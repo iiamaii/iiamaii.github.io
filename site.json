@@ -1,10 +1,29 @@
 {
   "title": "연구노트",
-  "description": "기술과 연구를 읽고, 실험하고, 기록하는 개인 블로그.",
+  "description": "iiamaii의 프로필과 주제별 논문 리뷰를 모으는 연구 공간.",
   "author": "iiamaii",
   "github": "https://github.com/iiamaii",
   "url": "https://iiamaii.github.io",
   "basePath": "",
   "language": "ko",
-  "intro": "기술을 탐구하고, 배운 것을 기록합니다."
+  "githubPage": "https://github.com/iiamaii",
+  "profile": {
+    "name": "iiamaii",
+    "headline": "",
+    "bio": "",
+    "interests": []
+  },
+  "philosophy": {
+    "title": "나의 철학",
+    "text": ""
+  },
+  "hero": {
+    "image": "/assets/research-cover.webp",
+    "alt": "검은 면과 파란 면이 이어지는 추상적인 종이 구조"
+  },
+  "topics": [
+    { "id": "topic-01", "name": "주제 01", "description": "첫 번째 연구 주제를 설정하세요.", "thumbnail": "/assets/topics/topic-01.svg" },
+    { "id": "topic-02", "name": "주제 02", "description": "두 번째 연구 주제를 설정하세요.", "thumbnail": "/assets/topics/topic-02.svg" },
+    { "id": "topic-03", "name": "주제 03", "description": "세 번째 연구 주제를 설정하세요.", "thumbnail": "/assets/topics/topic-03.svg" }
+  ]
 }

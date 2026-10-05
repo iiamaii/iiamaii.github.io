@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs",
+    "test": "node scripts/check.mjs",
     "dev": "node scripts/dev.mjs",
     "new": "node scripts/new-post.mjs"
   },

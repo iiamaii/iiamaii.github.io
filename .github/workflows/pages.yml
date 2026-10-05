@@ -30,6 +30,8 @@ jobs:
         uses: actions/configure-pages@v5
       - name: Install dependencies
         run: npm ci
+      - name: Check review publishing
+        run: npm test
       - name: Build blog
         run: npm run build
         env:
