@@ -1,0 +1,7 @@
+{
+  "asset": "public/assets/research-cover.webp",
+  "source": "Built-in image_gen; one generation, no variants or retries",
+  "size": [1536, 1024],
+  "purpose": "Featured editorial cover for a Korean personal technical and research magazine blog",
+  "prompt": "Use case: stylized-concept\nAsset type: featured editorial cover for a Korean personal technical and research magazine blog; landscape 3:2 image.\nPrimary request: A minimal sculptural ribbon of folded graph paper curling into a loop, pure abstract artwork.\nScene/backdrop: bright cool white studio backdrop.\nSubject: one folded paper ribbon, with charcoal-black outer surfaces, fine grey grid lines on white inner surfaces, and one electric cobalt-blue plane.\nStyle/medium: tangible paper sculpture with a restrained high-end science magazine aesthetic.\nComposition/framing: sharply composed, balanced centered asymmetric composition, generous negative space, landscape 3:2.\nLighting/mood: soft directional studio lighting with a crisp cast shadow.\nMaterials/textures: subtle tactile paper texture, clean precise folds.\nConstraints: Pure abstract artwork; do not depict or imply a factual scientific structure. No text, no letters, no logos, no UI, no watermark."
+}

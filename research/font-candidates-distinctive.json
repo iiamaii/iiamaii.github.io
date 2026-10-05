@@ -1,0 +1,28 @@
+{
+  "verifiedAt": "2026-10-06",
+  "purpose": "기술·연구 기록 블로그에 적용할 추가 무료 웹폰트 후보",
+  "license": "SIL Open Font License 1.1",
+  "notes": "상업·비상업 웹 사용 가능. 폰트 파일을 직접 배포할 때 저작권 고지와 OFL을 함께 보존한다. 시각적 인상과 용도 추천은 디자인 판단이다. 아직 실제 블로그 폰트는 변경하지 않았다.",
+  "fonts": [
+    {"name":"함렡 · Hahmlet","family":"Hahmlet","language":"ko","role":"제목·본문","source":"https://github.com/hyper-type/hahmlet","license":"https://github.com/google/fonts/blob/main/ofl/hahmlet/OFL.txt","web":"Google Fonts"},
+    {"name":"송명 · Song Myung","family":"Song Myung","language":"ko","role":"제목·읽기 중심 글","source":"https://fonts.google.com/specimen/Song+Myung","license":"https://github.com/google/fonts/blob/main/ofl/songmyung/OFL.txt","web":"Google Fonts","note":"Regular 400만 제공"},
+    {"name":"IBM Plex Sans KR","family":"IBM Plex Sans KR","language":"ko","role":"본문·메뉴","source":"https://github.com/IBM/plex","license":"https://github.com/google/fonts/blob/main/ofl/ibmplexsanskr/OFL.txt","web":"Google Fonts"},
+    {"name":"Wanted Sans","family":"Wanted Sans Variable","language":"ko","role":"제목·본문·메뉴","source":"https://github.com/wanteddev/wanted-sans","license":"https://github.com/wanteddev/wanted-sans/blob/main/packages/wanted-sans/README.md#라이선스","web":"https://cdn.jsdelivr.net/gh/wanteddev/wanted-sans@v1.0.3/packages/wanted-sans/fonts/webfonts/variable/split/WantedSansVariable.min.css"},
+    {"name":"LINE Seed Sans KR","family":"LINE Seed Sans KR","language":"ko","role":"본문·메뉴·짧은 제목","source":"https://seed.line.me/index_kr.html","license":"https://seed.line.me/index_kr.html","web":"WOFF2 @font-face","previewMirror":"https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_11-01@1.0/LINESeedKR-Rg.woff2","note":"최종 적용 시 공식 배포본과 저작권 고지를 보존. 굵기 100/400/700."},
+    {"name":"구기 · Gugi","family":"Gugi","language":"ko","role":"로고·짧은 제목","source":"https://fonts.google.com/specimen/Gugi","license":"https://github.com/google/fonts/blob/main/ofl/gugi/OFL.txt","web":"Google Fonts","note":"Regular 400만 제공. 긴 본문에는 추천하지 않음."},
+    {"name":"Fraunces","family":"Fraunces","language":"en","role":"제목·짧은 소개","source":"https://github.com/undercasetype/Fraunces","license":"https://github.com/google/fonts/blob/main/ofl/fraunces/OFL.txt","web":"Google Fonts"},
+    {"name":"Bodoni Moda","family":"Bodoni Moda","language":"en","role":"대제목·표지","source":"https://github.com/indestructible-type/Bodoni","license":"https://github.com/google/fonts/blob/main/ofl/bodonimoda/OFL.txt","web":"Google Fonts"},
+    {"name":"Instrument Serif","family":"Instrument Serif","language":"en","role":"대제목·인용","source":"https://github.com/Instrument/instrument-serif","license":"https://github.com/google/fonts/blob/main/ofl/instrumentserif/OFL.txt","web":"Google Fonts","note":"Regular와 Italic. 큰 크기용 디스플레이 서체."},
+    {"name":"DM Serif Display","family":"DM Serif Display","language":"en","role":"제목·강조 문구","source":"https://fonts.google.com/specimen/DM+Serif+Display","license":"https://github.com/google/fonts/blob/main/ofl/dmserifdisplay/OFL.txt","web":"Google Fonts","note":"Regular와 Italic"},
+    {"name":"Space Grotesk","family":"Space Grotesk","language":"en","role":"제목·본문·숫자","source":"https://github.com/floriankarsten/space-grotesk","license":"https://github.com/google/fonts/blob/main/ofl/spacegrotesk/OFL.txt","web":"Google Fonts"},
+    {"name":"Bricolage Grotesque","family":"Bricolage Grotesque","language":"en","role":"제목·브랜딩","source":"https://github.com/ateliertriay/bricolage","license":"https://github.com/google/fonts/blob/main/ofl/bricolagegrotesque/OFL.txt","web":"Google Fonts"}
+  ],
+  "pairs": [
+    {"name":"편집물","koreanHeading":"Hahmlet","koreanBody":"IBM Plex Sans KR","englishHeading":"Instrument Serif"},
+    {"name":"부드러운 기록","koreanHeading":"Song Myung","koreanBody":"LINE Seed Sans KR","englishHeading":"Fraunces"},
+    {"name":"기술 노트","koreanHeading":"Wanted Sans","koreanBody":"Wanted Sans","englishHeading":"Space Grotesk"}
+  ],
+  "excluded": [
+    {"name":"을유1945","source":"https://www.eulyoo.co.kr/member/font.html","reason":"공식 안내에 웹페이지 무료 사용과 임베이딩·서버 및 디바이스 등을 이용한 복사·배포 제한이 함께 명시돼 있다. OFL 설명은 포함된 본명조 글리프에 대한 설명이다. 외부 웹폰트 미러를 그대로 블로그에 쓰는 후보로 채택하지 않는다."}
+  ]
+}

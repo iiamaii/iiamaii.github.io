@@ -1,0 +1,26 @@
+{
+  "checked_on": "2026-10-06",
+  "purpose": "무료 웹폰트 후보와 잡지형 기술·연구 블로그용 조합 비교",
+  "applied": false,
+  "license": "All shortlisted font families use SIL Open Font License 1.1; embedding and self-hosting permitted subject to license conditions.",
+  "license_guidance": "https://openfontlicense.org/ofl-faq/",
+  "design_notes": "Suggested roles and visual impressions are editorial judgments, not objective rankings.",
+  "korean": [
+    {"name":"Pretendard","role":"본문·메뉴","official":"https://github.com/orioncactus/pretendard","webfont":"https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css"},
+    {"name":"SUIT","role":"본문·메뉴·제목","official":"https://github.com/sun-typeface/SUIT","license":"https://github.com/sun-typeface/SUIT/blob/main/LICENSE","webfont":"https://cdn.jsdelivr.net/gh/sun-typeface/SUIT@2/fonts/static/woff2/SUIT.css"},
+    {"name":"Maru Buri","role":"잡지형 제목·소개","official":"https://hangeul.naver.com/fonts/search?f=maru","license":"https://help.naver.com/service/30016/contents/18088?lang=ko","preview_webfont":"https://cdn.jsdelivr.net/gh/fonts-archive/MaruBuri/subsets/MaruBuri-dynamic-subset.css","preview_source_note":"Community-maintained webfont mirror; original license verified with NAVER. For publication, prefer local files from the official distributor with the accompanying license."},
+    {"name":"Noto Serif KR","role":"연구 글 제목·명조 본문","official":"https://fonts.google.com/specimen/Noto+Serif+KR","license":"https://github.com/google/fonts/blob/main/ofl/notoserifkr/OFL.txt"},
+    {"name":"Gowun Batang","role":"에세이·명조 본문","official":"https://fonts.google.com/specimen/Gowun+Batang","license":"https://github.com/google/fonts/blob/main/ofl/gowunbatang/OFL.txt","weights":[400,700]}
+  ],
+  "latin": [
+    {"name":"Inter","role":"영문 본문·메뉴·숫자","official":"https://rsms.me/inter/"},
+    {"name":"Source Serif 4","role":"영문 연구 글·장문·제목","official":"https://github.com/adobe-fonts/source-serif","license":"https://github.com/adobe-fonts/source-serif/blob/release/LICENSE.md"},
+    {"name":"Newsreader","role":"영문 잡지형 제목·장문","official":"https://github.com/productiontype/Newsreader","license":"https://github.com/productiontype/Newsreader/blob/master/OFL.txt"},
+    {"name":"JetBrains Mono","role":"코드·명령어","official":"https://github.com/JetBrains/JetBrainsMono","license":"https://github.com/JetBrains/JetBrainsMono/blob/master/OFL.txt"}
+  ],
+  "recommended_pairings": [
+    {"name":"잡지형","korean_heading":"Maru Buri","korean_body":"Pretendard","latin":"Newsreader","code":"JetBrains Mono"},
+    {"name":"차분한 연구 노트","korean_heading":"Noto Serif KR","korean_body":"Pretendard","latin":"Source Serif 4","code":"JetBrains Mono"},
+    {"name":"선명한 기술 블로그","korean_heading":"SUIT","korean_body":"SUIT","latin":"Inter","code":"JetBrains Mono"}
+  ]
+}
