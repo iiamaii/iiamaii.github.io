@@ -1,0 +1,102 @@
+{
+  "downloadedAt": "2026-10-06",
+  "fonts": [
+    {
+      "id": "hahmlet",
+      "source": "https://raw.githubusercontent.com/google/fonts/main/ofl/hahmlet/Hahmlet%5Bwght%5D.ttf",
+      "license": "https://raw.githubusercontent.com/google/fonts/main/ofl/hahmlet/OFL.txt",
+      "bytes": 698080,
+      "sha256": "550a5c4f2d59f056d0e9954b00d12ac0e348a3ed528f5b4a985b4767edd0497c",
+      "packaging": "Original font tables compressed as WOFF2; glyphs and variation axes preserved"
+    },
+    {
+      "id": "songmyung",
+      "source": "https://raw.githubusercontent.com/google/fonts/main/ofl/songmyung/SongMyung-Regular.ttf",
+      "license": "https://raw.githubusercontent.com/google/fonts/main/ofl/songmyung/OFL.txt",
+      "bytes": 315924,
+      "sha256": "decab8c05f00c706e7d9dd966d84928c340673453b14b916b3d8157b41e53686",
+      "packaging": "Original font tables compressed as WOFF2; glyphs and variation axes preserved"
+    },
+    {
+      "id": "ibmplexsanskr",
+      "source": "https://raw.githubusercontent.com/google/fonts/main/ofl/ibmplexsanskr/IBMPlexSansKR-Regular.ttf",
+      "license": "https://raw.githubusercontent.com/google/fonts/main/ofl/ibmplexsanskr/OFL.txt",
+      "bytes": 561608,
+      "sha256": "98861efc7c57a75fcd328a6c057fd8e77fa6bf33d3469850d35e16256f214cbe",
+      "packaging": "Original font tables compressed as WOFF2; glyphs and variation axes preserved"
+    },
+    {
+      "id": "gugi",
+      "source": "https://raw.githubusercontent.com/google/fonts/main/ofl/gugi/Gugi-Regular.ttf",
+      "license": "https://raw.githubusercontent.com/google/fonts/main/ofl/gugi/OFL.txt",
+      "bytes": 181044,
+      "sha256": "00714f2f7811ec2fdc4edbba67867fdda0923b5e4963acb0553215b106ef712c",
+      "packaging": "Original font tables compressed as WOFF2; glyphs and variation axes preserved"
+    },
+    {
+      "id": "fraunces",
+      "source": "https://raw.githubusercontent.com/google/fonts/main/ofl/fraunces/Fraunces%5BSOFT%2CWONK%2Copsz%2Cwght%5D.ttf",
+      "license": "https://raw.githubusercontent.com/google/fonts/main/ofl/fraunces/OFL.txt",
+      "bytes": 194828,
+      "sha256": "4465935f1d909ea0909fd12fb1a8b210cd5cb7541c9571cb75161cab1566e838",
+      "packaging": "Original font tables compressed as WOFF2; glyphs and variation axes preserved"
+    },
+    {
+      "id": "bodonimoda",
+      "source": "https://raw.githubusercontent.com/google/fonts/main/ofl/bodonimoda/BodoniModa%5Bopsz%2Cwght%5D.ttf",
+      "license": "https://raw.githubusercontent.com/google/fonts/main/ofl/bodonimoda/OFL.txt",
+      "bytes": 74380,
+      "sha256": "a38a997ff49146dcd01fdfff8043e5f7f4dc15b618e2b9bda416a7a1138fa8c2",
+      "packaging": "Original font tables compressed as WOFF2; glyphs and variation axes preserved"
+    },
+    {
+      "id": "instrumentserif",
+      "source": "https://raw.githubusercontent.com/google/fonts/main/ofl/instrumentserif/InstrumentSerif-Regular.ttf",
+      "license": "https://raw.githubusercontent.com/google/fonts/main/ofl/instrumentserif/OFL.txt",
+      "bytes": 27376,
+      "sha256": "a58003497f6c300eb9109c486fb5d546e4c76ac996e3e085dae3eba1dbfa13bf",
+      "packaging": "Original font tables compressed as WOFF2; glyphs and variation axes preserved"
+    },
+    {
+      "id": "dmserifdisplay",
+      "source": "https://raw.githubusercontent.com/google/fonts/main/ofl/dmserifdisplay/DMSerifDisplay-Regular.ttf",
+      "license": "https://raw.githubusercontent.com/google/fonts/main/ofl/dmserifdisplay/OFL.txt",
+      "bytes": 31888,
+      "sha256": "501cfd78d4bbee7a8fd09513b2fa841e749bf099be8b4e70405f27c021f5539f",
+      "packaging": "Original font tables compressed as WOFF2; glyphs and variation axes preserved"
+    },
+    {
+      "id": "spacegrotesk",
+      "source": "https://raw.githubusercontent.com/google/fonts/main/ofl/spacegrotesk/SpaceGrotesk%5Bwght%5D.ttf",
+      "license": "https://raw.githubusercontent.com/google/fonts/main/ofl/spacegrotesk/OFL.txt",
+      "bytes": 49168,
+      "sha256": "bb45bf0586278169399242f33d6fbfb46177d0ddc1897feb1f8f2386a4a74041",
+      "packaging": "Original font tables compressed as WOFF2; glyphs and variation axes preserved"
+    },
+    {
+      "id": "bricolagegrotesque",
+      "source": "https://raw.githubusercontent.com/google/fonts/main/ofl/bricolagegrotesque/BricolageGrotesque%5Bopsz%2Cwdth%2Cwght%5D.ttf",
+      "license": "https://raw.githubusercontent.com/google/fonts/main/ofl/bricolagegrotesque/OFL.txt",
+      "bytes": 204660,
+      "sha256": "de27b41c14e8672d3544734fc181f4663ae0f735c61668b26d7a997faf1e7343",
+      "packaging": "Original font tables compressed as WOFF2; glyphs and variation axes preserved"
+    },
+    {
+      "id": "wanted-sans",
+      "source": "https://cdn.jsdelivr.net/gh/wanteddev/wanted-sans@v1.0.3/packages/wanted-sans/fonts/webfonts/variable/complete/woff2/WantedSansVariable.woff2",
+      "license": "https://raw.githubusercontent.com/wanteddev/wanted-sans/v1.0.3/OFL.txt",
+      "bytes": 1289292,
+      "sha256": "4259e7e9a172e634c2cb419d793b84148990316341e910443e5d10965b2c8f16",
+      "packaging": "Official complete variable WOFF2, unmodified"
+    },
+    {
+      "id": "line-seed-kr",
+      "source": "https://seed.line.me/src/images/fonts/LINE_Seed_Sans_KR.zip",
+      "zipEntry": "LINE_SeedKR_2023.09.06/Web/woff2/LINESeedKR-Rg.woff2",
+      "license": "https://seed.line.me/index_kr.html",
+      "bytes": 523808,
+      "sha256": "709275188a8ef23040274490cd1fa048a02e9c441a238a4252837258cf8a43df",
+      "packaging": "Official Regular WOFF2, unmodified"
+    }
+  ]
+}

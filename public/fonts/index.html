@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>폰트 비교 · 연구노트</title>
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <style>
+    @font-face{font-family:PreviewHahmlet;src:url('../assets/fonts/hahmlet/font.woff2') format('woff2');font-weight:100 900;font-display:swap}
+    @font-face{font-family:PreviewSongMyung;src:url('../assets/fonts/songmyung/font.woff2') format('woff2');font-weight:400;font-display:swap}
+    @font-face{font-family:PreviewIBMPlex;src:url('../assets/fonts/ibmplexsanskr/font.woff2') format('woff2');font-weight:400;font-display:swap}
+    @font-face{font-family:PreviewWanted;src:url('../assets/fonts/wanted-sans/font.woff2') format('woff2');font-weight:400 1000;font-display:swap}
+    @font-face{font-family:PreviewLINESeed;src:url('../assets/fonts/line-seed-kr/font.woff2') format('woff2');font-weight:400;font-display:swap}
+    @font-face{font-family:PreviewGugi;src:url('../assets/fonts/gugi/font.woff2') format('woff2');font-weight:400;font-display:swap}
+    @font-face{font-family:PreviewFraunces;src:url('../assets/fonts/fraunces/font.woff2') format('woff2');font-weight:100 900;font-display:swap}
+    @font-face{font-family:PreviewBodoni;src:url('../assets/fonts/bodonimoda/font.woff2') format('woff2');font-weight:400 900;font-display:swap}
+    @font-face{font-family:PreviewInstrument;src:url('../assets/fonts/instrumentserif/font.woff2') format('woff2');font-weight:400;font-display:swap}
+    @font-face{font-family:PreviewDMSerif;src:url('../assets/fonts/dmserifdisplay/font.woff2') format('woff2');font-weight:400;font-display:swap}
+    @font-face{font-family:PreviewSpace;src:url('../assets/fonts/spacegrotesk/font.woff2') format('woff2');font-weight:300 700;font-display:swap}
+    @font-face{font-family:PreviewBricolage;src:url('../assets/fonts/bricolagegrotesque/font.woff2') format('woff2');font-weight:200 800;font-display:swap}
+    :root{--ink:#171b22;--muted:#687180;--line:#dfe3e9;--blue:#2549d8;--paper:#fff;--soft:#f5f6f9;--sample-size:19px}
+    *{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font-family:system-ui,-apple-system,'Apple SD Gothic Neo',sans-serif;font-size:15px;line-height:1.6}a{color:var(--blue);text-underline-offset:4px}button,input,textarea{font:inherit}button,a,input,textarea{ -webkit-tap-highlight-color:transparent}button{cursor:pointer}a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--blue);outline-offset:4px}.shell{max-width:1220px;margin:0 auto;padding:0 36px}.header{display:flex;align-items:center;justify-content:space-between;gap:20px;min-height:90px;border-bottom:1px solid var(--ink)}.brand{color:var(--ink);font-size:20px;font-weight:650;text-decoration:none}.header-note{color:var(--muted);font-size:13px}.intro{padding:45px 0 30px}.eyebrow{font-size:12px;letter-spacing:.14em;color:var(--blue);margin:0 0 10px}h1{margin:0;font-size:clamp(28px,4vw,43px);line-height:1.3;letter-spacing:-.045em;font-weight:650}.description{max-width:680px;color:var(--muted);margin:16px 0 0}.controls{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(220px,1fr);gap:25px;padding:24px;background:var(--soft);margin-bottom:28px}.sample-fields{display:grid;gap:15px}label{display:block;font-weight:550;font-size:13px}input[type=text],textarea{width:100%;display:block;margin-top:7px;border:1px solid #cbd1da;border-radius:4px;background:var(--paper);color:var(--ink);padding:10px 12px}textarea{resize:vertical;min-height:80px}.side-controls{display:grid;align-content:start;gap:19px}.languages{display:flex;gap:8px;flex-wrap:wrap}.language-button{padding:10px 18px;border:1px solid var(--line);border-radius:4px;color:var(--ink);background:var(--paper)}.language-button[aria-pressed=true]{background:var(--ink);color:var(--paper);border-color:var(--ink)}input[type=range]{width:100%;display:block;margin-top:13px;accent-color:var(--blue)}.weight-note{margin:0;color:var(--muted);font-size:13px}.summary{display:flex;justify-content:space-between;gap:15px;flex-wrap:wrap;border-bottom:2px solid var(--ink);padding:0 0 13px}.summary h2{font-size:17px;margin:0;font-weight:600}.summary span{font-size:13px;color:var(--muted)}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:45px}.font-card{padding:28px 0 32px;border-bottom:1px solid var(--line);min-width:0}.card-header{display:flex;align-items:baseline;justify-content:space-between;gap:14px;margin-bottom:22px}.font-name{font-size:16px;font-weight:650;margin:0}.load-state{font-size:12px;color:var(--muted);white-space:nowrap}.load-state.loaded{color:#25644b}.load-state.error{color:#ab2631}.font-sample{font-weight:400;font-synthesis:none;word-break:keep-all;overflow-wrap:anywhere;font-optical-sizing:auto}.sample-title{font-family:inherit;font-weight:400;line-height:1.45;font-size:calc(var(--sample-size) * 1.85);letter-spacing:-.02em;margin:0 0 18px}.sample-body{font-family:inherit;font-size:var(--sample-size);line-height:1.85;margin:0 0 22px}.font-role{font-size:13px;margin:0 0 7px;color:var(--muted)}.font-note{font-size:13px;margin:0 0 13px;color:var(--muted)}.font-links{display:flex;gap:18px;flex-wrap:wrap;font-size:12px}.pairing{margin:44px 0;background:var(--soft);padding:25px 28px}.pairing h2{font-size:18px;margin:0 0 14px}.pairing p{margin:8px 0;font-size:14px}.footer{border-top:1px solid var(--ink);padding:25px 0 35px;font-size:13px;color:var(--muted);display:flex;justify-content:space-between;flex-wrap:wrap;gap:15px}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+    @media(max-width:700px){.shell{padding:0 22px}.controls{grid-template-columns:1fr;padding:20px}.side-controls{grid-template-columns:1fr 1fr;gap:14px}.weight-note{grid-column:1/-1}.grid{grid-template-columns:1fr}.intro{padding:30px 0 25px}.header{min-height:75px}.header-note{display:none}.sample-title{font-size:calc(var(--sample-size) * 1.65)}.pairing{padding:22px}.font-name{font-size:15px}.card-header{gap:9px}}
+    @media(max-width:380px){.side-controls{grid-template-columns:1fr}.weight-note{grid-column:auto}.shell{padding:0 16px}.controls{padding:16px}.language-button{padding:10px 15px}}
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="header"><a class="brand" href="../">연구노트<span style="color:var(--blue)">.</span></a><span class="header-note">무료 웹폰트 · 한글 6종 / 영문 6종</span><a href="../">블로그 보기 ↗</a></header>
+    <main>
+      <section class="intro"><p class="eyebrow">TYPE STUDY</p><h1>글의 분위기를 고르는 시간.</h1><p class="description">같은 문장을 서로 다른 폰트로 비교합니다. 제목과 본문을 직접 입력하고, 한글과 영문을 바꿔 보세요.</p></section>
+      <section class="controls" aria-label="폰트 비교 설정">
+        <div class="sample-fields"><label for="title-text">제목<input id="title-text" type="text" maxlength="160" value="질문을 남기는 연구노트"></label><label for="body-text">본문<textarea id="body-text" rows="3" maxlength="1200">논문에서 발견한 질문을 코드와 실험으로 확인합니다. 작은 발견과 아직 풀리지 않은 생각을 기록합니다. AI Research 2026.</textarea></label></div>
+        <div class="side-controls"><div><label>비교할 언어</label><div class="languages" style="margin-top:7px"><button class="language-button" id="show-ko" type="button" aria-pressed="true">한글 6종</button><button class="language-button" id="show-en" type="button" aria-pressed="false">영문 6종</button></div></div><label for="text-size">본문 크기 <output id="size-value">19 px</output><input id="text-size" type="range" min="15" max="28" value="19" step="1"></label><p class="weight-note">모두 기본 굵기 400으로 비교합니다.<br>‘폰트 로딩 완료’가 표시되면 실제 서체입니다.</p></div>
+      </section>
+      <div class="summary"><h2 id="group-title">한글 폰트 6종</h2><span>무료 사용 · 웹 적용 가능 · 공식 출처 제공</span></div>
+      <div class="grid" id="font-grid"></div>
+      <span id="live-status" class="sr-only" role="status" aria-live="polite"></span>
+      <aside class="pairing"><h2>잡지형 연구 블로그에 추천하는 조합</h2><p><strong>편집물</strong> — 함렡 제목 · IBM Plex Sans KR 본문 · Instrument Serif 영문 제목</p><p><strong>부드러운 기록</strong> — 송명 제목 · LINE Seed Sans KR 본문 · Fraunces 영문 제목</p><p><strong>기술 노트</strong> — Wanted Sans 제목·본문 · Space Grotesk 영문 제목</p></aside>
+    </main>
+    <footer class="footer"><span>공식 배포 폰트를 직접 불러옵니다. 라이선스: SIL Open Font License 1.1.</span><a href="../">연구노트로 돌아가기</a></footer>
+  </div>
+  <noscript>문장 입력과 언어 전환에는 JavaScript가 필요합니다.</noscript>
+  <script>
+    (() => {
+      const fonts = [
+        {id:'hahmlet',name:'함렡 · Hahmlet',family:'PreviewHahmlet',lang:'ko',role:'명조 · 제목 / 본문',note:'각진 획과 또렷한 리듬',source:'https://github.com/hyper-type/hahmlet',serif:true},
+        {id:'songmyung',name:'송명 · Song Myung',family:'PreviewSongMyung',lang:'ko',role:'명조 · 제목 / 읽기 중심 글',note:'차분한 출판물 같은 인상 · 기본 굵기 1종',source:'https://fonts.google.com/specimen/Song+Myung',serif:true},
+        {id:'ibmplexsanskr',name:'IBM Plex Sans KR',family:'PreviewIBMPlex',lang:'ko',role:'고딕 · 본문 / 메뉴 / 연구 기록',note:'정돈된 형태와 기술적인 인상',source:'https://github.com/IBM/plex'},
+        {id:'wanted-sans',name:'Wanted Sans',family:'PreviewWanted',lang:'ko',role:'고딕 · 제목 / 본문 / 메뉴',note:'기하학적인 형태 · 가변 굵기 지원',source:'https://github.com/wanteddev/wanted-sans'},
+        {id:'line-seed-kr',name:'LINE Seed Sans KR',family:'PreviewLINESeed',lang:'ko',role:'고딕 · 본문 / 메뉴 / 짧은 제목',note:'둥근 모서리와 친근한 인상',source:'https://seed.line.me/index_kr.html'},
+        {id:'gugi',name:'구기 · Gugi',family:'PreviewGugi',lang:'ko',role:'디스플레이 · 로고 / 짧은 제목',note:'장식적인 기하학 형태 · 기본 굵기 1종',source:'https://fonts.google.com/specimen/Gugi'},
+        {id:'fraunces',name:'Fraunces',family:'PreviewFraunces',lang:'en',role:'Serif · 제목 / 짧은 소개',note:'부드러운 곡선과 개성 있는 획',source:'https://github.com/undercasetype/Fraunces',serif:true},
+        {id:'bodonimoda',name:'Bodoni Moda',family:'PreviewBodoni',lang:'en',role:'Serif · 대제목 / 표지',note:'굵고 가는 획의 대비 · 큰 제목에 추천',source:'https://github.com/indestructible-type/Bodoni',serif:true},
+        {id:'instrumentserif',name:'Instrument Serif',family:'PreviewInstrument',lang:'en',role:'Serif · 대제목 / 인용',note:'좁고 날렵한 형태 · 큰 제목에 추천',source:'https://github.com/Instrument/instrument-serif',serif:true},
+        {id:'dmserifdisplay',name:'DM Serif Display',family:'PreviewDMSerif',lang:'en',role:'Serif · 제목 / 강조 문구',note:'풍부한 곡선과 선명한 대비',source:'https://fonts.google.com/specimen/DM+Serif+Display',serif:true},
+        {id:'spacegrotesk',name:'Space Grotesk',family:'PreviewSpace',lang:'en',role:'Sans serif · 제목 / 본문 / 숫자',note:'고정폭 서체에서 온 개성 있는 디테일',source:'https://github.com/floriankarsten/space-grotesk'},
+        {id:'bricolagegrotesque',name:'Bricolage Grotesque',family:'PreviewBricolage',lang:'en',role:'Sans serif · 제목 / 브랜딩',note:'표정이 풍부한 형태와 글자 폭',source:'https://github.com/ateliertriay/bricolage'}
+      ];
+      const samples={ko:{title:'질문을 남기는 연구노트',body:'논문에서 발견한 질문을 코드와 실험으로 확인합니다. 작은 발견과 아직 풀리지 않은 생각을 기록합니다. AI Research 2026.'},en:{title:'Notes on the unfinished.',body:'A small question opens a new direction. Read, test, and leave a note for the next experiment. 0123456789.'}};
+      const grid=document.getElementById('font-grid');
+      const titleInput=document.getElementById('title-text');
+      const bodyInput=document.getElementById('body-text');
+      let language='ko';
+      function element(tag,className,text){const node=document.createElement(tag);if(className)node.className=className;if(text!==undefined)node.textContent=text;return node;}
+      function updateSamples(){samples[language]={title:titleInput.value,body:bodyInput.value};grid.querySelectorAll('.sample-title').forEach(node=>node.textContent=titleInput.value);grid.querySelectorAll('.sample-body').forEach(node=>node.textContent=bodyInput.value);}
+      function render(){
+        grid.replaceChildren();titleInput.value=samples[language].title;bodyInput.value=samples[language].body;
+        document.getElementById('group-title').textContent=language==='ko'?'한글 폰트 6종':'영문 폰트 6종';
+        document.getElementById('show-ko').setAttribute('aria-pressed',String(language==='ko'));document.getElementById('show-en').setAttribute('aria-pressed',String(language==='en'));
+        const visible=fonts.filter(font=>font.lang===language);
+        const promises=visible.map(font=>{
+          const card=element('article','font-card');card.dataset.font=font.family;
+          const header=element('div','card-header');const name=element('h3','font-name',font.name);const status=element('span','load-state','폰트 불러오는 중');header.append(name,status);
+          const sample=element('div','font-sample');sample.style.fontFamily=`${font.family}, ${font.serif?'serif':'sans-serif'}`;
+          sample.append(element('h2','sample-title',samples[language].title),element('p','sample-body',samples[language].body));
+          const links=element('div','font-links');
+          for(const [text,url] of [['공식 출처',font.source],['라이선스 원문',`../assets/fonts/${font.id}/OFL.txt`]]){const link=element('a','',text);link.href=url;link.target='_blank';link.rel='noopener noreferrer';links.append(link);}
+          card.append(header,sample,element('p','font-role',font.role),element('p','font-note',font.note),links);grid.append(card);
+          return document.fonts.load(`400 28px ${font.family}`,samples[language].title+' '+samples[language].body).then(faces=>{if(!faces.length)throw new Error('Font face missing');status.textContent='폰트 로딩 완료';status.classList.add('loaded');return true;}).catch(()=>{status.textContent='폰트 로딩 실패';status.classList.add('error');return false;});
+        });
+        const renderedLanguage=language;
+        Promise.all(promises).then(results=>{if(language===renderedLanguage)document.getElementById('live-status').textContent=`${renderedLanguage==='ko'?'한글':'영문'} 폰트 ${results.filter(Boolean).length}종 로딩 완료`;});
+      }
+      document.getElementById('show-ko').addEventListener('click',()=>{language='ko';render();});document.getElementById('show-en').addEventListener('click',()=>{language='en';render();});
+      titleInput.addEventListener('input',updateSamples);bodyInput.addEventListener('input',updateSamples);
+      document.getElementById('text-size').addEventListener('input',event=>{document.documentElement.style.setProperty('--sample-size',`${event.target.value}px`);document.getElementById('size-value').textContent=`${event.target.value} px`;});
+      render();
+    })();
+  </script>
+</body>
+</html>

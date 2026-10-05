@@ -83,6 +83,8 @@ git push -u origin main
 
 ## 폰트 후보
 
+블로그의 **폰트 비교** 메뉴 또는 로컬 미리보기의 `http://localhost:4321/fonts/`에서 추가 후보를 확인합니다. 문장을 직접 입력하고 본문 크기를 조절할 수 있습니다. 폰트 파일은 `public/assets/fonts/`에 공식 라이선스와 함께 포함되어 있어 외부 폰트 CDN 연결 없이 표시됩니다. 다운로드 출처와 파일 해시는 `research/font-preview-assets.json`에 기록했습니다.
+
 기본 후보 9종은 `research/font-candidates.json`, 추가 후보 12종과 공식 라이선스는 `research/font-candidates-distinctive.json`에 정리했습니다. 추가 후보는 함렡, 송명, IBM Plex Sans KR, Wanted Sans, LINE Seed Sans KR, 구기와 Fraunces, Bodoni Moda, Instrument Serif, DM Serif Display, Space Grotesk, Bricolage Grotesque입니다. 모두 OFL 1.1로 무료 웹 사용이 가능합니다. 실제 적용할 폰트는 비교 후 선택합니다.
 
 ## 구성

@@ -83,6 +83,7 @@ ${published ? `<meta property="article:published_time" content="${published}T00:
 <nav aria-label="주 메뉴">
 <a href="${href('/#notes')}" ${route === '/' ? 'aria-current="page"' : ''}>글</a>
 <a href="${href('/about/')}" ${route === '/about/' ? 'aria-current="page"' : ''}>소개</a>
+<a href="${href('/fonts/')}">폰트 비교</a>
 <a href="${esc(config.github)}" target="_blank" rel="noopener noreferrer" aria-label="GitHub 프로필 (새 탭)">GitHub</a>
 </nav>
 </header>
