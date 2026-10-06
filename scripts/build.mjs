@@ -17,10 +17,9 @@ function external(value) {
 external(config.url);
 external(config.github);
 external(config.githubPage || config.github);
-const topics = config.topics ?? [];
-if (!topics.length) throw new Error('Define at least one topic in site.json.');
+const topicPresets = config.topics ?? [];
 const topicIds = new Set();
-for (const topic of topics) {
+for (const topic of topicPresets) {
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(topic.id) || topic.id === 'all' || topicIds.has(topic.id)) throw new Error(`Invalid or duplicate topic id: ${topic.id}`);
   if (!topic.name?.trim()) throw new Error(`Topic ${topic.id} needs a name.`);
   topicIds.add(topic.id);
@@ -31,7 +30,17 @@ async function checkImage(src) {
 }
 await checkImage(config.hero.image);
 if (config.logo) await checkImage(config.logo.image);
-await Promise.all(topics.map(topic => checkImage(topic.thumbnail)));
+const defaultThumbnail = config.reviewThumbnail || '/assets/topics/topic-01.svg';
+await checkImage(defaultThumbnail);
+
+function postTopic(value, file) {
+  if (typeof value !== 'string' || !value.trim()) throw new Error(`${file}: topic must be a non-empty string.`);
+  const key = value.normalize('NFC').trim().replace(/\s+/g, ' ');
+  const preset = topicPresets.find(topic => topic.id === key);
+  const id = /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(key) && key !== 'all' && !key.startsWith('auto-')
+    ? key : `auto-${createHash('sha256').update(key).digest('hex').slice(0, 24)}`;
+  return { ...preset, id, key, name: preset?.name || key, thumbnail: preset?.thumbnail || defaultThumbnail };
+}
 
 function renderMarkdown(source, lang) {
   const headings = [];
@@ -62,16 +71,17 @@ const reviewDirectory = path.join(root, 'content/reviews');
 await fs.mkdir(reviewDirectory, { recursive: true });
 for (const file of (await fs.readdir(reviewDirectory)).filter(name => name.endsWith('.md'))) {
   const { data, content } = matter(await fs.readFile(path.join(reviewDirectory, file), 'utf8'));
-  if (data.draft === true) continue;
+  if (data.visibility !== undefined && !['public', 'private'].includes(data.visibility)) throw new Error(`${file}: visibility must be public or private.`);
+  if (data.visibility !== 'public' || data.draft === true) continue;
   const suffixLanguage = file.match(/\.(ko|en)\.md$/)?.[1];
   const lang = data.lang || suffixLanguage || 'ko';
   if (!languages.includes(lang) || (suffixLanguage && suffixLanguage !== lang)) throw new Error(`${file}: lang must be ko or en and match the filename suffix.`);
   if (typeof data.title !== 'string' || !data.title.trim() || typeof data.description !== 'string' || !data.description.trim()) throw new Error(`${file}: title and description are required.`);
-  const topic = topics.find(item => item.id === data.topic);
-  if (!topic) throw new Error(`${file}: topic must match an id in site.json.`);
   const date = data.date instanceof Date ? data.date.toISOString().slice(0, 10) : String(data.date);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(Date.parse(date)) || new Date(date).toISOString().slice(0, 10) !== date) throw new Error(`${file}: date must be a valid YYYY-MM-DD.`);
   if (date > today) continue;
+  const topic = postTopic(data.topic, file);
+  if (data.topicName !== undefined && (typeof data.topicName !== 'string' || !data.topicName.trim())) throw new Error(`${file}: topicName must be a non-empty string when provided.`);
   const slug = data.translationKey || file.replace(/\.md$/, '').replace(/\.(ko|en)$/, '').replace(/^\d{4}-\d{2}-\d{2}-/, '');
   if (typeof slug !== 'string' || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) throw new Error(`${file}: use a lowercase slug or translationKey with hyphens.`);
   if (data.thumbnail) await checkImage(data.thumbnail);
@@ -79,11 +89,28 @@ for (const file of (await fs.readdir(reviewDirectory)).filter(name => name.endsW
   const pair = pairs.get(slug) || {};
   if (pair[lang]) throw new Error(`${file}: duplicate ${lang} review for ${slug}.`);
   const other = pair[lang === 'ko' ? 'en' : 'ko'];
-  if (other && other.topic.id !== topic.id) throw new Error(`${file}: translations of the same review must use the same topic.`);
+  if (other && other.topic.key !== topic.key) throw new Error(`${file}: translations of the same review must use the same topic.`);
   const readingMinutes = lang === 'en' ? Math.max(1, Math.ceil(content.trim().split(/\s+/).length / 220)) : Math.max(1, Math.ceil(content.replace(/\s/g, '').length / 500));
   pair[lang] = { ...data, date, slug, topic, sourceLang: lang, readingMinutes, ...renderMarkdown(content, lang) };
   pairs.set(slug, pair);
 }
+
+const topicMap = new Map();
+const newestPairs = [...pairs.values()].sort((a, b) => {
+  const latest = pair => Object.values(pair).map(review => review.date).sort().at(-1);
+  return latest(b).localeCompare(latest(a));
+});
+for (const pair of newestPairs) {
+  for (const lang of languages) {
+    const review = pair[lang];
+    if (!review) continue;
+    const topic = topicMap.get(review.topic.id) || { ...review.topic, names: {} };
+    if (review.topicName && !topic.names[lang]) topic.names[lang] = review.topicName.trim();
+    topicMap.set(topic.id, topic);
+  }
+}
+const publicConfig = { ...config, topics: [...topicMap.values()] };
+await Promise.all(publicConfig.topics.map(topic => checkImage(topic.thumbnail)));
 
 const assetBuffers = await Promise.all(['style.css', 'site.js', 'reviews.js'].map(file => fs.readFile(path.join(root, 'public/assets', file))));
 const assetVersion = createHash('sha256').update(Buffer.concat(assetBuffers)).digest('hex').slice(0, 12);
@@ -97,7 +124,7 @@ async function writePage(route, html) {
 }
 const sitemapRoutes = [];
 for (const lang of languages) {
-  const site = localizedConfig(config, lang);
+  const site = localizedConfig(publicConfig, lang);
   const reviews = [...pairs.values()].map(pair => {
     const source = pair[lang] || pair[lang === 'ko' ? 'en' : 'ko'];
     const other = pair[source.sourceLang === 'ko' ? 'en' : 'ko'];
@@ -113,7 +140,7 @@ for (const lang of languages) {
       availableLanguages: languages.filter(language => pair[language])
     };
   }).sort((a, b) => b.date.localeCompare(a.date) || a.slug.localeCompare(b.slug));
-  const renderer = createRenderer({ config, lang, reviews, base, assetVersion });
+  const renderer = createRenderer({ config: publicConfig, lang, reviews, base, assetVersion });
   await writePage(languageRoute('/', lang), renderer.home());
   await writePage(languageRoute('/profile/', lang), renderer.profile());
   await writePage(languageRoute('/reviews/', lang), renderer.reviewIndex());

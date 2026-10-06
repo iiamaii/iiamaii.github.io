@@ -7,7 +7,7 @@
 - [논문 리뷰](https://iiamaii.github.io/reviews/): 전체·주제 탭, 썸네일과 짧은 설명, 리뷰 본문
 - GitHub page 메뉴: 기본적으로 [iiamaii GitHub 프로필](https://github.com/iiamaii)로 연결
 
-기존 예시 글은 게시 목록에서 정리했습니다. 현재 실제 논문 리뷰는 0편이며, `주제 01–03`과 등록 대기 카드가 표시됩니다. 프로필과 철학은 내용을 채우기 전까지 준비 안내를 보여줍니다.
+기존 예시 글은 게시 목록에서 정리했습니다. 현재 실제 논문 리뷰는 0편이며, 공개된 리뷰가 없다는 안내를 표시합니다. 주제는 공개 포스트에서 자동으로 모읍니다. 프로필과 철학은 내용을 채우기 전까지 준비 안내를 보여줍니다.
 
 ## 미리보기
 
@@ -32,7 +32,8 @@ npm run dev
 | `profile.interests` | 연구 관심사 문자열 목록 |
 | `philosophy.title`, `philosophy.text` | 메인과 프로필에 함께 표시할 철학 |
 | `hero.image`, `hero.alt` | 대문 이미지 경로와 설명 |
-| `logo.image`, `logo.alt` | 대문 이미지와 함께 표시할 로고 |
+| `logo.image`, `logo.alt` | 좌측 상단의 홈 링크 로고 |
+| `reviewThumbnail` | 포스트 썸네일이 없을 때 사용하는 기본 이미지 |
 | `githubPage` | GitHub page 메뉴의 외부 주소 |
 | `title`, `description` | 블로그 이름과 검색 설명 |
 
@@ -49,11 +50,22 @@ npm run dev
 | `/reviews/` | `/en/reviews/` |
 | `/reviews/논문-id/` | `/en/reviews/논문-id/` |
 
-프로필·철학의 영어 문구는 `site.json`의 `translations.en.profile`, `translations.en.philosophy`에 작성합니다. 주제 영어 이름과 설명은 `translations.en.topics`에 주제 id를 키로 넣습니다. 영어 본문이 비어 있고 한글 원문이 있으면 원문 안내와 함께 표시합니다.
+프로필·철학의 영어 문구는 `site.json`의 `translations.en.profile`, `translations.en.philosophy`에 작성합니다. 주제 표시 이름을 번역하려면 각 언어 포스트의 `topicName`에 작성하고, 두 원고의 `topic` 값은 동일하게 유지합니다. 영어 본문이 비어 있고 한글 원문이 있으면 원문 안내와 함께 표시합니다.
 
 ## 논문 주제
 
-`site.json`의 `topics` 목록에서 이름, 설명과 기본 썸네일을 수정합니다. 주제를 추가하거나 삭제하면 메인 그룹과 리뷰 탭도 함께 갱신됩니다.
+공개 포스트의 `topic` 값을 모아 메인 주제 그룹과 리뷰 탭을 자동으로 만듭니다. 주제를 `site.json`에 미리 등록할 필요가 없으며 한글과 공백을 사용할 수 있습니다.
+
+```yaml
+topic: "머신러닝"
+visibility: "public"
+```
+
+같은 주제의 공개 글은 함께 묶입니다. 주제 앞뒤의 공백과 연속된 공백은 정리합니다. 주제 목록은 해당 주제의 최신 공개 글부터 표시합니다. 비공개·초안·미래 날짜의 글은 주제 생성에 영향을 주지 않으며, 마지막 공개 글을 비공개로 바꾸면 다음 배포에서 해당 주제도 사라집니다.
+
+`topicName`은 각 언어에서 표시할 주제 이름을 지정하는 선택 항목입니다. 예를 들어 두 언어 원고의 `topic`은 모두 `"머신러닝"`으로 두고, 영어 원고에 `topicName: "Machine Learning"`을 추가합니다. 번역 이름이 없으면 공통 주제 이름을 표시합니다.
+
+특정 주제에 이름과 기본 썸네일을 지정하고 싶으면 `site.json`의 `topics`에 다음과 같은 선택 설정을 넣을 수 있습니다. 이 설정만으로 탭이 생성되지는 않습니다.
 
 ```json
 {
@@ -64,22 +76,23 @@ npm run dev
 }
 ```
 
-`id`는 중복되지 않는 영문 소문자·숫자·하이픈을 사용합니다. 기존 리뷰가 있으면 해당 리뷰의 `topic`도 함께 바꿉니다. `all`은 전체 탭을 위해 예약되어 있습니다.
+선택 설정의 `id`는 영문 소문자·숫자·하이픈을 사용하며, 포스트의 `topic`을 같은 값으로 입력하면 적용됩니다. `all`은 전체 탭을 위해 예약되어 있습니다. 포스트의 `topicName`이 선택 설정의 표시 이름보다 우선합니다.
 
 ## 논문 리뷰 작성
 
 ```sh
-npm run new -- paper-slug topic-01
+npm run new -- paper-slug "머신러닝"
 ```
 
-`content/reviews/날짜-paper-slug.ko.md`와 `.en.md` 초안이 함께 생성됩니다. 주제 id를 생략하면 첫 번째 주제를 사용합니다. 각 언어의 제목·설명·본문을 채우고 준비된 파일의 `draft`를 `false`로 변경합니다. 영어 번역은 별도 원고로 작성하며, 원문을 바꿀 때 번역본도 함께 수정합니다.
+`content/reviews/날짜-paper-slug.ko.md`와 `.en.md` 원고가 함께 생성되며, 둘 다 `visibility: "private"`로 시작합니다. 주제를 생략하면 `"미분류"`를 사용합니다. 각 언어의 제목·설명·본문을 채우고 공개할 파일만 `visibility: "public"`으로 변경합니다. 영어 번역은 별도 원고로 작성하며, 원문을 바꿀 때 번역본도 함께 수정합니다.
 
 ```yaml
 ---
 title: "내 리뷰 제목"
 description: "카드에 표시할 짧은 설명"
 date: "2026-10-06"
-topic: "topic-01"
+topic: "머신러닝"
+visibility: "public"
 lang: "ko"
 translationKey: "paper-slug"
 paperTitle: "논문 원제"
@@ -88,7 +101,6 @@ year: "2026"
 paperUrl: "https://논문-원문-주소"
 thumbnail: "/assets/논문-썸네일.webp"
 thumbnailAlt: "썸네일 설명"
-draft: false
 ---
 
 ## 핵심 아이디어
@@ -96,27 +108,33 @@ draft: false
 리뷰 본문을 작성합니다.
 ```
 
-- `title`, `description`, `date`, `topic`은 발행 시 필수입니다.
+- `title`, `description`, `date`, `topic`은 공개 시 필수입니다. `visibility`를 정확히 `"public"`으로 지정해야 발행됩니다.
+- `visibility: "private"`이거나 공개 여부가 없으면 비공개로 처리합니다. 다른 값은 오류로 알려줍니다.
 - `lang`은 `ko` 또는 `en`입니다. 두 언어의 `translationKey`와 `topic`을 같게 설정하면 같은 글로 묶입니다. 초안 생성 명령이 이를 설정합니다.
 - 번역본을 발행하지 않았으면 원문을 표시하고 아직 번역이 없음을 안내합니다. 번역본 발행 후에는 언어 버튼으로 제목·요약·본문까지 전환됩니다.
 - 두 언어로 작성해도 카드 수는 논문 한 편으로 계산합니다. 기존의 `.md` 원고는 기본적으로 한글 원고로 처리합니다.
-- `thumbnail`을 비우면 해당 주제의 기본 썸네일을 사용합니다.
+- `thumbnail`을 비우면 주제의 선택 설정 이미지 또는 `reviewThumbnail`을 사용합니다.
 - 카드 제목을 누르면 `/reviews/paper-slug/`의 리뷰 본문을 엽니다.
 - 본문은 Markdown으로 작성하며, `##` 제목으로 목차를 만듭니다.
-- 초안과 한국 시간 기준 미래 날짜의 글은 게시되지 않습니다.
+- 기존 `draft: true`도 계속 지원하며, 한국 시간 기준 미래 날짜의 글과 함께 게시에서 제외합니다.
+- 비공개 글은 메인·리뷰 카드·주제 탭·관련 글·본문 URL·RSS·사이트맵에 포함하지 않습니다. 한글·영어 원고의 공개 여부는 각각 설정하며, 공개되지 않은 번역 대신 공개 원문을 안내와 함께 표시합니다.
 - 메인에는 주제별 최신 리뷰 4편까지 표시하며, 리뷰 페이지에는 모두 표시합니다.
 - 주제 탭은 클릭과 좌우 방향키·Home·End 키를 지원합니다. 선택한 주제는 URL에 남고 브라우저 뒤로가기로 돌아갈 수 있습니다.
+
+현재 GitHub 저장소는 공개 저장소입니다. `visibility: "private"`는 블로그 게시 여부를 제어하며 저장소의 접근 권한을 바꾸지 않습니다. 비공개 원고를 GitHub에 커밋·푸시하면 원고와 Git 이력을 저장소에서 읽을 수 있으므로, 공개하면 안 되는 원고는 로컬에 보관합니다. `public/`의 파일도 모두 배포되므로 비공개 자료를 넣지 않습니다.
 
 ## 게시하기
 
 저장소는 `https://github.com/iiamaii/iiamaii.github.io`이며, GitHub Pages 게시 소스는 **GitHub Actions**입니다.
 
-파일을 수정하고 확인한 다음 `main` 브랜치에 커밋·푸시하면 자동으로 다시 게시됩니다. `npm test`는 임시 폴더의 검증용 원고로 주제별 카드, 초안 제외, 썸네일과 주소 생성을 확인합니다.
+파일을 수정하고 확인한 다음 `main` 브랜치에 커밋·푸시하면 자동으로 다시 게시됩니다. `npm test`는 임시 폴더의 검증용 원고로 자동 주제 생성, 비공개 제외, 공개 취소 후 본문 제거, 한글·영문 연결과 피드를 확인합니다.
 
 ```sh
 npm test
 npm run build
-git add site.json content/reviews public/assets scripts README.md
+git add site.json public/assets scripts README.md
+# 공개할 원고만 파일별로 추가합니다.
+git add content/reviews/날짜-paper-slug.ko.md
 git commit -m "Update profile and paper reviews"
 git push
 ```
@@ -132,7 +150,7 @@ git push
 ## 파일 구성
 
 ```text
-site.json             프로필·철학·주제 설정
+site.json             프로필·철학·이미지·선택 주제 설정
 content/reviews/      논문 리뷰 Markdown
 public/assets/        이미지·스타일·폰트·탭 스크립트
 public/fonts/         폰트 비교 페이지

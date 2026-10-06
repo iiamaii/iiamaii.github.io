@@ -25,11 +25,8 @@
     "image": "/assets/brand-logo-transparent.png",
     "alt": "iiamaii 로고"
   },
-  "topics": [
-    { "id": "topic-01", "name": "주제 01", "description": "첫 번째 연구 주제를 설정하세요.", "thumbnail": "/assets/topics/topic-01.svg" },
-    { "id": "topic-02", "name": "주제 02", "description": "두 번째 연구 주제를 설정하세요.", "thumbnail": "/assets/topics/topic-02.svg" },
-    { "id": "topic-03", "name": "주제 03", "description": "세 번째 연구 주제를 설정하세요.", "thumbnail": "/assets/topics/topic-03.svg" }
-  ],
+  "reviewThumbnail": "/assets/topics/topic-01.svg",
+  "topics": [],
   "translations": {
     "en": {
       "title": "Research Notes",
@@ -38,11 +35,7 @@
       "philosophy": { "title": "My philosophy", "text": "" },
       "hero": { "alt": "An abstract folded structure with dark and blue surfaces" },
       "logo": { "alt": "iiamaii logo" },
-      "topics": {
-        "topic-01": { "name": "Topic 01", "description": "Choose your first research topic." },
-        "topic-02": { "name": "Topic 02", "description": "Choose your second research topic." },
-        "topic-03": { "name": "Topic 03", "description": "Choose your third research topic." }
-      }
+      "topics": {}
     }
   }
 }

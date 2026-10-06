@@ -9,7 +9,7 @@ export function localizedConfig(config, lang) {
     philosophy: { ...config.philosophy, ...translation.philosophy },
     hero: { ...config.hero, ...translation.hero },
     logo: config.logo ? { ...config.logo, ...translation.logo } : null,
-    topics: config.topics.map(topic => ({ ...topic, ...translation.topics?.[topic.id] }))
+    topics: (config.topics ?? []).map(topic => ({ ...topic, ...translation.topics?.[topic.id], name: topic.names?.[lang] || translation.topics?.[topic.id]?.name || topic.name }))
   };
 }
 
@@ -19,6 +19,7 @@ export const copy = {
     profileLink: '내 프로필 보기', collectionTitle: '논문으로 이어지는 질문들.', collectionIntro: '주제별로 읽고, 생각하고, 남긴 기록.', allReviews: '전체 리뷰',
     topicLink: (name, n) => `${name} 리뷰 ${n}편 보기`, moreTopic: '이 주제의 리뷰 더 보기', readingTime: n => `${n}분 읽기`,
     preparing: '리뷰 준비 중', emptyTitle: '첫 논문을 기다리는 자리.', topicIntro: '이 주제의 논문 리뷰를 모읍니다.', emptyIntro: '논문을 등록하면 썸네일과 짧은 소개가 여기에 나타납니다.', noReviews: '아직 등록된 논문이 없습니다.',
+    emptyCollectionTitle: '아직 공개된 리뷰가 없습니다.', emptyCollectionIntro: '읽고 생각한 논문들을 이곳에 차근차근 모아갑니다.',
     philosophyQuestion: '어떤 질문을 중요하게 생각하고,\n어떤 태도로 연구하고 싶은가.', philosophyPending: '나의 철학을 담을 문장을 준비하고 있습니다.',
     introPending: '소개 준비 중', aboutMe: '나는 어떤 사람인가.', bioPending: '소개와 연구 관심사를 이곳에 차근차근 채워갑니다.', interests: '관심 있는 질문들.', interestsPending: '연구 관심사를 준비하고 있습니다.', browseReviews: '논문 리뷰 둘러보기',
     reviewHeading: '읽고, 생각하고,\n다시 질문합니다', reviewDescription: '논문의 핵심 아이디어와 나의 생각을 주제별로 모읍니다.', topicTabs: '논문 주제', all: '전체', tabLabel: (name, n) => `${name}, ${n}편`, total: n => `총 ${n}편의 리뷰`, reviewList: '논문 리뷰 목록',
@@ -33,6 +34,7 @@ export const copy = {
     profileLink: 'About me', collectionTitle: 'Questions carried by papers.', collectionIntro: 'Reading, thinking, and taking notes by topic.', allReviews: 'All reviews',
     topicLink: (name, n) => `View ${name}: ${n} review${n === 1 ? '' : 's'}`, moreTopic: 'More reviews in this topic', readingTime: n => `${n} min read`,
     preparing: 'REVIEW IN PROGRESS', emptyTitle: 'A place for the first paper.', topicIntro: 'Paper reviews in this topic.', emptyIntro: 'New reviews will appear here with a thumbnail and a short introduction.', noReviews: 'No papers added yet.',
+    emptyCollectionTitle: 'No public reviews yet.', emptyCollectionIntro: 'A growing collection of papers, reflections, and open questions.',
     philosophyQuestion: 'Which questions matter to me,\nand how do I want to approach research?', philosophyPending: 'A statement of my philosophy is taking shape.',
     introPending: 'Introduction coming soon', aboutMe: 'A little about me.', bioPending: 'A space for my introduction and research interests.', interests: 'Questions I care about.', interestsPending: 'Research interests coming soon.', browseReviews: 'Explore paper reviews',
     reviewHeading: 'Read, reflect,\nand ask again', reviewDescription: 'Key ideas from papers and my reflections, organized by topic.', topicTabs: 'Paper topics', all: 'All', tabLabel: (name, n) => `${name}, ${n} review${n === 1 ? '' : 's'}`, total: n => `${n} review${n === 1 ? '' : 's'} in total`, reviewList: 'Paper review collection',

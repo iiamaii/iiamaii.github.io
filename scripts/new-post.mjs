@@ -2,10 +2,9 @@ import fs from 'node:fs/promises';
 import matter from 'gray-matter';
 
 const slug = process.argv[2];
-const config = JSON.parse(await fs.readFile('site.json', 'utf8'));
-const topic = process.argv[3] || config.topics[0]?.id;
-if (!slug || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) || !config.topics.some(item => item.id === topic)) {
-  console.error('Usage: npm run new -- paper-slug [topic-id from site.json]');
+const topic = (process.argv[3] || '미분류').normalize('NFC').trim().replace(/\s+/g, ' ');
+if (!slug || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) || !topic) {
+  console.error('Usage: npm run new -- paper-slug ["topic name"]');
   process.exit(1);
 }
 await fs.mkdir('content/reviews', { recursive: true });
@@ -24,8 +23,8 @@ const templates = {
 };
 for (const [lang, template] of Object.entries(templates)) {
   const file = `content/reviews/${date}-${slug}.${lang}.md`;
-  const metadata = { title: template.title, description: template.description, date, topic, lang, translationKey: slug, paperTitle: '', authors: '', year: '', paperUrl: '', thumbnail: '', thumbnailAlt: '', draft: true };
+  const metadata = { title: template.title, description: template.description, date, topic, visibility: 'private', lang, translationKey: slug, paperTitle: '', authors: '', year: '', paperUrl: '', thumbnail: '', thumbnailAlt: '' };
   await fs.writeFile(file, `---\n${Object.entries(metadata).map(([key, value]) => `${key}: ${JSON.stringify(value)}`).join('\n')}\n---\n\n${template.body}\n`, { flag: 'wx' });
   console.log(`Created ${file}`);
 }
-console.log('Fill each language version and set draft: false when ready. Unpublished translations display the original with a notice.');
+console.log('Fill each language version and set visibility: public when ready. New topics are created from public reviews. Unpublished translations display the public original with a notice.');
