@@ -2,7 +2,7 @@
 
 `iiamaii`의 프로필·철학과 주제별 논문 리뷰를 모으는 GitHub Pages 블로그입니다.
 
-- [메인](https://iiamaii.github.io/): 대문 이미지와 철학 / 주제별 논문 카드, 넓은 화면에서 좌우 50:50 구성
+- [메인](https://iiamaii.github.io/): 대문 이미지·내 로고·철학 / 주제별 논문 카드, 넓은 화면에서 좌우 50:50 구성
 - [내 프로필](https://iiamaii.github.io/profile/): 소개, 철학, 연구 관심사
 - [논문 리뷰](https://iiamaii.github.io/reviews/): 전체·주제 탭, 썸네일과 짧은 설명, 리뷰 본문
 - GitHub page 메뉴: 기본적으로 [iiamaii GitHub 프로필](https://github.com/iiamaii)로 연결
@@ -32,10 +32,24 @@ npm run dev
 | `profile.interests` | 연구 관심사 문자열 목록 |
 | `philosophy.title`, `philosophy.text` | 메인과 프로필에 함께 표시할 철학 |
 | `hero.image`, `hero.alt` | 대문 이미지 경로와 설명 |
+| `logo.image`, `logo.alt` | 대문 이미지와 함께 표시할 로고 |
 | `githubPage` | GitHub page 메뉴의 외부 주소 |
 | `title`, `description` | 블로그 이름과 검색 설명 |
 
-이미지는 `public/assets/`에 넣고 `/assets/파일명.webp`처럼 설정합니다. 현재 대문은 이전에 생성한 추상 이미지를 사용합니다. 생성 기록은 `research/cover-artwork.json`에 있습니다.
+이미지는 `public/assets/`에 넣고 `/assets/파일명.webp`처럼 설정합니다. 현재 대문은 이전에 생성한 추상 이미지를 사용하며, 첨부한 로고는 `public/assets/brand-logo.png`에 원본으로 보관합니다. 생성 이미지 기록은 `research/cover-artwork.json`에 있습니다.
+
+## 한국어·영어 전환
+
+모든 공개 페이지 상단의 **한국어 / EN** 버튼으로 언어를 바꿉니다. 선택한 언어로 프로필과 리뷰 목록을 이동하며, 주제 탭 선택도 전환 후 유지됩니다.
+
+| 한국어 | 영어 |
+| --- | --- |
+| `/` | `/en/` |
+| `/profile/` | `/en/profile/` |
+| `/reviews/` | `/en/reviews/` |
+| `/reviews/논문-id/` | `/en/reviews/논문-id/` |
+
+프로필·철학의 영어 문구는 `site.json`의 `translations.en.profile`, `translations.en.philosophy`에 작성합니다. 주제 영어 이름과 설명은 `translations.en.topics`에 주제 id를 키로 넣습니다. 영어 본문이 비어 있고 한글 원문이 있으면 원문 안내와 함께 표시합니다.
 
 ## 논문 주제
 
@@ -58,7 +72,7 @@ npm run dev
 npm run new -- paper-slug topic-01
 ```
 
-`content/reviews/날짜-paper-slug.md` 초안이 생성됩니다. 주제 id를 생략하면 첫 번째 주제를 사용합니다. 원문 정보와 본문을 채우고 `draft: false`로 변경합니다.
+`content/reviews/날짜-paper-slug.ko.md`와 `.en.md` 초안이 함께 생성됩니다. 주제 id를 생략하면 첫 번째 주제를 사용합니다. 각 언어의 제목·설명·본문을 채우고 준비된 파일의 `draft`를 `false`로 변경합니다. 영어 번역은 별도 원고로 작성하며, 원문을 바꿀 때 번역본도 함께 수정합니다.
 
 ```yaml
 ---
@@ -66,6 +80,8 @@ title: "내 리뷰 제목"
 description: "카드에 표시할 짧은 설명"
 date: "2026-10-06"
 topic: "topic-01"
+lang: "ko"
+translationKey: "paper-slug"
 paperTitle: "논문 원제"
 authors: "저자"
 year: "2026"
@@ -81,6 +97,9 @@ draft: false
 ```
 
 - `title`, `description`, `date`, `topic`은 발행 시 필수입니다.
+- `lang`은 `ko` 또는 `en`입니다. 두 언어의 `translationKey`와 `topic`을 같게 설정하면 같은 글로 묶입니다. 초안 생성 명령이 이를 설정합니다.
+- 번역본을 발행하지 않았으면 원문을 표시하고 아직 번역이 없음을 안내합니다. 번역본 발행 후에는 언어 버튼으로 제목·요약·본문까지 전환됩니다.
+- 두 언어로 작성해도 카드 수는 논문 한 편으로 계산합니다. 기존의 `.md` 원고는 기본적으로 한글 원고로 처리합니다.
 - `thumbnail`을 비우면 해당 주제의 기본 썸네일을 사용합니다.
 - 카드 제목을 누르면 `/reviews/paper-slug/`의 리뷰 본문을 엽니다.
 - 본문은 Markdown으로 작성하며, `##` 제목으로 목차를 만듭니다.
@@ -108,7 +127,7 @@ git push
 
 제목에는 **함렡(Hahmlet)**, 본문에는 **IBM Plex Sans KR**을 사용합니다. 폰트 파일과 OFL 1.1 라이선스를 사이트에 포함해 외부 CDN 없이 불러옵니다. 제목과 본문의 조합은 `public/assets/style.css`에서 바꿀 수 있습니다.
 
-[폰트 비교 페이지](https://iiamaii.github.io/fonts/)에서는 한글 6종·영문 6종을 문장과 크기를 바꾸며 확인할 수 있습니다. 비교 링크는 하단 메뉴에 있습니다. 폰트 출처는 `research/font-preview-assets.json`, 조사 자료는 `research/font-candidates*.json`에 정리했습니다.
+[임시 폰트 비교 페이지](https://iiamaii.github.io/fonts/)는 직접 주소로만 접근합니다. 블로그의 메뉴·하단·사이트맵에는 연결하지 않고 `noindex`를 유지합니다. 하단에는 별도의 유틸리티 링크를 표시하지 않습니다. 폰트 출처는 `research/font-preview-assets.json`, 조사 자료는 `research/font-candidates*.json`에 정리했습니다.
 
 ## 파일 구성
 
@@ -118,6 +137,8 @@ content/reviews/      논문 리뷰 Markdown
 public/assets/        이미지·스타일·폰트·탭 스크립트
 public/fonts/         폰트 비교 페이지
 scripts/build.mjs     HTML·RSS·사이트맵 생성
+scripts/i18n.mjs      한국어·영어 화면 문구
+scripts/render.mjs    언어별 페이지 생성
 scripts/new-post.mjs  논문 리뷰 초안 생성
 dist/                 빌드 결과 (Git 제외)
 ```

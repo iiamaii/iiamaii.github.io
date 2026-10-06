@@ -20,12 +20,15 @@ if (tablist) {
       if (!group.hidden) total += Number(group.dataset.reviewTotal);
     });
     const selectedName = tabs.find(tab => tab.dataset.topic === topic).childNodes[0].textContent;
-    count.textContent = `${topic === 'all' ? '전체' : selectedName} · ${total}편의 리뷰`;
+    count.textContent = document.documentElement.lang === 'en'
+      ? `${selectedName} · ${total} review${total === 1 ? '' : 's'}`
+      : `${selectedName} · ${total}편의 리뷰`;
     if (updateHistory) {
       const url = new URL(window.location.href);
       if (topic === 'all') url.searchParams.delete('topic');
       else url.searchParams.set('topic', topic);
       window.history.pushState({ topic }, '', url);
+      document.dispatchEvent(new Event('site:locationchange'));
     }
   }
   tablist.hidden = false;

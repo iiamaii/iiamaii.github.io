@@ -1,0 +1,45 @@
+export const languages = ['ko', 'en'];
+export const languageRoute = (route, lang) => lang === 'en' ? `/en${route}` : route;
+
+export function localizedConfig(config, lang) {
+  const translation = config.translations?.[lang] ?? {};
+  return {
+    ...config, ...translation,
+    profile: { ...config.profile, ...translation.profile },
+    philosophy: { ...config.philosophy, ...translation.philosophy },
+    hero: { ...config.hero, ...translation.hero },
+    logo: config.logo ? { ...config.logo, ...translation.logo } : null,
+    topics: config.topics.map(topic => ({ ...topic, ...translation.topics?.[topic.id] }))
+  };
+}
+
+export const copy = {
+  ko: {
+    locale: 'ko_KR', home: '홈', skip: '본문으로 건너뛰기', menu: '주 메뉴', profile: '내 프로필', reviews: '논문 리뷰', newTab: '새 탭', language: '언어 선택', koLink: '한국어로 보기', enLink: 'Read in English',
+    profileLink: '내 프로필 보기', collectionTitle: '논문으로 이어지는 질문들.', collectionIntro: '주제별로 읽고, 생각하고, 남긴 기록.', allReviews: '전체 리뷰',
+    topicLink: (name, n) => `${name} 리뷰 ${n}편 보기`, moreTopic: '이 주제의 리뷰 더 보기', readingTime: n => `${n}분 읽기`,
+    preparing: '리뷰 준비 중', emptyTitle: '첫 논문을 기다리는 자리.', topicIntro: '이 주제의 논문 리뷰를 모읍니다.', emptyIntro: '논문을 등록하면 썸네일과 짧은 소개가 여기에 나타납니다.', noReviews: '아직 등록된 논문이 없습니다.',
+    philosophyQuestion: '어떤 질문을 중요하게 생각하고,\n어떤 태도로 연구하고 싶은가.', philosophyPending: '나의 철학을 담을 문장을 준비하고 있습니다.',
+    introPending: '소개 준비 중', aboutMe: '나는 어떤 사람인가.', bioPending: '소개와 연구 관심사를 이곳에 차근차근 채워갑니다.', interests: '관심 있는 질문들.', interestsPending: '연구 관심사를 준비하고 있습니다.', browseReviews: '논문 리뷰 둘러보기',
+    reviewHeading: '읽고, 생각하고,\n다시 질문합니다', reviewDescription: '논문의 핵심 아이디어와 나의 생각을 주제별로 모읍니다.', topicTabs: '논문 주제', all: '전체', tabLabel: (name, n) => `${name}, ${n}편`, total: n => `총 ${n}편의 리뷰`, reviewList: '논문 리뷰 목록',
+    originalPaper: 'ORIGINAL PAPER', paperLink: '논문 원문', toc: '이 글의 목차', related: '같은 주제의 리뷰',
+    originalLabel: source => source === 'en' ? 'English 원문' : '한국어 원문',
+    originalNotice: source => source === 'en' ? '한국어 번역은 아직 준비되지 않아 영어 원문을 표시합니다.' : '영문 번역은 아직 준비되지 않아 한국어 원문을 표시합니다.',
+    profileOriginal: '번역을 준비하고 있어 원문을 표시합니다.',
+    notFound: '페이지를 찾을 수 없습니다', notFoundTitle: '아직 없는 기록입니다.', notFoundIntro: '논문 리뷰 목록에서 다른 기록을 찾아보세요.', reviewLink: '논문 리뷰 보기', redirect: '내 프로필로 이동', table: '본문 표'
+  },
+  en: {
+    locale: 'en_US', home: 'home', skip: 'Skip to content', menu: 'Main navigation', profile: 'My profile', reviews: 'Paper reviews', newTab: 'new tab', language: 'Choose language', koLink: '한국어로 보기', enLink: 'Read in English',
+    profileLink: 'About me', collectionTitle: 'Questions carried by papers.', collectionIntro: 'Reading, thinking, and taking notes by topic.', allReviews: 'All reviews',
+    topicLink: (name, n) => `View ${name}: ${n} review${n === 1 ? '' : 's'}`, moreTopic: 'More reviews in this topic', readingTime: n => `${n} min read`,
+    preparing: 'REVIEW IN PROGRESS', emptyTitle: 'A place for the first paper.', topicIntro: 'Paper reviews in this topic.', emptyIntro: 'New reviews will appear here with a thumbnail and a short introduction.', noReviews: 'No papers added yet.',
+    philosophyQuestion: 'Which questions matter to me,\nand how do I want to approach research?', philosophyPending: 'A statement of my philosophy is taking shape.',
+    introPending: 'Introduction coming soon', aboutMe: 'A little about me.', bioPending: 'A space for my introduction and research interests.', interests: 'Questions I care about.', interestsPending: 'Research interests coming soon.', browseReviews: 'Explore paper reviews',
+    reviewHeading: 'Read, reflect,\nand ask again', reviewDescription: 'Key ideas from papers and my reflections, organized by topic.', topicTabs: 'Paper topics', all: 'All', tabLabel: (name, n) => `${name}, ${n} review${n === 1 ? '' : 's'}`, total: n => `${n} review${n === 1 ? '' : 's'} in total`, reviewList: 'Paper review collection',
+    originalPaper: 'ORIGINAL PAPER', paperLink: 'Read the paper', toc: 'In this review', related: 'More in this topic',
+    originalLabel: source => source === 'ko' ? 'Korean original' : 'English original',
+    originalNotice: source => source === 'ko' ? 'An English translation is not available yet. The Korean original is shown below.' : 'A Korean translation is not available yet. The English original is shown below.',
+    profileOriginal: 'A translation is in progress. The original text is shown below.',
+    notFound: 'Page not found', notFoundTitle: 'This page is still unwritten.', notFoundIntro: 'Explore the paper review collection for more notes.', reviewLink: 'Browse paper reviews', redirect: 'Go to my profile', table: 'Table in this review'
+  }
+};
