@@ -80,6 +80,8 @@ visibility: "public"
 
 ## 논문 리뷰 작성
 
+에이전트·작업자는 [포스팅 스킬](skills/publish-research-blog/SKILL.md)을 따른다. 출처 검증부터 한글·영문 작성, 공개 설정, 배포 확인까지 필요한 규칙과 [연구 인계 양식](skills/publish-research-blog/assets/research-handoff.md), [리뷰 본문 템플릿](skills/publish-research-blog/assets/review-body.md)을 포함한다. 요구사항 변경은 이 스킬을 기준으로 반영한다.
+
 ```sh
 npm run new -- paper-slug "머신러닝"
 ```
@@ -158,6 +160,8 @@ scripts/build.mjs     HTML·RSS·사이트맵 생성
 scripts/i18n.mjs      한국어·영어 화면 문구
 scripts/render.mjs    언어별 페이지 생성
 scripts/new-post.mjs  논문 리뷰 초안 생성
+skills/publish-research-blog/  포스팅 스킬·연구 인계·본문 템플릿
+AGENTS.md            작업자의 스킬 연결
 dist/                 빌드 결과 (Git 제외)
 ```
 

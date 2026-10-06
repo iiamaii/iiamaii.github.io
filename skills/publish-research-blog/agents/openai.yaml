@@ -1,0 +1,4 @@
+interface:
+  display_name: "연구 블로그 포스팅"
+  short_description: "외부 연구 결과를 출처가 있는 한글·영문 리뷰와 블로그 게시로 연결"
+  default_prompt: "$publish-research-blog 스킬로 이 연구 결과를 주제별 논문 리뷰로 작성하고, 요청한 공개 범위에 맞춰 게시를 준비해줘."
