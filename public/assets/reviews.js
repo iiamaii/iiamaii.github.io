@@ -16,8 +16,14 @@ if (tablist) {
       if (selected) panel.setAttribute('aria-labelledby', tab.id);
     });
     groups.forEach(group => {
-      group.hidden = topic !== 'all' && group.dataset.topicGroup !== topic;
-      if (!group.hidden) total += Number(group.dataset.reviewTotal);
+      const cards = [...group.querySelectorAll('.review-card')];
+      cards.forEach(card => {
+        card.hidden = topic === 'all' && card.dataset.primaryTopic !== group.dataset.topicGroup;
+      });
+      const visibleCount = cards.filter(card => !card.hidden).length;
+      group.hidden = !visibleCount || (topic !== 'all' && group.dataset.topicGroup !== topic);
+      group.querySelector('[data-topic-review-count]').textContent = `${String(visibleCount).padStart(2, '0')} REVIEWS`;
+      if (!group.hidden) total += visibleCount;
     });
     const selectedName = tabs.find(tab => tab.dataset.topic === topic).childNodes[0].textContent;
     count.textContent = document.documentElement.lang === 'en'

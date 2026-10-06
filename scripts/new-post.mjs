@@ -1,10 +1,18 @@
 import fs from 'node:fs/promises';
 import matter from 'gray-matter';
+import { normalizeTopics } from './topics.mjs';
 
 const slug = process.argv[2];
-const topic = (process.argv[3] || '미분류').normalize('NFC').trim().replace(/\s+/g, ' ');
-if (!slug || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) || !topic) {
-  console.error('Usage: npm run new -- paper-slug ["topic name"]');
+const topicArguments = process.argv.slice(3);
+let topics;
+try {
+  topics = normalizeTopics(topicArguments.length ? topicArguments : ['미분류']);
+} catch (error) {
+  console.error(error.message);
+  process.exit(1);
+}
+if (!slug || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
+  console.error('Usage: npm run new -- paper-slug ["topic name" ...]');
   process.exit(1);
 }
 await fs.mkdir('content/reviews', { recursive: true });
@@ -23,7 +31,7 @@ const templates = {
 };
 for (const [lang, template] of Object.entries(templates)) {
   const file = `content/reviews/${date}-${slug}.${lang}.md`;
-  const metadata = { title: template.title, description: template.description, date, topic, visibility: 'private', lang, translationKey: slug, paperTitle: '', authors: '', year: '', paperUrl: '', thumbnail: '', thumbnailAlt: '' };
+  const metadata = { title: template.title, description: template.description, date, topics, visibility: 'private', lang, translationKey: slug, paperTitle: '', authors: '', year: '', paperUrl: '', thumbnail: '', thumbnailAlt: '' };
   await fs.writeFile(file, `---\n${Object.entries(metadata).map(([key, value]) => `${key}: ${JSON.stringify(value)}`).join('\n')}\n---\n\n${template.body}\n`, { flag: 'wx' });
   console.log(`Created ${file}`);
 }

@@ -5,6 +5,7 @@ import matter from 'gray-matter';
 import { Marked, Renderer } from 'marked';
 import { languages, languageRoute, localizedConfig, copy } from './i18n.mjs';
 import { createRenderer } from './render.mjs';
+import { normalizeTopic, normalizeTopics } from './topics.mjs';
 
 const root = process.cwd();
 const out = path.join(root, 'dist');
@@ -33,13 +34,35 @@ if (config.logo) await checkImage(config.logo.image);
 const defaultThumbnail = config.reviewThumbnail || '/assets/topics/topic-01.svg';
 await checkImage(defaultThumbnail);
 
-function postTopic(value, file) {
-  if (typeof value !== 'string' || !value.trim()) throw new Error(`${file}: topic must be a non-empty string.`);
-  const key = value.normalize('NFC').trim().replace(/\s+/g, ' ');
+function postTopics(data, file) {
+  if (data.topics !== undefined && data.topic !== undefined) throw new Error(`${file}: use topics or legacy topic, not both.`);
+  const keys = data.topics !== undefined
+    ? normalizeTopics(data.topics, `${file}: topics`)
+    : [normalizeTopic(data.topic, `${file}: topic`)];
+  const names = new Map();
+  if (data.topicName !== undefined) {
+    if (keys.length !== 1) throw new Error(`${file}: use topicNames for multiple topics.`);
+    if (typeof data.topicName !== 'string' || !data.topicName.trim()) throw new Error(`${file}: topicName must be a non-empty string when provided.`);
+    names.set(keys[0], data.topicName.trim());
+  }
+  if (data.topicNames !== undefined) {
+    if (!data.topicNames || typeof data.topicNames !== 'object' || Array.isArray(data.topicNames)) throw new Error(`${file}: topicNames must map topic keys to display names.`);
+    for (const [value, name] of Object.entries(data.topicNames)) {
+      const key = normalizeTopic(value, `${file}: topicNames key`);
+      if (!keys.includes(key)) throw new Error(`${file}: topicNames key ${key} is not in the post topics.`);
+      if (typeof name !== 'string' || !name.trim()) throw new Error(`${file}: topicNames values must be non-empty strings.`);
+      if (names.has(key)) throw new Error(`${file}: duplicate display name for topic ${key}.`);
+      names.set(key, name.trim());
+    }
+  }
+  return keys.map(key => postTopic(key, names.get(key)));
+}
+
+function postTopic(key, displayName) {
   const preset = topicPresets.find(topic => topic.id === key);
   const id = /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(key) && key !== 'all' && !key.startsWith('auto-')
     ? key : `auto-${createHash('sha256').update(key).digest('hex').slice(0, 24)}`;
-  return { ...preset, id, key, name: preset?.name || key, thumbnail: preset?.thumbnail || defaultThumbnail };
+  return { ...preset, id, key, displayName, name: preset?.name || key, thumbnail: preset?.thumbnail || defaultThumbnail };
 }
 
 function renderMarkdown(source, lang) {
@@ -80,8 +103,7 @@ for (const file of (await fs.readdir(reviewDirectory)).filter(name => name.endsW
   const date = data.date instanceof Date ? data.date.toISOString().slice(0, 10) : String(data.date);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(Date.parse(date)) || new Date(date).toISOString().slice(0, 10) !== date) throw new Error(`${file}: date must be a valid YYYY-MM-DD.`);
   if (date > today) continue;
-  const topic = postTopic(data.topic, file);
-  if (data.topicName !== undefined && (typeof data.topicName !== 'string' || !data.topicName.trim())) throw new Error(`${file}: topicName must be a non-empty string when provided.`);
+  const topics = postTopics(data, file);
   const slug = data.translationKey || file.replace(/\.md$/, '').replace(/\.(ko|en)$/, '').replace(/^\d{4}-\d{2}-\d{2}-/, '');
   if (typeof slug !== 'string' || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) throw new Error(`${file}: use a lowercase slug or translationKey with hyphens.`);
   if (data.thumbnail) await checkImage(data.thumbnail);
@@ -89,9 +111,9 @@ for (const file of (await fs.readdir(reviewDirectory)).filter(name => name.endsW
   const pair = pairs.get(slug) || {};
   if (pair[lang]) throw new Error(`${file}: duplicate ${lang} review for ${slug}.`);
   const other = pair[lang === 'ko' ? 'en' : 'ko'];
-  if (other && other.topic.key !== topic.key) throw new Error(`${file}: translations of the same review must use the same topic.`);
+  if (other && (other.topics.length !== topics.length || other.topics.some(topic => !topics.some(item => item.key === topic.key)))) throw new Error(`${file}: translations of the same review must use the same topics.`);
   const readingMinutes = lang === 'en' ? Math.max(1, Math.ceil(content.trim().split(/\s+/).length / 220)) : Math.max(1, Math.ceil(content.replace(/\s/g, '').length / 500));
-  pair[lang] = { ...data, date, slug, topic, sourceLang: lang, readingMinutes, ...renderMarkdown(content, lang) };
+  pair[lang] = { ...data, date, slug, topics, sourceLang: lang, readingMinutes, ...renderMarkdown(content, lang) };
   pairs.set(slug, pair);
 }
 
@@ -104,9 +126,11 @@ for (const pair of newestPairs) {
   for (const lang of languages) {
     const review = pair[lang];
     if (!review) continue;
-    const topic = topicMap.get(review.topic.id) || { ...review.topic, names: {} };
-    if (review.topicName && !topic.names[lang]) topic.names[lang] = review.topicName.trim();
-    topicMap.set(topic.id, topic);
+    for (const entry of review.topics) {
+      const topic = topicMap.get(entry.id) || { ...entry, names: {} };
+      if (entry.displayName && !topic.names[lang]) topic.names[lang] = entry.displayName;
+      topicMap.set(topic.id, topic);
+    }
   }
 }
 const publicConfig = { ...config, topics: [...topicMap.values()] };
@@ -128,10 +152,11 @@ for (const lang of languages) {
   const reviews = [...pairs.values()].map(pair => {
     const source = pair[lang] || pair[lang === 'ko' ? 'en' : 'ko'];
     const other = pair[source.sourceLang === 'ko' ? 'en' : 'ko'];
+    const topics = (pair.ko || pair.en).topics;
     return {
       ...source,
-      topic: site.topics.find(topic => topic.id === source.topic.id),
-      thumbnail: source.thumbnail || other?.thumbnail || source.topic.thumbnail,
+      topics: topics.map(entry => site.topics.find(topic => topic.id === entry.id)),
+      thumbnail: source.thumbnail || other?.thumbnail || topics[0].thumbnail,
       thumbnailAlt: source.thumbnailAlt || other?.thumbnailAlt || '',
       paperTitle: source.paperTitle || other?.paperTitle || '',
       paperUrl: source.paperUrl || other?.paperUrl || '',

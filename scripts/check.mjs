@@ -3,6 +3,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
 import { spawnSync } from 'node:child_process';
+import matter from 'gray-matter';
 
 const root = process.cwd();
 const temp = await fs.mkdtemp(path.join(os.tmpdir(), 'blog-review-check-'));
@@ -27,7 +28,7 @@ try {
   config.translations.en.philosophy.text = 'English philosophy.\n\nA second English paragraph.';
   await fs.writeFile(path.join(temp, 'site.json'), JSON.stringify(config));
   const fixture = async (slug, fields, body = '## Repeated question\n\nA paragraph.\n\n## Repeated question\n\nAnother paragraph.') => {
-    const data = { title: `Fixture ${slug} & "question"`, description: 'A concise test description.', date: '2020-01-01', topic: 'alpha', visibility: 'public', ...fields };
+    const data = { title: `Fixture ${slug} & "question"`, description: 'A concise test description.', date: '2020-01-01', ...(fields.topics !== undefined ? {} : { topic: 'alpha' }), visibility: 'public', ...fields };
     const metadata = Object.entries(data).filter(([, value]) => value !== undefined).map(([key, value]) => `${key}: ${JSON.stringify(value)}`).join('\n');
     await fs.writeFile(path.join(temp, 'content/reviews', `${slug}.md`), `---\n${metadata}\n---\n\n${body}\n`);
   };
@@ -37,6 +38,7 @@ try {
   await fixture('draft', { draft: true, topic: 'draft-only-topic' });
   await fixture('future', { date: '9999-01-01', topic: 'future-only-topic' });
   await fixture('private', { visibility: 'private', topic: '비공개 연구', title: 'Private review sentinel' }, 'PRIVATE_REVIEW_BODY_SENTINEL');
+  await fixture('private-multi', { visibility: 'private', topics: ['비공개 전용', '비공개 비전'], title: 'Private multi review sentinel' }, 'PRIVATE_MULTI_BODY_SENTINEL');
   await fixture('unmarked', { visibility: undefined, topic: '미지정 연구', title: 'Unmarked review sentinel' }, 'UNMARKED_REVIEW_BODY_SENTINEL');
   await fixture('private-translation.en', { lang: 'en', translationKey: 'alpha-4', visibility: 'private', title: 'Private translation sentinel' }, 'PRIVATE_TRANSLATION_BODY_SENTINEL');
   let result = build();
@@ -55,7 +57,7 @@ try {
   assert.ok(index.includes('data-topic="alpha"') && index.includes('data-review-total="5"'));
   assert.ok(index.includes('data-topic="beta"') && index.includes('data-review-total="2"'));
   assert.ok(!index.includes('data-topic-group="empty"') && !index.includes('data-topic="empty"'), 'Unused topic presets do not create groups or tabs.');
-  for (const name of ['비공개 연구', '미지정 연구', 'draft-only-topic', 'future-only-topic']) assert.ok(!index.includes(name), 'Only public, ready reviews contribute topics.');
+  for (const name of ['비공개 연구', '비공개 전용', '비공개 비전', '미지정 연구', 'draft-only-topic', 'future-only-topic']) assert.ok(!index.includes(name), 'Only public, ready reviews contribute topics.');
   assert.ok(index.includes('Fixture beta-1 &amp; &quot;question&quot;'), 'Metadata is escaped in cards.');
   assert.ok(article.includes('https://example.org/paper?x=1&amp;y=2'));
   assert.ok(article.includes('/assets/topics/topic-03.svg'), 'A review can override its topic thumbnail.');
@@ -65,7 +67,7 @@ try {
   assert.ok(home.includes('<p>Second paragraph.</p>'), 'The home and profile share the same philosophy.');
   assert.ok(sitemap.includes('/profile/') && sitemap.includes('/reviews/beta-1/'));
   assert.equal((rss.match(/<item>/g) || []).length, 7);
-  for (const excluded of ['draft', 'future', 'private', 'unmarked']) {
+  for (const excluded of ['draft', 'future', 'private', 'private-multi', 'unmarked']) {
     for (const prefix of ['', 'en/']) await assert.rejects(fs.access(path.join(temp, 'dist', `${prefix}reviews`, excluded, 'index.html')));
     assert.ok(!sitemap.includes(`/reviews/${excluded}/`) && !rss.includes(`/reviews/${excluded}/`));
   }
@@ -112,8 +114,16 @@ try {
   const created = (await fs.readdir(path.join(temp, 'content/reviews'))).filter(name => name.includes('new-draft'));
   assert.equal(created.length, 2, 'The authoring command creates both language drafts.');
   for (const file of created) {
-    const source = await fs.readFile(path.join(temp, 'content/reviews', file), 'utf8');
-    assert.ok(source.includes('visibility: "private"') && source.includes('topic: "새로운 주제"'), 'New language versions start private and accept unregistered topics.');
+    const { data } = matter(await fs.readFile(path.join(temp, 'content/reviews', file), 'utf8'));
+    assert.equal(data.visibility, 'private');
+    assert.deepEqual(data.topics, ['새로운 주제'], 'New language versions start private and accept unregistered topics.');
+  }
+  result = spawnSync(process.execPath, ['scripts/new-post.mjs', 'new-multi', '머신러닝', ' 컴퓨터   비전 ', '컴퓨터 비전'], { cwd: temp, encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  for (const file of (await fs.readdir(path.join(temp, 'content/reviews'))).filter(name => name.includes('new-multi'))) {
+    const { data } = matter(await fs.readFile(path.join(temp, 'content/reviews', file), 'utf8'));
+    assert.equal(data.visibility, 'private');
+    assert.deepEqual(data.topics, ['머신러닝', '컴퓨터 비전'], 'The authoring command accepts and deduplicates multiple topics in both languages.');
   }
   result = spawnSync(process.execPath, ['scripts/new-post.mjs', 'new-draft', 'alpha'], { cwd: temp, encoding: 'utf8' });
   assert.notEqual(result.status, 0, 'The authoring command does not overwrite existing drafts.');
@@ -141,7 +151,7 @@ try {
       if (entry.isDirectory()) await checkNoPrivateContent(file);
       else if (/\.(html|xml)$/.test(entry.name)) {
         const html = await fs.readFile(file, 'utf8');
-        for (const sentinel of ['Private review sentinel', 'Unmarked review sentinel', 'Private translation sentinel', 'PRIVATE_REVIEW_BODY_SENTINEL', 'UNMARKED_REVIEW_BODY_SENTINEL', 'PRIVATE_TRANSLATION_BODY_SENTINEL']) assert.ok(!html.includes(sentinel), `${entry.name} must not contain private source content.`);
+        for (const sentinel of ['Private review sentinel', 'Private multi review sentinel', 'Unmarked review sentinel', 'Private translation sentinel', 'PRIVATE_REVIEW_BODY_SENTINEL', 'PRIVATE_MULTI_BODY_SENTINEL', 'UNMARKED_REVIEW_BODY_SENTINEL', 'PRIVATE_TRANSLATION_BODY_SENTINEL']) assert.ok(!html.includes(sentinel), `${entry.name} must not contain private source content.`);
       }
     }
   };
@@ -170,6 +180,67 @@ try {
   assert.notEqual(result.status, 0);
   assert.ok(result.stderr.includes('visibility must be public or private'));
   await fs.rm(path.join(temp, 'content/reviews/invalid-visibility.md'));
+
+  const seedMultipleTopics = async () => {
+    await fixture('multi-a.ko', { lang: 'ko', translationKey: 'multi-a', date: '2020-02-01', title: '여러 주제로 읽는 논문', topics: ['머신러닝', ' 컴퓨터   비전 ', '컴퓨터 비전', '방법론'] });
+    await fixture('multi-a.en', { lang: 'en', translationKey: 'multi-a', date: '2020-02-01', title: 'One paper, multiple topics', topics: ['방법론', '컴퓨터 비전', '머신러닝'], topicNames: { '머신러닝': 'Machine Learning', '컴퓨터 비전': 'Computer Vision', '방법론': 'Methodology' } });
+    await fixture('multi-b', { topic: '컴퓨터 비전', title: '비전만 다루는 논문' });
+    await fixture('multi-c', { topics: ['컴퓨터 비전', '머신러닝'], title: '두 주제의 후속 논문' });
+  };
+  const baseTotal = ((await read('feed.xml')).match(/<item>/g) || []).length;
+  await seedMultipleTopics();
+  result = build();
+  assert.equal(result.status, 0, result.stderr);
+  const multiIndex = await read('reviews/index.html');
+  const multiEnglish = await read('en/reviews/index.html');
+  const machineId = multiIndex.match(/data-topic="([^"]+)">머신러닝<span/)?.[1];
+  const methodId = multiIndex.match(/data-topic="([^"]+)">방법론<span/)?.[1];
+  assert.ok(machineId && methodId);
+  const group = id => multiIndex.match(new RegExp(`<section[^>]*data-topic-group="${id}"[^>]*>[\\s\\S]*?</section>`))?.[0];
+  assert.ok(group(machineId).includes('data-review-total="2"'));
+  assert.ok(group(visionId).includes('data-review-total="3"'));
+  assert.ok(group(methodId).includes('data-review-total="1"'));
+  assert.ok(/^<section[^>]* hidden>/.test(group(methodId)), 'A topic that is only secondary stays out of the default All view until its tab is selected.');
+  assert.ok(group(machineId).includes('/reviews/multi-a/') && group(visionId).includes('/reviews/multi-a/') && group(methodId).includes('/reviews/multi-a/'), 'A post belongs to every assigned topic.');
+  const visibleCards = [...multiIndex.matchAll(/<article class="review-card"([^>]*)>/g)].filter(match => !/\bhidden\b/.test(match[1]));
+  assert.equal(visibleCards.length, 11, 'All shows each of the 11 unique papers once, even when topics overlap.');
+  assert.ok(multiIndex.includes('data-topic="all">전체<span class="tab-count">11</span>'));
+  assert.ok(multiEnglish.includes(`data-topic="${machineId}">Machine Learning<span class="tab-count">2</span>`));
+  assert.ok(multiEnglish.includes(`data-topic="${visionId}">Computer Vision<span class="tab-count">3</span>`));
+  assert.ok(multiEnglish.includes(`data-topic="${methodId}">Methodology<span class="tab-count">1</span>`));
+  for (const html of [multiIndex, await read('index.html')]) {
+    const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map(match => match[1]);
+    assert.equal(new Set(ids).size, ids.length, 'Cards repeated across topic groups have distinct accessible title ids.');
+  }
+  const multiArticle = await read('reviews/multi-a/index.html');
+  assert.ok(multiArticle.includes('머신러닝 · 컴퓨터 비전 · 방법론'));
+  const related = multiArticle.split('class="related-reviews"')[1];
+  assert.equal((related.match(/href="\/reviews\/multi-c\/"/g) || []).length, 1, 'Related reviews sharing more than one topic appear once.');
+  assert.ok(related.includes('/reviews/multi-b/'), 'Related reviews can share a secondary topic.');
+  assert.ok((await read('en/reviews/multi-a/index.html')).includes(`href="/en/reviews/?topic=${machineId}#review-panel"`), 'The primary topic stays consistent across languages even if the source lists are reordered.');
+  assert.equal(((await read('feed.xml')).match(/<item>/g) || []).length, baseTotal + 3);
+  assert.equal(((await read('sitemap.xml')).match(/<loc>https:\/\/[^<]+\/reviews\/multi-a\/<\/loc>/g) || []).length, 2, 'Each published language has one sitemap URL regardless of topic count.');
+  await checkNoPrivateContent(path.join(temp, 'dist'));
+  for (const fields of [
+    { topics: [] }, { topics: 'machine-learning' }, { topics: ['valid', ''] }, { topics: ['valid', 7] },
+    { topics: ['valid'], topic: 'legacy' }, { topics: ['valid'], topicNames: { unknown: 'Unknown' } },
+    { topics: ['valid'], topicNames: { valid: '' } }, { topics: ['valid', 'other'], topicName: 'Ambiguous' }
+  ]) {
+    await fixture('invalid-multi', fields);
+    result = build();
+    assert.notEqual(result.status, 0, `Invalid topic metadata should fail: ${JSON.stringify(fields)}`);
+    await fs.rm(path.join(temp, 'content/reviews/invalid-multi.md'));
+  }
+  await fixture('multi-a.en', { lang: 'en', translationKey: 'multi-a', topics: ['머신러닝'] });
+  result = build();
+  assert.notEqual(result.status, 0);
+  assert.ok(result.stderr.includes('must use the same topics'));
+  for (const file of ['multi-a.ko', 'multi-a.en', 'multi-b', 'multi-c']) await fixture(file, { visibility: 'private' });
+  result = build();
+  assert.equal(result.status, 0, result.stderr);
+  assert.ok(!(await read('reviews/index.html')).includes(`data-topic="${machineId}"`) && !(await read('reviews/index.html')).includes(`data-topic="${methodId}"`), 'Topics shared only by withdrawn posts disappear.');
+  for (const prefix of ['', 'en/']) await assert.rejects(fs.access(path.join(temp, 'dist', `${prefix}reviews/multi-a/index.html`)));
+  assert.ok(!(await read('feed.xml')).includes('/reviews/multi-a/') && !(await read('sitemap.xml')).includes('/reviews/multi-a/'));
   await fs.rename(path.join(temp, 'content/reviews'), path.join(temp, 'content/reviews-saved'));
   await fs.mkdir(path.join(temp, 'content/reviews'));
   result = build();
@@ -180,11 +251,9 @@ try {
   assert.ok(!(await read('reviews/index.html')).includes('data-topic-group='));
   await fs.rm(path.join(temp, 'content/reviews'), { recursive: true });
   await fs.rename(path.join(temp, 'content/reviews-saved'), path.join(temp, 'content/reviews'));
-  console.log('Passed: automatic public topics, private and unmarked exclusion, removal on visibility change, bilingual pairing, original-language fallback, authoring, metadata, RSS, sitemap and project paths.');
+  console.log('Passed: multiple public topics, unique All counts, topic translations, legacy single topics, private exclusion, visibility changes, bilingual pairing, authoring, RSS, sitemap and project paths.');
   if (keepPreview) {
-    await fixture('vision-1', { topic: '컴퓨터 비전', topicName: '컴퓨터 비전', title: 'A public vision review' });
-    await fixture('vision-2', { topic: '컴퓨터 비전', title: 'Another public vision review' });
-    await fixture('vision.en', { lang: 'en', translationKey: 'vision-1', topic: '컴퓨터 비전', topicName: 'Computer Vision', title: 'An English vision review' });
+    await seedMultipleTopics();
     result = build();
     assert.equal(result.status, 0, result.stderr);
     previewReady = true;
