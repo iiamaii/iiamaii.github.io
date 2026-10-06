@@ -36,7 +36,7 @@ npm run dev
 | `githubPage` | GitHub page 메뉴의 외부 주소 |
 | `title`, `description` | 블로그 이름과 검색 설명 |
 
-이미지는 `public/assets/`에 넣고 `/assets/파일명.webp`처럼 설정합니다. 현재 대문은 이전에 생성한 추상 이미지를 사용하며, 첨부한 로고는 `public/assets/brand-logo.png`에 원본으로 보관합니다. 생성 이미지 기록은 `research/cover-artwork.json`에 있습니다.
+이미지는 `public/assets/`에 넣고 `/assets/파일명.webp`처럼 설정합니다. 현재 대문은 이전에 생성한 추상 이미지를 사용하며, 첨부한 로고의 원본은 `public/assets/brand-logo.png`에 보관하고, 배경을 제거한 `public/assets/brand-logo-transparent.png`를 페이지 좌측 상단의 홈 링크로 사용합니다. 생성 이미지 기록은 `research/cover-artwork.json`에 있습니다.
 
 ## 한국어·영어 전환
 

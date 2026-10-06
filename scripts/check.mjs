@@ -67,7 +67,7 @@ try {
   }
   await assert.rejects(fs.access(path.join(temp, 'dist/posts')), 'The old sample post directory is absent.');
   assert.ok((await read('about/index.html')).includes('url=/profile/'));
-  assert.ok(home.includes('class="hero-logo"') && home.includes('/assets/brand-logo.png'), 'The logo is part of the hero composition.');
+  assert.ok(home.includes('class="brand-logo"') && home.includes('/assets/brand-logo-transparent.png'), 'The transparent logo is the header home link.');
   for (const route of ['index.html', 'profile/index.html', 'reviews/index.html', 'en/index.html', 'en/profile/index.html', 'en/reviews/index.html']) {
     const html = await read(route);
     assert.ok(!html.includes('href="/fonts/"'), 'The temporary font page has no public navigation links.');

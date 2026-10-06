@@ -1,0 +1,15 @@
+{
+  "tool": "image_gen built-in",
+  "use_case": "background-extraction",
+  "source": "public/assets/brand-logo.png",
+  "output": "public/assets/brand-logo-transparent.png",
+  "transparent_background": true,
+  "prompt": "Use case: background-extraction. Edit target: the attached original personal logo. Remove only the surrounding white background and the white negative-space cutouts that are connected to that background, replacing them with true transparent alpha. Preserve the logo exactly: all geometric silhouettes, relative proportions, dark navy-to-blue gradient, central vertical stem and two circular details, the white lettering embedded inside the dark left and right slanted wings. Do not redraw, reinterpret, smooth away detail, add outlines, add shadows, or add a white panel. Output the isolated original logo as a transparent PNG, horizontally framed with minimal transparent padding so it can be placed in a website header. The white letters inside the colored wing shapes must remain white, and the colored geometric mark must retain its exact original shape.",
+  "validation": {
+    "format": "RGBA PNG",
+    "width": 1774,
+    "height": 887,
+    "alpha_range": [0, 255],
+    "all_corners_transparent": true
+  }
+}
