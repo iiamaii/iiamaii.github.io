@@ -7,7 +7,7 @@
 - [논문 리뷰](https://iiamaii.github.io/reviews/): 전체·주제 탭, 썸네일과 짧은 설명, 리뷰 본문
 - GitHub page 메뉴: 기본적으로 [iiamaii GitHub 프로필](https://github.com/iiamaii)로 연결
 
-기존 예시 글은 게시 목록에서 정리했습니다. 현재 실제 논문 리뷰는 0편이며, 공개된 리뷰가 없다는 안내를 표시합니다. 주제는 공개 포스트에서 자동으로 모읍니다. 프로필과 철학은 내용을 채우기 전까지 준비 안내를 보여줍니다.
+기존 예시 글은 게시 목록에서 정리했습니다. 현재 [SyncWorld 리뷰](https://iiamaii.github.io/reviews/syncworld-visual-calibration/) 한 편을 한글·영문으로 게시합니다. 주제는 공개 포스트에서 자동으로 모읍니다. 프로필과 철학은 내용을 채우기 전까지 준비 안내를 보여줍니다.
 
 ## 미리보기
 
