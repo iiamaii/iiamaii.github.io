@@ -21,7 +21,7 @@ thumbnailAlt: "SyncWorld의 행동·영상 보정 문맥이 미래 영상 예측
 행동 조건 월드 모델은 현재 관찰과 앞으로 실행할 행동을 받아 미래 관찰을 예측하는 모델이다. 로봇의 이동 명령이 같아도 카메라 방향이 달라지면 영상에서 보이는 이동 방향은 달라질 수 있다. 카메라를 반대편으로 옮기는 상황은 이 문제를 설명하기 위한 예시이며, 별도의 실험 결과가 아니다. SyncWorld는 설정에 따른 이 대응을 **행동–영상 매핑**으로 다룬다. [SyncWorld §3.1](https://arxiv.org/html/2609.09155v1#S3.SS1)
 
 <figure class="review-figure" id="figure-action-visual-mapping">
-<a href="/assets/reviews/syncworld/action-visual-mapping.ko.svg" target="_blank" rel="noopener noreferrer"><img src="/assets/reviews/syncworld/action-visual-mapping.ko.svg" alt="같은 +x 물리 이동 명령이 시점 A에서는 오른쪽, 반대 카메라 방향의 시점 B에서는 왼쪽으로 보인다. 6개 운동 자유도의 12방향 행동·영상 쌍을 보정 문맥으로 제공하는 설명용 도식." loading="lazy" decoding="async"></a>
+<a href="/assets/reviews/syncworld/action-visual-mapping.ko.svg" target="_blank" rel="noopener noreferrer"><img src="/assets/reviews/syncworld/action-visual-mapping.ko.svg" width="900" height="1040" alt="같은 +x 물리 이동 명령이 시점 A에서는 오른쪽, 반대 카메라 방향의 시점 B에서는 왼쪽으로 보인다. 6개 운동 자유도의 12방향 행동·영상 쌍을 보정 문맥으로 제공하는 설명용 도식." loading="lazy" decoding="async"></a>
 <figcaption><span class="figure-label">개념도 · 같은 행동, 다른 시점</span>카메라 방향이 반대인 설명용 예다. 아래 12방향은 대응을 알려주는 보정 구간을 나타낸다. 작성자 재구성이며 실제 측정 결과가 아니다. <span class="figure-links"><a href="/assets/reviews/syncworld/action-visual-mapping.ko.svg" target="_blank" rel="noopener noreferrer">크게 보기</a></span></figcaption>
 </figure>
 
@@ -40,7 +40,7 @@ future video ~ W_theta(C_s, H_t, A_t)
 `C_s`는 설정 `s`의 보정 문맥, `H_t`는 현재까지의 관찰·행동 이력, `A_t`는 앞으로 실행할 행동이다. `W_theta`는 미래 영상의 조건부 분포를 나타내며, `theta`는 배포 시 고정된 모델 파라미터다. 여기서 제로샷은 새 설정에 맞춰 파라미터를 다시 학습하지 않는다는 의미다. 보정 관찰이나 계산이 필요 없다는 의미로 줄여 읽으면 안 된다. [SyncWorld §3.1, 식 3](https://arxiv.org/html/2609.09155v1#S3.SS1)
 
 <figure class="review-figure" id="figure-syncworld-architecture">
-<a href="/assets/reviews/syncworld/paper-figure-2.png" target="_blank" rel="noopener noreferrer"><img src="/assets/reviews/syncworld/paper-figure-2.png" alt="SyncWorld 구조: 보정 에피소드·상호작용 이력·미래 행동이 자세 임베딩과 영상 잠재 표현으로 변환되어 DiT의 조건이 되고 미래 영상이 생성된다." loading="lazy" decoding="async"></a>
+<a href="/assets/reviews/syncworld/paper-figure-2.png" target="_blank" rel="noopener noreferrer"><img src="/assets/reviews/syncworld/paper-figure-2.png" width="2226" height="980" alt="SyncWorld 구조: 보정 에피소드·상호작용 이력·미래 행동이 자세 임베딩과 영상 잠재 표현으로 변환되어 DiT의 조건이 되고 미래 영상이 생성된다." loading="lazy" decoding="async"></a>
 <figcaption><span class="figure-label">원문 Figure 2 · 보정에서 미래 영상까지</span>왼쪽의 보정·이력·미래 행동을 입력으로, 가운데 DiT를 생성 본체로, 오른쪽을 예측 결과로 읽는다. <span class="figure-links"><a href="/assets/reviews/syncworld/paper-figure-2.png" target="_blank" rel="noopener noreferrer">크게 보기</a> · <a href="https://arxiv.org/html/2609.09155v1#S3.F2">Yuncong Yang et al., 2026, 원문 Figure 2</a> · <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> · 원본 유지, 수정·자르기 없음</span></figcaption>
 </figure>
 
@@ -59,7 +59,7 @@ future video ~ W_theta(C_s, H_t, A_t)
 영상 평가에서는 512×512 해상도로 16개 행동에 대응하는 미래 구간을 예측한다. LIBERO와 ManiSkill은 각각 50개 궤적, 실물은 25개 궤적을 사용하며, 궤적당 두 시점으로 각각 100·100·50개 평가 영상을 구성한다. Table 1은 IRASim·WorldGym·Ctrl-World보다 전반적으로 좋은 영상 품질 지표를 보고한다. 비교 모델들은 같은 downstream 데이터로 미세 조정되지만 백본과 학습 방식까지 같지는 않으므로, 모델 간 차이를 보정 하나의 효과로 해석하기 어렵다. [SyncWorld §4.1–4.2, Table 1, 부록 C.1](https://arxiv.org/html/2609.09155v1#S4.SS1)
 
 <figure class="review-figure" id="figure-syncworld-qualitative">
-<a href="/assets/reviews/syncworld/paper-figure-5.png" target="_blank" rel="noopener noreferrer"><img src="/assets/reviews/syncworld/paper-figure-5.png" alt="두 카메라 시점의 실제 로봇 장면을 시간 순서로 나열해 실제 관찰, Ctrl-World와 SyncWorld의 미래 예측을 비교한 논문 원본 그림." loading="lazy" decoding="async"></a>
+<a href="/assets/reviews/syncworld/paper-figure-5.png" target="_blank" rel="noopener noreferrer"><img src="/assets/reviews/syncworld/paper-figure-5.png" width="4355" height="1621" alt="두 카메라 시점의 실제 로봇 장면을 시간 순서로 나열해 실제 관찰, Ctrl-World와 SyncWorld의 미래 예측을 비교한 논문 원본 그림." loading="lazy" decoding="async"></a>
 <figcaption><span class="figure-label">원문 Figure 5 · 실제 로봇의 예측 비교</span>왼쪽·오른쪽은 서로 다른 카메라 시점이며, 각 묶음의 행은 위에서부터 실제 관찰(Ground-truth), Ctrl-World, SyncWorld다. 가로 방향으로 시간에 따른 변화를 읽고 팔·그리퍼 위치를 비교한다. 저자가 고른 정성 예시이며 전체 성공률이나 물리 정확성의 증명은 아니다. <span class="figure-links"><a href="/assets/reviews/syncworld/paper-figure-5.png" target="_blank" rel="noopener noreferrer">크게 보기</a> · <a href="https://arxiv.org/html/2609.09155v1#S4.F5">Yuncong Yang et al., 2026, 원문 Figure 5</a> · <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> · 원본 유지, 수정·자르기 없음</span></figcaption>
 </figure>
 
@@ -75,7 +75,7 @@ future video ~ W_theta(C_s, H_t, A_t)
 정책 개선은 별도의 질문이다. SyncWorld는 동결한 시각·언어·행동 정책(VLA) π0에서 8개 행동 후보를 뽑고, 각 후보의 두 시점 미래 영상을 생성한다. GPT-5 시각·언어 모델(VLM)이 과제 진행과 물리적 타당성을 평가해 후보를 선택한다. 이는 생성 예측 제어(GPC)의 후보 순위 방식인 GPC-Rank를 이용한 구성이다. [SyncWorld §3.3, 부록 C.4.1–C.4.2](https://arxiv.org/html/2609.09155v1#S3.SS3), [GPC §III–IV](https://arxiv.org/html/2502.00622v4)
 
 <figure class="review-figure" id="figure-policy-ranking">
-<a href="/assets/reviews/syncworld/policy-ranking.ko.svg" target="_blank" rel="noopener noreferrer"><img src="/assets/reviews/syncworld/policy-ranking.ko.svg" alt="동결 π0 정책에서 16행동씩 8후보를 만들고, SyncWorld가 후보별 전면·측면 미래 영상을 생성한다. GPT-5가 과제 진행과 물리적 타당성으로 평가한 뒤 최고 점수 후보를 실행한다." loading="lazy" decoding="async"></a>
+<a href="/assets/reviews/syncworld/policy-ranking.ko.svg" target="_blank" rel="noopener noreferrer"><img src="/assets/reviews/syncworld/policy-ranking.ko.svg" width="900" height="1210" alt="동결 π0 정책에서 16행동씩 8후보를 만들고, SyncWorld가 후보별 전면·측면 미래 영상을 생성한다. GPT-5가 과제 진행과 물리적 타당성으로 평가한 뒤 최고 점수 후보를 실행한다." loading="lazy" decoding="async"></a>
 <figcaption><span class="figure-label">개념도 · 예측과 후보 선택의 역할</span>설정은 §3.3과 부록 C.4.2를 따라 재구성했다. SyncWorld는 미래를 예측하고 GPT-5는 후보를 평가한다. 어느 단계에서 오류가 났는지 구분해 검증해야 한다. 실제 생성 영상이나 점수를 표시한 그림은 아니다. <span class="figure-links"><a href="/assets/reviews/syncworld/policy-ranking.ko.svg" target="_blank" rel="noopener noreferrer">크게 보기</a></span></figcaption>
 </figure>
 
