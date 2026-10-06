@@ -82,6 +82,8 @@ visibility: "public"
 
 에이전트·작업자는 [포스팅 스킬](skills/publish-research-blog/SKILL.md)을 따른다. 출처 검증부터 한글·영문 작성, 공개 설정, 배포 확인까지 필요한 규칙과 [연구 인계 양식](skills/publish-research-blog/assets/research-handoff.md), [리뷰 본문 템플릿](skills/publish-research-blog/assets/review-body.md)을 포함한다. 요구사항 변경은 이 스킬을 기준으로 반영한다.
 
+다른 AI 서비스에서는 스킬과 두 템플릿을 첨부하거나 저장소에서 읽게 한 뒤 [복사용 작업 요청](skills/publish-research-blog/assets/agent-request.md)의 입력을 채워 전달한다. 저장소·실행 도구가 없으면 원고와 인계 자료를 받고, 접근 가능한 작업자가 검증·게시를 이어간다.
+
 ```sh
 npm run new -- paper-slug "머신러닝"
 ```
