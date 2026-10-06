@@ -10,8 +10,8 @@ paperTitle: "SyncWorld: Visual Calibration Enables World Models as Zero-Shot Sim
 authors: "Yuncong Yang, Zhengtao Han, Furkan Ozyurt, Zeyuan Yang, Han Yang, Junyi Cao, Haoyu Zhen, Yilun Du, Chuang Gan"
 year: "2026"
 paperUrl: "https://arxiv.org/abs/2609.09155v1"
-thumbnail: "/assets/reviews/syncworld/cover.svg"
-thumbnailAlt: "SyncWorld의 행동·영상 보정 문맥이 미래 영상 예측으로 이어지는 자체 제작 개념 표지"
+thumbnail: "/assets/reviews/syncworld/paper-figure-2.png"
+thumbnailAlt: "SyncWorld 원문 Figure 2의 모델 구조도"
 ---
 
 로봇의 행동 숫자를 안다고 화면 속 움직임까지 바로 알 수 있을까? SyncWorld는 새 설정에서 짧은 행동·영상 대응을 먼저 관찰하고, 추가 학습 없이 그 문맥을 이용해 미래 영상을 예측한다. 보고된 결과는 이 접근의 가능성을 보여주지만, 모든 몸체의 물리적 정확성이나 모든 과제의 정책 개선까지 입증하지는 않는다. [SyncWorld §3–4, 부록 C.4.3·E](https://arxiv.org/html/2609.09155v1#S3)
@@ -20,9 +20,9 @@ thumbnailAlt: "SyncWorld의 행동·영상 보정 문맥이 미래 영상 예측
 
 행동 조건 월드 모델은 현재 관찰과 앞으로 실행할 행동을 받아 미래 관찰을 예측하는 모델이다. 로봇의 이동 명령이 같아도 카메라 방향이 달라지면 영상에서 보이는 이동 방향은 달라질 수 있다. 카메라를 반대편으로 옮기는 상황은 이 문제를 설명하기 위한 예시이며, 별도의 실험 결과가 아니다. SyncWorld는 설정에 따른 이 대응을 **행동–영상 매핑**으로 다룬다. [SyncWorld §3.1](https://arxiv.org/html/2609.09155v1#S3.SS1)
 
-<figure class="review-figure" id="figure-action-visual-mapping">
-<a href="/assets/reviews/syncworld/action-visual-mapping.ko.svg" target="_blank" rel="noopener noreferrer"><img src="/assets/reviews/syncworld/action-visual-mapping.ko.svg" width="900" height="1040" alt="같은 +x 물리 이동 명령이 시점 A에서는 오른쪽, 반대 카메라 방향의 시점 B에서는 왼쪽으로 보인다. 6개 운동 자유도의 12방향 행동·영상 쌍을 보정 문맥으로 제공하는 설명용 도식." loading="lazy" decoding="async"></a>
-<figcaption><span class="figure-label">개념도 · 같은 행동, 다른 시점</span>카메라 방향이 반대인 설명용 예다. 아래 12방향은 대응을 알려주는 보정 구간을 나타낸다. 작성자 재구성이며 실제 측정 결과가 아니다. <span class="figure-links"><a href="/assets/reviews/syncworld/action-visual-mapping.ko.svg" target="_blank" rel="noopener noreferrer">크게 보기</a></span></figcaption>
+<figure class="review-figure" id="figure-syncworld-core">
+<a href="/assets/reviews/syncworld/syncworld-core.svg" target="_blank" rel="noopener noreferrer"><img src="/assets/reviews/syncworld/syncworld-core.svg" width="1200" height="1590" alt="보정 C_s의 행동·영상 쌍, 이력 H_t의 접근·집기·들기, 미래 명령 A_t의 이동·그리퍼 닫기 예시를 넣은 개념도. 입력은 배포 시 가중치가 고정된 SyncWorld를 조건화한다. 샘플은 AI 생성 설명용 이미지이며 파란색 목표 자세는 실행 전 계획이다." loading="lazy" decoding="async"></a>
+<figcaption><span class="figure-label">핵심 개념 · 새 문맥, 고정된 모델</span>보정은 새 설정의 행동–영상 대응을 입력 문맥으로 알려준다. 가중치 θ는 배포 시 바꾸지 않는다. C_s는 12방향 보정, H_t는 이미 일어난 관찰·행동, A_t는 예측할 미래 명령이다. 세 입력 카드의 샘플은 역할을 설명하는 AI 생성 예시다. 보정의 행동·영상 쌍, 이미 수행한 접근·집기·들기, 실행 전 명령을 구분한다. 미래 행동의 파란색 목표 자세는 계획을 뜻한다. 논문 데이터·실제 보정 궤적·모델의 예측 영상이나 실험 결과가 아니다. <span class="figure-links"><a href="/assets/reviews/syncworld/syncworld-core.svg" target="_blank" rel="noopener noreferrer">크게 보기</a></span></figcaption>
 </figure>
 
 기존 연구는 이미 여러 부분을 해결하고 있었다. IRASim은 행동과 영상 프레임의 대응을 정교하게 모델링했고, WorldGym은 생성된 환경에서 정책을 평가했다. Ctrl-World는 다중 시점과 이력을 활용하며 새 DROID 카메라 설정에서의 제로샷 결과도 보고했다. 따라서 SyncWorld를 “이전에는 설정 전이가 불가능했는데 처음 해결한 모델”로 소개하기보다, 대응을 알려주는 보정 문맥을 명시적으로 설계한 접근으로 읽는 것이 적절하다. 마지막 판단은 리뷰 작성자의 해석이다. [IRASim §3](https://arxiv.org/html/2406.14540v2), [WorldGym §3–4](https://arxiv.org/html/2506.00613v3), [Ctrl-World §4, §5.4](https://arxiv.org/html/2510.10125v3)
@@ -63,29 +63,58 @@ future video ~ W_theta(C_s, H_t, A_t)
 <figcaption><span class="figure-label">원문 Figure 5 · 실제 로봇의 예측 비교</span>왼쪽·오른쪽은 서로 다른 카메라 시점이며, 각 묶음의 행은 위에서부터 실제 관찰(Ground-truth), Ctrl-World, SyncWorld다. 가로 방향으로 시간에 따른 변화를 읽고 팔·그리퍼 위치를 비교한다. 저자가 고른 정성 예시이며 전체 성공률이나 물리 정확성의 증명은 아니다. <span class="figure-links"><a href="/assets/reviews/syncworld/paper-figure-5.png" target="_blank" rel="noopener noreferrer">크게 보기</a> · <a href="https://arxiv.org/html/2609.09155v1#S4.F5">Yuncong Yang et al., 2026, 원문 Figure 5</a> · <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> · 원본 유지, 수정·자르기 없음</span></figcaption>
 </figure>
 
-다른 시점에서도 예측이 같은 장면을 나타내는지 확인하는 Met3R은 특징 대응에 기반한 일관성 지표다. 단위 없는 점수이며 낮을수록 좋다. 아래는 Table 2 중 IRASim과 보정을 사용한 SyncWorld의 값이다. 평균은 LIBERO·ManiSkill·실물 세 영역의 보고 평균이다.
+다른 시점에서도 예측이 같은 장면을 나타내는지 확인하는 Met3R은 특징 대응에 기반한 일관성 지표다. 단위 없는 점수이며 낮을수록 좋다. 평균은 LIBERO·ManiSkill·실물 세 영역의 보고 평균이다. 먼저 세 영역별 열을 비교한 뒤 평균 열을 읽는 것이 좋다.
 
-| 모델 | 실물 Met3R ↓ | 세 영역 평균 Met3R ↓ |
-| --- | --- | --- |
-| IRASim | 0.468 | 0.560 |
-| SyncWorld, 보정 사용 | 0.473 | 0.538 |
+**원문 Table 2 — 시점 간 일관성.** 아래는 전체 행을 옮긴 것이다. 낮을수록 좋으며, Oracle은 실제 관찰의 참고 점수다.
 
-평균에서는 SyncWorld가 좋지만, 실물 열에서는 IRASim의 값이 더 낮다. 따라서 “모든 영역에서 가장 일관적”이라는 서술은 표와 정확히 일치하지 않는다. 두 값의 차이에 대한 통계적 유의성은 확인하지 않았다. 이 지표는 시점 간 특징 일관성을 평가하며 힘·접촉·물리 법칙 전체의 정확성을 직접 검증하지 않는다. [SyncWorld §4.3, Table 2, 부록 C.3](https://arxiv.org/html/2609.09155v1#S4.SS3)
+| 모델 | LIBERO ↓ | ManiSkill ↓ | 실물 ↓ | 평균 ↓ |
+| --- | --- | --- | --- | --- |
+| IRASim | 0.579 | 0.633 | 0.468 | 0.560 |
+| WorldGym | 0.583 | 0.632 | 0.515 | 0.577 |
+| Ctrl-World | 0.559 | 0.642 | 0.494 | 0.565 |
+| SyncWorld, 추론 보정 없음 | 0.545 | 0.607 | 0.474 | 0.542 |
+| SyncWorld, 추론 보정 사용 | 0.540 | 0.602 | 0.473 | 0.538 |
+| Oracle | 0.515 | 0.594 | 0.459 | 0.523 |
+
+추론 보정 사용 여부를 비교하면 평균이 0.542에서 0.538로 낮아진다. 이 두 행 모두 보정·증류 학습을 거친 모델이므로 보정 학습 자체를 제거한 비교와는 다르다. 평균에서는 SyncWorld가 좋지만, 실물 열에서는 IRASim의 값이 더 낮다. 따라서 “모든 영역에서 가장 일관적”이라는 서술은 표와 정확히 일치하지 않는다. 두 값의 차이에 대한 통계적 유의성은 확인하지 않았다. 이 지표는 시점 간 특징 일관성을 평가하며 힘·접촉·물리 법칙 전체의 정확성을 직접 검증하지 않는다. [SyncWorld §4.3, Table 2, 부록 C.3](https://arxiv.org/html/2609.09155v1#S4.SS3)
 
 정책 개선은 별도의 질문이다. SyncWorld는 동결한 시각·언어·행동 정책(VLA) π0에서 8개 행동 후보를 뽑고, 각 후보의 두 시점 미래 영상을 생성한다. GPT-5 시각·언어 모델(VLM)이 과제 진행과 물리적 타당성을 평가해 후보를 선택한다. 이는 생성 예측 제어(GPC)의 후보 순위 방식인 GPC-Rank를 이용한 구성이다. [SyncWorld §3.3, 부록 C.4.1–C.4.2](https://arxiv.org/html/2609.09155v1#S3.SS3), [GPC §III–IV](https://arxiv.org/html/2502.00622v4)
 
-<figure class="review-figure" id="figure-policy-ranking">
-<a href="/assets/reviews/syncworld/policy-ranking.ko.svg" target="_blank" rel="noopener noreferrer"><img src="/assets/reviews/syncworld/policy-ranking.ko.svg" width="900" height="1210" alt="동결 π0 정책에서 16행동씩 8후보를 만들고, SyncWorld가 후보별 전면·측면 미래 영상을 생성한다. GPT-5가 과제 진행과 물리적 타당성으로 평가한 뒤 최고 점수 후보를 실행한다." loading="lazy" decoding="async"></a>
-<figcaption><span class="figure-label">개념도 · 예측과 후보 선택의 역할</span>설정은 §3.3과 부록 C.4.2를 따라 재구성했다. SyncWorld는 미래를 예측하고 GPT-5는 후보를 평가한다. 어느 단계에서 오류가 났는지 구분해 검증해야 한다. 실제 생성 영상이나 점수를 표시한 그림은 아니다. <span class="figure-links"><a href="/assets/reviews/syncworld/policy-ranking.ko.svg" target="_blank" rel="noopener noreferrer">크게 보기</a></span></figcaption>
+<figure class="review-figure" id="figure-syncworld-policy">
+<a href="/assets/reviews/syncworld/paper-figure-4.png" target="_blank" rel="noopener noreferrer"><img src="/assets/reviews/syncworld/paper-figure-4.png" width="2357" height="930" alt="원문 Figure 4. VLA가 행동 후보를 만들고 SyncWorld가 후보별 두 시점 영상을 예측한다. VLM이 지시와 예측 결과로 점수를 매기고 최고 점수 후보를 실행한다." loading="lazy" decoding="async"></a>
+<figcaption><span class="figure-label">원문 Figure 4 · 예측 영상에서 행동 후보 선택까지</span>왼쪽에서 오른쪽으로 후보 생성·미래 영상·점수 평가를 읽는다. 같은 색의 행이 같은 행동 후보다. 오른쪽 숫자는 후보 평가 점수이며 성공률(%)로 읽으면 안 된다. <span class="figure-links"><a href="/assets/reviews/syncworld/paper-figure-4.png" target="_blank" rel="noopener noreferrer">크게 보기</a> · <a href="https://arxiv.org/html/2609.09155v1#S3.F4">Yuncong Yang et al., 2026, Figure 4</a> · <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> · 원본 유지, 수정·자르기 없음</span></figcaption>
 </figure>
 
-| LIBERO 과제 | 직접 π0 실행 | SyncWorld + 보정 | 실제 시뮬레이터로 후보 평가 |
-| --- | --- | --- | --- |
-| BBQ Sauce | 52% | 58% | 60% |
-| Orange Juice | 56% | 72% | 80% |
-| Black Bowl | 48% | 60% | 66% |
+그림은 후보 세 줄을 예시로 보여주지만 실제 평가 구성은 8후보·후보당 16행동·두 시점이다. GPT-5에는 생성 영상에서 뽑은 대표 프레임 3개를 제공한다. SyncWorld는 결과를 예측하고 GPT-5가 점수를 매긴다. 두 단계의 오류가 합쳐지므로 영상 품질 개선을 곧바로 행동 선택 개선으로 읽을 수 없다. [원문 Figure 4, §3.3, 부록 C.4.2·Table 7](https://arxiv.org/html/2609.09155v1#S3.F4)
 
-성공률은 과제당 50회 실행에서 성공한 비율이다. Orange Juice의 변화는 16%포인트다. 다만 세 과제는 실제 시뮬레이터를 사용한 후보 평가가 직접 정책보다 좋아지는 조건으로 선정됐다. SyncWorld의 성능으로 고른 것은 아니지만 전체 LIBERO 평균도 아니다. 추가 과제 Ketchup에서는 직접 정책 80%, SyncWorld 72%, 실제 시뮬레이터 74%가 보고된다. 정확한 미래를 제공해도 후보 평가가 나쁜 행동을 고를 수 있다는 반례다. [SyncWorld §4.4, Table 3, 부록 C.4.3, Table 8](https://arxiv.org/html/2609.09155v1#A3.SS4.SSS3)
+**원문 Table 3 — 오라클 개선 여지가 있는 세 과제.** 원문의 성공 비율을 %로 변환했고, 보정 없는 행도 함께 옮겼다.
+
+| 방법 | BBQ Sauce | Orange Juice | Black Bowl |
+| --- | --- | --- | --- |
+| 직접 π0 실행 | 52% | 56% | 48% |
+| SyncWorld, 추론 보정 없음 | 54% | 68% | 58% |
+| SyncWorld, 추론 보정 사용 | 58% | 72% | 60% |
+| 실제 시뮬레이터로 후보 평가 | 60% | 80% | 66% |
+
+성공률은 과제당 50회 실행에서 성공한 비율이다. Orange Juice에서 직접 실행 56%→보정 없음 68%→보정 사용 72%로 읽으면, 전체 후보 평가 방식의 이득과 추론 보정 추가분을 구분할 수 있다. 직접 실행 대비 변화는 16%포인트, 보정 없는 모델 대비 추가 변화는 4%포인트다. 다만 세 과제는 실제 시뮬레이터를 사용한 후보 평가가 직접 정책보다 좋아지는 조건으로 선정됐다. SyncWorld의 성능으로 고른 것은 아니지만 전체 LIBERO 평균도 아니다. [SyncWorld §4.4, Table 3, 부록 C.4.3, Table 8](https://arxiv.org/html/2609.09155v1#A3.SS4.SSS3)
+
+**원문 Table 8 — 개선이 보장되지 않는 추가 과제.** 같은 방식으로 원문의 비율을 %로 옮겼다. 위의 세 과제만으로 전체 효과를 판단하면 이 반례가 사라진다.
+
+| 방법 | Alphabet Soup | Ketchup | Put Cream Cheese |
+| --- | --- | --- | --- |
+| 직접 π0 실행 | 58% | 80% | 34% |
+| SyncWorld | 58% | 72% | 34% |
+| 실제 시뮬레이터로 후보 평가 | 62% | 74% | 30% |
+
+Ketchup에서는 실제 시뮬레이터도 직접 실행보다 6%포인트 낮고, Put Cream Cheese에서는 4%포인트 낮다. 정확한 미래 관찰을 제공해도 평가기가 고른 후보가 더 나쁠 수 있다. 저자는 이런 과제에서 VLM/GPC-Rank 신호가 병목이라고 해석한다. 다만 이 표만으로 SyncWorld의 예측 오류와 후보 평가 오류의 기여도를 분리할 수는 없다. [원문 부록 C.4.3, Table 8](https://arxiv.org/html/2609.09155v1#A3.T8)
+
+**원문 Table 6 — 생성 시간과 계산 조건.** 아래는 SyncWorld 행만 발췌한 것이다.
+
+| GPU 구성 | Denoising step | 생성 시간 |
+| --- | --- | --- |
+| H100 1장 | 50 | 39.4초 |
+| H100 1장 | 20 | 15.6초 |
+| H100 4장 | 20 | 3.2초 |
 
 실행 비용도 조건을 붙여 읽어야 한다. Table 6의 3.2초는 H100 네 장과 20회 denoising step을 사용한 생성 설정의 값이다. 같은 표에서 H100 한 장, 20회 step은 15.6초다. 어느 값도 정책 추론, 8개 후보와 두 시점의 평가, GPT-5 판단을 모두 포함한 의사결정 지연으로 확인되지 않았다. [SyncWorld 부록 C.2, Table 6](https://arxiv.org/html/2609.09155v1#A3.SS2)
 
@@ -115,7 +144,7 @@ ReWAM은 표현 설계와 행동 학습의 관계를 다룬다. 여기의 특징
 
 | 출처·버전 | 실제 읽은 범위 |
 | --- | --- |
-| [SyncWorld v1](https://arxiv.org/html/2609.09155v1) | 본문 §1–5; 부록 B.1–B.2, C.1–C.4, D–E의 관련 설정·표·실패 설명; 원본 Figure 2·5와 캡션 |
+| [SyncWorld v1](https://arxiv.org/html/2609.09155v1) | 본문 §1–5; 부록 B.1–B.2, C.1–C.4, D–E의 관련 설정·표·실패 설명; 원본 Figure 2·4·5와 캡션; Table 2·3·6·8 행 재대조 |
 | [IRASim v2](https://arxiv.org/html/2406.14540v2) | §3.1–3.3, §4.1–4.3, §5의 관련 문단·실험 설명 |
 | [WorldGym v3](https://arxiv.org/html/2506.00613v3) | §3.1.1–3.1.3, §4.1–4.2, §6의 관련 문단 |
 | [Ctrl-World v3](https://arxiv.org/html/2510.10125v3) | §4.1–4.2, §5.3–5.4, §6의 관련 문단 |
@@ -129,4 +158,4 @@ ReWAM은 표현 설계와 행동 학습의 관계를 다룬다. 여기의 특징
 
 GPC v4의 공식 제목은 *Inference-Time Enhancement of Generative Robot Policies via Predictive World Modeling*이다. RoboActualizer v3의 RoboTwin 평가 범위는 §5와 부록 C.2의 서술이 달라 미확인으로 남겼으며, 이 글은 해당 범위에 대한 결론을 사용하지 않는다.
 
-확인 범위는 원문 텍스트·표·서지 정보와 아래에 명시한 그림이다. 관련 논문 전문 완독, 증명 전체 검산, 코드·가중치 실행, 보충 동영상 확인, 시뮬레이션·실물 재현, 통계적 유의성 검증은 **미실행**이다. 그림 보완에서는 원문 Figure 2·5의 이미지와 캡션을 직접 검토했다. 두 원본 PNG는 Yuncong Yang 외 저자(2026)의 [SyncWorld v1](https://arxiv.org/abs/2609.09155v1)에서 가져왔으며, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)에 따라 출처를 표시하고 수정·자르기 없이 사용했다. 행동–영상 대응·후보 평가 개념도와 표지는 작성자가 설명용으로 제작했으며 실제 실험 결과가 아니다. 각 그림의 확대 링크에서 전체 해상도를 볼 수 있다.
+확인 범위는 원문 텍스트·표·서지 정보와 아래에 명시한 그림이다. 관련 논문 전문 완독, 증명 전체 검산, 코드·가중치 실행, 보충 동영상 확인, 시뮬레이션·실물 재현, 통계적 유의성 검증은 **미실행**이다. 이번 수정에서는 원문 Figure 2·4·5의 이미지와 캡션, Table 2·3·6·8의 행을 직접 검토했다. 원본 PNG 세 개는 Yuncong Yang 외 저자(2026)의 [SyncWorld v1](https://arxiv.org/abs/2609.09155v1)에서 가져왔으며, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)에 따라 출처를 표시하고 수정·자르기 없이 사용했다. 직접 제작한 그림은 보정 문맥과 고정된 모델의 관계를 설명하는 개념도 하나이며 실제 실험 결과가 아니다. 표는 원문 값을 Markdown으로 옮겼고, 성공 비율만 %로 변환했다. 표지는 원문 Figure 2를 사용한다. 각 그림의 확대 링크에서 전체 해상도를 볼 수 있다.
