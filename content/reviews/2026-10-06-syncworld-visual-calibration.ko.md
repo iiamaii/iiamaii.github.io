@@ -10,8 +10,8 @@ paperTitle: "SyncWorld: Visual Calibration Enables World Models as Zero-Shot Sim
 authors: "Yuncong Yang, Zhengtao Han, Furkan Ozyurt, Zeyuan Yang, Han Yang, Junyi Cao, Haoyu Zhen, Yilun Du, Chuang Gan"
 year: "2026"
 paperUrl: "https://arxiv.org/abs/2609.09155v1"
-thumbnail: ""
-thumbnailAlt: ""
+thumbnail: "/assets/reviews/syncworld/cover.svg"
+thumbnailAlt: "SyncWorld의 행동·영상 보정 문맥이 미래 영상 예측으로 이어지는 자체 제작 개념 표지"
 ---
 
 로봇의 행동 숫자를 안다고 화면 속 움직임까지 바로 알 수 있을까? SyncWorld는 새 설정에서 짧은 행동·영상 대응을 먼저 관찰하고, 추가 학습 없이 그 문맥을 이용해 미래 영상을 예측한다. 보고된 결과는 이 접근의 가능성을 보여주지만, 모든 몸체의 물리적 정확성이나 모든 과제의 정책 개선까지 입증하지는 않는다. [SyncWorld §3–4, 부록 C.4.3·E](https://arxiv.org/html/2609.09155v1#S3)
@@ -19,6 +19,11 @@ thumbnailAlt: ""
 ## 어떤 질문에서 출발했는가
 
 행동 조건 월드 모델은 현재 관찰과 앞으로 실행할 행동을 받아 미래 관찰을 예측하는 모델이다. 로봇의 이동 명령이 같아도 카메라 방향이 달라지면 영상에서 보이는 이동 방향은 달라질 수 있다. 카메라를 반대편으로 옮기는 상황은 이 문제를 설명하기 위한 예시이며, 별도의 실험 결과가 아니다. SyncWorld는 설정에 따른 이 대응을 **행동–영상 매핑**으로 다룬다. [SyncWorld §3.1](https://arxiv.org/html/2609.09155v1#S3.SS1)
+
+<figure class="review-figure" id="figure-action-visual-mapping">
+<a href="/assets/reviews/syncworld/action-visual-mapping.ko.svg" target="_blank" rel="noopener noreferrer"><img src="/assets/reviews/syncworld/action-visual-mapping.ko.svg" alt="같은 +x 물리 이동 명령이 시점 A에서는 오른쪽, 반대 카메라 방향의 시점 B에서는 왼쪽으로 보인다. 6개 운동 자유도의 12방향 행동·영상 쌍을 보정 문맥으로 제공하는 설명용 도식." loading="lazy" decoding="async"></a>
+<figcaption><span class="figure-label">개념도 · 같은 행동, 다른 시점</span>카메라 방향이 반대인 설명용 예다. 아래 12방향은 대응을 알려주는 보정 구간을 나타낸다. 작성자 재구성이며 실제 측정 결과가 아니다. <span class="figure-links"><a href="/assets/reviews/syncworld/action-visual-mapping.ko.svg" target="_blank" rel="noopener noreferrer">크게 보기</a></span></figcaption>
+</figure>
 
 기존 연구는 이미 여러 부분을 해결하고 있었다. IRASim은 행동과 영상 프레임의 대응을 정교하게 모델링했고, WorldGym은 생성된 환경에서 정책을 평가했다. Ctrl-World는 다중 시점과 이력을 활용하며 새 DROID 카메라 설정에서의 제로샷 결과도 보고했다. 따라서 SyncWorld를 “이전에는 설정 전이가 불가능했는데 처음 해결한 모델”로 소개하기보다, 대응을 알려주는 보정 문맥을 명시적으로 설계한 접근으로 읽는 것이 적절하다. 마지막 판단은 리뷰 작성자의 해석이다. [IRASim §3](https://arxiv.org/html/2406.14540v2), [WorldGym §3–4](https://arxiv.org/html/2506.00613v3), [Ctrl-World §4, §5.4](https://arxiv.org/html/2510.10125v3)
 
@@ -34,6 +39,13 @@ future video ~ W_theta(C_s, H_t, A_t)
 
 `C_s`는 설정 `s`의 보정 문맥, `H_t`는 현재까지의 관찰·행동 이력, `A_t`는 앞으로 실행할 행동이다. `W_theta`는 미래 영상의 조건부 분포를 나타내며, `theta`는 배포 시 고정된 모델 파라미터다. 여기서 제로샷은 새 설정에 맞춰 파라미터를 다시 학습하지 않는다는 의미다. 보정 관찰이나 계산이 필요 없다는 의미로 줄여 읽으면 안 된다. [SyncWorld §3.1, 식 3](https://arxiv.org/html/2609.09155v1#S3.SS1)
 
+<figure class="review-figure" id="figure-syncworld-architecture">
+<a href="/assets/reviews/syncworld/paper-figure-2.png" target="_blank" rel="noopener noreferrer"><img src="/assets/reviews/syncworld/paper-figure-2.png" alt="SyncWorld 구조: 보정 에피소드·상호작용 이력·미래 행동이 자세 임베딩과 영상 잠재 표현으로 변환되어 DiT의 조건이 되고 미래 영상이 생성된다." loading="lazy" decoding="async"></a>
+<figcaption><span class="figure-label">원문 Figure 2 · 보정에서 미래 영상까지</span>왼쪽의 보정·이력·미래 행동을 입력으로, 가운데 DiT를 생성 본체로, 오른쪽을 예측 결과로 읽는다. <span class="figure-links"><a href="/assets/reviews/syncworld/paper-figure-2.png" target="_blank" rel="noopener noreferrer">크게 보기</a> · <a href="https://arxiv.org/html/2609.09155v1#S3.F2">Yuncong Yang et al., 2026, 원문 Figure 2</a> · <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> · 원본 유지, 수정·자르기 없음</span></figcaption>
+</figure>
+
+그림의 세 입력은 역할이 다르다. **보정**은 이 설정에서 행동과 화면 변화의 대응을 알려주고, **이력**은 이미 진행된 상호작용을 담으며, **미래 행동**은 앞으로 실행할 명령이다. 자세는 벡터 임베딩으로, 영상은 압축된 잠재 표현으로 처리된다. 확산 트랜스포머(DiT)는 이 조건을 이용해 잡음 상태의 미래 영상 표현을 정제한다. 그림의 미래 잡음은 생성할 프레임의 출발점이다. [원문 Figure 2, §3.1, 부록 B.1.1](https://arxiv.org/html/2609.09155v1#S3.F2)
+
 ## 방법과 가정
 
 이 방법은 보정 영상을 기존 생성 모델에 붙이는 것만으로 완성되지 않는다. 학습 중 보정·이력·미래 행동에 같은 좌표 변환을 적용해, 숫자 자체보다 문맥 안의 대응을 읽도록 유도한다. 또한 보정을 포함한 입력과 보정을 제거한 이력 중심 입력의 예측을 맞추는 **보정–이력 증류**를 사용한다. 추론 시 명시적 보정 없이 나온 결과도 이런 학습을 거친 모델의 결과이므로, 보정 학습 자체를 하지 않은 모델과 구분해야 한다. [SyncWorld §3.2, 부록 B.1.2–B.1.3](https://arxiv.org/html/2609.09155v1#S3.SS2)
@@ -46,6 +58,11 @@ future video ~ W_theta(C_s, H_t, A_t)
 
 영상 평가에서는 512×512 해상도로 16개 행동에 대응하는 미래 구간을 예측한다. LIBERO와 ManiSkill은 각각 50개 궤적, 실물은 25개 궤적을 사용하며, 궤적당 두 시점으로 각각 100·100·50개 평가 영상을 구성한다. Table 1은 IRASim·WorldGym·Ctrl-World보다 전반적으로 좋은 영상 품질 지표를 보고한다. 비교 모델들은 같은 downstream 데이터로 미세 조정되지만 백본과 학습 방식까지 같지는 않으므로, 모델 간 차이를 보정 하나의 효과로 해석하기 어렵다. [SyncWorld §4.1–4.2, Table 1, 부록 C.1](https://arxiv.org/html/2609.09155v1#S4.SS1)
 
+<figure class="review-figure" id="figure-syncworld-qualitative">
+<a href="/assets/reviews/syncworld/paper-figure-5.png" target="_blank" rel="noopener noreferrer"><img src="/assets/reviews/syncworld/paper-figure-5.png" alt="두 카메라 시점의 실제 로봇 장면을 시간 순서로 나열해 실제 관찰, Ctrl-World와 SyncWorld의 미래 예측을 비교한 논문 원본 그림." loading="lazy" decoding="async"></a>
+<figcaption><span class="figure-label">원문 Figure 5 · 실제 로봇의 예측 비교</span>왼쪽·오른쪽은 서로 다른 카메라 시점이며, 각 묶음의 행은 위에서부터 실제 관찰(Ground-truth), Ctrl-World, SyncWorld다. 가로 방향으로 시간에 따른 변화를 읽고 팔·그리퍼 위치를 비교한다. 저자가 고른 정성 예시이며 전체 성공률이나 물리 정확성의 증명은 아니다. <span class="figure-links"><a href="/assets/reviews/syncworld/paper-figure-5.png" target="_blank" rel="noopener noreferrer">크게 보기</a> · <a href="https://arxiv.org/html/2609.09155v1#S4.F5">Yuncong Yang et al., 2026, 원문 Figure 5</a> · <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> · 원본 유지, 수정·자르기 없음</span></figcaption>
+</figure>
+
 다른 시점에서도 예측이 같은 장면을 나타내는지 확인하는 Met3R은 특징 대응에 기반한 일관성 지표다. 단위 없는 점수이며 낮을수록 좋다. 아래는 Table 2 중 IRASim과 보정을 사용한 SyncWorld의 값이다. 평균은 LIBERO·ManiSkill·실물 세 영역의 보고 평균이다.
 
 | 모델 | 실물 Met3R ↓ | 세 영역 평균 Met3R ↓ |
@@ -56,6 +73,11 @@ future video ~ W_theta(C_s, H_t, A_t)
 평균에서는 SyncWorld가 좋지만, 실물 열에서는 IRASim의 값이 더 낮다. 따라서 “모든 영역에서 가장 일관적”이라는 서술은 표와 정확히 일치하지 않는다. 두 값의 차이에 대한 통계적 유의성은 확인하지 않았다. 이 지표는 시점 간 특징 일관성을 평가하며 힘·접촉·물리 법칙 전체의 정확성을 직접 검증하지 않는다. [SyncWorld §4.3, Table 2, 부록 C.3](https://arxiv.org/html/2609.09155v1#S4.SS3)
 
 정책 개선은 별도의 질문이다. SyncWorld는 동결한 시각·언어·행동 정책(VLA) π0에서 8개 행동 후보를 뽑고, 각 후보의 두 시점 미래 영상을 생성한다. GPT-5 시각·언어 모델(VLM)이 과제 진행과 물리적 타당성을 평가해 후보를 선택한다. 이는 생성 예측 제어(GPC)의 후보 순위 방식인 GPC-Rank를 이용한 구성이다. [SyncWorld §3.3, 부록 C.4.1–C.4.2](https://arxiv.org/html/2609.09155v1#S3.SS3), [GPC §III–IV](https://arxiv.org/html/2502.00622v4)
+
+<figure class="review-figure" id="figure-policy-ranking">
+<a href="/assets/reviews/syncworld/policy-ranking.ko.svg" target="_blank" rel="noopener noreferrer"><img src="/assets/reviews/syncworld/policy-ranking.ko.svg" alt="동결 π0 정책에서 16행동씩 8후보를 만들고, SyncWorld가 후보별 전면·측면 미래 영상을 생성한다. GPT-5가 과제 진행과 물리적 타당성으로 평가한 뒤 최고 점수 후보를 실행한다." loading="lazy" decoding="async"></a>
+<figcaption><span class="figure-label">개념도 · 예측과 후보 선택의 역할</span>설정은 §3.3과 부록 C.4.2를 따라 재구성했다. SyncWorld는 미래를 예측하고 GPT-5는 후보를 평가한다. 어느 단계에서 오류가 났는지 구분해 검증해야 한다. 실제 생성 영상이나 점수를 표시한 그림은 아니다. <span class="figure-links"><a href="/assets/reviews/syncworld/policy-ranking.ko.svg" target="_blank" rel="noopener noreferrer">크게 보기</a></span></figcaption>
+</figure>
 
 | LIBERO 과제 | 직접 π0 실행 | SyncWorld + 보정 | 실제 시뮬레이터로 후보 평가 |
 | --- | --- | --- | --- |
@@ -93,7 +115,7 @@ ReWAM은 표현 설계와 행동 학습의 관계를 다룬다. 여기의 특징
 
 | 출처·버전 | 실제 읽은 범위 |
 | --- | --- |
-| [SyncWorld v1](https://arxiv.org/html/2609.09155v1) | 본문 §1–5; 부록 B.1–B.2, C.1–C.4, D–E의 관련 설정·표·실패 설명 |
+| [SyncWorld v1](https://arxiv.org/html/2609.09155v1) | 본문 §1–5; 부록 B.1–B.2, C.1–C.4, D–E의 관련 설정·표·실패 설명; 원본 Figure 2·5와 캡션 |
 | [IRASim v2](https://arxiv.org/html/2406.14540v2) | §3.1–3.3, §4.1–4.3, §5의 관련 문단·실험 설명 |
 | [WorldGym v3](https://arxiv.org/html/2506.00613v3) | §3.1.1–3.1.3, §4.1–4.2, §6의 관련 문단 |
 | [Ctrl-World v3](https://arxiv.org/html/2510.10125v3) | §4.1–4.2, §5.3–5.4, §6의 관련 문단 |
@@ -107,4 +129,4 @@ ReWAM은 표현 설계와 행동 학습의 관계를 다룬다. 여기의 특징
 
 GPC v4의 공식 제목은 *Inference-Time Enhancement of Generative Robot Policies via Predictive World Modeling*이다. RoboActualizer v3의 RoboTwin 평가 범위는 §5와 부록 C.2의 서술이 달라 미확인으로 남겼으며, 이 글은 해당 범위에 대한 결론을 사용하지 않는다.
 
-확인 범위는 원문 텍스트·표·서지 정보다. 관련 논문 전문 완독, 증명 전체 검산, 코드·가중치 실행, 보충 동영상 확인, 시뮬레이션·실물 재현, 통계적 유의성 검증은 **미실행**이다. 논문 그림은 복제하지 않았고 새 이미지도 사용하지 않았다.
+확인 범위는 원문 텍스트·표·서지 정보와 아래에 명시한 그림이다. 관련 논문 전문 완독, 증명 전체 검산, 코드·가중치 실행, 보충 동영상 확인, 시뮬레이션·실물 재현, 통계적 유의성 검증은 **미실행**이다. 그림 보완에서는 원문 Figure 2·5의 이미지와 캡션을 직접 검토했다. 두 원본 PNG는 Yuncong Yang 외 저자(2026)의 [SyncWorld v1](https://arxiv.org/abs/2609.09155v1)에서 가져왔으며, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)에 따라 출처를 표시하고 수정·자르기 없이 사용했다. 행동–영상 대응·후보 평가 개념도와 표지는 작성자가 설명용으로 제작했으며 실제 실험 결과가 아니다. 각 그림의 확대 링크에서 전체 해상도를 볼 수 있다.
