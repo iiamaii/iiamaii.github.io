@@ -15,7 +15,7 @@ export function localizedConfig(config, lang) {
 
 export const copy = {
   ko: {
-    locale: 'ko_KR', home: '홈', skip: '본문으로 건너뛰기', menu: '주 메뉴', profile: '내 프로필', reviews: '논문 리뷰', newTab: '새 탭', language: '언어 선택', koLink: '한국어로 보기', enLink: 'Read in English',
+    locale: 'ko_KR', home: '홈', skip: '본문으로 건너뛰기', menu: '주 메뉴', profile: '내 프로필', reviews: '논문 리뷰', newTab: '새 탭', language: '언어 선택', koLink: '한글로 보기', enLink: 'Read in English',
     profileLink: '내 프로필 보기', collectionTitle: '논문으로 이어지는 질문들.', collectionIntro: '주제별로 읽고, 생각하고, 남긴 기록.', allReviews: '전체 리뷰',
     topicLink: (name, n) => `${name} 리뷰 ${n}편 보기`, moreTopic: '이 주제의 리뷰 더 보기', readingTime: n => `${n}분 읽기`,
     preparing: '리뷰 준비 중', emptyTitle: '첫 논문을 기다리는 자리.', topicIntro: '이 주제의 논문 리뷰를 모읍니다.', emptyIntro: '논문을 등록하면 썸네일과 짧은 소개가 여기에 나타납니다.', noReviews: '아직 등록된 논문이 없습니다.',
@@ -29,7 +29,7 @@ export const copy = {
     notFound: '페이지를 찾을 수 없습니다', notFoundTitle: '아직 없는 기록입니다.', notFoundIntro: '논문 리뷰 목록에서 다른 기록을 찾아보세요.', reviewLink: '논문 리뷰 보기', redirect: '내 프로필로 이동', table: '본문 표'
   },
   en: {
-    locale: 'en_US', home: 'home', skip: 'Skip to content', menu: 'Main navigation', profile: 'My profile', reviews: 'Paper reviews', newTab: 'new tab', language: 'Choose language', koLink: '한국어로 보기', enLink: 'Read in English',
+    locale: 'en_US', home: 'home', skip: 'Skip to content', menu: 'Main navigation', profile: 'My profile', reviews: 'Paper reviews', newTab: 'new tab', language: 'Choose language', koLink: '한글로 보기', enLink: 'Read in English',
     profileLink: 'About me', collectionTitle: 'Questions carried by papers.', collectionIntro: 'Reading, thinking, and taking notes by topic.', allReviews: 'All reviews',
     topicLink: (name, n) => `View ${name}: ${n} review${n === 1 ? '' : 's'}`, moreTopic: 'More reviews in this topic', readingTime: n => `${n} min read`,
     preparing: 'REVIEW IN PROGRESS', emptyTitle: 'A place for the first paper.', topicIntro: 'Paper reviews in this topic.', emptyIntro: 'New reviews will appear here with a thumbnail and a short introduction.', noReviews: 'No papers added yet.',

@@ -17,7 +17,7 @@ export function createRenderer({ config, lang, reviews, base, assetVersion }) {
   const fallbackBadge = review => review.sourceLang !== lang ? `<span class="original-badge">${esc(t.originalLabel(review.sourceLang))}</span>` : '';
 
   function page({ title, description = site.description, route, content, published, availableLanguages = languages, canonicalLanguage = lang, scripts = '' }) {
-    const languageLinks = languages.map(language => `<a href="${base}${languageRoute(route, language)}" data-language-link hreflang="${language}" lang="${language}" aria-label="${language === 'ko' ? t.koLink : t.enLink}" ${language === lang ? 'aria-current="true"' : ''}>${language === 'ko' ? '한국어' : 'EN'}</a>`).join('');
+    const languageLinks = languages.map(language => `<a href="${base}${languageRoute(route, language)}" data-language-link hreflang="${language}" lang="${language}" aria-label="${language === 'ko' ? t.koLink : t.enLink}" ${language === lang ? 'aria-current="true"' : ''}>${language === 'ko' ? '한글' : 'EN'}</a>`).join('');
     return `<!doctype html>
 <html lang="${lang}">
 <head>
@@ -42,7 +42,7 @@ ${scripts}
 <a class="skip-link" href="#main">${t.skip}</a>
 <div class="site-shell">
 <header class="site-header">
-<a class="brand" href="${href('/')}" aria-label="${esc(site.title)} ${t.home}">${site.logo ? `<img class="brand-logo" src="${asset(site.logo.image)}" alt="${esc(site.logo.alt)}" width="144" height="60">` : `${esc(site.title)}<span class="brand-dot" aria-hidden="true">.</span>`}</a>
+<a class="brand" href="${href('/')}" aria-label="${esc(site.title)} ${t.home}">${site.logo ? `<img class="brand-logo" src="${asset(site.logo.image)}" alt="${esc(site.logo.alt)}" width="72" height="30">` : `${esc(site.title)}<span class="brand-dot" aria-hidden="true">.</span>`}</a>
 <span class="brand-caption">${esc(site.author)} / RESEARCH JOURNAL</span>
 <nav class="main-nav" aria-label="${t.menu}"><a href="${href('/profile/')}" ${route === '/profile/' ? 'aria-current="page"' : ''}>${t.profile}</a><a href="${href('/reviews/')}" ${route.startsWith('/reviews/') ? 'aria-current="page"' : ''}>${t.reviews}</a><a href="${esc(site.githubPage || site.github)}" target="_blank" rel="noopener noreferrer" aria-label="GitHub page (${t.newTab})">GitHub page ${arrow}</a></nav>
 <div class="language-switch" role="group" aria-label="${t.language}">${languageLinks}</div>
