@@ -19,9 +19,9 @@ export const copy = {
     profileLink: '내 프로필 보기', collectionTitle: '논문으로 이어지는 질문들.', collectionIntro: '주제별로 읽고, 생각하고, 남긴 기록.', allReviews: '전체 리뷰',
     latestIntro: n => `최근 업데이트한 논문 리뷰 ${n}편을 모았습니다.`, moreReviews: '더보기', updated: '업데이트',
     reviewUi: {
-      toggle: '필터 · 검색', size: '표시 개수', allSizes: '전체', search: '단어 검색', searchPlaceholder: '제목, 요약, 본문, 저자에서 검색',
+      filterToggle: '필터', searchToggle: '검색', size: '표시 개수', allSizes: '전체', search: '단어 검색', searchPlaceholder: '제목, 요약, 본문, 저자에서 검색',
       topic: '주제', from: '업데이트 시작', to: '업데이트 종료', timeHint: '시간은 한국 시간(KST) 기준입니다.',
-      sort: '정렬', newest: '최근 업데이트순', oldest: '오래된 업데이트순', apply: '검색 적용', reset: '초기화',
+      sort: '정렬', newest: '최근 업데이트순', oldest: '오래된 업데이트순', filterApply: '필터 적용', filterReset: '필터 초기화', apply: '검색 적용', searchReset: '검색 초기화', reset: '초기화',
       noResults: '조건에 맞는 리뷰가 없습니다.', noResultsHint: '검색어를 바꾸거나 필터를 초기화해 보세요.',
       range: '{total}편 중 {start}–{end}편', zero: '검색 결과 0편', page: '{page} / {pages}', previous: '이전', next: '다음',
       pagination: '리뷰 페이지 이동', rangeError: '종료 시간은 시작 시간 이후로 선택해 주세요.', active: '적용 중'
@@ -43,9 +43,9 @@ export const copy = {
     profileLink: 'About me', collectionTitle: 'Questions carried by papers.', collectionIntro: 'Reading, thinking, and taking notes by topic.', allReviews: 'All reviews',
     latestIntro: n => `The ${n} most recently updated paper review${n === 1 ? '' : 's'}.`, moreReviews: 'View more', updated: 'Updated',
     reviewUi: {
-      toggle: 'Filter & search', size: 'Reviews per page', allSizes: 'All', search: 'Word search', searchPlaceholder: 'Search titles, summaries, full text, and authors',
+      filterToggle: 'Filter', searchToggle: 'Search', size: 'Reviews per page', allSizes: 'All', search: 'Word search', searchPlaceholder: 'Search titles, summaries, full text, and authors',
       topic: 'Topic', from: 'Updated from', to: 'Updated through', timeHint: 'Times are in Korea Standard Time (KST).',
-      sort: 'Sort by', newest: 'Recently updated', oldest: 'Oldest update first', apply: 'Apply search', reset: 'Reset',
+      sort: 'Sort by', newest: 'Recently updated', oldest: 'Oldest update first', filterApply: 'Apply filters', filterReset: 'Reset filters', apply: 'Apply search', searchReset: 'Reset search', reset: 'Reset',
       noResults: 'No matching reviews.', noResultsHint: 'Try different words or reset the filters.',
       range: '{start}–{end} of {total} reviews', zero: '0 matching reviews', page: '{page} / {pages}', previous: 'Previous', next: 'Next',
       pagination: 'Review pagination', rangeError: 'Choose an end time on or after the start time.', active: 'Active'

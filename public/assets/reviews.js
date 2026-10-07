@@ -12,8 +12,10 @@ if (data) {
   const grid = document.querySelector('[data-review-grid]');
   const cards = new Map([...grid.querySelectorAll('[data-review-slug]')].map(card => [card.dataset.reviewSlug, card]));
   const count = document.querySelector('[data-review-count]');
-  const form = document.querySelector('[data-review-filters]');
-  const toggle = document.querySelector('[data-filter-toggle]');
+  const filterForm = document.querySelector('[data-review-filters]');
+  const searchForm = document.querySelector('[data-review-search]');
+  const filterToggle = document.querySelector('[data-filter-toggle]');
+  const searchToggle = document.querySelector('[data-search-toggle]');
   const size = document.querySelector('[data-review-size]');
   const empty = document.querySelector('[data-no-results]');
   const pagination = document.querySelector('[data-review-pagination]');
@@ -23,13 +25,15 @@ if (data) {
   let result;
   const message = (template, values) => template.replace(/\{(\w+)\}/g, (_, key) => values[key]);
 
-  function showFilters(open) {
+  function showPanel(form, toggle, open) {
     form.hidden = !open;
     toggle.setAttribute('aria-expanded', String(open));
     toggle.lastElementChild.textContent = open ? '−' : '+';
   }
 
-  function render(updateHistory = false) {
+  const hasFilters = () => Boolean(state.from || state.to || state.topic !== 'all' || state.sort !== 'newest');
+
+  function render(updateHistory = false, changedFields = ['q', 'topic', 'from', 'to', 'sort']) {
     result = queryReviews(reviews, state);
     state.page = result.page;
     const visible = new Set(result.items.map(review => review.slug));
@@ -45,14 +49,18 @@ if (data) {
     });
     const selectedName = tabs.find(tab => tab.dataset.topic === state.topic).firstChild.textContent;
     count.textContent = `${selectedName} · ${result.total ? message(ui.range, result) : ui.zero}`;
-    for (const name of ['q', 'topic', 'from', 'to', 'sort']) form.elements.namedItem(name).value = state[name];
-    form.elements.namedItem('to').setCustomValidity('');
+    for (const name of changedFields) {
+      const input = filterForm.elements.namedItem(name) || searchForm.elements.namedItem(name);
+      if (input) input.value = state[name];
+    }
+    if (changedFields.some(name => name === 'from' || name === 'to')) filterForm.elements.namedItem('to').setCustomValidity('');
     size.value = state.size;
     pagination.hidden = result.pageCount <= 1;
     previous.disabled = result.page <= 1;
     next.disabled = result.page >= result.pageCount;
     document.querySelector('[data-review-page]').textContent = message(ui.page, { page: result.page, pages: result.pageCount });
-    document.querySelector('[data-filter-active]').hidden = !(state.q || state.from || state.to || state.topic !== 'all' || state.sort !== 'newest');
+    document.querySelector('[data-filter-active]').hidden = !hasFilters();
+    document.querySelector('[data-search-active]').hidden = !state.q;
     if (updateHistory) {
       const url = new URL(location.href);
       for (const name of ['topic', 'q', 'from', 'to', 'sort', 'size', 'page']) url.searchParams.delete(name);
@@ -68,23 +76,30 @@ if (data) {
 
   function change(patch) {
     state = { ...state, page: 1, ...patch };
-    render(true);
+    render(true, Object.keys(patch));
   }
   const reset = () => change({ q: '', topic: 'all', from: '', to: '', sort: 'newest' });
-  toggle.addEventListener('click', () => {
-    showFilters(form.hidden);
-    if (!form.hidden) form.elements.namedItem('q').focus();
-  });
-  form.addEventListener('submit', event => {
+  for (const [form, toggle, firstField] of [[filterForm, filterToggle, 'topic'], [searchForm, searchToggle, 'q']]) {
+    toggle.addEventListener('click', () => {
+      showPanel(form, toggle, form.hidden);
+      if (!form.hidden) form.elements.namedItem(firstField).focus();
+    });
+  }
+  filterForm.addEventListener('submit', event => {
     event.preventDefault();
-    const values = Object.fromEntries(new FormData(form));
-    const end = form.elements.namedItem('to');
+    const values = Object.fromEntries(new FormData(filterForm));
+    const end = filterForm.elements.namedItem('to');
     end.setCustomValidity(values.from && values.to && values.to < values.from ? ui.rangeError : '');
-    if (!form.reportValidity()) return;
-    change({ ...values, q: values.q.trim() });
+    if (!filterForm.reportValidity()) return;
+    change(values);
   });
-  for (const name of ['from', 'to']) form.elements.namedItem(name).addEventListener('input', () => form.elements.namedItem('to').setCustomValidity(''));
-  document.querySelector('[data-reset-filters]').addEventListener('click', reset);
+  searchForm.addEventListener('submit', event => {
+    event.preventDefault();
+    change({ q: searchForm.elements.namedItem('q').value.trim() });
+  });
+  for (const name of ['from', 'to']) filterForm.elements.namedItem(name).addEventListener('input', () => filterForm.elements.namedItem('to').setCustomValidity(''));
+  document.querySelector('[data-reset-filters]').addEventListener('click', () => change({ topic: 'all', from: '', to: '', sort: 'newest' }));
+  document.querySelector('[data-reset-search]').addEventListener('click', () => change({ q: '' }));
   document.querySelector('[data-clear-search]').addEventListener('click', reset);
   size.addEventListener('change', () => change({ size: size.value }));
   tabs.forEach((tab, index) => {
@@ -112,12 +127,14 @@ if (data) {
     const hadTabFocus = tablist.contains(document.activeElement);
     state = readReviewQuery(new URL(location.href).searchParams, topicIds);
     render();
-    if (state.q || state.from || state.to || state.sort !== 'newest') showFilters(true);
+    if (hasFilters()) showPanel(filterForm, filterToggle, true);
+    if (state.q) showPanel(searchForm, searchToggle, true);
     if (hadTabFocus) tabs.find(tab => tab.getAttribute('aria-selected') === 'true').focus();
   });
   panel.setAttribute('role', 'tabpanel');
   panel.removeAttribute('aria-label');
   render();
-  showFilters(Boolean(state.q || state.from || state.to || state.sort !== 'newest'));
+  showPanel(filterForm, filterToggle, hasFilters());
+  showPanel(searchForm, searchToggle, Boolean(state.q));
   tools.hidden = false;
 }
