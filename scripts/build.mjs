@@ -6,10 +6,13 @@ import { Marked, Renderer } from 'marked';
 import { languages, languageRoute, localizedConfig, copy } from './i18n.mjs';
 import { createRenderer } from './render.mjs';
 import { normalizeTopic, normalizeTopics } from './topics.mjs';
+import { postTimes } from './post-times.mjs';
 
 const root = process.cwd();
 const out = path.join(root, 'dist');
 const config = JSON.parse(await fs.readFile(path.join(root, 'site.json'), 'utf8'));
+config.homeReviewLimit ??= 6;
+if (!Number.isInteger(config.homeReviewLimit) || config.homeReviewLimit < 1) throw new Error('homeReviewLimit must be a positive integer.');
 const base = (process.env.SITE_BASE_PATH ?? config.basePath ?? '').replace(/\/$/, '');
 if (base && !/^\/[a-zA-Z0-9_-]+$/.test(base)) throw new Error('basePath must be empty or a single /repository path.');
 function external(value) {
@@ -90,6 +93,7 @@ function renderMarkdown(source, lang) {
 
 const pairs = new Map();
 const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' });
+const now = Date.now();
 const reviewDirectory = path.join(root, 'content/reviews');
 await fs.mkdir(reviewDirectory, { recursive: true });
 for (const file of (await fs.readdir(reviewDirectory)).filter(name => name.endsWith('.md'))) {
@@ -103,6 +107,8 @@ for (const file of (await fs.readdir(reviewDirectory)).filter(name => name.endsW
   const date = data.date instanceof Date ? data.date.toISOString().slice(0, 10) : String(data.date);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(Date.parse(date)) || new Date(date).toISOString().slice(0, 10) !== date) throw new Error(`${file}: date must be a valid YYYY-MM-DD.`);
   if (date > today) continue;
+  const times = postTimes(data, date, file);
+  if (Date.parse(times.publishedAt) > now) continue;
   const topics = postTopics(data, file);
   const slug = data.translationKey || file.replace(/\.md$/, '').replace(/\.(ko|en)$/, '').replace(/^\d{4}-\d{2}-\d{2}-/, '');
   if (typeof slug !== 'string' || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) throw new Error(`${file}: use a lowercase slug or translationKey with hyphens.`);
@@ -113,13 +119,13 @@ for (const file of (await fs.readdir(reviewDirectory)).filter(name => name.endsW
   const other = pair[lang === 'ko' ? 'en' : 'ko'];
   if (other && (other.topics.length !== topics.length || other.topics.some(topic => !topics.some(item => item.key === topic.key)))) throw new Error(`${file}: translations of the same review must use the same topics.`);
   const readingMinutes = lang === 'en' ? Math.max(1, Math.ceil(content.trim().split(/\s+/).length / 220)) : Math.max(1, Math.ceil(content.replace(/\s/g, '').length / 500));
-  pair[lang] = { ...data, date, slug, topics, sourceLang: lang, readingMinutes, ...renderMarkdown(content, lang) };
+  pair[lang] = { ...data, date, ...times, searchText: [data.title, data.description, data.paperTitle, data.authors, data.year, content].filter(Boolean).join(' '), slug, topics, sourceLang: lang, readingMinutes, ...renderMarkdown(content, lang) };
   pairs.set(slug, pair);
 }
 
 const topicMap = new Map();
 const newestPairs = [...pairs.values()].sort((a, b) => {
-  const latest = pair => Object.values(pair).map(review => review.date).sort().at(-1);
+  const latest = pair => Object.values(pair).map(review => review.updatedAt).sort().at(-1);
   return latest(b).localeCompare(latest(a));
 });
 for (const pair of newestPairs) {
@@ -136,7 +142,7 @@ for (const pair of newestPairs) {
 const publicConfig = { ...config, topics: [...topicMap.values()] };
 await Promise.all(publicConfig.topics.map(topic => checkImage(topic.thumbnail)));
 
-const assetBuffers = await Promise.all(['style.css', 'site.js', 'reviews.js'].map(file => fs.readFile(path.join(root, 'public/assets', file))));
+const assetBuffers = await Promise.all(['style.css', 'site.js', 'reviews.js', 'review-query.js'].map(file => fs.readFile(path.join(root, 'public/assets', file))));
 const assetVersion = createHash('sha256').update(Buffer.concat(assetBuffers)).digest('hex').slice(0, 12);
 await fs.rm(out, { recursive: true, force: true });
 await fs.mkdir(out, { recursive: true });
@@ -153,8 +159,13 @@ for (const lang of languages) {
     const source = pair[lang] || pair[lang === 'ko' ? 'en' : 'ko'];
     const other = pair[source.sourceLang === 'ko' ? 'en' : 'ko'];
     const topics = (pair.ko || pair.en).topics;
+    const versions = Object.values(pair);
+    const latest = [...versions].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
     return {
       ...source,
+      publishedAt: versions.map(review => review.publishedAt).sort()[0],
+      updatedAt: latest.updatedAt,
+      hasTime: latest.hasTime,
       topics: topics.map(entry => site.topics.find(topic => topic.id === entry.id)),
       thumbnail: source.thumbnail || other?.thumbnail || topics[0].thumbnail,
       thumbnailAlt: source.thumbnailAlt || other?.thumbnailAlt || '',
@@ -164,7 +175,7 @@ for (const lang of languages) {
       year: source.year || other?.year || '',
       availableLanguages: languages.filter(language => pair[language])
     };
-  }).sort((a, b) => b.date.localeCompare(a.date) || a.slug.localeCompare(b.slug));
+  }).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt) || a.slug.localeCompare(b.slug));
   const renderer = createRenderer({ config: publicConfig, lang, reviews, base, assetVersion });
   await writePage(languageRoute('/', lang), renderer.home());
   await writePage(languageRoute('/profile/', lang), renderer.profile());
@@ -174,7 +185,7 @@ for (const lang of languages) {
   await fs.writeFile(path.join(out, languageRoute('/404.html', lang).slice(1)), renderer.notFound());
   const feedReviews = reviews.filter(review => review.sourceLang === lang);
   const { esc, absolute } = renderer;
-  await fs.writeFile(path.join(out, languageRoute('/feed.xml', lang).slice(1)), `<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>${esc(site.title)}</title><link>${esc(absolute('/'))}</link><description>${esc(site.description)}</description><language>${lang}</language><atom:link href="${esc(absolute('/feed.xml'))}" rel="self" type="application/rss+xml"/>${feedReviews.map(review => `<item><title>${esc(review.title)}</title><link>${esc(absolute(`/reviews/${review.slug}/`))}</link><guid isPermaLink="true">${esc(absolute(`/reviews/${review.slug}/`))}</guid><description>${esc(review.description)}</description><pubDate>${new Date(`${review.date}T00:00:00+09:00`).toUTCString()}</pubDate></item>`).join('')}</channel></rss>`);
+  await fs.writeFile(path.join(out, languageRoute('/feed.xml', lang).slice(1)), `<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>${esc(site.title)}</title><link>${esc(absolute('/'))}</link><description>${esc(site.description)}</description><language>${lang}</language><atom:link href="${esc(absolute('/feed.xml'))}" rel="self" type="application/rss+xml"/>${feedReviews.map(review => `<item><title>${esc(review.title)}</title><link>${esc(absolute(`/reviews/${review.slug}/`))}</link><guid isPermaLink="true">${esc(absolute(`/reviews/${review.slug}/`))}</guid><description>${esc(review.description)}</description><pubDate>${new Date(review.publishedAt).toUTCString()}</pubDate></item>`).join('')}</channel></rss>`);
   sitemapRoutes.push(...['/', '/profile/', '/reviews/', ...feedReviews.map(review => `/reviews/${review.slug}/`)].map(route => absolute(route)));
 }
 const xmlEscape = value => value.replaceAll('&', '&amp;');
