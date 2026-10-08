@@ -3,7 +3,7 @@ title: "끝점으로 반복 경로를 대신할 수 있을까: Looped Models와 
 description: "고정점 관점으로 TBPTT·KV 공유·RL 상태 재사용·distilled prefill을 분석한다. 전문과 부록을 읽고, 업데이트 가속과 전체 시간·정확도 손실을 구분한다."
 date: "2026-10-08"
 publishedAt: "2026-10-08T16:55:04+09:00"
-updatedAt: "2026-10-08T17:32:40+09:00"
+updatedAt: "2026-10-08T19:14:08+09:00"
 topics: ["language models", "looped models", "fixed points", "efficient inference", "reinforcement learning"]
 translationKey: "looped-models-fixed-points"
 paperTitle: "Towards Looped Models Done Right, Part II: Rethinking at Fixed Points"
@@ -48,7 +48,10 @@ z* = Fθ(z*; x)                    # 고정점
 
 VJP(vector–Jacobian product)는 Jacobian 전체를 만들지 않고 벡터에 대한 역방향 미분을 계산하는 연산이다. 네 방법을 모두 결합한 하나의 배포 시스템에서 누적 가속을 측정한 논문으로 읽으면 안 된다. 특히 RL 실험의 생성·평가는 반복별 KV를 유지한다. [§3, Appendix C.8](https://arxiv.org/pdf/2610.06833v1#page=40)
 
-**[Figure 3 · 학습·캐시 공유·student prefill의 경로](https://arxiv.org/html/2610.06833v1#S3.F3)** — (a) 점선 아래 상태를 분리하고 마지막 창만 역전파한다. (b) 과거 토큰의 마지막 KV를 여러 현재-token 반복이 읽는다. (c) 비반복 student가 prefix 끝점을 예측하고 teacher가 이후 생성한다. Student 뒤 한 teacher recurrence와 coda를 거치는 세부는 본문 설명을 함께 읽는다. [원문 그림 크게 보기](https://arxiv.org/html/2610.06833v1/prefix_paths.svg).
+<figure class="review-figure" id="paper-figure-3">
+<a href="/assets/reviews/looped-models-fixed-points/paper-figure-3.svg" target="_blank" rel="noopener noreferrer"><img src="/assets/reviews/looped-models-fixed-points/paper-figure-3.svg" width="508" height="160" alt="좌: 마지막 역전파 창, 중: terminal prefix KV 공유, 우: student prompt prefill과 recurrent teacher decoding의 원문 구조도." loading="lazy" decoding="async"></a>
+<figcaption><span class="figure-label">Figure 3 · 학습·캐시 공유·student prefill의 경로</span>(a) 점선 아래 상태를 분리하고 마지막 창만 역전파한다. (b) 과거 토큰의 마지막 KV를 여러 현재-token 반복이 읽는다. (c) 비반복 student가 prefix 끝점을 예측하고 teacher가 이후 생성한다. Student 뒤 한 teacher recurrence와 coda를 거치는 세부는 본문 설명을 함께 읽는다. <span class="figure-links"><a href="/assets/reviews/looped-models-fixed-points/paper-figure-3.svg" target="_blank" rel="noopener noreferrer">크게 보기</a> · <a href="https://arxiv.org/html/2610.06833v1#S3.F3">Benhao Huang et al., 2026, Figure 3</a> · <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> · 원본 유지, 수정·자르기 없음</span></figcaption>
+</figure>
 
 ## 토큰은 같은 순서와 속도로 수렴하지 않는다
 
@@ -60,7 +63,10 @@ VJP(vector–Jacobian product)는 Jacobian 전체를 만들지 않고 벡터에 
 
 그림에서는 관측 구간 끝까지 변화가 2% 아래로 유지되는 첫 깊이를 찾고, 적어도 네 번의 안정된 업데이트를 요구한다. 관측 길이를 64로 늘린 부록 Table 19에서 Small PLN-5 모델의 토큰 99.74%가 1% 기준을 만족한다. 이는 정해진 데이터와 유한한 관측 구간의 **상태 안정성**이다. 반면 훨씬 엄격한 수렴 검사에서는 탈락한 입력도 있고 수백 번의 반복이 필요하다. [Appendix C.4, Table 19; A.1](https://arxiv.org/pdf/2610.06833v1#page=36)
 
-**[Figure 2 · 토큰의 안정화는 순서대로 일어나지 않는다](https://arxiv.org/html/2610.06833v1#S2.F2)** — 어두운 영역은 작은 상대 상태 변화다. 확대 패널의 계단선은 인접 토큰의 안정 깊이가 뒤바뀔 수 있음을 보여준다. 오른쪽 위치·깊이의 약한 상관은 관측한 시퀀스에 한정된다. [원문 그림 크게 보기](https://arxiv.org/html/2610.06833v1/partial_convergence.png).
+<figure class="review-figure" id="paper-figure-2">
+<a href="/assets/reviews/looped-models-fixed-points/paper-figure-2.png" target="_blank" rel="noopener noreferrer"><img src="/assets/reviews/looped-models-fixed-points/paper-figure-2.png" width="836" height="232" alt="토큰 위치와 recurrence에 따른 상대 은닉 상태 변화 heatmap, 국소 안정 깊이 역전, 위치와 안정 깊이 산점도." loading="lazy" decoding="async"></a>
+<figcaption><span class="figure-label">Figure 2 · 토큰의 안정화는 순서대로 일어나지 않는다</span>어두운 영역은 작은 상대 상태 변화다. 확대 패널의 계단선은 인접 토큰의 안정 깊이가 뒤바뀔 수 있음을 보여준다. 오른쪽 위치·깊이의 약한 상관은 관측한 시퀀스에 한정된다. <span class="figure-links"><a href="/assets/reviews/looped-models-fixed-points/paper-figure-2.png" target="_blank" rel="noopener noreferrer">크게 보기</a> · <a href="https://arxiv.org/html/2610.06833v1#S2.F2">Benhao Huang et al., 2026, Figure 2</a> · <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> · 원본 유지, 수정·자르기 없음</span></figcaption>
+</figure>
 
 ## 마지막 몇 번만 역전파해도 되는 이유와 그 한계
 
@@ -111,7 +117,10 @@ J_prior = −E[stop_gradient(A) log pφ(R)]
 
 그림 4에서는 고정 `R=5` 학습의 주황 곡선이 테스트 깊이를 벗어나면 불안정해진다. 확률적으로 깊이를 바꾸는 PLN과 학습 분포는 비교적 안정적이고, 학습 분포가 PLN보다 PPL을 낮춘다. 그러나 이것은 모든 문제의 정확도가 반복에 따라 단조롭게 좋아진다는 뜻은 아니다. [Figure 4; Appendix C.5](https://arxiv.org/pdf/2610.06833v1#page=8)
 
-**[Figure 4 · 학습 깊이 밖에서의 PPL](https://arxiv.org/html/2610.06833v1#S4.F4)** — 가로축은 테스트 반복 횟수, 세로축은 WikiText PPL로 낮을수록 좋다. 고정 깊이 학습은 5 근처에서 좋지만 깊이를 벗어나면 불안정하다. 확률적·학습 분포는 더 안정적이다. 확대창은 5 근처의 작은 차이를 보여주며, 생성 정확도 그래프는 아니다. [원문 그림 크게 보기](https://arxiv.org/html/2610.06833v1/fixed_vs_pln_depth_scaling.svg).
+<figure class="review-figure" id="paper-figure-4">
+<a href="/assets/reviews/looped-models-fixed-points/paper-figure-4.svg" target="_blank" rel="noopener noreferrer"><img src="/assets/reviews/looped-models-fixed-points/paper-figure-4.svg" width="496" height="168" alt="S와 M 모델의 테스트 깊이 1–64에 따른 WikiText PPL; 고정 깊이, PLN, learned prior 비교." loading="lazy" decoding="async"></a>
+<figcaption><span class="figure-label">Figure 4 · 학습 깊이 밖에서의 PPL</span>가로축은 테스트 반복 횟수, 세로축은 WikiText PPL로 낮을수록 좋다. 고정 깊이 학습은 5 근처에서 좋지만 깊이를 벗어나면 불안정하다. 확률적·학습 분포는 더 안정적이다. 확대창은 5 근처의 작은 차이를 보여주며, 생성 정확도 그래프는 아니다. <span class="figure-links"><a href="/assets/reviews/looped-models-fixed-points/paper-figure-4.svg" target="_blank" rel="noopener noreferrer">크게 보기</a> · <a href="https://arxiv.org/html/2610.06833v1#S4.F4">Benhao Huang et al., 2026, Figure 4</a> · <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> · 원본 유지, 수정·자르기 없음</span></figcaption>
+</figure>
 
 부록의 중요한 대조군도 있다. Small에서 최종 학습 분포를 **첫 업데이트부터 고정**해 사용하면 validation PPL이 학습 분포의 5.67보다 낮은 5.63이다. 학습 과정의 지속적인 적응보다 좋은 분포 모양을 찾은 것이 이득의 원인일 수 있다. Entropy를 높이면 Medium CacheEval 공유 손실은 감소하지만, WikiText나 task 정확도까지 항상 좋아지는 것은 아니다. 평균 깊이가 같아도 실제 FLOPs는 완전히 같지 않다. [Appendix C.1, Tables 10, 12](https://arxiv.org/pdf/2610.06833v1#page=29)
 

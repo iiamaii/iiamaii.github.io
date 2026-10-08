@@ -3,7 +3,7 @@ title: "Can an endpoint replace the recurrent path? Efficiency at fixed points i
 description: "A full-paper review of TBPTT, terminal KV sharing, RL state reuse, and distilled prefill, including the assumptions, appendix controls, quality losses, and end-to-end costs."
 date: "2026-10-08"
 publishedAt: "2026-10-08T16:55:04+09:00"
-updatedAt: "2026-10-08T17:32:40+09:00"
+updatedAt: "2026-10-08T19:14:08+09:00"
 topics: ["language models", "looped models", "fixed points", "efficient inference", "reinforcement learning"]
 translationKey: "looped-models-fixed-points"
 paperTitle: "Towards Looped Models Done Right, Part II: Rethinking at Fixed Points"
@@ -48,7 +48,10 @@ At a mathematical fixed point, one more application leaves the state unchanged. 
 
 A VJP, or vector–Jacobian product, applies a backward derivative without constructing the full Jacobian. The paper does not measure a cumulative speedup from combining all four techniques in one deployed system. In particular, RL rollout and evaluation retain visit-specific KV. [§3, Appendix C.8](https://arxiv.org/pdf/2610.06833v1#page=40)
 
-**[Figure 3 · Three different computational paths](https://arxiv.org/html/2610.06833v1#S3.F3)** — (a) Detach below the dashed boundary and backpropagate through the suffix. (b) Reuse previous tokens’ terminal KV across the current token’s recurrences. (c) Predict the prefix endpoint with a non-recurrent student and retain teacher decoding. Read the text for the intervening teacher recurrence and coda used to build the banks. [Open original figure](https://arxiv.org/html/2610.06833v1/prefix_paths.svg).
+<figure class="review-figure" id="paper-figure-3">
+<a href="/assets/reviews/looped-models-fixed-points/paper-figure-3.svg" target="_blank" rel="noopener noreferrer"><img src="/assets/reviews/looped-models-fixed-points/paper-figure-3.svg" width="508" height="160" alt="Original schematic of suffix backpropagation, terminal-prefix KV sharing, and student prefill with recurrent teacher decoding." loading="lazy" decoding="async"></a>
+<figcaption><span class="figure-label">Figure 3 · Three different computational paths</span>(a) Detach below the dashed boundary and backpropagate through the suffix. (b) Reuse previous tokens’ terminal KV across the current token’s recurrences. (c) Predict the prefix endpoint with a non-recurrent student and retain teacher decoding. Read the text for the intervening teacher recurrence and coda used to build the banks. <span class="figure-links"><a href="/assets/reviews/looped-models-fixed-points/paper-figure-3.svg" target="_blank" rel="noopener noreferrer">View full size</a> · <a href="https://arxiv.org/html/2610.06833v1#S3.F3">Benhao Huang et al., 2026, Figure 3</a> · <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> · Original retained; no edits or cropping</span></figcaption>
+</figure>
 
 ## Tokens settle at different depths and in different orders
 
@@ -60,7 +63,10 @@ Figure 2 plots relative changes between adjacent recurrent hidden states, with r
 
 The figure identifies the first depth after which changes remain below 2% through the observation horizon, requiring at least four stable updates. With a horizon of 64, Appendix Table 19 reports that 99.74% of tokens in the Small PLN-5 model meet a 1% threshold. This describes **state stability** on a finite observation window and specified data. Under much stricter convergence checks, some inputs fail and others require hundreds of recurrences. [Appendix C.4, Table 19; A.1](https://arxiv.org/pdf/2610.06833v1#page=36)
 
-**[Figure 2 · Tokens do not settle in causal order](https://arxiv.org/html/2610.06833v1#S2.F2)** — Darker areas indicate smaller relative state changes. The zoomed staircase shows neighboring tokens exchanging their convergence-depth order. The weak position/depth correlation is specific to the observed sequences. [Open original figure](https://arxiv.org/html/2610.06833v1/partial_convergence.png).
+<figure class="review-figure" id="paper-figure-2">
+<a href="/assets/reviews/looped-models-fixed-points/paper-figure-2.png" target="_blank" rel="noopener noreferrer"><img src="/assets/reviews/looped-models-fixed-points/paper-figure-2.png" width="836" height="232" alt="Token-position versus recurrence hidden-state-change heatmap, local convergence-depth reversal, and position/depth scatterplot." loading="lazy" decoding="async"></a>
+<figcaption><span class="figure-label">Figure 2 · Tokens do not settle in causal order</span>Darker areas indicate smaller relative state changes. The zoomed staircase shows neighboring tokens exchanging their convergence-depth order. The weak position/depth correlation is specific to the observed sequences. <span class="figure-links"><a href="/assets/reviews/looped-models-fixed-points/paper-figure-2.png" target="_blank" rel="noopener noreferrer">View full size</a> · <a href="https://arxiv.org/html/2610.06833v1#S2.F2">Benhao Huang et al., 2026, Figure 2</a> · <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> · Original retained; no edits or cropping</span></figcaption>
+</figure>
 
 ## Why backpropagating through a suffix can work
 
@@ -111,7 +117,10 @@ The advantage `A` comes from `exp(−CE)`, an inverse-perplexity reward, adjuste
 
 In Figure 4, the orange fixed-`R=5` model becomes unstable outside its training depth. PLN and learned-depth training remain more stable, with the learned prior lowering PPL relative to PLN. This does not mean every task improves monotonically with more recurrences. [Figure 4; Appendix C.5](https://arxiv.org/pdf/2610.06833v1#page=8)
 
-**[Figure 4 · Perplexity outside the training depth](https://arxiv.org/html/2610.06833v1#S4.F4)** — The horizontal axis is test recurrence depth; lower WikiText PPL is better. Fixed-depth training performs well near five but becomes unstable elsewhere. Sampled and learned priors are more stable. Insets expose small differences near five; this is not a generation-accuracy plot. [Open original figure](https://arxiv.org/html/2610.06833v1/fixed_vs_pln_depth_scaling.svg).
+<figure class="review-figure" id="paper-figure-4">
+<a href="/assets/reviews/looped-models-fixed-points/paper-figure-4.svg" target="_blank" rel="noopener noreferrer"><img src="/assets/reviews/looped-models-fixed-points/paper-figure-4.svg" width="496" height="168" alt="WikiText PPL across test depths 1–64 for S and M models, comparing fixed depth, PLN, and learned priors." loading="lazy" decoding="async"></a>
+<figcaption><span class="figure-label">Figure 4 · Perplexity outside the training depth</span>The horizontal axis is test recurrence depth; lower WikiText PPL is better. Fixed-depth training performs well near five but becomes unstable elsewhere. Sampled and learned priors are more stable. Insets expose small differences near five; this is not a generation-accuracy plot. <span class="figure-links"><a href="/assets/reviews/looped-models-fixed-points/paper-figure-4.svg" target="_blank" rel="noopener noreferrer">View full size</a> · <a href="https://arxiv.org/html/2610.06833v1#S4.F4">Benhao Huang et al., 2026, Figure 4</a> · <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> · Original retained; no edits or cropping</span></figcaption>
+</figure>
 
 A consequential control appears in the appendix. At Small scale, sampling from the final learned distribution **held fixed from the first update** gives validation PPL 5.63 versus 5.67 for the adapting prior. Finding a better distribution shape may explain the benefit without requiring continual adaptation. Higher entropy reduces the Medium CacheEval sharing penalty, but does not monotonically improve WikiText or task accuracy. Equal mean depth also does not imply identical realized FLOPs. [Appendix C.1, Tables 10, 12](https://arxiv.org/pdf/2610.06833v1#page=29)
 
