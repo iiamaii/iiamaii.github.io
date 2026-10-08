@@ -33,6 +33,7 @@ ${availableLanguages.map(language => `<link rel="alternate" hreflang="${language
 <meta property="og:image" content="${esc(new URL(asset(site.hero.image), config.url).href)}">
 ${published ? `<meta property="article:published_time" content="${esc(published)}"><meta property="article:modified_time" content="${esc(modified || published)}">` : ''}
 <link rel="icon" type="image/svg+xml" href="${asset('/favicon.svg')}">
+<script src="${versioned('/assets/theme.js')}"></script>
 <link rel="stylesheet" href="${versioned('/assets/style.css')}">
 <link rel="alternate" type="application/rss+xml" title="${esc(site.title)}" href="${href('/feed.xml')}">
 <script src="${versioned('/assets/site.js')}" defer></script>
@@ -45,7 +46,10 @@ ${scripts}
 <a class="brand" href="${href('/')}" aria-label="${esc(site.title)} ${t.home}">${site.logo ? `<img class="brand-logo" src="${asset(site.logo.image)}" alt="${esc(site.logo.alt)}" width="72" height="30">` : `${esc(site.title)}<span class="brand-dot" aria-hidden="true">.</span>`}</a>
 <span class="brand-caption">${esc(site.author)} / RESEARCH JOURNAL</span>
 <nav class="main-nav" aria-label="${t.menu}"><a href="${href('/profile/')}" ${route === '/profile/' ? 'aria-current="page"' : ''}>${t.profile}</a><a href="${href('/reviews/')}" ${route.startsWith('/reviews/') ? 'aria-current="page"' : ''}>${t.reviews}</a><a href="${esc(site.githubPage || site.github)}" target="_blank" rel="noopener noreferrer" aria-label="GitHub page (${t.newTab})">GitHub page ${arrow}</a></nav>
+<div class="header-actions">
+<button type="button" class="theme-toggle" data-theme-toggle data-dark-label="${t.darkTheme}" data-light-label="${t.lightTheme}" aria-label="${t.darkTheme}" title="${t.darkTheme}" hidden><svg class="theme-icon-moon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20.5 14A8.5 8.5 0 0 1 10 3.5 8.5 8.5 0 1 0 20.5 14Z"/></svg><svg class="theme-icon-sun" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg></button>
 <div class="language-switch" role="group" aria-label="${t.language}">${languageLinks}</div>
+</div>
 </header>
 ${content}
 <footer class="site-footer"><span class="footer-brand">${esc(site.author)}<span class="brand-dot" aria-hidden="true">.</span></span><p>PROFILE · PHILOSOPHY · PAPER REVIEWS</p><span class="copyright">© ${new Date().getFullYear()}</span></footer>

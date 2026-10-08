@@ -15,7 +15,7 @@ export function localizedConfig(config, lang) {
 
 export const copy = {
   ko: {
-    locale: 'ko_KR', home: '홈', skip: '본문으로 건너뛰기', menu: '주 메뉴', profile: '내 프로필', reviews: '논문 리뷰', newTab: '새 탭', language: '언어 선택', koLink: '한글로 보기', enLink: 'Read in English',
+    locale: 'ko_KR', home: '홈', skip: '본문으로 건너뛰기', menu: '주 메뉴', profile: '내 프로필', reviews: '논문 리뷰', newTab: '새 탭', language: '언어 선택', koLink: '한글로 보기', enLink: 'Read in English', darkTheme: '다크 모드로 전환', lightTheme: '라이트 모드로 전환',
     profileLink: '내 프로필 보기', collectionTitle: '논문으로 이어지는 질문들.', collectionIntro: '주제별로 읽고, 생각하고, 남긴 기록.', allReviews: '전체 리뷰',
     latestIntro: n => `최근 업데이트한 논문 리뷰 ${n}편을 모았습니다.`, moreReviews: '더보기', updated: '업데이트',
     reviewUi: {
@@ -38,7 +38,7 @@ export const copy = {
     notFound: '페이지를 찾을 수 없습니다', notFoundTitle: '아직 없는 기록입니다.', notFoundIntro: '논문 리뷰 목록에서 다른 기록을 찾아보세요.', reviewLink: '논문 리뷰 보기', redirect: '내 프로필로 이동', table: '본문 표'
   },
   en: {
-    locale: 'en_US', home: 'home', skip: 'Skip to content', menu: 'Main navigation', profile: 'My profile', reviews: 'Paper reviews', newTab: 'new tab', language: 'Choose language', koLink: '한글로 보기', enLink: 'Read in English',
+    locale: 'en_US', home: 'home', skip: 'Skip to content', menu: 'Main navigation', profile: 'My profile', reviews: 'Paper reviews', newTab: 'new tab', language: 'Choose language', koLink: '한글로 보기', enLink: 'Read in English', darkTheme: 'Switch to dark mode', lightTheme: 'Switch to light mode',
     profileLink: 'About me', collectionTitle: 'Questions carried by papers.', collectionIntro: 'Reading, thinking, and taking notes by topic.', allReviews: 'All reviews',
     latestIntro: n => `The ${n} most recently updated paper review${n === 1 ? '' : 's'}.`, moreReviews: 'View more', updated: 'Updated',
     reviewUi: {

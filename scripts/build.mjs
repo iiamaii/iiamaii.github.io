@@ -142,7 +142,7 @@ for (const pair of newestPairs) {
 const publicConfig = { ...config, topics: [...topicMap.values()] };
 await Promise.all(publicConfig.topics.map(topic => checkImage(topic.thumbnail)));
 
-const assetBuffers = await Promise.all(['style.css', 'site.js', 'reviews.js', 'review-query.js'].map(file => fs.readFile(path.join(root, 'public/assets', file))));
+const assetBuffers = await Promise.all(['style.css', 'site.js', 'theme.js', 'reviews.js', 'review-query.js'].map(file => fs.readFile(path.join(root, 'public/assets', file))));
 const assetVersion = createHash('sha256').update(Buffer.concat(assetBuffers)).digest('hex').slice(0, 12);
 await fs.rm(out, { recursive: true, force: true });
 await fs.mkdir(out, { recursive: true });
