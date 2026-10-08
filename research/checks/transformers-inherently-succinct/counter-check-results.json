@@ -1,0 +1,119 @@
+{
+  "source": "https://arxiv.org/pdf/2510.19315v3#page=15",
+  "target": "Appendix A.2, Eqs. (14a–e), counter gadget B only",
+  "minimal_valid_tiling": {
+    "N": 1,
+    "rows": 1,
+    "tile": "t=(0,0,0,0)=t_fin",
+    "word": "0t#1t#",
+    "literal": {
+      "accepted_by_B": false,
+      "separators": [
+        {
+          "position_1_based": 3,
+          "increment": false,
+          "rollover_or_initial_zero": true,
+          "B": false
+        },
+        {
+          "position_1_based": 6,
+          "increment": true,
+          "rollover_or_initial_zero": false,
+          "B": false
+        }
+      ]
+    },
+    "candidate_or_repair": {
+      "accepted_by_B": true,
+      "separators": [
+        {
+          "position_1_based": 3,
+          "increment": false,
+          "rollover_or_initial_zero": true,
+          "B": true
+        },
+        {
+          "position_1_based": 6,
+          "increment": true,
+          "rollover_or_initial_zero": false,
+          "B": true
+        }
+      ]
+    }
+  },
+  "valid_cases": [
+    {
+      "N": 1,
+      "rows": 1,
+      "literal_B": false,
+      "OR_B": true
+    },
+    {
+      "N": 1,
+      "rows": 2,
+      "literal_B": false,
+      "OR_B": true
+    },
+    {
+      "N": 2,
+      "rows": 1,
+      "literal_B": false,
+      "OR_B": true
+    },
+    {
+      "N": 2,
+      "rows": 2,
+      "literal_B": false,
+      "OR_B": true
+    },
+    {
+      "N": 3,
+      "rows": 1,
+      "literal_B": false,
+      "OR_B": true
+    },
+    {
+      "N": 3,
+      "rows": 2,
+      "literal_B": false,
+      "OR_B": true
+    },
+    {
+      "N": 4,
+      "rows": 1,
+      "literal_B": false,
+      "OR_B": true
+    },
+    {
+      "N": 4,
+      "rows": 2,
+      "literal_B": false,
+      "OR_B": true
+    },
+    {
+      "N": 5,
+      "rows": 1,
+      "literal_B": false,
+      "OR_B": true
+    },
+    {
+      "N": 5,
+      "rows": 2,
+      "literal_B": false,
+      "OR_B": true
+    }
+  ],
+  "single_bit_mutations": {
+    "checked": 774,
+    "oracle_valid": 0,
+    "literal_accepts": 0,
+    "OR_accepts": 0,
+    "OR_oracle_mismatches": 0
+  },
+  "limitations": [
+    "No execution of gadgets A,C,D,E or the B-RASP-to-UHAT compiler.",
+    "The valid all-zero-edge two-column tiling is checked by inspection.",
+    "No formal proof of the full reduction, no author confirmation, no softmax training.",
+    "Finite checks of OR do not establish its global correctness."
+  ]
+}
