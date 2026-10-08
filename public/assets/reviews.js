@@ -1,14 +1,10 @@
 const queryModule = new URL('./review-query.js', import.meta.url);
 queryModule.search = new URL(import.meta.url).search;
-const { readReviewQuery, queryReviews } = await import(queryModule.href);
+const { readReviewQuery, queryReviews, reviewBatch } = await import(queryModule.href);
 const data = document.getElementById('review-data');
 if (data) {
   const { reviews, ui } = JSON.parse(data.textContent);
   const tools = document.querySelector('[data-review-tools]');
-  const tablist = document.querySelector('[data-topic-tabs]');
-  const tabs = [...tablist.querySelectorAll('[role="tab"]')];
-  const topicIds = tabs.map(tab => tab.dataset.topic);
-  const panel = document.getElementById('review-panel');
   const grid = document.querySelector('[data-review-grid]');
   const cards = new Map([...grid.querySelectorAll('[data-review-slug]')].map(card => [card.dataset.reviewSlug, card]));
   const count = document.querySelector('[data-review-count]');
@@ -16,14 +12,20 @@ if (data) {
   const searchForm = document.querySelector('[data-review-search]');
   const filterToggle = document.querySelector('[data-filter-toggle]');
   const searchToggle = document.querySelector('[data-search-toggle]');
+  const topicPicker = document.querySelector('[data-topic-picker]');
+  const topicInputs = [...filterForm.querySelectorAll('input[name="topic"]')];
+  const topicIds = topicInputs.map(input => input.value);
   const size = document.querySelector('[data-review-size]');
+  const sort = document.querySelector('[data-review-sort]');
   const empty = document.querySelector('[data-no-results]');
-  const pagination = document.querySelector('[data-review-pagination]');
-  const previous = document.querySelector('[data-page-previous]');
-  const next = document.querySelector('[data-page-next]');
+  const more = document.querySelector('[data-review-more]');
+  const moreButton = document.querySelector('[data-load-more]');
   let state = readReviewQuery(new URL(location.href).searchParams, topicIds);
   let result;
   const message = (template, values) => template.replace(/\{(\w+)\}/g, (_, key) => values[key]);
+  const observer = 'IntersectionObserver' in window ? new IntersectionObserver(entries => {
+    if (entries.some(entry => entry.isIntersecting) && result?.hasMore) loadMore();
+  }, { rootMargin: '200px 0px' }) : null;
 
   function showPanel(form, toggle, open) {
     form.hidden = !open;
@@ -31,110 +33,111 @@ if (data) {
     toggle.lastElementChild.textContent = open ? '−' : '+';
   }
 
-  const hasFilters = () => Boolean(state.from || state.to || state.topic !== 'all' || state.sort !== 'newest');
+  const hasFilters = () => Boolean(state.from || state.to || state.topics.length);
+  function summarizeTopics() {
+    const selected = topicInputs.filter(input => input.checked).length;
+    document.querySelector('[data-topic-selection]').textContent = selected ? message(ui.selectedTopics, { count: selected }) : ui.allTopics;
+  }
 
-  function render(updateHistory = false, changedFields = ['q', 'topic', 'from', 'to', 'sort']) {
-    result = queryReviews(reviews, state);
+  function syncUrl(mode) {
+    const url = new URL(location.href);
+    for (const name of ['topic', 'q', 'from', 'to', 'sort', 'size', 'page']) url.searchParams.delete(name);
+    for (const name of ['q', 'from', 'to']) if (state[name]) url.searchParams.set(name, state[name]);
+    state.topics.forEach(topic => url.searchParams.append('topic', topic));
+    if (state.sort !== 'newest') url.searchParams.set('sort', state.sort);
+    if (state.size !== '12') url.searchParams.set('size', state.size);
+    if (state.page !== 1) url.searchParams.set('page', String(state.page));
+    if (url.href !== location.href) history[mode === 'push' ? 'pushState' : 'replaceState'](null, '', url);
+    document.dispatchEvent(new Event('site:locationchange'));
+  }
+
+  function render(historyMode, changedFields = ['q', 'topics', 'from', 'to', 'sort', 'size'], append = false) {
+    observer?.disconnect();
+    result = append ? reviewBatch(result.matches, state) : queryReviews(reviews, state);
     state.page = result.page;
-    const visible = new Set(result.items.map(review => review.slug));
-    cards.forEach((card, slug) => { card.hidden = !visible.has(slug); });
-    result.items.forEach(review => grid.append(cards.get(review.slug)));
+    // Keep unshown cards detached: only the loaded batches take part in layout.
+    if (!append) grid.replaceChildren();
+    for (const review of result.items) {
+      const card = cards.get(review.slug);
+      if (card.parentElement !== grid) grid.append(card);
+    }
     grid.hidden = !result.total;
     empty.hidden = reviews.length === 0 || result.total > 0;
-    tabs.forEach(tab => {
-      const selected = tab.dataset.topic === state.topic;
-      tab.setAttribute('aria-selected', String(selected));
-      tab.tabIndex = selected ? 0 : -1;
-      if (selected) panel.setAttribute('aria-labelledby', tab.id);
-    });
-    const selectedName = tabs.find(tab => tab.dataset.topic === state.topic).firstChild.textContent;
-    count.textContent = `${selectedName} · ${result.total ? message(ui.range, result) : ui.zero}`;
+    count.textContent = result.total ? message(ui.range, result) : ui.zero;
     for (const name of changedFields) {
-      const input = filterForm.elements.namedItem(name) || searchForm.elements.namedItem(name);
-      if (input) input.value = state[name];
+      if (name === 'topics') {
+        topicInputs.forEach(input => { input.checked = state.topics.includes(input.value); });
+        summarizeTopics();
+      } else {
+        const input = filterForm.elements.namedItem(name) || searchForm.elements.namedItem(name);
+        if (input) input.value = state[name];
+      }
     }
     if (changedFields.some(name => name === 'from' || name === 'to')) filterForm.elements.namedItem('to').setCustomValidity('');
     size.value = state.size;
-    pagination.hidden = result.pageCount <= 1;
-    previous.disabled = result.page <= 1;
-    next.disabled = result.page >= result.pageCount;
-    document.querySelector('[data-review-page]').textContent = message(ui.page, { page: result.page, pages: result.pageCount });
+    sort.value = state.sort;
     document.querySelector('[data-filter-active]').hidden = !hasFilters();
     document.querySelector('[data-search-active]').hidden = !state.q;
-    if (updateHistory) {
-      const url = new URL(location.href);
-      for (const name of ['topic', 'q', 'from', 'to', 'sort', 'size', 'page']) url.searchParams.delete(name);
-      for (const name of ['q', 'from', 'to']) if (state[name]) url.searchParams.set(name, state[name]);
-      if (state.topic !== 'all') url.searchParams.set('topic', state.topic);
-      if (state.sort !== 'newest') url.searchParams.set('sort', state.sort);
-      if (state.size !== '12') url.searchParams.set('size', state.size);
-      if (state.page !== 1) url.searchParams.set('page', String(state.page));
-      if (url.href !== location.href) history.pushState(null, '', url);
-      document.dispatchEvent(new Event('site:locationchange'));
-    }
+    more.hidden = !result.hasMore;
+    document.querySelector('[data-load-progress]').textContent = message(ui.range, result);
+    if (historyMode) syncUrl(historyMode);
+    if (result.hasMore) observer?.observe(more);
   }
 
   function change(patch) {
     state = { ...state, page: 1, ...patch };
-    render(true, Object.keys(patch));
+    if (grid.getBoundingClientRect().top < 0) tools.scrollIntoView({ block: 'start', behavior: 'instant' });
+    render('push', Object.keys(patch));
   }
-  const reset = () => change({ q: '', topic: 'all', from: '', to: '', sort: 'newest' });
-  for (const [form, toggle, firstField] of [[filterForm, filterToggle, 'topic'], [searchForm, searchToggle, 'q']]) {
+  function loadMore(focusNewCard = false) {
+    if (!result.hasMore) return;
+    const firstNew = result.end;
+    state.page += 1;
+    render('replace', [], true);
+    if (focusNewCard) cards.get(result.items[firstNew].slug).querySelector('a').focus({ preventScroll: true });
+  }
+  const reset = () => change({ q: '', topics: [], from: '', to: '' });
+  for (const [form, toggle, firstField] of [[filterForm, filterToggle, topicPicker.querySelector('summary')], [searchForm, searchToggle, searchForm.elements.namedItem('q')]]) {
     toggle.addEventListener('click', () => {
       showPanel(form, toggle, form.hidden);
-      if (!form.hidden) form.elements.namedItem(firstField).focus();
+      if (!form.hidden) firstField.focus();
     });
   }
   filterForm.addEventListener('submit', event => {
     event.preventDefault();
-    const values = Object.fromEntries(new FormData(filterForm));
-    const end = filterForm.elements.namedItem('to');
-    end.setCustomValidity(values.from && values.to && values.to < values.from ? ui.rangeError : '');
+    const values = new FormData(filterForm);
+    const from = values.get('from');
+    const to = values.get('to');
+    filterForm.elements.namedItem('to').setCustomValidity(from && to && to < from ? ui.rangeError : '');
     if (!filterForm.reportValidity()) return;
-    change(values);
+    change({ topics: values.getAll('topic'), from, to });
   });
   searchForm.addEventListener('submit', event => {
     event.preventDefault();
     change({ q: searchForm.elements.namedItem('q').value.trim() });
   });
+  topicInputs.forEach(input => input.addEventListener('change', summarizeTopics));
+  document.querySelector('[data-clear-topics]').addEventListener('click', () => {
+    topicInputs.forEach(input => { input.checked = false; });
+    summarizeTopics();
+  });
   for (const name of ['from', 'to']) filterForm.elements.namedItem(name).addEventListener('input', () => filterForm.elements.namedItem('to').setCustomValidity(''));
-  document.querySelector('[data-reset-filters]').addEventListener('click', () => change({ topic: 'all', from: '', to: '', sort: 'newest' }));
+  document.querySelector('[data-reset-filters]').addEventListener('click', () => change({ topics: [], from: '', to: '' }));
   document.querySelector('[data-reset-search]').addEventListener('click', () => change({ q: '' }));
   document.querySelector('[data-clear-search]').addEventListener('click', reset);
   size.addEventListener('change', () => change({ size: size.value }));
-  tabs.forEach((tab, index) => {
-    tab.addEventListener('click', () => change({ topic: tab.dataset.topic }));
-    tab.addEventListener('keydown', event => {
-      let nextIndex;
-      if (event.key === 'ArrowRight') nextIndex = (index + 1) % tabs.length;
-      if (event.key === 'ArrowLeft') nextIndex = (index - 1 + tabs.length) % tabs.length;
-      if (event.key === 'Home') nextIndex = 0;
-      if (event.key === 'End') nextIndex = tabs.length - 1;
-      if (nextIndex === undefined) return;
-      event.preventDefault();
-      tabs[nextIndex].focus();
-      change({ topic: tabs[nextIndex].dataset.topic });
-    });
-  });
-  function goToPage(page) {
-    change({ page });
-    panel.focus({ preventScroll: true });
-    panel.scrollIntoView({ block: 'start' });
-  }
-  previous.addEventListener('click', () => goToPage(state.page - 1));
-  next.addEventListener('click', () => goToPage(state.page + 1));
+  sort.addEventListener('change', () => change({ sort: sort.value }));
+  moreButton.addEventListener('click', () => loadMore(true));
   window.addEventListener('popstate', () => {
-    const hadTabFocus = tablist.contains(document.activeElement);
     state = readReviewQuery(new URL(location.href).searchParams, topicIds);
     render();
     if (hasFilters()) showPanel(filterForm, filterToggle, true);
+    if (state.topics.length) topicPicker.open = true;
     if (state.q) showPanel(searchForm, searchToggle, true);
-    if (hadTabFocus) tabs.find(tab => tab.getAttribute('aria-selected') === 'true').focus();
   });
-  panel.setAttribute('role', 'tabpanel');
-  panel.removeAttribute('aria-label');
   render();
   showPanel(filterForm, filterToggle, hasFilters());
+  if (state.topics.length) topicPicker.open = true;
   showPanel(searchForm, searchToggle, Boolean(state.q));
   tools.hidden = false;
 }

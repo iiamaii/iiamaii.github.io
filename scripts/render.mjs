@@ -98,10 +98,43 @@ ${content}
 
   function reviewIndex() {
     const u = t.reviewUi;
-    const tabs = [{ id: 'all', name: t.all, count: reviews.length }, ...site.topics.map(topic => ({ ...topic, count: forTopic(topic).length }))];
-    const topicOptions = tabs.map(tab => `<option value="${tab.id}">${esc(tab.name)}</option>`).join('');
+    const topicOptions = site.topics.map(topic => `<label class="topic-option"><input type="checkbox" name="topic" value="${topic.id}"><span data-topic="${topic.id}">${esc(topic.name)}</span><span class="topic-count" aria-hidden="true">${forTopic(topic).length}</span></label>`).join('');
     const records = reviews.map(review => ({ slug: review.slug, topics: review.topics.map(topic => topic.id), publishedAt: review.publishedAt, updatedAt: review.updatedAt, text: `${review.searchText} ${review.topics.map(topic => `${topic.key} ${topic.name}`).join(' ')}` }));
-    const content = `<main id="main" class="reviews-page"><div class="page-heading"><p class="section-kicker"><span class="kicker-number">01</span><span>PAPER REVIEWS</span></p><h1>${lines(t.reviewHeading)}<span class="brand-dot" aria-hidden="true">.</span></h1><p class="page-description">${t.reviewDescription}</p></div><div class="review-toolbar" data-review-tools hidden><div class="review-controls"><div class="review-tool-buttons"><button type="button" class="filter-toggle" data-filter-toggle aria-label="${u.filterToggle}" aria-expanded="false" aria-controls="review-filters">${u.filterToggle}<span class="filter-active" data-filter-active hidden>${u.active}</span><span aria-hidden="true">+</span></button><button type="button" class="filter-toggle" data-search-toggle aria-label="${u.searchToggle}" aria-expanded="false" aria-controls="review-search">${u.searchToggle}<span class="filter-active" data-search-active hidden>${u.active}</span><span aria-hidden="true">+</span></button></div><label class="review-size">${u.size}<select name="size" data-review-size><option value="6">6</option><option value="12" selected>12</option><option value="24">24</option><option value="all">${u.allSizes}</option></select></label></div><form id="review-filters" class="review-filters" data-review-filters action="${href('/reviews/')}" method="get" hidden><label>${u.topic}<select name="topic">${topicOptions}</select></label><label>${u.sort}<select name="sort"><option value="newest">${u.newest}</option><option value="oldest">${u.oldest}</option></select></label><label>${u.from}<input type="datetime-local" name="from" step="60"></label><label>${u.to}<input type="datetime-local" name="to" step="60"></label><div class="filter-actions"><button type="submit" class="button-link">${u.filterApply}</button><button type="button" class="secondary-button" data-reset-filters>${u.filterReset}</button><p>${u.timeHint}</p></div></form><form id="review-search" class="review-filters review-search" data-review-search action="${href('/reviews/')}" method="get" hidden><label class="filter-search">${u.search}<input type="search" name="q" placeholder="${u.searchPlaceholder}"></label><div class="filter-actions"><button type="submit" class="button-link">${u.apply}</button><button type="button" class="secondary-button" data-reset-search>${u.searchReset}</button></div></form><div class="topic-tabs" data-topic-tabs role="tablist" aria-label="${t.topicTabs}">${tabs.map((tab, i) => `<button type="button" role="tab" id="tab-${tab.id}" aria-controls="review-panel" aria-label="${esc(t.tabLabel(tab.name, tab.count))}" aria-selected="${i === 0}" tabindex="${i === 0 ? 0 : -1}" data-topic="${tab.id}">${esc(tab.name)}<span class="tab-count">${tab.count}</span></button>`).join('')}</div></div><p class="collection-count review-result-count" data-review-count aria-live="polite">${t.total(reviews.length)}</p><div id="review-panel" class="review-collection${reviews.length ? '' : ' is-empty'}" tabindex="0" aria-label="${t.reviewList}"><div class="review-grid" data-review-grid>${reviews.map(review => card(review, 'index')).join('')}</div>${reviews.length ? '' : emptyReviews()}<div class="review-no-results" data-no-results hidden><h2>${u.noResults}</h2><p>${u.noResultsHint}</p><button type="button" class="secondary-button" data-clear-search>${u.reset}</button></div></div><nav class="review-pagination" data-review-pagination aria-label="${u.pagination}" hidden><button type="button" class="secondary-button" data-page-previous>${u.previous}</button><span data-review-page aria-live="polite"></span><button type="button" class="secondary-button" data-page-next>${u.next}</button></nav><script id="review-data" type="application/json">${json({ reviews: records, ui: u })}</script></main>`;
+    const content = `<main id="main" class="reviews-page">
+<div class="page-heading"><p class="section-kicker"><span class="kicker-number">01</span><span>PAPER REVIEWS</span></p><h1>${lines(t.reviewHeading)}<span class="brand-dot" aria-hidden="true">.</span></h1><p class="page-description">${t.reviewDescription}</p></div>
+<div class="review-toolbar" data-review-tools hidden>
+  <div class="review-controls">
+    <div class="review-tool-buttons">
+      <button type="button" class="filter-toggle" data-filter-toggle aria-label="${u.filterToggle}" aria-expanded="false" aria-controls="review-filters">${u.filterToggle}<span class="filter-active" data-filter-active hidden>${u.active}</span><span aria-hidden="true">+</span></button>
+      <button type="button" class="filter-toggle" data-search-toggle aria-label="${u.searchToggle}" aria-expanded="false" aria-controls="review-search">${u.searchToggle}<span class="filter-active" data-search-active hidden>${u.active}</span><span aria-hidden="true">+</span></button>
+    </div>
+    <div class="review-list-options">
+      <label class="review-size">${u.sort}<select name="sort" data-review-sort><option value="newest">${u.newest}</option><option value="oldest">${u.oldest}</option></select></label>
+      <label class="review-size">${u.size}<select name="size" data-review-size><option value="6">6</option><option value="12" selected>12</option><option value="24">24</option></select></label>
+    </div>
+  </div>
+  <form id="review-filters" class="review-filters" data-review-filters action="${href('/reviews/')}" method="get" hidden>
+    <details class="topic-picker" data-topic-picker><summary>${u.topic}<span data-topic-selection>${u.allTopics}</span></summary>
+      <fieldset><legend>${u.topic}</legend><p class="topic-hint">${u.topicHint}</p><div class="topic-checklist">${topicOptions || `<p class="topic-hint">${u.noTopics}</p>`}</div><button type="button" class="topic-clear" data-clear-topics>${u.clearTopics}</button></fieldset>
+    </details>
+    <label>${u.from}<input type="datetime-local" name="from" step="60"></label>
+    <label>${u.to}<input type="datetime-local" name="to" step="60"></label>
+    <div class="filter-actions"><button type="submit" class="button-link">${u.filterApply}</button><button type="button" class="secondary-button" data-reset-filters>${u.filterReset}</button><p>${u.timeHint}</p></div>
+  </form>
+  <form id="review-search" class="review-filters review-search" data-review-search action="${href('/reviews/')}" method="get" hidden>
+    <label class="filter-search">${u.search}<input type="search" name="q" placeholder="${u.searchPlaceholder}"></label>
+    <div class="filter-actions"><button type="submit" class="button-link">${u.apply}</button><button type="button" class="secondary-button" data-reset-search>${u.searchReset}</button></div>
+  </form>
+</div>
+<p class="collection-count review-result-count" data-review-count aria-live="polite">${t.total(reviews.length)}</p>
+<div id="review-panel" class="review-collection${reviews.length ? '' : ' is-empty'}" role="region" aria-label="${t.reviewList}">
+  <div class="review-grid" data-review-grid>${reviews.map(review => card(review, 'index')).join('')}</div>
+  ${reviews.length ? '' : emptyReviews()}
+  <div class="review-no-results" data-no-results hidden><h2>${u.noResults}</h2><p>${u.noResultsHint}</p><button type="button" class="secondary-button" data-clear-search>${u.reset}</button></div>
+</div>
+<div class="review-more" data-review-more hidden><p data-load-progress aria-hidden="true"></p><button type="button" class="secondary-button" data-load-more>${u.loadMore}</button></div>
+<script id="review-data" type="application/json">${json({ reviews: records, ui: u })}</script>
+</main>`;
     return page({ title: t.reviews, route: '/reviews/', content, scripts: `<script type="module" src="${versioned('/assets/reviews.js')}"></script>` });
   }
 

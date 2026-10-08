@@ -58,7 +58,7 @@ try {
   assert.equal(records(index).filter(review => review.topics.includes('alpha')).length, 5);
   assert.equal(records(index).filter(review => review.topics.includes('beta')).length, 2);
   assert.ok(home.indexOf('class="home-latest"') < home.indexOf('class="home-profile"'), 'Reviews precede the profile in document order.');
-  assert.ok(!index.includes('data-topic-group="empty"') && !index.includes('data-topic="empty"'), 'Unused topic presets do not create groups or tabs.');
+  assert.ok(!index.includes('data-topic-group="empty"') && !index.includes('data-topic="empty"'), 'Unused topic presets do not create filter choices.');
   for (const name of ['비공개 연구', '비공개 전용', '비공개 비전', '미지정 연구', 'draft-only-topic', 'future-only-topic']) assert.ok(!index.includes(name), 'Only public, ready reviews contribute topics.');
   assert.ok(index.includes('Fixture beta-1 &amp; &quot;question&quot;'), 'Metadata is escaped in cards.');
   assert.ok(article.includes('https://example.org/paper?x=1&amp;y=2'));
@@ -143,10 +143,10 @@ try {
   result = build();
   assert.equal(result.status, 0, result.stderr);
   const dynamicIndex = await read('reviews/index.html');
-  const visionId = dynamicIndex.match(/data-topic="([^"]+)">컴퓨터 비전<span/)?.[1];
-  assert.ok(visionId, 'A topic name in a public post automatically creates a tab without a preset.');
+  const visionId = dynamicIndex.match(/data-topic="([^"]+)">컴퓨터 비전<\/span>/)?.[1];
+  assert.ok(visionId, 'A topic name in a public post automatically creates a checkbox choice without a preset.');
   assert.equal(records(dynamicIndex).filter(review => review.topics.includes(visionId)).length, 2, 'Normalized topics share the same filter id.');
-  assert.ok((await read('en/reviews/index.html')).includes(`data-topic="${visionId}">Computer Vision<span`), 'Translated topic labels share the same filter id.');
+  assert.ok((await read('en/reviews/index.html')).includes(`data-topic="${visionId}">Computer Vision</span>`), 'Translated topic labels share the same filter id.');
   assert.ok((await read('reviews/vision-1/index.html')).includes('/assets/topics/topic-01.svg'), 'New topics have a default thumbnail.');
   const checkNoPrivateContent = async directory => {
     for (const entry of await fs.readdir(directory, { withFileTypes: true })) {
@@ -164,7 +164,7 @@ try {
   await fixture('vision.en', { lang: 'en', translationKey: 'vision-1', topic: '컴퓨터 비전', visibility: 'private' });
   result = build();
   assert.equal(result.status, 0, result.stderr);
-  assert.ok(!(await read('reviews/index.html')).includes(`data-topic="${visionId}"`), 'The last public review becoming private removes its topic tab.');
+  assert.ok(!(await read('reviews/index.html')).includes(`data-topic="${visionId}"`), 'The last public review becoming private removes its topic choice.');
   for (const prefix of ['', 'en/']) await assert.rejects(fs.access(path.join(temp, 'dist', `${prefix}reviews/vision-1/index.html`)), 'Republishing removes previously public article files.');
   assert.ok(!(await read('feed.xml')).includes('/reviews/vision-1/') && !(await read('sitemap.xml')).includes('/reviews/vision-1/'));
   const noPresets = { ...config, topics: [] };
@@ -196,8 +196,8 @@ try {
   assert.equal(result.status, 0, result.stderr);
   const multiIndex = await read('reviews/index.html');
   const multiEnglish = await read('en/reviews/index.html');
-  const machineId = multiIndex.match(/data-topic="([^"]+)">머신러닝<span/)?.[1];
-  const methodId = multiIndex.match(/data-topic="([^"]+)">방법론<span/)?.[1];
+  const machineId = multiIndex.match(/data-topic="([^"]+)">머신러닝<\/span>/)?.[1];
+  const methodId = multiIndex.match(/data-topic="([^"]+)">방법론<\/span>/)?.[1];
   assert.ok(machineId && methodId);
   assert.equal(records(multiIndex).filter(review => review.topics.includes(machineId)).length, 2);
   assert.equal(records(multiIndex).filter(review => review.topics.includes(visionId)).length, 3);
@@ -207,10 +207,12 @@ try {
   assert.equal((multiIndex.match(/data-review-slug="multi-a"/g) || []).length, 1, 'A multi-topic post has exactly one card.');
   const visibleCards = [...multiIndex.matchAll(/<article class="review-card"([^>]*)>/g)].filter(match => !/\bhidden\b/.test(match[1]));
   assert.equal(visibleCards.length, 11, 'All shows each of the 11 unique papers once, even when topics overlap.');
-  assert.ok(multiIndex.includes('data-topic="all">전체<span class="tab-count">11</span>'));
-  assert.ok(multiEnglish.includes(`data-topic="${machineId}">Machine Learning<span class="tab-count">2</span>`));
-  assert.ok(multiEnglish.includes(`data-topic="${visionId}">Computer Vision<span class="tab-count">3</span>`));
-  assert.ok(multiEnglish.includes(`data-topic="${methodId}">Methodology<span class="tab-count">1</span>`));
+  assert.ok(!multiIndex.includes('role="tab"') && !multiIndex.includes('data-topic="all"'), 'Topic tabs and the All tab are removed.');
+  const choices = [...multiIndex.matchAll(/type="checkbox" name="topic" value="([^"]+)"/g)].map(match => match[1]);
+  assert.deepEqual(choices.sort(), [...new Set(records(multiIndex).flatMap(review => review.topics))].sort(), 'Checkbox choices list all and only the public topics once.');
+  assert.ok(multiEnglish.includes(`data-topic="${machineId}">Machine Learning</span>`));
+  assert.ok(multiEnglish.includes(`data-topic="${visionId}">Computer Vision</span>`));
+  assert.ok(multiEnglish.includes(`data-topic="${methodId}">Methodology</span>`));
   for (const html of [multiIndex, await read('index.html')]) {
     const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map(match => match[1]);
     assert.equal(new Set(ids).size, ids.length, 'Every card has a unique accessible title id.');
@@ -276,7 +278,7 @@ try {
   assert.equal(result.status, 0, result.stderr);
   assert.ok((await read('index.html')).includes('아직 공개된 리뷰가 없습니다.'));
   assert.ok((await read('en/reviews/index.html')).includes('No public reviews yet.'));
-  assert.equal(((await read('reviews/index.html')).match(/role="tab"/g) || []).length, 1, 'An empty collection has only the All tab.');
+  assert.equal(((await read('reviews/index.html')).match(/type="checkbox"/g) || []).length, 0, 'An empty collection has no topic choices.');
   assert.ok(!(await read('reviews/index.html')).includes('data-topic-group='));
   await fs.rm(path.join(temp, 'content/reviews'), { recursive: true });
   await fs.rename(path.join(temp, 'content/reviews-saved'), path.join(temp, 'content/reviews'));

@@ -1,4 +1,4 @@
-export const pageSizes = ['6', '12', '24', 'all'];
+export const pageSizes = ['6', '12', '24'];
 export const normalizeSearch = value => String(value).normalize('NFC').toLocaleLowerCase().replace(/\s+/g, ' ').trim();
 
 export function dateTimeValue(value) {
@@ -9,11 +9,11 @@ export function dateTimeValue(value) {
 }
 
 export function readReviewQuery(params, topicIds) {
-  const topic = params.get('topic') || 'all';
+  const selected = new Set(params.getAll('topic'));
   const size = params.get('size') || '12';
   const page = params.get('page') || '1';
   return {
-    topic: topicIds.includes(topic) ? topic : 'all',
+    topics: topicIds.filter(id => id !== 'all' && selected.has(id)),
     q: (params.get('q') || '').trim(),
     from: dateTimeValue(params.get('from')),
     to: dateTimeValue(params.get('to')),
@@ -29,12 +29,15 @@ export function queryReviews(reviews, state) {
   const to = state.to ? Date.parse(`${state.to}:00+09:00`) + 59999 : Infinity;
   const matches = reviews.filter(review => {
     const updated = Date.parse(review.updatedAt);
-    return (state.topic === 'all' || review.topics.includes(state.topic)) && updated >= from && updated <= to && words.every(word => normalizeSearch(review.text).includes(word));
+    return (!state.topics.length || state.topics.some(topic => review.topics.includes(topic))) && updated >= from && updated <= to && words.every(word => normalizeSearch(review.text).includes(word));
   }).sort((a, b) => (state.sort === 'oldest' ? 1 : -1) * (Date.parse(a.updatedAt) - Date.parse(b.updatedAt)) || a.slug.localeCompare(b.slug));
-  const size = state.size === 'all' ? Math.max(1, matches.length) : Number(state.size);
+  return reviewBatch(matches, state);
+}
+
+export function reviewBatch(matches, state) {
+  const size = Number(state.size);
   const pageCount = Math.max(1, Math.ceil(matches.length / size));
   const page = Math.min(state.page, pageCount);
-  const offset = (page - 1) * size;
-  const items = matches.slice(offset, offset + size);
-  return { items, total: matches.length, page, pageCount, start: matches.length ? offset + 1 : 0, end: offset + items.length };
+  const items = matches.slice(0, page * size);
+  return { matches, items, total: matches.length, page, pageCount, end: items.length, hasMore: items.length < matches.length };
 }

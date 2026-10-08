@@ -26,22 +26,36 @@ test('topic, every search word, and an inclusive KST minute range combine', () =
   assert.equal(queryReviews(reviews, read('q=full+body')).total, 7);
 });
 
-test('page size applies to filtered unique papers, page bounds clamp, All shows every match', () => {
+test('multiple topics match any selected topic without duplicating shared papers', () => {
+  const state = read('topic=beta&topic=alpha&topic=beta&topic=unknown&topic=all');
+  assert.deepEqual(state.topics, ['alpha', 'beta']);
+  const result = queryReviews(reviews, state);
+  assert.equal(result.total, 15, 'Topic choices combine with OR, not AND.');
+  assert.equal(new Set(result.items.map(review => review.slug)).size, result.items.length);
+  assert.equal(queryReviews(reviews, read('topic=beta')).total, 7);
+  assert.equal(queryReviews(reviews, read('topic=alpha&topic=beta&q=consistency')).total, 7, 'Word conditions still combine with selected topics.');
+  assert.equal(queryReviews(reviews, read('topic=all')).total, 15, 'Legacy All links show the unfiltered collection.');
+});
+
+test('scroll batches accumulate in order, clamp at the end, and reset with new conditions', () => {
   const first = queryReviews(reviews, read('size=6'));
   const second = queryReviews(reviews, read('size=6&page=2'));
   const last = queryReviews(reviews, read('size=6&page=99'));
-  assert.equal(first.items.length, 6);
-  assert.deepEqual([second.start, second.end, second.pageCount], [7, 12, 3]);
-  assert.deepEqual([last.page, last.start, last.end], [3, 13, 15]);
-  assert.equal(new Set([...first.items, ...second.items, ...last.items].map(review => review.slug)).size, 15);
-  assert.equal(queryReviews(reviews, read('size=all')).items.length, 15);
+  assert.deepEqual([first.items.length, first.hasMore], [6, true]);
+  assert.deepEqual([second.items.length, second.end, second.hasMore], [12, 12, true]);
+  assert.deepEqual(second.items.slice(0, 6), first.items, 'Existing cards keep their order as the next batch is appended.');
+  assert.deepEqual([last.page, last.end, last.hasMore], [3, 15, false]);
+  assert.equal(new Set(last.items.map(review => review.slug)).size, 15);
+  assert.equal(queryReviews(reviews, read('size=all')).items.length, 12, 'Legacy unlimited batches fall back to a bounded batch.');
+  const filtered = queryReviews(reviews, read('size=6&topic=beta'));
+  assert.deepEqual([filtered.total, filtered.end, filtered.hasMore], [7, 6, true]);
   const empty = queryReviews(reviews, read('q=missing&page=4'));
-  assert.deepEqual([empty.page, empty.total, empty.start, empty.end], [1, 0, 0, 0]);
+  assert.deepEqual([empty.page, empty.total, empty.end, empty.hasMore], [1, 0, 0, false]);
 });
 
 test('invalid URL controls fall back safely and reversed ranges yield no matches', () => {
   const state = read('topic=unknown&size=0&page=-1&sort=unknown&from=2020-02-31T12:00&to=bad');
-  assert.deepEqual([state.topic, state.size, state.page, state.sort, state.from, state.to], ['all', '12', 1, 'newest', '', '']);
+  assert.deepEqual([state.topics, state.size, state.page, state.sort, state.from, state.to], [[], '12', 1, 'newest', '', '']);
   assert.equal(queryReviews(reviews, read('from=2020-03-04T12:00&to=2020-03-03T12:00')).total, 0);
 });
 
