@@ -3,7 +3,7 @@ title: "Transformer는 같은 규칙을 왜 더 작게 표현할 수 있을까"
 description: "Transformers are Inherently Succinct를 계산 이력과 작은 검증기의 관점에서 읽는다. 지수·이중 지수 크기 차이의 증명, UHAT의 가정, 검증 난이도와 부록 식의 문제를 정리한다."
 date: "2026-10-09"
 publishedAt: "2026-10-09T00:06:00+09:00"
-updatedAt: "2026-10-09T00:06:00+09:00"
+updatedAt: "2026-10-09T00:31:33+09:00"
 topics: ["language models", "transformer theory", "formal languages", "computational complexity", "formal verification"]
 translationKey: "transformers-inherently-succinct"
 paperTitle: "Transformers are Inherently Succinct"

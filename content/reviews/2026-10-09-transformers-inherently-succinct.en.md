@@ -3,7 +3,7 @@ title: "Why can a Transformer describe the same rules more compactly?"
 description: "A guide to Transformers are Inherently Succinct through long computation histories and small verifiers: size separations, UHAT assumptions, verification complexity, and an appendix connective issue."
 date: "2026-10-09"
 publishedAt: "2026-10-09T00:06:00+09:00"
-updatedAt: "2026-10-09T00:06:00+09:00"
+updatedAt: "2026-10-09T00:31:33+09:00"
 topics: ["language models", "transformer theory", "formal languages", "computational complexity", "formal verification"]
 translationKey: "transformers-inherently-succinct"
 paperTitle: "Transformers are Inherently Succinct"
