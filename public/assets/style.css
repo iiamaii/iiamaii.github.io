@@ -44,6 +44,9 @@
 .review-filters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:14px 0 0;padding:16px;background:#eef0eb;border:1px solid var(--line)}
 .review-filters>label{display:flex;flex-direction:column;gap:6px;min-width:0;font-size:.6875rem;color:#525852}
 .review-filters input:not([type="checkbox"]){width:100%;min-width:0;max-width:100%}
+/* Keep iOS date controls from overriding the field's width and box sizing. */
+.review-filters input[type="datetime-local"]{-webkit-appearance:none;appearance:none;display:block;box-sizing:border-box;inline-size:100%;min-inline-size:0;max-inline-size:100%;height:36px;overflow:hidden;text-align:left}
+.review-filters input[type="datetime-local"]::-webkit-date-and-time-value{min-width:0;max-width:100%;text-align:left}
 .review-search{grid-template-columns:minmax(0,1fr)}
 .filter-search,.topic-picker{grid-column:1/-1}
 .topic-picker{min-width:0}
