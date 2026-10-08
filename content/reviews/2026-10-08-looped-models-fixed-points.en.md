@@ -3,7 +3,7 @@ title: "Can an endpoint replace the recurrent path? Efficiency at fixed points i
 description: "A full-paper review of TBPTT, terminal KV sharing, RL state reuse, and distilled prefill, including the assumptions, appendix controls, quality losses, and end-to-end costs."
 date: "2026-10-08"
 publishedAt: "2026-10-08T16:55:04+09:00"
-updatedAt: "2026-10-08T16:55:04+09:00"
+updatedAt: "2026-10-08T17:32:40+09:00"
 topics: ["language models", "looped models", "fixed points", "efficient inference", "reinforcement learning"]
 translationKey: "looped-models-fixed-points"
 paperTitle: "Towards Looped Models Done Right, Part II: Rethinking at Fixed Points"
@@ -12,11 +12,13 @@ year: "2026"
 paperUrl: "https://arxiv.org/abs/2610.06833v1"
 visibility: "public"
 lang: "en"
-thumbnail: ""
-thumbnailAlt: ""
+thumbnail: "/assets/reviews/looped-models-fixed-points/paper-figure-1.svg"
+thumbnailAlt: "Paper Figure 1 connecting the depth prior and orthogonal input injection to fixed-point endpoints and savings in training activations, KV cache, prefill, and RL scoring plus backward."
 ---
 
 If a looped language model repeatedly applies the same computation until its state barely changes, must it keep and replay **the entire path to that endpoint**? This paper treats fixed points as states that can replace parts of a computational trajectory. It connects this view to backpropagation, inference KV caches, reinforcement-learning replay, and prompt processing. Cache savings, faster updates, and faster prefill are separate experiments, with separate costs in quality and total runtime. [§1–3, §5, PDF pp. 1–13](https://arxiv.org/pdf/2610.06833v1#page=1)
+
+**Figure 1 · How to read the representative figure.** The left panel presents two training improvements, the learned depth prior and OrthoInj. The center contrasts the recurrent path with an endpoint near a fixed point. The right panel summarizes four computational shortcuts. Its bars report separate experiments, not cumulative speedups from one combined system. In particular, the RL 2× refers to scoring and backward, not total training time. [Benhao Huang et al., 2026, Figure 1](https://arxiv.org/html/2610.06833v1#S0.F1) · [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) · Original retained · [View full size](/assets/reviews/looped-models-fixed-points/paper-figure-1.svg).
 
 ## The question
 
@@ -252,5 +254,5 @@ A useful next experiment would vary `R`, the TBPTT window, and prefix residual o
 - Focal paper: Benhao Huang, Chufan Shi, Junlin Chen, Shicheng Wen, Zhengzhong Liu, Eric Xing, and Xuezhe Ma, **Towards Looped Models Done Right, Part II: Rethinking at Fixed Points** (2026), [arXiv:2610.06833v1](https://arxiv.org/abs/2610.06833v1), submitted October 5, 2026; reviewed October 8, 2026.
 - Reading scope: all explanatory text, equations, algorithms, experimental protocols, and tables in main §1–7 and Appendices A–E of the 47-page PDF, cross-checked with the authors' submitted TeX. Core figures and cited table/equation pages were visually inspected; this does not claim visual QA of every page. Appendices missing after C.1 in the [HTML](https://arxiv.org/html/2610.06833v1) were recovered from the PDF and submitted source.
 - Additional sources: official abstracts/metadata of the four background papers above and the [official implementation README](https://github.com/ifm-ai/xllm-loop). Code and checkpoints were not executed. Detailed related-work claims without a primary-paper rereading are attributed to the focal paper.
-- Figure sources: original Figures 2, 3, and 4, with source links and explanations at their respective locations; [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Tables select and reorganize reported values; speedup ratios and differences were calculated from those values.
+- Figure sources: original Figures 1, 2, 3, and 4, with source links and explanations at their respective locations; [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Tables select and reorganize reported values; speedup ratios and differences were calculated from those values.
 - **Not executed:** GPU training/inference reproduction, code/checkpoint execution checks, numerical gradient checks, independent reconstruction and assumption audit of the proofs, additional-seed experiments, and contamination checks. Numerical results are the authors' reports, not independently reproduced observations.

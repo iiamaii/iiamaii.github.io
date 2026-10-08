@@ -3,7 +3,7 @@ title: "끝점으로 반복 경로를 대신할 수 있을까: Looped Models와 
 description: "고정점 관점으로 TBPTT·KV 공유·RL 상태 재사용·distilled prefill을 분석한다. 전문과 부록을 읽고, 업데이트 가속과 전체 시간·정확도 손실을 구분한다."
 date: "2026-10-08"
 publishedAt: "2026-10-08T16:55:04+09:00"
-updatedAt: "2026-10-08T16:55:04+09:00"
+updatedAt: "2026-10-08T17:32:40+09:00"
 topics: ["language models", "looped models", "fixed points", "efficient inference", "reinforcement learning"]
 translationKey: "looped-models-fixed-points"
 paperTitle: "Towards Looped Models Done Right, Part II: Rethinking at Fixed Points"
@@ -12,11 +12,13 @@ year: "2026"
 paperUrl: "https://arxiv.org/abs/2610.06833v1"
 visibility: "public"
 lang: "ko"
-thumbnail: ""
-thumbnailAlt: ""
+thumbnail: "/assets/reviews/looped-models-fixed-points/paper-figure-1.svg"
+thumbnailAlt: "깊이 분포와 직교 입력 주입, 고정점 근처의 반복 궤적, 학습 activation·KV 캐시·prefill·RL 채점과 역전파의 비용 절감을 연결한 논문 Figure 1."
 ---
 
 반복형 언어 모델이 같은 계산을 거듭하다가 거의 변하지 않는 상태에 도달한다면, 그곳까지의 **모든 계산 경로를 계속 보관하고 다시 실행해야 할까?** 이 논문은 고정점을 ‘계산을 멈출 위치’뿐 아니라 ‘계산 경로를 대신할 상태’로 바라본다. 학습의 역전파, 추론의 KV 캐시, 강화학습의 재계산, 긴 프롬프트의 처리에 이 관점을 적용한다. 다만 캐시 절감, 업데이트 가속, prefill 가속은 서로 다른 실험이며, 정확도와 전체 실행 시간의 대가는 각각 확인해야 한다. [§1–3, §5, PDF pp. 1–13](https://arxiv.org/pdf/2610.06833v1#page=1)
+
+**Figure 1 · 대표 그림을 읽는 법.** 왼쪽은 learned depth prior와 OrthoInj라는 두 학습 개선 방향, 가운데는 반복 경로와 고정점 근처의 끝점, 오른쪽은 그 상태를 활용하는 네 가지 비용 절감을 연결한다. 오른쪽 막대는 서로 다른 실험의 보고값이며, 네 기법을 결합한 누적 가속이 아니다. 특히 RL의 2배는 전체 학습이 아니라 채점·역전파 구간이다. [Benhao Huang et al., 2026, Figure 1](https://arxiv.org/html/2610.06833v1#S0.F1) · [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) · 원본 유지 · [크게 보기](/assets/reviews/looped-models-fixed-points/paper-figure-1.svg).
 
 ## 어떤 질문에서 출발했는가
 
@@ -252,5 +254,5 @@ Appendix E는 Ouro·MELT·continuous depth batching의 KV 공유 결과가 모�
 - 원문: Benhao Huang, Chufan Shi, Junlin Chen, Shicheng Wen, Zhengzhong Liu, Eric Xing, Xuezhe Ma, **Towards Looped Models Done Right, Part II: Rethinking at Fixed Points** (2026), [arXiv:2610.06833v1](https://arxiv.org/abs/2610.06833v1). 제출일 2026-10-05. 검토일 2026-10-08.
 - 검토 범위: 47쪽 PDF의 본문 §1–7, Appendix A–E의 전체 설명·수식·알고리즘·실험 protocol과 표를 읽고 저자 제출 TeX와 대조했다. 그림은 본문 핵심 그림과 인용한 표·수식의 PDF 화면을 확인했다. 모든 47쪽의 시각적 검수를 했다는 의미는 아니다. [HTML](https://arxiv.org/html/2610.06833v1)에서 빠진 C.2 이후 부록은 PDF·제출 소스로 보완했다.
 - 추가 출처: 위 네 배경 논문의 공식 초록·서지 정보, [공식 코드 저장소 README](https://github.com/ifm-ai/xllm-loop). 코드 실행과 checkpoint 검증은 하지 않았다. 관련 연구의 세부 비교 중 원문을 직접 읽지 않은 부분은 focal paper의 해석으로 표시했다.
-- 그림 출처: 원문 Figure 2·3·4. 각 그림의 연결 위치에서 원문과 해설을 안내한다. [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). 표는 원문 수치 중 필요한 비교를 골라 재구성했고, 가속 비율·차이는 그 수치로 계산했다.
+- 그림 출처: 대표 이미지인 원문 Figure 1과 본문 해설의 Figure 2·3·4. 각 그림의 연결 위치에서 원문과 해설을 안내한다. [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). 표는 원문 수치 중 필요한 비교를 골라 재구성했고, 가속 비율·차이는 그 수치로 계산했다.
 - **미실행 검증:** GPU 학습·추론 재현, 공개 코드와 checkpoint의 실행 검증, gradient 수치 검사, 독립적인 증명 전개·가정 감사, 추가 seed 실험, 데이터 오염 검사. 본문 수치는 저자 보고 결과이며 직접 관측한 재현 결과가 아니다.
