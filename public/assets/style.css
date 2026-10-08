@@ -30,14 +30,14 @@
 .reviews-page .page-heading{padding:32px 0 26px}
 .reviews-page .page-heading h1{font-size:clamp(1.8rem,3.2vw,2.6rem);margin-top:15px}
 .review-toolbar{display:block;padding:16px 0}
-.review-controls,.review-list-options,.review-tool-buttons{display:flex;align-items:center;flex-wrap:wrap}
+.review-controls,.review-list-options,.review-tool-buttons{display:flex;align-items:center;flex-wrap:nowrap}
 .review-controls{justify-content:space-between;gap:12px}
-.review-list-options{gap:18px}
-.review-tool-buttons{gap:8px}
+.review-list-options{gap:18px;min-width:0;margin-left:auto}
+.review-tool-buttons{gap:8px;flex-shrink:0}
 .reviews-page .button-link,.reviews-page .secondary-button,.reviews-page .filter-toggle{min-height:36px;padding:7px 13px;font-size:.75rem;gap:10px}
 .filter-toggle[aria-expanded="true"]{border-color:var(--blue);color:var(--blue)}
-.filter-active{font-size:.5625rem;color:var(--blue)}
-.review-size{display:flex;align-items:center;gap:8px;font-size:.6875rem;color:var(--muted)}
+.reviews-page .icon-toggle{position:relative;width:36px;min-width:36px;height:36px;padding:0;gap:0}.icon-toggle svg{display:block;flex-shrink:0}.icon-toggle[aria-describedby]{border-color:var(--blue);color:var(--blue)}.filter-active{position:absolute;top:4px;right:4px;width:5px;height:5px;border-radius:50%;background:var(--blue)}.visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+.review-size{display:flex;align-items:center;gap:8px;min-width:0;font-size:.6875rem;color:var(--muted);white-space:nowrap}
 .review-size select,.review-filters input:not([type="checkbox"]){border:1px solid var(--line);border-radius:0;min-height:36px;padding:7px 10px;background:var(--surface);color:var(--ink);font:inherit;font-size:.75rem;line-height:1.5}
 .review-size select{min-width:65px;max-width:100%}
 .review-size select:focus-visible,.review-filters input:focus-visible,.topic-picker summary:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
@@ -78,5 +78,5 @@
 @media(max-width:900px){.home-latest .review-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}.home-profile-layout{gap:32px}.home-profile .philosophy-text{font-size:.9375rem}.topic-checklist{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){
 .home-page{padding:25px 0 47px}.home-latest .review-grid{grid-template-columns:minmax(0,1fr);gap:20px}.latest-heading{padding:19px 0 25px}.latest-heading h1{font-size:1.75rem}.latest-heading p{font-size:.8125rem}.home-latest .card-copy{padding:20px}.home-latest .card-copy h3{font-size:1.25rem}.home-latest .card-copy>p{font-size:.8125rem}.home-profile{margin-top:38px;padding-top:25px}.home-profile-layout{grid-template-columns:minmax(0,1fr);gap:27px}.home-profile .philosophy-copy h2{font-size:2rem}
-.reviews-page .page-heading{padding:26px 0 22px}.reviews-page .page-heading h1{font-size:2rem}.review-controls{gap:12px}.review-list-options{width:100%;justify-content:space-between;gap:8px}.review-size{font-size:.6875rem}.review-size select{min-height:38px}.reviews-page .filter-toggle,.reviews-page .button-link,.reviews-page .secondary-button{min-height:38px}.review-filters{grid-template-columns:minmax(0,1fr);padding:12px;gap:12px}.review-filters input:not([type="checkbox"]){min-height:38px}.topic-picker summary{min-height:38px}.topic-checklist{grid-template-columns:minmax(0,1fr);max-height:220px}.topic-option{min-height:36px}.filter-actions p{width:100%;margin-left:0}.review-result-count{margin-top:14px}
+.reviews-page .page-heading{padding:26px 0 22px}.reviews-page .page-heading h1{font-size:2rem}.review-controls{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px}.review-tool-buttons{gap:6px}.review-list-options{display:grid;grid-template-columns:minmax(0,1fr) 64px;gap:6px;width:auto;margin-left:0}.review-size{display:block;font-size:.6875rem}.review-size>span{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}.review-size select{width:100%;min-width:0;min-height:38px;padding:7px 8px}.reviews-page .icon-toggle{width:38px;min-width:38px;height:38px}.reviews-page .filter-toggle,.reviews-page .button-link,.reviews-page .secondary-button{min-height:38px}.review-filters{grid-template-columns:minmax(0,1fr);padding:12px;gap:12px}.review-filters input:not([type="checkbox"]){min-height:38px}.topic-picker summary{min-height:38px}.topic-checklist{grid-template-columns:minmax(0,1fr);max-height:220px}.topic-option{min-height:36px}.filter-actions p{width:100%;margin-left:0}.review-result-count{margin-top:14px}
 }

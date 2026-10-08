@@ -30,7 +30,6 @@ if (data) {
   function showPanel(form, toggle, open) {
     form.hidden = !open;
     toggle.setAttribute('aria-expanded', String(open));
-    toggle.lastElementChild.textContent = open ? '−' : '+';
   }
 
   const hasFilters = () => Boolean(state.from || state.to || state.topics.length);
@@ -76,8 +75,16 @@ if (data) {
     if (changedFields.some(name => name === 'from' || name === 'to')) filterForm.elements.namedItem('to').setCustomValidity('');
     size.value = state.size;
     sort.value = state.sort;
-    document.querySelector('[data-filter-active]').hidden = !hasFilters();
-    document.querySelector('[data-search-active]').hidden = !state.q;
+    sort.title = state.sort === 'oldest' ? ui.oldest : ui.newest;
+    for (const [toggle, badge, active, label] of [
+      [filterToggle, document.querySelector('[data-filter-active]'), hasFilters(), ui.filterToggle],
+      [searchToggle, document.querySelector('[data-search-active]'), Boolean(state.q), ui.searchToggle]
+    ]) {
+      badge.hidden = !active;
+      if (active) toggle.setAttribute('aria-describedby', badge.id);
+      else toggle.removeAttribute('aria-describedby');
+      toggle.title = active ? `${label} · ${ui.active}` : label;
+    }
     more.hidden = !result.hasMore;
     document.querySelector('[data-load-progress]').textContent = message(ui.range, result);
     if (historyMode) syncUrl(historyMode);

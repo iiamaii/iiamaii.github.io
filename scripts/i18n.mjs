@@ -19,9 +19,9 @@ export const copy = {
     profileLink: '내 프로필 보기', collectionTitle: '논문으로 이어지는 질문들.', collectionIntro: '주제별로 읽고, 생각하고, 남긴 기록.', allReviews: '전체 리뷰',
     latestIntro: n => `최근 업데이트한 논문 리뷰 ${n}편을 모았습니다.`, moreReviews: '더보기', updated: '업데이트',
     reviewUi: {
-      filterToggle: '필터', searchToggle: '검색', size: '한 번에', search: '단어 검색', searchPlaceholder: '제목, 요약, 본문, 저자에서 검색',
+      filterToggle: '필터', searchToggle: '검색', size: '표시 개수', sizeUnit: '개', search: '단어 검색', searchPlaceholder: '제목, 요약, 본문, 저자에서 검색',
       topic: '주제 선택', allTopics: '모든 주제', selectedTopics: '{count}개 선택', clearTopics: '선택 해제', noTopics: '아직 공개된 주제가 없습니다.', topicHint: '선택한 주제 중 하나라도 포함된 리뷰를 표시합니다. 선택하지 않으면 전체를 표시합니다.', from: '업데이트 시작', to: '업데이트 종료', timeHint: '시간은 한국 시간(KST) 기준입니다.',
-      sort: '정렬', newest: '최근 업데이트순', oldest: '오래된 업데이트순', filterApply: '필터 적용', filterReset: '필터 초기화', apply: '검색 적용', searchReset: '검색 초기화', reset: '초기화',
+      sort: '정렬', newest: '최근 업데이트순', oldest: '오래된 업데이트순', newestShort: '최신순', oldestShort: '오래된순', filterApply: '필터 적용', filterReset: '필터 초기화', apply: '검색 적용', searchReset: '검색 초기화', reset: '초기화',
       noResults: '조건에 맞는 리뷰가 없습니다.', noResultsHint: '검색어를 바꾸거나 필터를 초기화해 보세요.',
       range: '전체 {total}편 중 {end}편 표시', zero: '검색 결과 0편', loadMore: '더 불러오기', rangeError: '종료 시간은 시작 시간 이후로 선택해 주세요.', active: '적용 중'
     },
@@ -42,9 +42,9 @@ export const copy = {
     profileLink: 'About me', collectionTitle: 'Questions carried by papers.', collectionIntro: 'Reading, thinking, and taking notes by topic.', allReviews: 'All reviews',
     latestIntro: n => `The ${n} most recently updated paper review${n === 1 ? '' : 's'}.`, moreReviews: 'View more', updated: 'Updated',
     reviewUi: {
-      filterToggle: 'Filter', searchToggle: 'Search', size: 'Batch size', search: 'Word search', searchPlaceholder: 'Search titles, summaries, full text, and authors',
+      filterToggle: 'Filter', searchToggle: 'Search', size: 'Reviews shown', sizeUnit: '', search: 'Word search', searchPlaceholder: 'Search titles, summaries, full text, and authors',
       topic: 'Choose topics', allTopics: 'All topics', selectedTopics: '{count} selected', clearTopics: 'Clear selection', noTopics: 'No public topics yet.', topicHint: 'Reviews matching any selected topic are included. Leave unchecked to show all.', from: 'Updated from', to: 'Updated through', timeHint: 'Times are in Korea Standard Time (KST).',
-      sort: 'Sort by', newest: 'Recently updated', oldest: 'Oldest update first', filterApply: 'Apply filters', filterReset: 'Reset filters', apply: 'Apply search', searchReset: 'Reset search', reset: 'Reset',
+      sort: 'Sort by', newest: 'Recently updated', oldest: 'Oldest update first', newestShort: 'Newest', oldestShort: 'Oldest', filterApply: 'Apply filters', filterReset: 'Reset filters', apply: 'Apply search', searchReset: 'Reset search', reset: 'Reset',
       noResults: 'No matching reviews.', noResultsHint: 'Try different words or reset the filters.',
       range: 'Showing {end} of {total}', zero: '0 matching reviews', loadMore: 'Load more', rangeError: 'Choose an end time on or after the start time.', active: 'Active'
     },

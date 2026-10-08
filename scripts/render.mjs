@@ -105,12 +105,12 @@ ${content}
 <div class="review-toolbar" data-review-tools hidden>
   <div class="review-controls">
     <div class="review-tool-buttons">
-      <button type="button" class="filter-toggle" data-filter-toggle aria-label="${u.filterToggle}" aria-expanded="false" aria-controls="review-filters">${u.filterToggle}<span class="filter-active" data-filter-active hidden>${u.active}</span><span aria-hidden="true">+</span></button>
-      <button type="button" class="filter-toggle" data-search-toggle aria-label="${u.searchToggle}" aria-expanded="false" aria-controls="review-search">${u.searchToggle}<span class="filter-active" data-search-active hidden>${u.active}</span><span aria-hidden="true">+</span></button>
+      <button type="button" class="filter-toggle icon-toggle" data-filter-toggle aria-label="${u.filterToggle}" title="${u.filterToggle}" aria-expanded="false" aria-controls="review-filters"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 5h16l-6.5 7.5V19l-3-1.5v-5z"/></svg><span id="filter-status" class="filter-active" data-filter-active hidden><span class="visually-hidden">${u.active}</span></span></button>
+      <button type="button" class="filter-toggle icon-toggle" data-search-toggle aria-label="${u.searchToggle}" title="${u.searchToggle}" aria-expanded="false" aria-controls="review-search"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/></svg><span id="search-status" class="filter-active" data-search-active hidden><span class="visually-hidden">${u.active}</span></span></button>
     </div>
     <div class="review-list-options">
-      <label class="review-size">${u.sort}<select name="sort" data-review-sort><option value="newest">${u.newest}</option><option value="oldest">${u.oldest}</option></select></label>
-      <label class="review-size">${u.size}<select name="size" data-review-size><option value="6">6</option><option value="12" selected>12</option><option value="24">24</option></select></label>
+      <label class="review-size"><span>${u.sort}</span><select name="sort" data-review-sort aria-label="${u.sort}" title="${u.newest}"><option value="newest">${u.newestShort}</option><option value="oldest">${u.oldestShort}</option></select></label>
+      <label class="review-size"><span>${u.size}</span><select name="size" data-review-size aria-label="${u.size}" title="${u.size}"><option value="6">6${u.sizeUnit}</option><option value="12" selected>12${u.sizeUnit}</option><option value="24">24${u.sizeUnit}</option></select></label>
     </div>
   </div>
   <form id="review-filters" class="review-filters" data-review-filters action="${href('/reviews/')}" method="get" hidden>
