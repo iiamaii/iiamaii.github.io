@@ -91,3 +91,7 @@
 @media(max-width:600px){.stat-network .node-label{display:none}.stat-network .node-number{font-size:28px}.stat-network .edge-weight{font-size:28px}.network-legend{font-size:12px}}
 
 .site-footer .footer-github{display:grid;place-items:center;flex:0 0 40px;width:40px;height:40px;margin-right:-9px;color:var(--muted);border-radius:3px}.site-footer .footer-github:hover{color:var(--ink);background:var(--soft)}.footer-github svg{display:block}
+
+/* Keep page tabs on one row, including narrow mobile screens. */
+.site-header .main-nav{display:flex;flex-wrap:nowrap;min-width:0;overflow-x:auto;scrollbar-width:none}.site-header .main-nav::-webkit-scrollbar{display:none}.site-header .main-nav>a{flex:0 0 auto;white-space:nowrap}
+@media(max-width:760px){.site-header .main-nav{flex-basis:100%;gap:clamp(8px,2.5vw,12px);font-size:clamp(11px,3.6vw,13px)}}
