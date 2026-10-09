@@ -33,7 +33,9 @@ ${availableLanguages.map(language => `<link rel="alternate" hreflang="${language
 <meta property="og:site_name" content="${esc(site.title)}"><meta property="og:url" content="${esc(absolute(route))}">
 <meta property="og:image" content="${esc(new URL(asset(site.hero.image), config.url).href)}">
 ${published ? `<meta property="article:published_time" content="${esc(published)}"><meta property="article:modified_time" content="${esc(modified || published)}">` : ''}
-<link rel="icon" type="image/svg+xml" href="${asset('/favicon.svg')}">
+<link rel="icon" type="image/png" sizes="32x32" href="${versioned('/assets/favicon-32.png')}">
+<link rel="icon" type="image/png" sizes="64x64" href="${versioned('/assets/favicon-64.png')}">
+<link rel="shortcut icon" href="${versioned('/favicon.ico')}">
 <script src="${versioned('/assets/theme.js')}"></script>
 <link rel="stylesheet" href="${versioned('/assets/style.css')}">
 <link rel="alternate" type="application/rss+xml" title="${esc(site.title)}" href="${href('/feed.xml')}">
@@ -53,7 +55,7 @@ ${scripts}
 </div>
 </header>
 ${content}
-<footer class="site-footer"><span class="footer-brand">${esc(site.author)}<span class="brand-dot" aria-hidden="true">.</span></span><p>PROFILE · PHILOSOPHY · PAPER REVIEWS</p><span class="copyright">© ${new Date().getFullYear()}</span><a class="footer-github" href="${esc(site.githubPage || site.github)}" target="_blank" rel="noopener noreferrer" aria-label="GitHub (${t.newTab})" title="GitHub"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true" focusable="false"><path d="M12 .75a11.25 11.25 0 0 0-3.558 21.923c.563.104.768-.244.768-.543 0-.267-.01-.975-.015-1.914-3.13.68-3.79-1.509-3.79-1.509-.512-1.3-1.25-1.646-1.25-1.646-1.023-.7.077-.686.077-.686 1.13.08 1.725 1.16 1.725 1.16 1.006 1.724 2.64 1.226 3.283.938.102-.73.394-1.226.716-1.508-2.5-.284-5.13-1.25-5.13-5.566 0-1.23.44-2.235 1.16-3.023-.116-.285-.503-1.43.11-2.98 0 0 .945-.303 3.094 1.155A10.78 10.78 0 0 1 12 6.172c.956.005 1.92.13 2.82.38 2.148-1.458 3.091-1.155 3.091-1.155.615 1.55.228 2.695.112 2.98.722.788 1.158 1.794 1.158 3.023 0 4.327-2.634 5.28-5.144 5.559.405.35.766 1.043.766 2.1 0 1.517-.014 2.74-.014 3.112 0 .302.203.653.774.542A11.252 11.252 0 0 0 12 .75Z"/></svg></a></footer>
+<footer class="site-footer"><span class="footer-brand">${esc(site.author.toUpperCase())}<span class="brand-dot" aria-hidden="true">.</span></span><p>PROFILE · PHILOSOPHY · PAPER REVIEWS</p><span class="copyright">© ${new Date().getFullYear()}</span><a class="footer-github" href="${esc(site.githubPage || site.github)}" target="_blank" rel="noopener noreferrer" aria-label="GitHub (${t.newTab})" title="GitHub"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true" focusable="false"><path d="M12 .75a11.25 11.25 0 0 0-3.558 21.923c.563.104.768-.244.768-.543 0-.267-.01-.975-.015-1.914-3.13.68-3.79-1.509-3.79-1.509-.512-1.3-1.25-1.646-1.25-1.646-1.023-.7.077-.686.077-.686 1.13.08 1.725 1.16 1.725 1.16 1.006 1.724 2.64 1.226 3.283.938.102-.73.394-1.226.716-1.508-2.5-.284-5.13-1.25-5.13-5.566 0-1.23.44-2.235 1.16-3.023-.116-.285-.503-1.43.11-2.98 0 0 .945-.303 3.094 1.155A10.78 10.78 0 0 1 12 6.172c.956.005 1.92.13 2.82.38 2.148-1.458 3.091-1.155 3.091-1.155.615 1.55.228 2.695.112 2.98.722.788 1.158 1.794 1.158 3.023 0 4.327-2.634 5.28-5.144 5.559.405.35.766 1.043.766 2.1 0 1.517-.014 2.74-.014 3.112 0 .302.203.653.774.542A11.252 11.252 0 0 0 12 .75Z"/></svg></a></footer>
 </div>
 </body></html>`;
   }

@@ -1,5 +1,5 @@
 {
-  "title": "연구노트",
+  "title": "IIAMAII",
   "description": "iiamaii의 프로필과 주제별 논문 리뷰를 모으는 연구 공간.",
   "author": "iiamaii",
   "github": "https://github.com/iiamaii",
@@ -30,7 +30,7 @@
   "topics": [],
   "translations": {
     "en": {
-      "title": "Research Notes",
+      "title": "IIAMAII",
       "description": "A personal space for iiamaii's profile and paper reviews, organized by topic.",
       "profile": { "name": "iiamaii", "headline": "", "bio": "", "interests": [] },
       "philosophy": { "title": "My philosophy", "text": "" },

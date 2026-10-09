@@ -148,7 +148,7 @@ await Promise.all(publicConfig.topics.map(topic => checkImage(topic.thumbnail)))
 
 const analyses = await loadAnalyses(path.join(root, 'content/statistics'), new Set(pairs.keys()), now);
 
-const assetBuffers = await Promise.all(['style.css', 'site.js', 'theme.js', 'reviews.js', 'review-query.js', 'statistics.js'].map(file => fs.readFile(path.join(root, 'public/assets', file))));
+const assetBuffers = await Promise.all(['style.css', 'site.js', 'theme.js', 'reviews.js', 'review-query.js', 'statistics.js', 'favicon-32.png', 'favicon-64.png'].map(file => fs.readFile(path.join(root, 'public/assets', file))));
 const assetVersion = createHash('sha256').update(Buffer.concat(assetBuffers)).digest('hex').slice(0, 12);
 await fs.rm(out, { recursive: true, force: true });
 await fs.mkdir(out, { recursive: true });
