@@ -1,9 +1,9 @@
 ---
-title: "LeJEPA explained: align image views, match a Gaussian distribution"
+title: "[1/3] LeJEPA explained: align image views, match a Gaussian distribution"
 description: "An accessible explanation of collapse, view agreement and Gaussian matching, with figures and carefully scoped experimental evidence."
 date: "2026-10-09"
 publishedAt: "2026-10-09T23:54:43+09:00"
-updatedAt: "2026-10-09T23:54:43+09:00"
+updatedAt: "2026-10-09T23:59:49+09:00"
 topics: ["self-supervised learning", "representation learning", "joint embedding predictive architectures", "distribution matching", "computer vision"]
 visibility: "public"
 lang: "en"

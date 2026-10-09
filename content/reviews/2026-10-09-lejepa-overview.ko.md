@@ -1,9 +1,9 @@
 ---
-title: "LeJEPA 입문: 같은 이미지는 가깝게, 표현 분포는 Gaussian으로"
+title: "[1/3] LeJEPA 입문: 같은 이미지는 가깝게, 표현 분포는 Gaussian으로"
 description: "표현 붕괴와 두 손실의 역할을 쉽게 설명하고, Gaussian 목표·임의 투영·주요 실험을 그림과 함께 읽는다."
 date: "2026-10-09"
 publishedAt: "2026-10-09T23:54:43+09:00"
-updatedAt: "2026-10-09T23:54:43+09:00"
+updatedAt: "2026-10-09T23:59:49+09:00"
 topics: ["self-supervised learning", "representation learning", "joint embedding predictive architectures", "distribution matching", "computer vision"]
 visibility: "public"
 lang: "ko"

@@ -1,9 +1,9 @@
 ---
-title: "LeJEPA 기술 심층 리뷰: 증명 조건, SIGReg와 수식 검토"
+title: "[3/3] LeJEPA 기술 심층 리뷰: 증명 조건, SIGReg와 수식 검토"
 description: "Gaussian 최소성, 투영 식별, ECF gradient·표본 bias·계산 비용을 분석하고 원문 거리 손실의 누락 항을 확인한다."
 date: "2026-10-09"
 publishedAt: "2026-10-09T23:54:43+09:00"
-updatedAt: "2026-10-09T23:54:43+09:00"
+updatedAt: "2026-10-09T23:59:47+09:00"
 topics: ["self-supervised learning", "representation learning", "joint embedding predictive architectures", "distribution matching", "computer vision"]
 visibility: "public"
 lang: "ko"

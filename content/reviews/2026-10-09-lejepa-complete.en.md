@@ -1,9 +1,9 @@
 ---
-title: "LeJEPA in full: from target distribution to theory, algorithm and experiments"
+title: "[2/3] LeJEPA in full: from target distribution to theory, algorithm and experiments"
 description: "A connected review of the 50-page paper: problem, related work, target distribution, SIGReg, training, experiments and limitations."
 date: "2026-10-09"
 publishedAt: "2026-10-09T23:54:43+09:00"
-updatedAt: "2026-10-09T23:54:43+09:00"
+updatedAt: "2026-10-09T23:59:48+09:00"
 topics: ["self-supervised learning", "representation learning", "joint embedding predictive architectures", "distribution matching", "computer vision"]
 visibility: "public"
 lang: "en"

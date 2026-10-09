@@ -1,9 +1,9 @@
 ---
-title: "LeJEPA 전체 해설: 목표 분포에서 이론·알고리즘·실험까지"
+title: "[2/3] LeJEPA 전체 해설: 목표 분포에서 이론·알고리즘·실험까지"
 description: "50쪽 논문을 문제·관련 연구·목표 분포·SIGReg·학습 구조·실험·한계 순서로 연결해 설명한다."
 date: "2026-10-09"
 publishedAt: "2026-10-09T23:54:43+09:00"
-updatedAt: "2026-10-09T23:54:43+09:00"
+updatedAt: "2026-10-09T23:59:48+09:00"
 topics: ["self-supervised learning", "representation learning", "joint embedding predictive architectures", "distribution matching", "computer vision"]
 visibility: "public"
 lang: "ko"

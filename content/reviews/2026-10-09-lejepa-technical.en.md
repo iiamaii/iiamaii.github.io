@@ -1,9 +1,9 @@
 ---
-title: "LeJEPA technical review: proof conditions, SIGReg and checked equations"
+title: "[3/3] LeJEPA technical review: proof conditions, SIGReg and checked equations"
 description: "Examines Gaussian minimality, projected identification, ECF gradients and bias, computational cost and a missing term in the distance-loss derivation."
 date: "2026-10-09"
 publishedAt: "2026-10-09T23:54:43+09:00"
-updatedAt: "2026-10-09T23:54:43+09:00"
+updatedAt: "2026-10-09T23:59:47+09:00"
 topics: ["self-supervised learning", "representation learning", "joint embedding predictive architectures", "distribution matching", "computer vision"]
 visibility: "public"
 lang: "en"
