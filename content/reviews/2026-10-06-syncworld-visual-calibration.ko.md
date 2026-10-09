@@ -2,13 +2,14 @@
 title: "카메라가 바뀌어도 행동을 읽을 수 있을까: SyncWorld와 시각 보정"
 description: "짧은 행동·영상 문맥으로 새 로봇 설정에 적응하는 SyncWorld를 살펴본다. 영상 예측의 개선과 정책 성공률을 구분하고, 관련 연구 10편을 통해 전이와 실행 비용의 남은 질문을 정리한다."
 date: "2026-10-06"
-updatedAt: "2026-10-09T01:32:41Z"
+updatedAt: "2026-10-09T05:04:32Z"
 topics: ["world action model", "robot learning", "world simulation", "in-context learning", "visual calibration"]
 visibility: "public"
 lang: "ko"
 translationKey: "syncworld-visual-calibration"
 paperTitle: "SyncWorld: Visual Calibration Enables World Models as Zero-Shot Simulators"
-authors: "Yuncong Yang, Zhengtao Han, Furkan Ozyurt, Zeyuan Yang, Han Yang, Junyi Cao, Haoyu Zhen, Yilun Du, Chuang Gan"
+paperPublishedDate: "2026-09-08"
+authors: ["Yuncong Yang", "Zhengtao Han", "Furkan Ozyurt", "Zeyuan Yang", "Han Yang", "Junyi Cao", "Haoyu Zhen", "Yilun Du", "Chuang Gan"]
 year: "2026"
 paperUrl: "https://arxiv.org/abs/2609.09155v1"
 thumbnail: "/assets/reviews/syncworld/paper-figure-2.webp"

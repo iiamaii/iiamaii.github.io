@@ -2,12 +2,13 @@
 title: "Can an endpoint replace the recurrent path? Efficiency at fixed points in looped models"
 description: "A full-paper review of TBPTT, terminal KV sharing, RL state reuse, and distilled prefill, including the assumptions, appendix controls, quality losses, and end-to-end costs."
 date: "2026-10-08"
+updatedAt: "2026-10-09T05:04:32Z"
 publishedAt: "2026-10-08T16:55:04+09:00"
-updatedAt: "2026-10-08T19:14:08+09:00"
 topics: ["language models", "looped models", "fixed points", "efficient inference", "reinforcement learning"]
 translationKey: "looped-models-fixed-points"
 paperTitle: "Towards Looped Models Done Right, Part II: Rethinking at Fixed Points"
-authors: "Benhao Huang, Chufan Shi, Junlin Chen, Shicheng Wen, Zhengzhong Liu, Eric Xing, Xuezhe Ma"
+paperPublishedDate: "2026-10-05"
+authors: ["Benhao Huang", "Chufan Shi", "Junlin Chen", "Shicheng Wen", "Zhengzhong Liu", "Eric Xing", "Xuezhe Ma"]
 year: "2026"
 paperUrl: "https://arxiv.org/abs/2610.06833v1"
 visibility: "public"

@@ -2,12 +2,13 @@
 title: "Why can a Transformer describe the same rules more compactly?"
 description: "A guide to Transformers are Inherently Succinct through long computation histories and small verifiers: size separations, UHAT assumptions, verification complexity, and an appendix connective issue."
 date: "2026-10-09"
+updatedAt: "2026-10-09T05:04:32Z"
 publishedAt: "2026-10-09T00:06:00+09:00"
-updatedAt: "2026-10-09T00:31:33+09:00"
 topics: ["language models", "transformer theory", "formal languages", "computational complexity", "formal verification"]
 translationKey: "transformers-inherently-succinct"
 paperTitle: "Transformers are Inherently Succinct"
-authors: "Pascal Bergsträßer, Ryan Cotterell, Anthony W. Lin"
+paperPublishedDate: "2025-10-22"
+authors: ["Pascal Bergsträßer", "Ryan Cotterell", "Anthony W. Lin"]
 year: "2026"
 paperUrl: "https://arxiv.org/abs/2510.19315v3"
 visibility: "public"

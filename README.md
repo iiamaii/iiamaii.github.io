@@ -121,7 +121,8 @@ visibility: "public"
 lang: "ko"
 translationKey: "paper-slug"
 paperTitle: "논문 원제"
-authors: "저자"
+paperPublishedDate: "2026-09-01"
+authors: ["First Author", "Second Author"]
 year: "2026"
 paperUrl: "https://논문-원문-주소"
 thumbnail: "/assets/논문-썸네일.webp"
@@ -134,6 +135,8 @@ thumbnailAlt: "썸네일 설명"
 ```
 
 - `title`, `description`, `date`, 한 개 이상의 `topics`는 공개 시 필수입니다. 기존 단일 `topic`도 지원하며, `visibility`를 정확히 `"public"`으로 지정해야 발행됩니다.
+- 공개 포스트는 `paperPublishedDate`(공식 출처의 논문 최초 공개일)와 `authors`(원문 순서의 전체 저자 목록)가 필수입니다. arXiv는 v1의 Submitted 날짜를 쓰고 수정 버전 날짜와 구분합니다. 두 언어의 값은 동일해야 하며 날짜가 미확인이면 비공개 초안으로 유지합니다. 기존 쉼표 구분 저자 문자열도 지원하지만 `et al.`로 줄여 저장하지 않습니다.
+- 본문 상단에 포스트 최초 업로드일과 업데이트일을 작게 표시합니다. 원문 정보에는 논문 공개일과 첫 저자 `et al.`을 표시하며 `+`로 전체 저자를 펼치고 `−`로 접습니다. 단독 저자는 이름만 표시합니다.
 - `visibility: "private"`이거나 공개 여부가 없으면 비공개로 처리합니다. 다른 값은 오류로 알려줍니다.
 - `lang`은 `ko` 또는 `en`입니다. 두 언어의 `translationKey`와 주제 집합을 같게 설정하면 같은 글로 묶입니다. 초안 생성 명령이 이를 설정합니다.
 - 번역본을 발행하지 않았으면 원문을 표시하고 아직 번역이 없음을 안내합니다. 번역본 발행 후에는 언어 버튼으로 제목·요약·본문까지 전환됩니다.

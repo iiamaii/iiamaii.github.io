@@ -60,11 +60,12 @@ test('invalid URL controls fall back safely and reversed ranges yield no matches
 });
 
 test('legacy dates retain midnight KST; explicit timestamps keep seconds and timezone', () => {
-  assert.deepEqual(postTimes({}, '2020-03-01', 'legacy.md'), { publishedAt: '2020-02-29T15:00:00.000Z', updatedAt: '2020-02-29T15:00:00.000Z', hasTime: false });
+  assert.deepEqual(postTimes({}, '2020-03-01', 'legacy.md'), { publishedAt: '2020-02-29T15:00:00.000Z', updatedAt: '2020-02-29T15:00:00.000Z', hasTime: false, hasPublishedTime: false });
   const timed = postTimes({ publishedAt: '2020-03-01T09:30:45+09:00', updatedAt: '2020-03-03T18:05:42+09:00' }, '2020-03-01', 'timed.md');
   assert.equal(timed.publishedAt, '2020-03-01T00:30:45.000Z');
   assert.equal(timed.updatedAt, '2020-03-03T09:05:42.000Z');
   assert.equal(timed.hasTime, true);
+  assert.equal(timed.hasPublishedTime, true);
   for (const data of [
     { publishedAt: '2020-03-01T09:00:00' },
     { publishedAt: '2020-02-30T09:00:00+09:00' },

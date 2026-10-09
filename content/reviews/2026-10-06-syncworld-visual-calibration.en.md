@@ -2,13 +2,14 @@
 title: "Can a World Model Read Actions After the Camera Moves? SyncWorld and Visual Calibration"
 description: "SyncWorld uses a short action–video context to adapt to a new robot setup. This review separates video prediction from policy success and connects ten related papers to questions about transfer and inference cost."
 date: "2026-10-06"
-updatedAt: "2026-10-09T01:32:41Z"
+updatedAt: "2026-10-09T05:04:32Z"
 topics: ["world action model", "robot learning", "world simulation", "in-context learning", "visual calibration"]
 visibility: "public"
 lang: "en"
 translationKey: "syncworld-visual-calibration"
 paperTitle: "SyncWorld: Visual Calibration Enables World Models as Zero-Shot Simulators"
-authors: "Yuncong Yang, Zhengtao Han, Furkan Ozyurt, Zeyuan Yang, Han Yang, Junyi Cao, Haoyu Zhen, Yilun Du, Chuang Gan"
+paperPublishedDate: "2026-09-08"
+authors: ["Yuncong Yang", "Zhengtao Han", "Furkan Ozyurt", "Zeyuan Yang", "Han Yang", "Junyi Cao", "Haoyu Zhen", "Yilun Du", "Chuang Gan"]
 year: "2026"
 paperUrl: "https://arxiv.org/abs/2609.09155v1"
 thumbnail: "/assets/reviews/syncworld/paper-figure-2.webp"

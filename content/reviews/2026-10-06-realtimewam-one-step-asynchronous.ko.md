@@ -2,12 +2,14 @@
 title: "반복과 대기를 함께 줄이기: RealtimeWAM의 한 단계 비동기 행동 생성"
 description: "Teacher 끝점 지도로 행동 생성을 한 단계로 압축하고 KV 준비 이벤트로 전문가 대기를 줄이는 방법을 읽는다. 평균 성공률, 교란 조건, GPU별 누적 가속과 학습 비용을 구분한다."
 date: "2026-10-06"
+updatedAt: "2026-10-09T05:04:32Z"
 topics: ["world action model", "robot learning", "policy distillation", "real-time inference", "gpu optimization"]
 visibility: "public"
 lang: "ko"
 translationKey: "realtimewam-one-step-asynchronous"
 paperTitle: "RealtimeWAM: One-Step Asynchronous World Action Models"
-authors: "Chengtao Lv, Jinyang Du, Shuyi Feng, Yang Yong, Shiqiao Gu, Shunzi Yang, Ruihao Gong, Shen Ren, Tianwei Zhang, Wenya Wang"
+paperPublishedDate: "2026-10-05"
+authors: ["Chengtao Lv", "Jinyang Du", "Shuyi Feng", "Yang Yong", "Shiqiao Gu", "Shunzi Yang", "Ruihao Gong", "Shen Ren", "Tianwei Zhang", "Wenya Wang"]
 year: "2026"
 paperUrl: "https://arxiv.org/abs/2610.06617v1"
 thumbnail: "/assets/reviews/realtimewam/paper-figure-2.png"

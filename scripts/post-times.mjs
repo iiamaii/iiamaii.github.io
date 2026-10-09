@@ -12,5 +12,5 @@ export function postTimes(data, date, file) {
   if (new Date(publishedAt).toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' }) !== date) throw new Error(`${file}: publishedAt must fall on date in Asia/Seoul.`);
   const updatedAt = timestamp(data.updatedAt, 'updatedAt', publishedAt);
   if (Date.parse(updatedAt) < Date.parse(publishedAt)) throw new Error(`${file}: updatedAt cannot be before publishedAt.`);
-  return { publishedAt, updatedAt, hasTime: data.publishedAt !== undefined || data.updatedAt !== undefined };
+  return { publishedAt, updatedAt, hasTime: data.publishedAt !== undefined || data.updatedAt !== undefined, hasPublishedTime: data.publishedAt !== undefined };
 }

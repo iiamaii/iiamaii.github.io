@@ -28,7 +28,7 @@ try {
   config.translations.en.philosophy.text = 'English philosophy.\n\nA second English paragraph.';
   await fs.writeFile(path.join(temp, 'site.json'), JSON.stringify(config));
   const fixture = async (slug, fields, body = '## Repeated question\n\nA paragraph.\n\n## Repeated question\n\nAnother paragraph.') => {
-    const data = { title: `Fixture ${slug} & "question"`, description: 'A concise test description.', date: '2020-01-01', ...(fields.topics !== undefined ? {} : { topic: 'alpha' }), visibility: 'public', ...fields };
+    const data = { title: `Fixture ${slug} & "question"`, description: 'A concise test description.', date: '2020-01-01', paperPublishedDate: '2019-12-01', authors: ['First Author', 'Second Author'], ...(fields.topics !== undefined ? {} : { topic: 'alpha' }), visibility: 'public', ...fields };
     const metadata = Object.entries(data).filter(([, value]) => value !== undefined).map(([key, value]) => `${key}: ${JSON.stringify(value)}`).join('\n');
     await fs.writeFile(path.join(temp, 'content/reviews', `${slug}.md`), `---\n${metadata}\n---\n\n${body}\n`);
   };
@@ -134,6 +134,8 @@ try {
   for (const file of created) {
     const { data } = matter(await fs.readFile(path.join(temp, 'content/reviews', file), 'utf8'));
     assert.equal(data.visibility, 'private');
+    assert.deepEqual(data.authors, []);
+    assert.equal(data.paperPublishedDate, '');
     assert.ok(Number.isFinite(Date.parse(data.publishedAt)) && data.updatedAt === data.publishedAt, 'Drafts include publication and update timestamps.');
     assert.deepEqual(data.topics, ['새로운 주제'], 'New language versions start private and accept unregistered topics.');
   }
@@ -292,6 +294,19 @@ try {
   await fs.rm(path.join(temp, 'content/reviews/invalid-time.md'));
   for (const file of ['timed-a', 'timed-b', 'timed-a.en', 'timed-private.en']) await fs.rm(path.join(temp, `content/reviews/${file}.md`));
   await fs.writeFile(path.join(temp, 'site.json'), JSON.stringify(config));
+  for (const fields of [{ paperPublishedDate: undefined }, { paperPublishedDate: '2019-02-29' }, { authors: [] }, { authors: ['First Author et al.'] }]) {
+    await fixture('invalid-paper-metadata', fields);
+    result = build();
+    assert.notEqual(result.status, 0, 'Incomplete or invalid public paper provenance must fail.');
+    await fs.rm(path.join(temp, 'content/reviews/invalid-paper-metadata.md'));
+  }
+  for (const fields of [{ paperPublishedDate: '2019-12-02' }, { authors: ['Second Author', 'First Author'] }]) {
+    await fixture('mismatched-paper.en', { lang: 'en', translationKey: 'alpha-1', ...fields });
+    result = build();
+    assert.notEqual(result.status, 0);
+    assert.ok(result.stderr.includes('same paperPublishedDate and ordered authors'));
+    await fs.rm(path.join(temp, 'content/reviews/mismatched-paper.en.md'));
+  }
   await fs.rename(path.join(temp, 'content/reviews'), path.join(temp, 'content/reviews-saved'));
   await fs.mkdir(path.join(temp, 'content/reviews'));
   result = build();

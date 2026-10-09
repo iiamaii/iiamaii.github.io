@@ -8,6 +8,7 @@ import { createRenderer } from './render.mjs';
 import { normalizeTopic, normalizeTopics } from './topics.mjs';
 import { loadAnalyses } from './statistics.mjs';
 import { postTimes } from './post-times.mjs';
+import { paperMetadata } from './paper-metadata.mjs';
 
 const root = process.cwd();
 const out = path.join(root, 'dist');
@@ -110,6 +111,7 @@ for (const file of (await fs.readdir(reviewDirectory)).filter(name => name.endsW
   if (date > today) continue;
   const times = postTimes(data, date, file);
   if (Date.parse(times.publishedAt) > now) continue;
+  const paper = paperMetadata(data, file);
   const topics = postTopics(data, file);
   const slug = data.translationKey || file.replace(/\.md$/, '').replace(/\.(ko|en)$/, '').replace(/^\d{4}-\d{2}-\d{2}-/, '');
   if (typeof slug !== 'string' || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) throw new Error(`${file}: use a lowercase slug or translationKey with hyphens.`);
@@ -118,9 +120,10 @@ for (const file of (await fs.readdir(reviewDirectory)).filter(name => name.endsW
   const pair = pairs.get(slug) || {};
   if (pair[lang]) throw new Error(`${file}: duplicate ${lang} review for ${slug}.`);
   const other = pair[lang === 'ko' ? 'en' : 'ko'];
+  if (other && (other.paperPublishedDate !== paper.paperPublishedDate || JSON.stringify(other.authors) !== JSON.stringify(paper.authors))) throw new Error(`${file}: translations must use the same paperPublishedDate and ordered authors.`);
   if (other && (other.topics.length !== topics.length || other.topics.some(topic => !topics.some(item => item.key === topic.key)))) throw new Error(`${file}: translations of the same review must use the same topics.`);
   const readingMinutes = lang === 'en' ? Math.max(1, Math.ceil(content.trim().split(/\s+/).length / 220)) : Math.max(1, Math.ceil(content.replace(/\s/g, '').length / 500));
-  pair[lang] = { ...data, date, ...times, searchText: [data.title, data.description, data.paperTitle, data.authors, data.year, content].filter(Boolean).join(' '), slug, topics, sourceLang: lang, readingMinutes, ...renderMarkdown(content, lang) };
+  pair[lang] = { ...data, ...paper, date, ...times, searchText: [data.title, data.description, data.paperTitle, paper.authors.join(' '), paper.paperPublishedDate, data.year, content].filter(Boolean).join(' '), slug, topics, sourceLang: lang, readingMinutes, ...renderMarkdown(content, lang) };
   pairs.set(slug, pair);
 }
 
@@ -164,9 +167,11 @@ for (const lang of languages) {
     const topics = (pair.ko || pair.en).topics;
     const versions = Object.values(pair);
     const latest = [...versions].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
+    const firstPublished = [...versions].sort((a, b) => a.publishedAt.localeCompare(b.publishedAt))[0];
     return {
       ...source,
-      publishedAt: versions.map(review => review.publishedAt).sort()[0],
+      publishedAt: firstPublished.publishedAt,
+      hasPublishedTime: firstPublished.hasPublishedTime,
       updatedAt: latest.updatedAt,
       hasTime: latest.hasTime,
       topics: topics.map(entry => site.topics.find(topic => topic.id === entry.id)),

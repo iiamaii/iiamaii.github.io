@@ -2,12 +2,14 @@
 title: "Fewer Steps, Less Waiting: Understanding RealtimeWAM"
 description: "How teacher endpoints compress action generation into one step, and KV-ready events reduce expert waiting. Read aggregate accuracy, perturbation losses, device-specific speedups and training cost together."
 date: "2026-10-06"
+updatedAt: "2026-10-09T05:04:32Z"
 topics: ["world action model", "robot learning", "policy distillation", "real-time inference", "gpu optimization"]
 visibility: "public"
 lang: "en"
 translationKey: "realtimewam-one-step-asynchronous"
 paperTitle: "RealtimeWAM: One-Step Asynchronous World Action Models"
-authors: "Chengtao Lv, Jinyang Du, Shuyi Feng, Yang Yong, Shiqiao Gu, Shunzi Yang, Ruihao Gong, Shen Ren, Tianwei Zhang, Wenya Wang"
+paperPublishedDate: "2026-10-05"
+authors: ["Chengtao Lv", "Jinyang Du", "Shuyi Feng", "Yang Yong", "Shiqiao Gu", "Shunzi Yang", "Ruihao Gong", "Shen Ren", "Tianwei Zhang", "Wenya Wang"]
 year: "2026"
 paperUrl: "https://arxiv.org/abs/2610.06617v1"
 thumbnail: "/assets/reviews/realtimewam/paper-figure-2.png"

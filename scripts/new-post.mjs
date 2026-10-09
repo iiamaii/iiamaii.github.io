@@ -32,7 +32,7 @@ const templates = {
 };
 for (const [lang, template] of Object.entries(templates)) {
   const file = `content/reviews/${date}-${slug}.${lang}.md`;
-  const metadata = { title: template.title, description: template.description, date, publishedAt: timestamp, updatedAt: timestamp, topics, visibility: 'private', lang, translationKey: slug, paperTitle: '', authors: '', year: '', paperUrl: '', thumbnail: '', thumbnailAlt: '' };
+  const metadata = { title: template.title, description: template.description, date, publishedAt: timestamp, updatedAt: timestamp, topics, visibility: 'private', lang, translationKey: slug, paperTitle: '', paperPublishedDate: '', authors: [], year: '', paperUrl: '', thumbnail: '', thumbnailAlt: '' };
   await fs.writeFile(file, `---\n${Object.entries(metadata).map(([key, value]) => `${key}: ${JSON.stringify(value)}`).join('\n')}\n---\n\n${template.body}\n`, { flag: 'wx' });
   console.log(`Created ${file}`);
 }
