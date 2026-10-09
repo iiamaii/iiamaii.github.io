@@ -92,7 +92,10 @@ try {
   for (const route of ['index.html', 'profile/index.html', 'reviews/index.html', 'en/index.html', 'en/profile/index.html', 'en/reviews/index.html']) {
     const html = await read(route);
     assert.ok(!html.includes('href="/fonts/"'), 'The temporary font page has no public navigation links.');
-    assert.ok(!/<footer[^>]*>[\s\S]*?href=/.test(html), 'The footer has no utility links.');
+    const footer = html.match(/<footer[^>]*>[\s\S]*?<\/footer>/)[0];
+    assert.equal((footer.match(/<a /g) || []).length, 1, 'The footer has only the requested GitHub icon link.');
+    assert.ok(footer.includes('class="footer-github"') && footer.includes('<svg'), 'GitHub is an icon in the footer.');
+    assert.ok(!html.match(/<nav class="main-nav"[\s\S]*?<\/nav>/)[0].includes('GitHub'), 'GitHub is absent from the header navigation.');
     assert.ok(html.includes('data-language-link'), 'Every public page has a language switch.');
   }
   assert.ok((await read('fonts/index.html')).includes('noindex'), 'The temporary font preview stays available but outside search results.');

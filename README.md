@@ -6,7 +6,7 @@
 - [내 프로필](https://iiamaii.github.io/profile/): 소개, 철학, 연구 관심사
 - [논문 리뷰](https://iiamaii.github.io/reviews/): 복수 주제·업데이트 기간 필터, 단어 검색, 정렬, 스크롤 추가 표시, 리뷰 본문
 - [논문 통계](https://iiamaii.github.io/statistics/): 저장한 분석의 막대그래프·관계 그래프·데이터 표
-- GitHub page 메뉴: 기본적으로 [iiamaii GitHub 프로필](https://github.com/iiamaii)로 연결
+- 하단 우측 GitHub 아이콘: 기본적으로 [iiamaii GitHub 프로필](https://github.com/iiamaii)로 연결
 
 기존 예시 글은 게시 목록에서 정리했습니다. 현재 [SyncWorld 리뷰](https://iiamaii.github.io/reviews/syncworld-visual-calibration/), [RealtimeWAM 리뷰](https://iiamaii.github.io/reviews/realtimewam-one-step-asynchronous/), [Looped models 고정점 리뷰](https://iiamaii.github.io/reviews/looped-models-fixed-points/), [Transformer 간결성 리뷰](https://iiamaii.github.io/reviews/transformers-inherently-succinct/) 네 편을 한글·영문으로 게시합니다. 각 글은 다섯 주제로 분류하며, 앞의 두 편은 `world action model`, 뒤의 두 편은 `language models`를 첫 주제로 둡니다. 주제는 공개 포스트에서 자동으로 모읍니다. 프로필과 철학은 내용을 채우기 전까지 준비 안내를 보여줍니다.
 
@@ -36,7 +36,7 @@ npm run dev
 | `logo.image`, `logo.alt` | 좌측 상단의 홈 링크 로고 |
 | `homeReviewLimit` | 메인에 표시할 최신 리뷰 수. 기본 6, 양의 정수 |
 | `reviewThumbnail` | 포스트 썸네일이 없을 때 사용하는 기본 이미지 |
-| `githubPage` | GitHub page 메뉴의 외부 주소 |
+| `githubPage` | 하단 우측 GitHub 아이콘의 외부 주소 |
 | `title`, `description` | 블로그 이름과 검색 설명 |
 
 이미지는 `public/assets/`에 넣고 `/assets/파일명.webp`처럼 설정합니다. 현재 대문은 이전에 생성한 추상 이미지를 사용하며, 첨부한 로고의 원본은 `public/assets/brand-logo.png`에 보관하고, 배경을 제거한 `public/assets/brand-logo-transparent.png`를 페이지 좌측 상단의 홈 링크로 사용합니다. 생성 이미지 기록은 `research/cover-artwork.json`에 있습니다.
