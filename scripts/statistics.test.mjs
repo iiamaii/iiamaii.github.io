@@ -14,6 +14,7 @@ const render = (record, lang = 'ko') => renderStatistics({ analyses: [record], r
 test('finite values including zero and negatives retain a shared zero baseline; text is escaped', () => {
   const record = validateAnalysis(fixture(), keys), html = render(record);
   assert.match(html, /&lt;script&gt;bad\(\)&lt;\/script&gt;/); assert.ok(!html.includes('<script>bad'));
+  assert.match(html, /class="stat-bar-fill is-negative" style="left:0%;width:50%"/);
   assert.match(html, /left:50%/); assert.match(html, /left:0%;width:50%/); assert.match(html, /left:50%;width:0%/);
   assert.match(html, /\/repository\/reviews\/paper-a\//);
   assert.match(render(record, 'en'), /\/repository\/en\/reviews\/paper-a\//);
