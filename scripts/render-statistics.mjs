@@ -12,9 +12,9 @@ export function renderStatistics({ analyses, reviews, lang, href }) {
       const extent = Math.max(Math.abs(min), Math.abs(max)) || 1;
       const range = max / extent - min / extent || 1;
       const zero = (-min / extent) / range * 100;
-      visual = `<div class="stat-bars" role="img" aria-labelledby="${chartId}-title" aria-describedby="${chartId}-description"><div class="bar-axis"><span>${format(min)}</span><span>${format(max)}</span></div>${chart.values.map(row => {
+      visual = `<div class="stat-bars" role="img" aria-labelledby="${chartId}-title" aria-describedby="${chartId}-description"><div class="bar-axis"><span>${format(min)}</span><span>${format(min / 2 + max / 2)}</span><span>${format(max)}</span></div>${chart.values.map(row => {
         const position = (row.value / extent - min / extent) / range * 100;
-        return `<div class="stat-bar-row"><span class="stat-bar-label">${local(row.label)}</span><div class="stat-bar-track"><span class="stat-bar-zero" style="left:${zero}%"></span><span class="stat-bar-fill" style="left:${Math.min(position, zero)}%;width:${Math.abs(position - zero)}%"></span></div><strong>${format(row.value)}</strong></div>`;
+        return `<div class="stat-bar-row"><span class="stat-bar-label">${local(row.label)}</span><strong>${format(row.value)}</strong><div class="stat-bar-track"><span class="stat-bar-zero" style="left:${zero}%"></span><span class="stat-bar-fill" style="left:${Math.min(position, zero)}%;width:${Math.abs(position - zero)}%"></span></div></div>`;
       }).join('')}</div>`;
       caption = `${local(chart.unit)} · ${chart.direction === 'lower' ? (ko ? '낮을수록 좋음' : 'Lower is better') : chart.direction === 'higher' ? (ko ? '높을수록 좋음' : 'Higher is better') : (ko ? '빈도·크기 표시' : 'Count / magnitude')}`;
       headers = [ko ? '항목' : 'Item', local(chart.unit)];
