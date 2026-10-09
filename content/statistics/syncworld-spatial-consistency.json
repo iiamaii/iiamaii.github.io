@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 1,
+  "id": "syncworld-spatial-consistency",
+  "visibility": "public",
+  "updatedAt": "2026-10-09T01:35:34Z",
+  "title": {
+    "ko": "SyncWorld · 시점 간 일관성 비교",
+    "en": "SyncWorld · Cross-view consistency"
+  },
+  "summary": {
+    "ko": "원문 Table 2에 보고된 Met3R 평균을 비교합니다. 값이 낮을수록 시점 간 불일치가 작습니다.",
+    "en": "Compare the mean Met3R values reported in Table 2. Lower values indicate less cross-view inconsistency."
+  },
+  "notes": {
+    "ko": "SyncWorld v1, §4.3 및 Table 2의 LIBERO·ManiSkill·실제 환경에 대한 Avg 열을 그대로 옮겼습니다. 반올림된 개별 열로 평균을 다시 계산하지 않았습니다. 두 SyncWorld 행은 보정 증류로 학습된 모델이며, 추론 시 보정의 사용 여부만 다릅니다. Oracle은 실제 관찰 기반 참조값으로 예측 모델이 아닙니다. 오차 막대·유의성 검증은 제공하지 않으며 작은 차이를 통계적 우위로 해석하지 않습니다.",
+    "en": "Values transcribe the Avg column over LIBERO, ManiSkill and real environments from SyncWorld v1, §4.3 and Table 2, without recomputing means from rounded columns. Both SyncWorld rows use calibration-distilled training and differ in whether inference-time calibration is used. Oracle is a ground-truth reference, not a predictive model. No error bars or significance tests are provided here; small differences do not establish statistical superiority."
+  },
+  "paperSlugs": [
+    "syncworld-visual-calibration"
+  ],
+  "sources": [
+    {
+      "url": "https://arxiv.org/html/2609.09155v1#S4.T2",
+      "label": {
+        "ko": "Yang 외 · SyncWorld v1",
+        "en": "Yang et al. · SyncWorld v1"
+      },
+      "location": {
+        "ko": "§4.3, Table 2 · Met3R Avg",
+        "en": "§4.3, Table 2 · Met3R Avg"
+      }
+    }
+  ],
+  "charts": [
+    {
+      "id": "met3r-average",
+      "type": "bar",
+      "title": {
+        "ko": "보고된 Met3R 평균",
+        "en": "Reported mean Met3R"
+      },
+      "description": {
+        "ko": "LIBERO·ManiSkill·실제 환경의 보고 평균. 축은 0부터 시작합니다.",
+        "en": "Reported average over LIBERO, ManiSkill and real environments. The axis starts at zero."
+      },
+      "unit": {
+        "ko": "Met3R · 무단위",
+        "en": "Met3R · dimensionless"
+      },
+      "direction": "lower",
+      "values": [
+        {
+          "label": {
+            "ko": "IRASim",
+            "en": "IRASim"
+          },
+          "value": 0.56
+        },
+        {
+          "label": {
+            "ko": "WorldGym",
+            "en": "WorldGym"
+          },
+          "value": 0.577
+        },
+        {
+          "label": {
+            "ko": "Ctrl-World",
+            "en": "Ctrl-World"
+          },
+          "value": 0.565
+        },
+        {
+          "label": {
+            "ko": "SyncWorld · 추론 보정 없음",
+            "en": "SyncWorld · without inference calibration"
+          },
+          "value": 0.542
+        },
+        {
+          "label": {
+            "ko": "SyncWorld · 추론 보정 사용",
+            "en": "SyncWorld · with inference calibration"
+          },
+          "value": 0.538
+        },
+        {
+          "label": {
+            "ko": "Oracle · 실제 관찰 참조",
+            "en": "Oracle · ground-truth reference"
+          },
+          "value": 0.523
+        }
+      ]
+    }
+  ]
+}

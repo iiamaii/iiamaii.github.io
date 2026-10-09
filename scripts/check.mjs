@@ -41,6 +41,11 @@ try {
   await fixture('private-multi', { visibility: 'private', topics: ['비공개 전용', '비공개 비전'], title: 'Private multi review sentinel' }, 'PRIVATE_MULTI_BODY_SENTINEL');
   await fixture('unmarked', { visibility: undefined, topic: '미지정 연구', title: 'Unmarked review sentinel' }, 'UNMARKED_REVIEW_BODY_SENTINEL');
   await fixture('private-translation.en', { lang: 'en', translationKey: 'alpha-4', visibility: 'private', title: 'Private translation sentinel' }, 'PRIVATE_TRANSLATION_BODY_SENTINEL');
+  await fs.mkdir(path.join(temp, 'content/statistics'), { recursive: true });
+  const bi = value => ({ ko: value, en: value });
+  const analysis = { schemaVersion: 1, id: 'fixture-analysis', visibility: 'public', updatedAt: '2020-01-01T00:00:00Z', title: bi('Analysis <sentinel>'), summary: bi('Saved results'), notes: bi('Source conditions'), paperSlugs: [], sources: [{ url: 'https://example.org/paper', label: bi('Paper'), location: bi('Table 1') }], charts: [{ id: 'counts', type: 'bar', title: bi('Count'), description: bi('Verified count'), unit: bi('papers'), direction: 'none', values: [{ label: bi('A'), value: 2 }] }] };
+  await fs.writeFile(path.join(temp, 'content/statistics/public.json'), JSON.stringify(analysis));
+  await fs.writeFile(path.join(temp, 'content/statistics/private.json'), JSON.stringify({ visibility: 'private', title: 'PRIVATE_ANALYSIS_SENTINEL' }));
   let result = build();
   assert.equal(result.status, 0, result.stderr);
   const home = await read('index.html');
@@ -49,6 +54,14 @@ try {
   const profile = await read('profile/index.html');
   const sitemap = await read('sitemap.xml');
   const rss = await read('feed.xml');
+  for (const prefix of ['', 'en/']) {
+    const statistics = await read(`${prefix}statistics/index.html`);
+    assert.ok(statistics.includes('Analysis &lt;sentinel&gt;'));
+    assert.ok(!statistics.includes('PRIVATE_ANALYSIS_SENTINEL'));
+    assert.ok(statistics.includes('data-analysis="fixture-analysis"'));
+    assert.ok(sitemap.includes(`${prefix}statistics/`));
+  }
+
   assert.equal((home.match(/class="review-card"/g) || []).length, 6, 'Home shows at most six unique reviews across all topics.');
   assert.equal((index.match(/class="review-card"/g) || []).length, 7, 'The review index shows all published reviews.');
   assert.ok(!home.includes('/reviews/alpha-1/'), 'The oldest fifth review stays off the home page.');
@@ -133,6 +146,10 @@ try {
   result = build('/project');
   assert.equal(result.status, 0, result.stderr);
   assert.ok((await read('index.html')).includes('href="/project/profile/"'));
+  assert.ok((await read('statistics/index.html')).includes('src="/project/assets/statistics.js?v='));
+  assert.ok((await read('en/statistics/index.html')).includes('href="/project/statistics/" data-language-link'));
+  assert.ok((await read('sitemap.xml')).includes('/project/en/statistics/'));
+
   assert.ok((await read('reviews/index.html')).includes('src="/project/assets/reviews.js?v='));
   assert.ok((await read('reviews/beta-1/index.html')).includes('href="/project/reviews/?topic=beta#review-panel"'));
   assert.ok((await read('en/reviews/alpha-5/index.html')).includes('href="/project/reviews/alpha-5/" data-language-link'));

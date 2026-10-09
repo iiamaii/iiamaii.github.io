@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "id": "analysis-id",
+  "visibility": "private",
+  "updatedAt": "2026-10-09T01:35:34Z",
+  "title": {
+    "ko": "분석 제목",
+    "en": "Analysis title"
+  },
+  "summary": {
+    "ko": "분석 대상과 질문",
+    "en": "Scope and question"
+  },
+  "notes": {
+    "ko": "데이터셋·버전·실험 조건·집계 방식·한계",
+    "en": "Dataset, version, conditions, aggregation and limitations"
+  },
+  "paperSlugs": [],
+  "sources": [
+    {
+      "url": "https://example.org/paper",
+      "label": {
+        "ko": "원문 제목",
+        "en": "Source title"
+      },
+      "location": {
+        "ko": "Table 1 · 확인한 위치",
+        "en": "Table 1 · verified location"
+      }
+    }
+  ],
+  "charts": [
+    {
+      "id": "comparison",
+      "type": "bar",
+      "title": {
+        "ko": "지표 비교",
+        "en": "Metric comparison"
+      },
+      "description": {
+        "ko": "비교 조건을 설명하세요",
+        "en": "Describe the comparison conditions"
+      },
+      "unit": {
+        "ko": "단위",
+        "en": "unit"
+      },
+      "direction": "higher",
+      "values": [
+        {
+          "label": {
+            "ko": "항목 A",
+            "en": "Item A"
+          },
+          "value": null
+        }
+      ]
+    }
+  ]
+}

@@ -6,6 +6,7 @@ import { Marked, Renderer } from 'marked';
 import { languages, languageRoute, localizedConfig, copy } from './i18n.mjs';
 import { createRenderer } from './render.mjs';
 import { normalizeTopic, normalizeTopics } from './topics.mjs';
+import { loadAnalyses } from './statistics.mjs';
 import { postTimes } from './post-times.mjs';
 
 const root = process.cwd();
@@ -142,7 +143,9 @@ for (const pair of newestPairs) {
 const publicConfig = { ...config, topics: [...topicMap.values()] };
 await Promise.all(publicConfig.topics.map(topic => checkImage(topic.thumbnail)));
 
-const assetBuffers = await Promise.all(['style.css', 'site.js', 'theme.js', 'reviews.js', 'review-query.js'].map(file => fs.readFile(path.join(root, 'public/assets', file))));
+const analyses = await loadAnalyses(path.join(root, 'content/statistics'), new Set(pairs.keys()), now);
+
+const assetBuffers = await Promise.all(['style.css', 'site.js', 'theme.js', 'reviews.js', 'review-query.js', 'statistics.js'].map(file => fs.readFile(path.join(root, 'public/assets', file))));
 const assetVersion = createHash('sha256').update(Buffer.concat(assetBuffers)).digest('hex').slice(0, 12);
 await fs.rm(out, { recursive: true, force: true });
 await fs.mkdir(out, { recursive: true });
@@ -176,17 +179,18 @@ for (const lang of languages) {
       availableLanguages: languages.filter(language => pair[language])
     };
   }).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt) || a.slug.localeCompare(b.slug));
-  const renderer = createRenderer({ config: publicConfig, lang, reviews, base, assetVersion });
+  const renderer = createRenderer({ config: publicConfig, lang, reviews, analyses, base, assetVersion });
   await writePage(languageRoute('/', lang), renderer.home());
   await writePage(languageRoute('/profile/', lang), renderer.profile());
   await writePage(languageRoute('/reviews/', lang), renderer.reviewIndex());
+  await writePage(languageRoute('/statistics/', lang), renderer.statistics());
   await writePage(languageRoute('/about/', lang), renderer.redirect());
   for (const review of reviews) await writePage(languageRoute(`/reviews/${review.slug}/`, lang), renderer.article(review));
   await fs.writeFile(path.join(out, languageRoute('/404.html', lang).slice(1)), renderer.notFound());
   const feedReviews = reviews.filter(review => review.sourceLang === lang);
   const { esc, absolute } = renderer;
   await fs.writeFile(path.join(out, languageRoute('/feed.xml', lang).slice(1)), `<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>${esc(site.title)}</title><link>${esc(absolute('/'))}</link><description>${esc(site.description)}</description><language>${lang}</language><atom:link href="${esc(absolute('/feed.xml'))}" rel="self" type="application/rss+xml"/>${feedReviews.map(review => `<item><title>${esc(review.title)}</title><link>${esc(absolute(`/reviews/${review.slug}/`))}</link><guid isPermaLink="true">${esc(absolute(`/reviews/${review.slug}/`))}</guid><description>${esc(review.description)}</description><pubDate>${new Date(review.publishedAt).toUTCString()}</pubDate></item>`).join('')}</channel></rss>`);
-  sitemapRoutes.push(...['/', '/profile/', '/reviews/', ...feedReviews.map(review => `/reviews/${review.slug}/`)].map(route => absolute(route)));
+  sitemapRoutes.push(...['/', '/profile/', '/reviews/', '/statistics/', ...feedReviews.map(review => `/reviews/${review.slug}/`)].map(route => absolute(route)));
 }
 const xmlEscape = value => value.replaceAll('&', '&amp;');
 await fs.writeFile(path.join(out, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${sitemapRoutes.map(url => `<url><loc>${xmlEscape(url)}</loc></url>`).join('')}</urlset>`);

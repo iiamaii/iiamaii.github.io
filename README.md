@@ -5,6 +5,7 @@
 - [메인](https://iiamaii.github.io/): 최신 리뷰를 상단에, 대문 이미지·프로필·철학을 하단에 표시
 - [내 프로필](https://iiamaii.github.io/profile/): 소개, 철학, 연구 관심사
 - [논문 리뷰](https://iiamaii.github.io/reviews/): 복수 주제·업데이트 기간 필터, 단어 검색, 정렬, 스크롤 추가 표시, 리뷰 본문
+- [논문 통계](https://iiamaii.github.io/statistics/): 저장한 분석의 막대그래프·관계 그래프·데이터 표
 - GitHub page 메뉴: 기본적으로 [iiamaii GitHub 프로필](https://github.com/iiamaii)로 연결
 
 기존 예시 글은 게시 목록에서 정리했습니다. 현재 [SyncWorld 리뷰](https://iiamaii.github.io/reviews/syncworld-visual-calibration/), [RealtimeWAM 리뷰](https://iiamaii.github.io/reviews/realtimewam-one-step-asynchronous/), [Looped models 고정점 리뷰](https://iiamaii.github.io/reviews/looped-models-fixed-points/), [Transformer 간결성 리뷰](https://iiamaii.github.io/reviews/transformers-inherently-succinct/) 네 편을 한글·영문으로 게시합니다. 각 글은 다섯 주제로 분류하며, 앞의 두 편은 `world action model`, 뒤의 두 편은 `language models`를 첫 주제로 둡니다. 주제는 공개 포스트에서 자동으로 모읍니다. 프로필과 철학은 내용을 채우기 전까지 준비 안내를 보여줍니다.
@@ -188,12 +189,16 @@ git push
 ```text
 site.json             프로필·철학·이미지·선택 주제 설정
 content/reviews/      논문 리뷰 Markdown
+content/statistics/   공개 가능한 분석 JSON
 public/assets/        이미지·스타일·폰트·목록 필터 스크립트
 public/fonts/         폰트 비교 페이지
 scripts/build.mjs     HTML·RSS·사이트맵 생성
 scripts/i18n.mjs      한국어·영어 화면 문구
 scripts/render.mjs    언어별 페이지 생성
 scripts/new-post.mjs  논문 리뷰 초안 생성
+scripts/new-statistics.mjs  비공개 분석 양식 생성
+scripts/statistics.mjs  분석 데이터 검증
+scripts/render-statistics.mjs  차트·데이터 표 생성
 scripts/post-times.mjs  발행·업데이트 시각 검증
 public/assets/review-query.js  검색·필터·페이지 계산
 skills/publish-research-blog/  포스팅 스킬·연구 인계·본문 템플릿
@@ -202,3 +207,13 @@ dist/                 빌드 결과 (Git 제외)
 ```
 
 `research/blog-design-references.json`은 기존 원본 조사 자료로 보존하며 사이트에는 포함하지 않습니다.
+
+## 논문 통계
+
+`/statistics/`와 `/en/statistics/`는 `content/statistics/*.json`의 공개 분석을 막대그래프·관계 그래프와 데이터 표로 표시합니다. 원문 수치·조건·출처를 저장하며, 관계선의 의미와 집계 범위를 함께 보여줍니다.
+
+```sh
+npm run stats:new -- analysis-id
+```
+
+생성된 비공개 JSON을 채운 뒤 검증하고 공개합니다. [분석 형식·작성 절차](skills/publish-research-blog/references/statistics-format.md)와 [템플릿](skills/publish-research-blog/assets/statistics-analysis.json)을 따릅니다. 페이지의 전체 리뷰·주제 수는 자동 갱신되고, 저장된 분석 결과는 재분석하여 JSON을 갱신해야 합니다. 이미지 해상도·압축 기준은 [포스팅 스킬](skills/publish-research-blog/SKILL.md)의 이미지 절에 있습니다.

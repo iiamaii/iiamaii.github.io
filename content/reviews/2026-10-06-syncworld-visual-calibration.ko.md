@@ -2,6 +2,7 @@
 title: "카메라가 바뀌어도 행동을 읽을 수 있을까: SyncWorld와 시각 보정"
 description: "짧은 행동·영상 문맥으로 새 로봇 설정에 적응하는 SyncWorld를 살펴본다. 영상 예측의 개선과 정책 성공률을 구분하고, 관련 연구 10편을 통해 전이와 실행 비용의 남은 질문을 정리한다."
 date: "2026-10-06"
+updatedAt: "2026-10-09T01:32:41Z"
 topics: ["world action model", "robot learning", "world simulation", "in-context learning", "visual calibration"]
 visibility: "public"
 lang: "ko"
@@ -10,7 +11,7 @@ paperTitle: "SyncWorld: Visual Calibration Enables World Models as Zero-Shot Sim
 authors: "Yuncong Yang, Zhengtao Han, Furkan Ozyurt, Zeyuan Yang, Han Yang, Junyi Cao, Haoyu Zhen, Yilun Du, Chuang Gan"
 year: "2026"
 paperUrl: "https://arxiv.org/abs/2609.09155v1"
-thumbnail: "/assets/reviews/syncworld/paper-figure-2.png"
+thumbnail: "/assets/reviews/syncworld/paper-figure-2.webp"
 thumbnailAlt: "SyncWorld 원문 Figure 2의 모델 구조도"
 ---
 
@@ -40,8 +41,8 @@ future video ~ W_theta(C_s, H_t, A_t)
 `C_s`는 설정 `s`의 보정 문맥, `H_t`는 현재까지의 관찰·행동 이력, `A_t`는 앞으로 실행할 행동이다. `W_theta`는 미래 영상의 조건부 분포를 나타내며, `theta`는 배포 시 고정된 모델 파라미터다. 여기서 제로샷은 새 설정에 맞춰 파라미터를 다시 학습하지 않는다는 의미다. 보정 관찰이나 계산이 필요 없다는 의미로 줄여 읽으면 안 된다. [SyncWorld §3.1, 식 3](https://arxiv.org/html/2609.09155v1#S3.SS1)
 
 <figure class="review-figure" id="figure-syncworld-architecture">
-<a href="/assets/reviews/syncworld/paper-figure-2.png" target="_blank" rel="noopener noreferrer"><img src="/assets/reviews/syncworld/paper-figure-2.png" width="2226" height="980" alt="SyncWorld 구조: 보정 에피소드·상호작용 이력·미래 행동이 자세 임베딩과 영상 잠재 표현으로 변환되어 DiT의 조건이 되고 미래 영상이 생성된다." loading="lazy" decoding="async"></a>
-<figcaption><span class="figure-label">원문 Figure 2 · 보정에서 미래 영상까지</span>왼쪽의 보정·이력·미래 행동을 입력으로, 가운데 DiT를 생성 본체로, 오른쪽을 예측 결과로 읽는다. <span class="figure-links"><a href="/assets/reviews/syncworld/paper-figure-2.png" target="_blank" rel="noopener noreferrer">크게 보기</a> · <a href="https://arxiv.org/html/2609.09155v1#S3.F2">Yuncong Yang et al., 2026, 원문 Figure 2</a> · <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> · 원본 유지, 수정·자르기 없음</span></figcaption>
+<a href="/assets/reviews/syncworld/paper-figure-2.webp" target="_blank" rel="noopener noreferrer"><img src="/assets/reviews/syncworld/paper-figure-2.webp" width="1600" height="704" alt="SyncWorld 구조: 보정 에피소드·상호작용 이력·미래 행동이 자세 임베딩과 영상 잠재 표현으로 변환되어 DiT의 조건이 되고 미래 영상이 생성된다." loading="lazy" decoding="async"></a>
+<figcaption><span class="figure-label">원문 Figure 2 · 보정에서 미래 영상까지</span>왼쪽의 보정·이력·미래 행동을 입력으로, 가운데 DiT를 생성 본체로, 오른쪽을 예측 결과로 읽는다. <span class="figure-links"><a href="/assets/reviews/syncworld/paper-figure-2.webp" target="_blank" rel="noopener noreferrer">크게 보기</a> · <a href="https://arxiv.org/html/2609.09155v1#S3.F2">Yuncong Yang et al., 2026, 원문 Figure 2</a> · <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> · 내용·배치 유지, 해상도 축소·WebP 압축, 자르기 없음</span></figcaption>
 </figure>
 
 그림의 세 입력은 역할이 다르다. **보정**은 이 설정에서 행동과 화면 변화의 대응을 알려주고, **이력**은 이미 진행된 상호작용을 담으며, **미래 행동**은 앞으로 실행할 명령이다. 자세는 벡터 임베딩으로, 영상은 압축된 잠재 표현으로 처리된다. 확산 트랜스포머(DiT)는 이 조건을 이용해 잡음 상태의 미래 영상 표현을 정제한다. 그림의 미래 잡음은 생성할 프레임의 출발점이다. [원문 Figure 2, §3.1, 부록 B.1.1](https://arxiv.org/html/2609.09155v1#S3.F2)
@@ -59,8 +60,8 @@ future video ~ W_theta(C_s, H_t, A_t)
 영상 평가에서는 512×512 해상도로 16개 행동에 대응하는 미래 구간을 예측한다. LIBERO와 ManiSkill은 각각 50개 궤적, 실물은 25개 궤적을 사용하며, 궤적당 두 시점으로 각각 100·100·50개 평가 영상을 구성한다. Table 1은 IRASim·WorldGym·Ctrl-World보다 전반적으로 좋은 영상 품질 지표를 보고한다. 비교 모델들은 같은 downstream 데이터로 미세 조정되지만 백본과 학습 방식까지 같지는 않으므로, 모델 간 차이를 보정 하나의 효과로 해석하기 어렵다. [SyncWorld §4.1–4.2, Table 1, 부록 C.1](https://arxiv.org/html/2609.09155v1#S4.SS1)
 
 <figure class="review-figure" id="figure-syncworld-qualitative">
-<a href="/assets/reviews/syncworld/paper-figure-5.png" target="_blank" rel="noopener noreferrer"><img src="/assets/reviews/syncworld/paper-figure-5.png" width="4355" height="1621" alt="두 카메라 시점의 실제 로봇 장면을 시간 순서로 나열해 실제 관찰, Ctrl-World와 SyncWorld의 미래 예측을 비교한 논문 원본 그림." loading="lazy" decoding="async"></a>
-<figcaption><span class="figure-label">원문 Figure 5 · 실제 로봇의 예측 비교</span>왼쪽·오른쪽은 서로 다른 카메라 시점이며, 각 묶음의 행은 위에서부터 실제 관찰(Ground-truth), Ctrl-World, SyncWorld다. 가로 방향으로 시간에 따른 변화를 읽고 팔·그리퍼 위치를 비교한다. 저자가 고른 정성 예시이며 전체 성공률이나 물리 정확성의 증명은 아니다. <span class="figure-links"><a href="/assets/reviews/syncworld/paper-figure-5.png" target="_blank" rel="noopener noreferrer">크게 보기</a> · <a href="https://arxiv.org/html/2609.09155v1#S4.F5">Yuncong Yang et al., 2026, 원문 Figure 5</a> · <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> · 원본 유지, 수정·자르기 없음</span></figcaption>
+<a href="/assets/reviews/syncworld/paper-figure-5.webp" target="_blank" rel="noopener noreferrer"><img src="/assets/reviews/syncworld/paper-figure-5.webp" width="2400" height="893" alt="두 카메라 시점의 실제 로봇 장면을 시간 순서로 나열해 실제 관찰, Ctrl-World와 SyncWorld의 미래 예측을 비교한 논문 원본 그림." loading="lazy" decoding="async"></a>
+<figcaption><span class="figure-label">원문 Figure 5 · 실제 로봇의 예측 비교</span>왼쪽·오른쪽은 서로 다른 카메라 시점이며, 각 묶음의 행은 위에서부터 실제 관찰(Ground-truth), Ctrl-World, SyncWorld다. 가로 방향으로 시간에 따른 변화를 읽고 팔·그리퍼 위치를 비교한다. 저자가 고른 정성 예시이며 전체 성공률이나 물리 정확성의 증명은 아니다. <span class="figure-links"><a href="/assets/reviews/syncworld/paper-figure-5.webp" target="_blank" rel="noopener noreferrer">크게 보기</a> · <a href="https://arxiv.org/html/2609.09155v1#S4.F5">Yuncong Yang et al., 2026, 원문 Figure 5</a> · <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> · 내용·배치 유지, 해상도 축소·WebP 압축, 자르기 없음</span></figcaption>
 </figure>
 
 다른 시점에서도 예측이 같은 장면을 나타내는지 확인하는 Met3R은 특징 대응에 기반한 일관성 지표다. 단위 없는 점수이며 낮을수록 좋다. 평균은 LIBERO·ManiSkill·실물 세 영역의 보고 평균이다. 먼저 세 영역별 열을 비교한 뒤 평균 열을 읽는 것이 좋다.
@@ -81,8 +82,8 @@ future video ~ W_theta(C_s, H_t, A_t)
 정책 개선은 별도의 질문이다. SyncWorld는 동결한 시각·언어·행동 정책(VLA) π0에서 8개 행동 후보를 뽑고, 각 후보의 두 시점 미래 영상을 생성한다. GPT-5 시각·언어 모델(VLM)이 과제 진행과 물리적 타당성을 평가해 후보를 선택한다. 이는 생성 예측 제어(GPC)의 후보 순위 방식인 GPC-Rank를 이용한 구성이다. [SyncWorld §3.3, 부록 C.4.1–C.4.2](https://arxiv.org/html/2609.09155v1#S3.SS3), [GPC §III–IV](https://arxiv.org/html/2502.00622v4)
 
 <figure class="review-figure" id="figure-syncworld-policy">
-<a href="/assets/reviews/syncworld/paper-figure-4.png" target="_blank" rel="noopener noreferrer"><img src="/assets/reviews/syncworld/paper-figure-4.png" width="2357" height="930" alt="원문 Figure 4. VLA가 행동 후보를 만들고 SyncWorld가 후보별 두 시점 영상을 예측한다. VLM이 지시와 예측 결과로 점수를 매기고 최고 점수 후보를 실행한다." loading="lazy" decoding="async"></a>
-<figcaption><span class="figure-label">원문 Figure 4 · 예측 영상에서 행동 후보 선택까지</span>왼쪽에서 오른쪽으로 후보 생성·미래 영상·점수 평가를 읽는다. 같은 색의 행이 같은 행동 후보다. 오른쪽 숫자는 후보 평가 점수이며 성공률(%)로 읽으면 안 된다. <span class="figure-links"><a href="/assets/reviews/syncworld/paper-figure-4.png" target="_blank" rel="noopener noreferrer">크게 보기</a> · <a href="https://arxiv.org/html/2609.09155v1#S3.F4">Yuncong Yang et al., 2026, Figure 4</a> · <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> · 원본 유지, 수정·자르기 없음</span></figcaption>
+<a href="/assets/reviews/syncworld/paper-figure-4.webp" target="_blank" rel="noopener noreferrer"><img src="/assets/reviews/syncworld/paper-figure-4.webp" width="1800" height="710" alt="원문 Figure 4. VLA가 행동 후보를 만들고 SyncWorld가 후보별 두 시점 영상을 예측한다. VLM이 지시와 예측 결과로 점수를 매기고 최고 점수 후보를 실행한다." loading="lazy" decoding="async"></a>
+<figcaption><span class="figure-label">원문 Figure 4 · 예측 영상에서 행동 후보 선택까지</span>왼쪽에서 오른쪽으로 후보 생성·미래 영상·점수 평가를 읽는다. 같은 색의 행이 같은 행동 후보다. 오른쪽 숫자는 후보 평가 점수이며 성공률(%)로 읽으면 안 된다. <span class="figure-links"><a href="/assets/reviews/syncworld/paper-figure-4.webp" target="_blank" rel="noopener noreferrer">크게 보기</a> · <a href="https://arxiv.org/html/2609.09155v1#S3.F4">Yuncong Yang et al., 2026, Figure 4</a> · <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> · 내용·배치 유지, 해상도 축소·WebP 압축, 자르기 없음</span></figcaption>
 </figure>
 
 그림은 후보 세 줄을 예시로 보여주지만 실제 평가 구성은 8후보·후보당 16행동·두 시점이다. GPT-5에는 생성 영상에서 뽑은 대표 프레임 3개를 제공한다. SyncWorld는 결과를 예측하고 GPT-5가 점수를 매긴다. 두 단계의 오류가 합쳐지므로 영상 품질 개선을 곧바로 행동 선택 개선으로 읽을 수 없다. [원문 Figure 4, §3.3, 부록 C.4.2·Table 7](https://arxiv.org/html/2609.09155v1#S3.F4)
@@ -158,4 +159,4 @@ ReWAM은 표현 설계와 행동 학습의 관계를 다룬다. 여기의 특징
 
 GPC v4의 공식 제목은 *Inference-Time Enhancement of Generative Robot Policies via Predictive World Modeling*이다. RoboActualizer v3의 RoboTwin 평가 범위는 §5와 부록 C.2의 서술이 달라 미확인으로 남겼으며, 이 글은 해당 범위에 대한 결론을 사용하지 않는다.
 
-확인 범위는 원문 텍스트·표·서지 정보와 아래에 명시한 그림이다. 관련 논문 전문 완독, 증명 전체 검산, 코드·가중치 실행, 보충 동영상 확인, 시뮬레이션·실물 재현, 통계적 유의성 검증은 **미실행**이다. 이번 수정에서는 원문 Figure 2·4·5의 이미지와 캡션, Table 2·3·6·8의 행을 직접 검토했다. 원본 PNG 세 개는 Yuncong Yang 외 저자(2026)의 [SyncWorld v1](https://arxiv.org/abs/2609.09155v1)에서 가져왔으며, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)에 따라 출처를 표시하고 수정·자르기 없이 사용했다. 직접 제작한 그림은 보정 문맥과 고정된 모델의 관계를 설명하는 개념도 하나이며 실제 실험 결과가 아니다. 표는 원문 값을 Markdown으로 옮겼고, 성공 비율만 %로 변환했다. 표지는 원문 Figure 2를 사용한다. 각 그림의 확대 링크에서 전체 해상도를 볼 수 있다.
+확인 범위는 원문 텍스트·표·서지 정보와 아래에 명시한 그림이다. 관련 논문 전문 완독, 증명 전체 검산, 코드·가중치 실행, 보충 동영상 확인, 시뮬레이션·실물 재현, 통계적 유의성 검증은 **미실행**이다. 이번 수정에서는 원문 Figure 2·4·5의 이미지와 캡션, Table 2·3·6·8의 행을 직접 검토했다. 원문 그림을 변환한 WebP 세 개는 Yuncong Yang 외 저자(2026)의 [SyncWorld v1](https://arxiv.org/abs/2609.09155v1)에서 가져왔으며, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)에 따라 출처를 표시하고 내용·배치를 유지하고 해상도 축소와 WebP 압축만 적용했다. 직접 제작한 그림은 보정 문맥과 고정된 모델의 관계를 설명하는 개념도 하나이며 실제 실험 결과가 아니다. 표는 원문 값을 Markdown으로 옮겼고, 성공 비율만 %로 변환했다. 표지는 원문 Figure 2를 사용한다. 각 그림의 확대 링크는 최적화된 이미지를 연다. 원본 해상도는 원문에서 확인할 수 있다. 개념도 SVG는 벡터 글자·도형을 유지하고 삽입 이미지의 해상도와 압축만 조정했다.

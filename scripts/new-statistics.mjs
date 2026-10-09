@@ -1,0 +1,11 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
+const id = process.argv[2];
+if (!id || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id)) throw new Error('Usage: npm run stats:new -- analysis-id');
+const template = JSON.parse(await fs.readFile('skills/publish-research-blog/assets/statistics-analysis.json', 'utf8'));
+template.id = id;
+template.updatedAt = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
+await fs.mkdir('content/statistics', { recursive: true });
+const file = path.join('content/statistics', `${id}.json`);
+await fs.writeFile(file, `${JSON.stringify(template, null, 2)}\n`, { flag: 'wx' });
+console.log(`Created ${file} (private). Fill verified values and sources before publishing. See skills/publish-research-blog/references/statistics-format.md`);

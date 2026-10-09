@@ -1,6 +1,7 @@
+import { renderStatistics } from './render-statistics.mjs';
 import { copy, languages, languageRoute, localizedConfig } from './i18n.mjs';
 
-export function createRenderer({ config, lang, reviews, base, assetVersion }) {
+export function createRenderer({ config, lang, reviews, analyses = [], base, assetVersion }) {
   const site = localizedConfig(config, lang);
   const t = copy[lang];
   const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -39,13 +40,13 @@ ${published ? `<meta property="article:published_time" content="${esc(published)
 <script src="${versioned('/assets/site.js')}" defer></script>
 ${scripts}
 </head>
-<body data-preserve-filters="${route === '/reviews/'}">
+<body data-preserve-filters="${route === '/reviews/' || route === '/statistics/'}">
 <a class="skip-link" href="#main">${t.skip}</a>
 <div class="site-shell">
 <header class="site-header">
 <a class="brand" href="${href('/')}" aria-label="${esc(site.title)} ${t.home}">${site.logo ? `<img class="brand-logo" src="${asset(site.logo.image)}" alt="${esc(site.logo.alt)}" width="72" height="30">` : `${esc(site.title)}<span class="brand-dot" aria-hidden="true">.</span>`}</a>
 <span class="brand-caption">${esc(site.author)} / RESEARCH JOURNAL</span>
-<nav class="main-nav" aria-label="${t.menu}"><a href="${href('/profile/')}" ${route === '/profile/' ? 'aria-current="page"' : ''}>${t.profile}</a><a href="${href('/reviews/')}" ${route.startsWith('/reviews/') ? 'aria-current="page"' : ''}>${t.reviews}</a><a href="${esc(site.githubPage || site.github)}" target="_blank" rel="noopener noreferrer" aria-label="GitHub page (${t.newTab})">GitHub page ${arrow}</a></nav>
+<nav class="main-nav" aria-label="${t.menu}"><a href="${href('/profile/')}" ${route === '/profile/' ? 'aria-current="page"' : ''}>${t.profile}</a><a href="${href('/reviews/')}" ${route.startsWith('/reviews/') ? 'aria-current="page"' : ''}>${t.reviews}</a><a href="${href('/statistics/')}" ${route === '/statistics/' ? 'aria-current="page"' : ''}>${lang === 'ko' ? '논문 통계' : 'Paper statistics'}</a><a href="${esc(site.githubPage || site.github)}" target="_blank" rel="noopener noreferrer" aria-label="GitHub page (${t.newTab})">GitHub page ${arrow}</a></nav>
 <div class="header-actions">
 <button type="button" class="theme-toggle" data-theme-toggle data-dark-label="${t.darkTheme}" data-light-label="${t.lightTheme}" aria-label="${t.darkTheme}" title="${t.darkTheme}" hidden><svg class="theme-icon-moon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20.5 14A8.5 8.5 0 0 1 10 3.5 8.5 8.5 0 1 0 20.5 14Z"/></svg><svg class="theme-icon-sun" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg></button>
 <div class="language-switch" role="group" aria-label="${t.language}">${languageLinks}</div>
@@ -149,7 +150,11 @@ ${content}
     return page({ title: review.title, description: review.description, route: reviewRoute(review), content, published: review.publishedAt, modified: review.updatedAt, availableLanguages: review.availableLanguages, canonicalLanguage: review.sourceLang });
   }
 
+  function statistics() {
+    return page({ title: lang === 'ko' ? '논문 통계' : 'Paper statistics', description: lang === 'ko' ? '논문 분석 결과와 공개 리뷰의 관계를 그래프로 살펴봅니다.' : 'Explore paper analyses and connections across public reviews.', route: '/statistics/', content: renderStatistics({ analyses, reviews, lang, href }), scripts: `<script src="${versioned('/assets/statistics.js')}" defer></script>` });
+  }
+
   const notFound = () => page({ title: t.notFound, route: '/404.html', content: `<main id="main" class="not-found"><p class="section-kicker">404 / NOT FOUND</p><h1>${t.notFoundTitle}</h1><p>${t.notFoundIntro}</p><a class="text-link" href="${href('/reviews/')}">${t.reviewLink} →</a></main>` });
   const redirect = () => `<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=${href('/profile/')}"><link rel="canonical" href="${absolute('/profile/')}"><title>${t.redirect}</title></head><body><a href="${href('/profile/')}">${t.redirect}</a></body></html>`;
-  return { home, profile, reviewIndex, article, notFound, redirect, site, absolute, href, esc };
+  return { home, profile, reviewIndex, statistics, article, notFound, redirect, site, absolute, href, esc };
 }
