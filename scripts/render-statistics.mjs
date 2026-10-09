@@ -20,20 +20,56 @@ export function renderStatistics({ analyses, reviews, lang, href }) {
       headers = [ko ? '항목' : 'Item', local(chart.unit)];
       rows = chart.values.map(row => [local(row.label), format(row.value)]);
     } else {
-      // Put connected components together; isolated nodes remain visible.
-      const ordered = [], visited = new Set();
-      function visit(id) { if (visited.has(id)) return; visited.add(id); ordered.push(chart.nodes.find(node => node.id === id)); for (const edge of chart.edges) { if (edge.source === id) visit(edge.target); if (edge.target === id) visit(edge.source); } }
-      chart.nodes.forEach(node => visit(node.id));
-      const positions = new Map(ordered.map((node, i) => { const angle = -Math.PI / 2 + i * Math.PI * 2 / ordered.length; return [node.id, { x: 320 + 205 * Math.cos(angle), y: 195 + 120 * Math.sin(angle) }]; }));
+      // Keep each connected component together; colors identify connected groups.
+      const groups = [], visited = new Set();
+      function visit(id, group) {
+        if (visited.has(id)) return;
+        visited.add(id);
+        group.push(chart.nodes.find(node => node.id === id));
+        for (const edge of chart.edges) {
+          if (edge.source === id) visit(edge.target, group);
+          if (edge.target === id) visit(edge.source, group);
+        }
+      }
+      for (const node of chart.nodes) {
+        if (visited.has(node.id)) continue;
+        const group = []; visit(node.id, group); groups.push(group);
+      }
+      const ordered = groups.flat(), positions = new Map();
+      const columns = groups.length > 2 ? 2 : 1;
+      const rowHeight = Math.max(180, ...groups.map(group => group.length > 4 ? 300 : 180));
+      const height = Math.ceil(groups.length / columns) * rowHeight;
+      const palette = ['blue', 'teal', 'amber', 'rose', 'violet', 'slate'];
+      groups.forEach((group, groupIndex) => {
+        const centerX = (groupIndex % columns + .5) * 640 / columns;
+        const centerY = (Math.floor(groupIndex / columns) + .5) * rowHeight - 12;
+        const radiusX = columns === 1 ? 190 : 84;
+        const radiusY = rowHeight * .28;
+        group.forEach((node, index) => {
+          const angle = group.length === 2 ? Math.PI - index * Math.PI : -Math.PI / 2 + index * Math.PI * 2 / group.length;
+          positions.set(node.id, {
+            x: centerX + (group.length === 1 ? 0 : radiusX * Math.cos(angle)),
+            y: centerY + (group.length < 3 ? 0 : radiusY * Math.sin(angle)),
+            color: palette[groupIndex % palette.length]
+          });
+        });
+      });
       const maxWeight = Math.max(1, ...chart.edges.map(edge => edge.weight));
-      visual = `<svg class="stat-network" viewBox="0 0 640 400" role="img" aria-labelledby="${chartId}-title" aria-describedby="${chartId}-description">${chart.edges.map(edge => {
+      const percentX = x => (x / 640 * 100).toFixed(3);
+      const percentY = y => (y / height * 100).toFixed(3);
+      const colorStyle = color => `--network-color:var(--network-${color})`;
+      visual = `<div class="network-meta"><span>${chart.nodes.length}${ko ? '개 항목' : ' items'}</span><span>${chart.edges.length}${ko ? '개 연결' : ' links'}</span></div><div class="network-stage" style="aspect-ratio:640 / ${height}" role="group" aria-labelledby="${chartId}-title" aria-describedby="${chartId}-description"><svg class="stat-network" viewBox="0 0 640 ${height}" preserveAspectRatio="none" aria-hidden="true" focusable="false">${chart.edges.map(edge => {
         const a = positions.get(edge.source), b = positions.get(edge.target);
-        return `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke-width="${1.5 + edge.weight / maxWeight * 4}"/><text class="edge-weight" x="${(a.x + b.x) / 2}" y="${(a.y + b.y) / 2 - 8}" text-anchor="middle">${format(edge.weight)}</text>`;
+        return `<line class="network-edge" x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" style="${colorStyle(a.color)}" stroke-width="${1.5 + edge.weight / maxWeight * 1.5}"/>`;
+      }).join('')}</svg>${chart.edges.map(edge => {
+        const a = positions.get(edge.source), b = positions.get(edge.target);
+        return `<span class="network-weight" aria-hidden="true" style="left:${percentX((a.x + b.x) / 2)}%;top:${percentY((a.y + b.y) / 2)}%;${colorStyle(a.color)}">${format(edge.weight)}</span>`;
       }).join('')}${ordered.map((node, index) => {
-        const p = positions.get(node.id), label = node.label[lang];
-        return `<g><title>${e(label)}</title><circle cx="${p.x}" cy="${p.y}" r="20"/><text class="node-number" x="${p.x}" y="${p.y + 5}" text-anchor="middle">${index + 1}</text><text class="node-label" x="${p.x}" y="${p.y + 44}" text-anchor="middle">${e(label.length > 24 ? `${label.slice(0, 23)}…` : label)}</text></g>`;
-      }).join('')}</svg><ul class="network-legend">${ordered.map((node, index) => `<li><span class="network-node-key">${index + 1}.</span> ${node.paperSlug ? `<a href="${href(`/reviews/${node.paperSlug}/`)}">${local(node.label)} ↗</a>` : local(node.label)}</li>`).join('')}</ul>`;
-      caption = local(chart.relationship);
+        const p = positions.get(node.id), number = String(index + 1).padStart(2, '0');
+        const tag = node.paperSlug ? 'a' : 'span';
+        return `<${tag} class="network-node" style="left:${percentX(p.x)}%;top:${percentY(p.y)}%;${colorStyle(p.color)}" ${node.paperSlug ? `href="${href(`/reviews/${node.paperSlug}/`)}"` : ''}><span class="network-point" aria-hidden="true"><span class="network-index">${number}</span></span><span class="network-node-label">${local(node.label)}</span></${tag}>`;
+      }).join('')}</div><ul class="network-legend">${ordered.map((node, index) => `<li style="${colorStyle(positions.get(node.id).color)}"><span class="network-node-key" aria-hidden="true">${String(index + 1).padStart(2, '0')}</span>${node.paperSlug ? `<a href="${href(`/reviews/${node.paperSlug}/`)}">${local(node.label)} <span aria-hidden="true">↗</span></a>` : local(node.label)}</li>`).join('')}</ul>`;
+      caption = `${local(chart.relationship)} · ${ko ? '같은 색은 연결된 묶음' : 'Matching colors indicate connected groups'}`;
       headers = [ko ? '연결 A' : 'Connection A', ko ? '연결 B' : 'Connection B', ko ? '가중치' : 'Weight'];
       rows = chart.edges.map(edge => [local(chart.nodes.find(node => node.id === edge.source).label), local(chart.nodes.find(node => node.id === edge.target).label), format(edge.weight)]);
     }
