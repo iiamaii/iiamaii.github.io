@@ -3,7 +3,7 @@ title: "[2/3] LeJEPA 전체 해설: 목표 분포에서 이론·알고리즘·�
 description: "50쪽 논문을 문제·관련 연구·목표 분포·SIGReg·학습 구조·실험·한계 순서로 연결해 설명한다."
 date: "2026-10-09"
 publishedAt: "2026-10-09T23:54:43+09:00"
-updatedAt: "2026-10-09T23:59:48+09:00"
+updatedAt: "2026-10-10T18:16:19+09:00"
 topics: ["self-supervised learning", "representation learning", "joint embedding predictive architectures", "distribution matching", "computer vision"]
 visibility: "public"
 lang: "ko"
@@ -18,6 +18,8 @@ thumbnailAlt: "LeJEPA의 두 제약 설명도: 한 이미지의 뷰들은 전역
 ---
 
 LeJEPA는 자기지도 표현 학습에서 두 가지 질문을 함께 다룬다. <strong>후속 과제를 아직 모를 때 어떤 표현 분포를 목표로 해야 하며, 그 분포를 큰 모델에서도 안정적으로 맞출 수 있을까?</strong> 저자들은 등방성 Gaussian을 통계적 예측 문제와 연결하고, SIGReg라는 투영 기반 분포 손실을 이미지 뷰의 합의 손실에 결합한다. 이론·알고리즘·다양한 이미지 실험이 하나의 설계 논리로 이어지는 것이 강점이다. 이 글은 50쪽 논문의 전체 흐름을 설명하면서, 증명의 조건과 실험 비교의 범위를 함께 살펴본다. [§§1–6](https://arxiv.org/pdf/2511.08544v3#page=1)
+
+**표기 안내.** 임베딩 벡터 $\mathbf z_{n,v}$, 전역 평균 $\boldsymbol\mu_n$, 전역 뷰 수 $V_g$와 손실 $\mathcal L$은 원문 표기를 따른다. 본문 계산 비용에서 $M=|\mathcal A|$는 방향 수이고 $T$는 적분 주파수 수를 뜻하는 리뷰 보조 기호다. $\mathcal L_{\mathrm{SIGReg}}$는 뷰별 SIGReg 평균의 약칭이며, 중심 손실의 $1/K$는 Algorithm 2의 feature 평균을 표시한다.
 
 세 버전 중 전체 해설 편이다. [입문 요약](/reviews/lejepa-overview/)은 두 조건의 직관에, [기술 심층 리뷰](/reviews/lejepa-technical/)는 증명·계산 복잡도·원문 수식 검토에 집중한다.
 
@@ -65,13 +67,13 @@ LeJEPA는 자기지도 표현 학습에서 두 가지 질문을 함께 다룬다
 
 ## 왜 등방성이고, 왜 Gaussian인가
 
-선형 예측을 먼저 생각해 보자. 표현 행렬을 `X`, 후속 정답을 `y=Xβ+ε`라고 하자. `β`는 풀려는 과제의 방향이고 `ε`는 잡음이다. 어떤 표현 방향의 변화가 매우 작으면 그 방향에 관한 정보를 잡음과 구별하기 어렵다.
+선형 예측을 먼저 생각해 보자. 표현 행렬을 $\mathbf Z$, 후속 정답을 $\mathbf y=\mathbf Z\boldsymbol\beta+\boldsymbol\varepsilon$라고 하자. $\boldsymbol\beta$는 풀려는 과제의 방향이고 $\boldsymbol\varepsilon$는 잡음이다. 어떤 표현 방향의 변화가 매우 작으면 그 방향에 관한 정보를 잡음과 구별하기 어렵다.
 
-원문은 ridge regression의 shrinkage bias와 OLS의 계수 분산을 분석한다. full-rank·고정 설계·동일 잡음 분산 등의 조건에서 OLS 분산의 trace는 `σ² Σ(1/λk)`다. `λk`는 `XᵀX`의 고윳값이다. 전체 에너지가 같다면 한 방향은 작고 다른 방향은 큰 분포보다, 모든 고윳값이 같은 분포가 이 양을 줄인다. 예를 들어 고윳값 `(1,1)`의 역수 합은 2지만 `(0.2,1.8)`은 약 5.56이다. 이 숫자는 리뷰 작성자의 작은 계산 예제다. [§3.1; Appendix B.1–B.2, pp. 26–27](https://arxiv.org/pdf/2511.08544v3#page=26)
+원문은 ridge regression의 shrinkage bias와 OLS의 계수 분산을 분석한다. full-rank·고정 설계·동일 잡음 분산 등의 조건에서 OLS 분산의 trace는 $\sigma^2\sum_{k=1}^K1/\lambda_k$다. $\lambda_k$는 $\mathbf Z^\top\mathbf Z$의 고윳값이다. 전체 에너지가 같다면 한 방향은 작고 다른 방향은 큰 분포보다, 모든 고윳값이 같은 분포가 이 양을 줄인다. 예를 들어 고윳값 $(1,1)$의 역수 합은 2지만 $(0.2,1.8)$은 약 5.56이다. 이 숫자는 리뷰 작성자의 작은 계산 예제다. [§3.1; Appendix B.1–B.2, pp. 26–27](https://arxiv.org/pdf/2511.08544v3#page=26)
 
 이 선형 결과가 정하는 것은 <strong>공분산의 등방성</strong>이다. 정규분포만이 이 공분산을 갖는 것은 아니다. 그래서 저자들은 이웃 평균과 Nadaraya–Watson kernel regression이라는 비선형 후속 예측기를 살펴본다. 이들은 가까운 표현들의 정답을 평균해 새 표현의 정답을 추정한다.
 
-그때 작은 이웃이나 bandwidth에서 발생하는 bias에는 정답 함수의 변화와 표현 밀도의 변화가 함께 들어간다. 밀도 `p`의 score는 `∇log p`이며, 이를 제곱해 평균한 `J(p)=E‖∇log p‖²`가 Fisher information이다. 과제 gradient에 대한 등방성 사전 가정 등을 사용하면 특정 bias 성분이 `J(p)`와 연결된다. kernel 분석은 이 값을 포함하는 최악 경우 bias 상한을 제어한다. [§3.2; Appendix A, B.3–B.7](https://arxiv.org/pdf/2511.08544v3#page=24)
+그때 작은 이웃이나 bandwidth에서 발생하는 bias에는 정답 함수의 변화와 표현 밀도의 변화가 함께 들어간다. 밀도 $p$의 score는 $\nabla\log p$이며, 이를 제곱해 평균한 $J(p)=\mathbb E\|\nabla\log p(X)\|_2^2$가 Fisher information이다. 과제 gradient에 대한 등방성 사전 가정 등을 사용하면 특정 bias 성분이 $J(p)$와 연결된다. kernel 분석은 이 값을 포함하는 최악 경우 bias 상한을 제어한다. [§3.2; Appendix A, B.3–B.7](https://arxiv.org/pdf/2511.08544v3#page=24)
 
 적절한 smoothness·꼬리 조건과 고정된 공분산 아래에서 Gaussian은 Fisher information을 최소화한다. 공분산 trace까지 고정하면 등방성 Gaussian이 선택된다. 그러나 국소 근사, 과제 사전 가정, query와 train의 분포 관계를 사용한 결론이다. 모든 비선형 예측기의 정확한 전체 위험이 무조건 유일하게 최소화된다고 바꾸면 논문보다 강한 주장이 된다. 자세한 조건은 [기술 심층 리뷰](/reviews/lejepa-technical/)에 정리했다.
 
@@ -81,20 +83,22 @@ LeJEPA는 자기지도 표현 학습에서 두 가지 질문을 함께 다룬다
 
 [그림 확대](/assets/reviews/lejepa/paper-figure-5.webp)
 
-<strong>Figure 5 해설.</strong> 왼쪽 히스토그램에서 좌표 `x₁`, `x₂`의 주변 분포는 비슷한 종 모양이다. 그런데 두 번째 패널의 결합 분포는 X자 형태라 다변량 Gaussian이 아니다. 세 번째 패널은 가운데 색 화살표 방향으로 투영했을 때 밀도가 달라지는 모습을 보여준다. 네 번째 패널은 방향에 따른 여러 정규화·검정 통계의 반응을 비교한다. 각 곡선은 실험적으로 비교한 통계이며 모두 동일한 척도의 확률이나 실제 downstream 정확도가 아니다. 핵심은 <strong>좋은 주변 통계만으로 결합 분포를 확인할 수 없다는 것</strong>이다. 출처: Balestriero·LeCun, [Figure 5, p. 8](https://arxiv.org/pdf/2511.08544v3#page=8), [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). 전체 패널을 crop·무손실 WebP 변환했다.
+<strong>Figure 5 해설.</strong> 왼쪽 히스토그램에서 좌표 $x_1$, $x_2$의 주변 분포는 비슷한 종 모양이다. 그런데 두 번째 패널의 결합 분포는 X자 형태라 다변량 Gaussian이 아니다. 세 번째 패널은 가운데 색 화살표 방향으로 투영했을 때 밀도가 달라지는 모습을 보여준다. 네 번째 패널은 방향에 따른 여러 정규화·검정 통계의 반응을 비교한다. 각 곡선은 실험적으로 비교한 통계이며 모두 동일한 척도의 확률이나 실제 downstream 정확도가 아니다. 핵심은 <strong>좋은 주변 통계만으로 결합 분포를 확인할 수 없다는 것</strong>이다. 출처: Balestriero·LeCun, [Figure 5, p. 8](https://arxiv.org/pdf/2511.08544v3#page=8), [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). 전체 패널을 crop·무손실 WebP 변환했다.
 
 유한 개의 moment를 맞추는 것에도 한계가 있다. 평균·분산·왜도·첨도 등 몇 개의 통계가 같아도 서로 다른 분포가 존재한다. 높은 차수까지 늘리면 꼬리 표본이 계산과 gradient에 큰 영향을 줄 수 있다. 이 논문은 그 대안으로 특성함수를 사용한다. [§4.2, Theorem 3, pp. 7–9](https://arxiv.org/pdf/2511.08544v3#page=7)
 
 ## SIGReg: 분포의 지문을 여러 방향에서 맞추기
 
-벡터 `z`를 길이 1인 방향 `a`에 투영한 스칼라를 `s=aᵀz`라 하자. SIGReg는 각 방향에서 empirical characteristic function, 즉 표본 특성함수를 계산한다.
+벡터 $\mathbf z$를 길이 1인 방향 $\mathbf a$에 투영한 스칼라를 $z=\mathbf a^\top\mathbf z$라 하자. SIGReg는 각 방향에서 empirical characteristic function, 즉 표본 특성함수를 계산한다.
 
-```text
-φ̂a(t) = (1/N) Σn exp(i t aᵀzn)
-목표: φG(t) = exp(−t²/2)
-```
+$$
+\begin{aligned}
+\hat\varphi_{\mathbf a}(t)&=\frac1N\sum_{n=1}^N\exp\!\left(it\mathbf a^\top\mathbf z_n\right),\\
+\varphi_{\mathcal N}(t)&=\exp(-t^2/2).
+\end{aligned}
+$$
 
-`t`는 주파수이며 `i`는 허수 단위다. 구현에서는 복소수 exponential을 cosine 평균과 sine 평균으로 나눌 수 있다. Gaussian의 지문은 닫힌 식으로 알려져 있으므로 목표 표본을 매번 생성할 필요가 없다. 주파수별 차이의 제곱에 가중치를 곱해 적분하고, 여러 방향의 값을 평균한다. 원문의 Epps–Pulley 통계와 Algorithm 1은 batch 크기 `N`을 곱한 스케일을 사용한다. [§4.3, Definition 2; Algorithm 1, p. 10](https://arxiv.org/pdf/2511.08544v3#page=10)
+$t$는 주파수이며 $i$는 허수 단위다. 구현에서는 복소수 exponential을 cosine 평균과 sine 평균으로 나눌 수 있다. Gaussian의 지문은 닫힌 식으로 알려져 있으므로 목표 표본을 매번 생성할 필요가 없다. 주파수별 차이의 제곱에 가중치를 곱해 적분하고, 여러 방향의 값을 평균한다. 원문의 Epps–Pulley 통계와 Algorithm 1은 batch 크기 $N$을 곱한 스케일을 사용한다. [§4.3, Definition 2; Algorithm 1, p. 10](https://arxiv.org/pdf/2511.08544v3#page=10)
 
 ![LeJEPA Figure 2: 고차원 표현의 투영 밀도와 목표 Gaussian의 차이.](/assets/reviews/lejepa/paper-figure-2.webp)
 
@@ -104,30 +108,32 @@ LeJEPA는 자기지도 표현 학습에서 두 가지 질문을 함께 다룬다
 
 Cramér–Wold 정리는 모든 방향에서의 분포 일치와 원래 벡터 분포의 일치를 연결한다. 실제 학습은 유한 방향과 주파수 grid를 사용한다. 그러므로 SIGReg를 작게 만들었다는 사실만으로 정확한 다변량 정규성을 인증할 수는 없다. 반복 중 방향을 다시 뽑는 것은 고정된 일부 방향에만 맞추는 현상을 줄이는 설계다. [§4.1, §4.4; Appendix B.8–B.10](https://arxiv.org/pdf/2511.08544v3#page=6)
 
-주요 계산은 matrix projection과 sine·cosine 평균이다. `N`개 표본, `K`차원, `M`개 방향, `T`개 주파수라면 dense 구현 비용은 대략 `O(NKM + NMT)`다. `K, M, T`를 고정하면 표본 수에 선형이고 모든 표본 쌍을 만들 필요가 없다. 방향 수를 차원과 함께 늘리는 설정이나 encoder 전체의 계산까지 모두 선형이라고 말하는 것은 별개다. [§4.3, p. 9; Algorithm 1](https://arxiv.org/pdf/2511.08544v3#page=9)
+주요 계산은 matrix projection과 sine·cosine 평균이다. $N$개 표본, $K$차원, $M$개 방향, $T$개 주파수라면 dense 구현 비용은 대략 $\mathcal O(NKM + NMT)$다. $K,M,T$를 고정하면 표본 수에 선형이고 모든 표본 쌍을 만들 필요가 없다. 방향 수를 차원과 함께 늘리는 설정이나 encoder 전체의 계산까지 모두 선형이라고 말하는 것은 별개다. [§4.3, p. 9; Algorithm 1](https://arxiv.org/pdf/2511.08544v3#page=9)
 
 ## 통합 학습: 두 손실이 묶는 단위를 확인하기
 
-`zn,v`를 이미지 `n`, 뷰 `v`의 projected embedding이라 하자. 큰 crop인 전역 뷰가 `Vg`개, 전체 뷰가 `V`개다. 원문의 Algorithm 2는 전역 뷰들의 평균 `μn`을 중심으로 합의 손실을 계산한다.
+$\mathbf z_{n,v}$를 이미지 $n$, 뷰 $v$의 projected embedding이라 하자. 큰 crop인 전역 뷰가 $V_g$개, 전체 뷰가 $V$개다. 원문의 Algorithm 2는 전역 뷰들의 평균 $\boldsymbol\mu_n$을 중심으로 합의 손실을 계산한다.
 
-```text
-μn = (1/Vg) Σg zn,g
-Lpred = (1/NVK) Σn,v ||zn,v − μn||²
-Lsigreg = (1/V) Σv SIGReg({zn,v : n=1…N})
-L = (1−λ)Lpred + λLsigreg
-```
+$$
+\begin{aligned}
+\boldsymbol\mu_n&=\frac1{V_g}\sum_{g=1}^{V_g}\mathbf z_{n,g},\\
+\mathcal L_{\mathrm{pred}}&=\frac1{NVK}\sum_{n=1}^N\sum_{v=1}^V\|\mathbf z_{n,v}-\boldsymbol\mu_n\|_2^2,\\
+\mathcal L_{\mathrm{SIGReg}}&=\frac1V\sum_{v=1}^V\operatorname{SIGReg}\!\left(\{\mathbf z_{n,v}\}_{n=1}^N\right),\\
+\mathcal L_{\mathrm{LeJEPA}}&=(1-\lambda)\mathcal L_{\mathrm{pred}}+\lambda\mathcal L_{\mathrm{SIGReg}}.
+\end{aligned}
+$$
 
-`K`는 projected embedding 차원이다. 위 식은 Algorithm 2의 `.square().mean()`에 맞춰 feature 차원도 평균한다. `μn`을 만드는 경로에서도 gradient가 흐른다. 별도의 frozen teacher 목표가 아니다. 합의 손실을 볼 때는 같은 `n`의 여러 뷰를 모으고, SIGReg를 볼 때는 같은 `v`의 여러 이미지 `n`을 모은다는 차이가 중요하다. encoder뿐 아니라 projector도 남아 있다. 평가용 backbone 특징과 분포 제약용 projected embedding을 구분한다. Algorithm 2의 non-ViT 설정은 global과 all views를 같게 두므로 그때는 모든 사용 뷰의 평균이 중심이다. [§5, Algorithm 2, pp. 11–12](https://arxiv.org/pdf/2511.08544v3#page=11)
+$K$는 projected embedding 차원이다. 위 식은 Algorithm 2의 `.square().mean()`에 맞춰 feature 차원도 평균한다. $\boldsymbol\mu_n$을 만드는 경로에서도 gradient가 흐른다. 별도의 frozen teacher 목표가 아니다. 합의 손실을 볼 때는 같은 $n$의 여러 뷰를 모으고, SIGReg를 볼 때는 같은 $v$의 여러 이미지 $n$을 모은다는 차이가 중요하다. encoder뿐 아니라 projector도 남아 있다. 평가용 backbone 특징과 분포 제약용 projected embedding을 구분한다. Algorithm 2의 non-ViT 설정은 global과 all views를 같게 두므로 그때는 모든 사용 뷰의 평균이 중심이다. [§5, Algorithm 2, pp. 11–12](https://arxiv.org/pdf/2511.08544v3#page=11)
 
 원문 Eq. 5–7은 쌍별 거리 평균을 중심 거리 평균으로 바꾸면서 동치라고 서술한다. 직접 전개하면 <strong>전역 뷰의 중심 주위 분산 항이 추가로 남는다</strong>. 이 리뷰에서는 Algorithm 2가 명시하는 중심 기반 목적을 기준으로 설명한다. 누락 항의 계산 예제와 부록 식 대조는 [기술 심층 리뷰](/reviews/lejepa-technical/)에 있다. 이 대수적 불일치만으로 실험 결과가 잘못됐다고 판정하지 않는다. [§5, p. 12; Appendix B.6, p. 34](https://arxiv.org/pdf/2511.08544v3#page=34)
 
 ## 구현 설정: 간결한 목적과 남아 있는 선택들
 
-§6.1의 기본 설정은 `λ=0.05`, 전역 뷰 2개와 local 뷰 8개, batch 최소 128, 방향 1,024개, `[-5,5]`의 17개 적분점이다. 한편 p. 14의 Experiment Details 1은 8개 뷰(전역 2, local 6)를 쓴다. 실험별 설정을 읽어야 하며 모든 표가 하나의 구성이라고 가정하면 안 된다. [§6.1; Experiment Details 1, pp. 13–14](https://arxiv.org/pdf/2511.08544v3#page=13)
+§6.1의 기본 설정은 $\lambda =0.05$, 전역 뷰 2개와 local 뷰 8개, batch 최소 128, 방향 1,024개, $[-5,5]$의 17개 적분점이다. 한편 p. 14의 Experiment Details 1은 8개 뷰(전역 2, local 6)를 쓴다. 실험별 설정을 읽어야 하며 모든 표가 하나의 구성이라고 가정하면 안 된다. [§6.1; Experiment Details 1, pp. 13–14](https://arxiv.org/pdf/2511.08544v3#page=13)
 
-학습에서는 AdamW, learning-rate warmup과 cosine schedule을 사용한다. 일부 모델 실험은 학습률 `5×10⁻³/5×10⁻⁴`와 weight decay `0.1/0.01/10⁻⁵`를 cross-validation한다. 선택적인 SWA(weight averaging) 결과도 Appendix Table 4에 있다. 따라서 ‘heuristics 없이’라는 제목은 핵심 anti-collapse 구조의 단순화에 초점을 두고 읽어야 한다. 모든 optimizer 설정이나 schedule까지 제거했다는 뜻은 아니다. [p. 14; Table 4, p. 42](https://arxiv.org/pdf/2511.08544v3#page=14)
+학습에서는 AdamW, learning-rate warmup과 cosine schedule을 사용한다. 일부 모델 실험은 학습률 $5\times 10^{-3}/5\times 10^{-4}$와 weight decay $0.1/0.01/10^{-5}$를 cross-validation한다. 선택적인 SWA(weight averaging) 결과도 Appendix Table 4에 있다. 따라서 ‘heuristics 없이’라는 제목은 핵심 anti-collapse 구조의 단순화에 초점을 두고 읽어야 한다. 모든 optimizer 설정이나 schedule까지 제거했다는 뜻은 아니다. [p. 14; Table 4, p. 42](https://arxiv.org/pdf/2511.08544v3#page=14)
 
-이 리뷰에서 확인한 [공식 코드 스냅샷](https://github.com/galilai-group/lejepa/tree/c293d291ca87cd4fddee9d3fffe4e914c7272052)의 MINIMAL 예시는 17점 `[0,3]` grid와 양의 구간 가중치 doubling, 256개 방향, 모든 뷰의 평균 중심을 사용한다. 논문 Algorithm 1 및 전역 뷰 중심 설정과 그대로 같은 구성이 아니다. 코드 설명을 읽었고 실행은 하지 않았다. 재현할 때는 버전과 설정을 먼저 고정해야 한다.
+이 리뷰에서 확인한 [공식 코드 스냅샷](https://github.com/galilai-group/lejepa/tree/c293d291ca87cd4fddee9d3fffe4e914c7272052)의 MINIMAL 예시는 17점 $[0,3]$ grid와 양의 구간 가중치 doubling, 256개 방향, 모든 뷰의 평균 중심을 사용한다. 논문 Algorithm 1 및 전역 뷰 중심 설정과 그대로 같은 구성이 아니다. 코드 설명을 읽었고 실행은 하지 않았다. 재현할 때는 버전과 설정을 먼저 고정해야 한다.
 
 ## 실험 1: 민감도와 구조 다양성
 
@@ -140,7 +146,7 @@ Table 1은 ImageNet-1K의 ViT-L/14를 100 epoch 학습하고 frozen linear top-1
 
 batch를 줄여도 학습이 가능하다는 것은 의미가 있다. 그러나 성능이 완전히 같지는 않으며 전역 뷰가 하나인 경우 하락도 크다. 적분 범위를 바꾸는 행들에서도 약 2%p 차이가 있다. 이 표의 메시지는 ‘모든 설정에 무감하다’가 아니라 ‘몇 가지 중요한 축에서 큰 모델을 비교적 넓은 설정으로 학습했다’에 가깝다.
 
-별도의 ImageNet-100/ResNet-50 실험에서 Figure 8·Table 7은 뷰 수와 `λ`를 함께 바꾼다. 예를 들어 2뷰/λ=0.01은 83.49%, 4뷰/λ=0.02는 84.68%, 8뷰/λ=0.05는 84.32%다. 서로 다른 뷰 수의 최고점이 같은 λ에 있지는 않는다. 기본값은 유용한 출발점이며 모든 설정의 유일한 최적값이라는 뜻은 아니다. [Figure 8, p. 13; Table 7, p. 43](https://arxiv.org/pdf/2511.08544v3#page=43)
+별도의 ImageNet-100/ResNet-50 실험에서 Figure 8·Table 7은 뷰 수와 $\lambda$를 함께 바꾼다. 예를 들어 2뷰/λ=0.01은 83.49%, 4뷰/λ=0.02는 84.68%, 8뷰/λ=0.05는 84.32%다. 서로 다른 뷰 수의 최고점이 같은 λ에 있지는 않는다. 기본값은 유용한 출발점이며 모든 설정의 유일한 최적값이라는 뜻은 아니다. [Figure 8, p. 13; Table 7, p. 43](https://arxiv.org/pdf/2511.08544v3#page=43)
 
 Figure 9는 ImageNet의 10개 클래스 부분집합에서 20M 미만 모델 약 50개, 8개 계열의 결과를 보여준다. 정확도는 약 91.5–95% 범위다. 논문 전체의 60개 이상 모델 실험이나 Figure 1의 1.8B 모델 학습 곡선을, 모든 모델의 전체 ImageNet·전이 과제 검증으로 읽으면 안 된다. 이 결과는 주로 <strong>여러 architecture에서 목적이 작동한다는 범위 확장</strong>을 뒷받침한다. [Figures 1, 9; §6.1, p. 14](https://arxiv.org/pdf/2511.08544v3#page=14)
 
@@ -152,7 +158,7 @@ Figure 9는 ImageNet의 10개 클래스 부분집합에서 20M 미만 모델 약
 
 <strong>Figure 10 해설.</strong> 세 패널은 ResNet-50/Galaxy10, ResNet-50/ImageNet-10, ViT-B/14/ImageNet-1K다. 가로축은 SIGReg, 세로축은 prediction 손실이며 둘 다 log scale이다. 색막대는 정확도이고 빨강이 높고 파랑이 낮다. 대체로 왼쪽 아래의 두 손실이 작은 영역에 높은 정확도가 모인다. 하지만 한 손실만 보면 부족하고, 점과 곡선의 관계는 측정한 설정들의 경향이지 보편 법칙이 아니다. 출처: Balestriero·LeCun, [Figure 10, p. 15](https://arxiv.org/pdf/2511.08544v3#page=15), [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). 전체 패널 crop·무손실 WebP 변환.
 
-Figure 11은 손실과 probe 정확도의 순위 관계를 분석한다. 원문이 보고하는 Spearman 값의 크기는 대략 0.60–0.90이고 `λ⁰·⁴`로 scaling한 경우 약 0.93–0.99다. 그래프상 손실은 줄고 정확도는 오르는데 값은 양수로 표기돼 있으므로, 이 글에서는 원문의 signed 정의가 명확하지 않은 상태에서 ‘양의 상관’이라고 단정하지 않는다. <strong>측정된 조건에서 강한 역방향 단조 관계를 보였다</strong>는 정도가 안전하다. [§6.2, Figure 11, p. 15](https://arxiv.org/pdf/2511.08544v3#page=15)
+Figure 11은 손실과 probe 정확도의 순위 관계를 분석한다. 원문이 보고하는 Spearman 값의 크기는 대략 0.60–0.90이고 $\lambda ^{0}·^{4}$로 scaling한 경우 약 0.93–0.99다. 그래프상 손실은 줄고 정확도는 오르는데 값은 양수로 표기돼 있으므로, 이 글에서는 원문의 signed 정의가 명확하지 않은 상태에서 ‘양의 상관’이라고 단정하지 않는다. <strong>측정된 조건에서 강한 역방향 단조 관계를 보였다</strong>는 정도가 안전하다. [§6.2, Figure 11, p. 15](https://arxiv.org/pdf/2511.08544v3#page=15)
 
 이것이 새로운 도메인에서 라벨 없이 최적 모델을 반드시 고를 수 있다는 증명은 아니다. scaling 지수는 라벨을 사용한 관측 결과와 연결해 평가됐다. 후속 검증은 기존 평가에서 지수를 정한 뒤 새 도메인의 라벨을 가린 상태에서 checkpoint를 선택하는 방식이어야 한다.
 
@@ -192,7 +198,7 @@ Figure 13의 attention 기반 영역과 Figure 14의 feature PCA 색상은 의�
 
 보충 Figures 16–21은 분포 검정의 비교, 회귀 계수와 정규화의 영향, 손실·정확도 관계, 적분 근사의 추가 결과다. Appendix D는 sphere 방향의 생성, E는 Shapiro–Wilk 계열의 순서 통계, F는 여러 다변량 정규성 통계를 보완한다. 이들은 SIGReg 설계의 비교 배경이지 모두 학습된 이미지 특징의 시각화는 아니다. Figure 17의 caption은 anisotropic 쪽 분산이 낮다고 적어 본문의 등방성 논지와 상충한다. 해당 caption의 조건·표기 문제는 해결되지 않아 별도 성능 근거로 쓰지 않는다. [pp. 43–50](https://arxiv.org/pdf/2511.08544v3#page=43)
 
-Appendix Table 6은 V100 SXM2 16GB에서 SIGReg 계산 시간을 10회 측정한다. `N=512, M=512, T=16`은 `0.465236±0.011642 ms`, `N=8192`는 `6.188304±0.007226 ms`다. §4.4는 forward–backward 측정이라고 설명한다. 이는 손실 계산의 측정이며 encoder 전체 학습 시간으로 해석하면 안 된다. 표에는 `K`와 각 단계의 시간이 분리돼 있지 않으므로 다른 시스템의 총 비용을 예측하는 근거로 확대하지 않는다. [Table 6, p. 43](https://arxiv.org/pdf/2511.08544v3#page=43)
+Appendix Table 6은 V100 SXM2 16GB에서 SIGReg 계산 시간을 10회 측정한다. $N=512, M=512, T=16$은 $0.465236\pm 0.011642 \,\mathrm{ms}$, $N=8192$는 $6.188304\pm 0.007226 \,\mathrm{ms}$다. §4.4는 forward–backward 측정이라고 설명한다. 이는 손실 계산의 측정이며 encoder 전체 학습 시간으로 해석하면 안 된다. 표에는 $K$와 각 단계의 시간이 분리돼 있지 않으므로 다른 시스템의 총 비용을 예측하는 근거로 확대하지 않는다. [Table 6, p. 43](https://arxiv.org/pdf/2511.08544v3#page=43)
 
 ## 증명과 결과가 연결되는 범위
 

@@ -2,7 +2,7 @@
 title: "Why can a Transformer describe the same rules more compactly?"
 description: "A guide to Transformers are Inherently Succinct through long computation histories and small verifiers: size separations, UHAT assumptions, verification complexity, and an appendix connective issue."
 date: "2026-10-09"
-updatedAt: "2026-10-09T05:04:32Z"
+updatedAt: "2026-10-10T18:16:16+09:00"
 publishedAt: "2026-10-09T00:06:00+09:00"
 topics: ["language models", "transformer theory", "formal languages", "computational complexity", "formal verification"]
 translationKey: "transformers-inherently-succinct"
@@ -19,9 +19,11 @@ thumbnailAlt: "Attention retrieves horizontal neighbors and the previous row at 
 
 Recognizing a rule and **describing that rule compactly** are different abilities. This paper shows that certain Transformers can describe the same language exponentially more compactly than temporal logic or fixed-precision RNNs, and doubly exponentially more compactly than finite automata. Its central construction places a long computation history in the input and uses attention to retrieve the positions needed for verification. The comparison concerns **minimum binary description length** under precise model assumptions, rather than measured LLM speed or accuracy. [§§1–4, Theorems 15 and 17, Corollary 18](https://arxiv.org/pdf/2510.19315v3#page=9)
 
+**Notation.** Exponents $2^n$, $2^{2^n}$ and polynomial size $\operatorname{poly}(n)$ use LaTeX. The tile-row block is an illustrative input string and retains its code formatting.
+
 **Reading the cover diagram.** The verifier on the right retrieves positions from the long input on the left and checks their relationships. This is an original illustration of the proof construction, based on [§§3–4](https://arxiv.org/pdf/2510.19315v3#page=6). [Open full size](/assets/reviews/transformers-inherently-succinct/transformers-core.svg).
 
-1. **The numbers inside cells are column addresses.** The two-bit addresses `00, 01, 10, 11` represent decimal 0, 1, 2, and 3. The two rows are consecutive, reusing the same addresses in the next row. `tile t` and `tile u` are abbreviated labels for tiles in each row; they do not mean that all tiles in a row are identical. The proof uses N-bit addresses for `2ᴺ` columns; only four are shown here.
+1. **The numbers inside cells are column addresses.** The two-bit addresses `00, 01, 10, 11` represent decimal 0, 1, 2, and 3. The two rows are consecutive, reusing the same addresses in the next row. `tile t` and `tile u` are abbreviated labels for tiles in each row; they do not mean that all tiles in a row are identical. The proof uses N-bit addresses for $2^N$ columns; only four are shown here.
 2. **The two arrows connect information needed for comparison.** The `neighbor` arrow passes information from cell `01` to cell `10` in the same row to check horizontal colors. The `same address` arrow means that the current row's cell `10` retrieves information from cell `10` in the preceding row to check vertical colors. Attention searches from the current cell toward an earlier position; the diagram's arrows show the retrieved information flowing into the current check. Their lengths encode neither runtime nor actual token distance.
 3. **The right-hand box represents reusable verification rules.** The left-hand table is supplied data; the UHAT on the right decides whether it is valid. The same rules are shared across positions, so each cell does not require new rules or weights. The input and per-position intermediate representations still require memory. Neighbor checks alone are insufficient: the verifier also checks format, address order, boundaries, and termination. The five gadgets below explain this division.
 4. **The two boxes below compare description costs for the same task.** For particular witness language families, equivalent LTL and fixed-precision RNN descriptions must be exponentially larger, while finite automata must be doubly exponentially larger. Box areas are not drawn to those ratios, and the labels do not compare training accuracy or inference speed. [Theorems 15 and 17, Corollary 18](https://arxiv.org/pdf/2510.19315v3#page=9)
@@ -57,11 +59,11 @@ The model is a **unique-hard attention transformer (UHAT)**. It retrieves the ve
 | Arithmetic and precision | Affine maps and ReLU; upper bounds allow rational weights | The lower-bound construction is also stated for input-length-independent fixed-precision integers |
 | Input length | Finite strings with no fixed maximum length | This differs from accuracy within a bounded context window |
 
-A strict past-access mask permits `j < i`, excluding the current position. The paper calls this “future masking” because it **hides the future**. Choosing the rightmost tied candidate then retrieves the most recent matching past position. Neither the strictness nor the tie rule is incidental. [§2; p.8, Corollaries 11 and 14](https://arxiv.org/pdf/2510.19315v3#page=8)
+A strict past-access mask permits $j < i$, excluding the current position. The paper calls this “future masking” because it **hides the future**. Choosing the rightmost tied candidate then retrieves the most recent matching past position. Neither the strictness nor the tie rule is incidental. [§2; p.8, Corollaries 11 and 14](https://arxiv.org/pdf/2510.19315v3#page=8)
 
 ### Turn a computation history into an addressed table
 
-The proof replaces running a long computation with checking an already supplied history. It uses a tiling table of width `2ᴺ`, giving every cell an N-bit column address. Each row starts at address zero, proceeds to the final address, and then wraps to zero for the next row. The table is encoded as a string in row order. [§3, Lemma 8; Appendix A.2](https://arxiv.org/pdf/2510.19315v3#page=14)
+The proof replaces running a long computation with checking an already supplied history. It uses a tiling table of width $2^N$, giving every cell an N-bit column address. Each row starts at address zero, proceeds to the final address, and then wraps to zero for the next row. The table is encoded as a string in row order. [§3, Lemma 8; Appendix A.2](https://arxiv.org/pdf/2510.19315v3#page=14)
 
 ```text
 Illustration with N = 2
@@ -93,12 +95,14 @@ The saving is in the **description of the verification rules**. The long history
 
 The central tool is the **shortest accepted string**. If a small verifier accepts only extremely long strings, how large must another representation be to impose the same requirement?
 
-The paper uses a computation that increments a `2ⁿ`-bit counter through its values. For n=3, this is an eight-bit counter with 256 possible values. In general there are `2^(2ⁿ)` values. A UHAT with a description polynomial in n and the tile-set encoding can check such a history while requiring a shortest accepted string of doubly exponential length. [§4, Theorem 15](https://arxiv.org/pdf/2510.19315v3#page=9)
+The paper uses a computation that increments a $2^n$-bit counter through its values. For n=3, this is an eight-bit counter with 256 possible values. In general there are $2^{2^n}$ values. A UHAT with a description polynomial in n and the tile-set encoding can check such a history while requiring a shortest accepted string of doubly exponential length. [§4, Theorem 15](https://arxiv.org/pdf/2510.19315v3#page=9)
 
-```text
-Verifier description: poly(n)
-Length of its shortest accepted string: at least 2^(2ⁿ)
-```
+$$
+\begin{aligned}
+\text{verifier description length}&=\operatorname{poly}(n),\\
+\text{shortest accepted string length}&\ge2^{2^n}.
+\end{aligned}
+$$
 
 The comparison representations guarantee relatively short accepted strings when their descriptions are small. Combining those guarantees with the construction yields the separations.
 
@@ -139,7 +143,7 @@ The preceding results are the **paper's stated theorems and proof structure**. D
 <figcaption><span class="figure-label">Paper excerpt · Counter check, Eq. (14e)</span>Look at ∧ in the default branch on the right. A valid address transition is an increment or a rollover. This branch must be distinguished from the preceding search for an earlier error. <span class="figure-links"><a href="https://arxiv.org/pdf/2510.19315v3#page=15">Bergsträßer et al., arXiv v3, p.15</a> · <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> · Cropped equation; original notation and fonts preserved · <a href="/assets/reviews/transformers-inherently-succinct/paper-equation-14e.png">Full size</a></span></figcaption>
 </figure>
 
-Read the equation from left to right. `Q#(j)` means that j is a separator `#` position, and `j < i` restricts the search to earlier positions. The black-triangle search looks for an earlier transition that is **neither a rollover nor a valid increment**. If such an error is found, it returns zero. Otherwise, the default branch after the colon checks the current transition. Here, `B₊₁` tests an ordinary +1 increment; `B₁→₀` tests rollover from the final address to zero and also handles the initial-zero condition. [Eqs. (14c–e)](https://arxiv.org/pdf/2510.19315v3#page=15)
+Read the equation from left to right. $Q_{\#}(j)$ means that j is a separator `#` position, and $j < i$ restricts the search to earlier positions. The black-triangle search looks for an earlier transition that is **neither a rollover nor a valid increment**. If such an error is found, it returns zero. Otherwise, the default branch after the colon checks the current transition. Here, $B_{+1}$ tests an ordinary +1 increment; $B_{1\to0}$ tests rollover from the final address to zero and also handles the initial-zero condition. [Eqs. (14c–e)](https://arxiv.org/pdf/2510.19315v3#page=15)
 
 The connective under examination is therefore **the final ∧ in the default branch**. The earlier ∧ joins the conditions “not a rollover” and “not an increment” to identify an error. Replacing both locations with OR is not the candidate tested in this review.
 
@@ -147,8 +151,8 @@ The smallest example uses N=1 and a tile t with all four boundary colors zero: `
 
 | Condition | Value |
 | --- | --- |
-| Normal increment `B₊₁` | True |
-| Rollover `B₁→₀` | False |
+| Normal increment $B_{+1}$ | True |
+| Rollover $B_{1\to0}$ | False |
 | Printed default: AND | False → valid input rejected |
 | Candidate replacement: OR | True |
 

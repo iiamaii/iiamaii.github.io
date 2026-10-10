@@ -2,7 +2,7 @@
 title: "Can an endpoint replace the recurrent path? Efficiency at fixed points in looped models"
 description: "A full-paper review of TBPTT, terminal KV sharing, RL state reuse, and distilled prefill, including the assumptions, appendix controls, quality losses, and end-to-end costs."
 date: "2026-10-08"
-updatedAt: "2026-10-09T05:04:32Z"
+updatedAt: "2026-10-10T18:16:15+09:00"
 publishedAt: "2026-10-08T16:55:04+09:00"
 topics: ["language models", "looped models", "fixed points", "efficient inference", "reinforcement learning"]
 translationKey: "looped-models-fixed-points"
@@ -19,6 +19,8 @@ thumbnailAlt: "Paper Figure 1 connecting the depth prior and orthogonal input in
 
 If a looped language model repeatedly applies the same computation until its state barely changes, must it keep and replay **the entire path to that endpoint**? This paper treats fixed points as states that can replace parts of a computational trajectory. It connects this view to backpropagation, inference KV caches, reinforcement-learning replay, and prompt processing. Cache savings, faster updates, and faster prefill are separate experiments, with separate costs in quality and total runtime. [§1–3, §5, PDF pp. 1–13](https://arxiv.org/pdf/2610.06833v1#page=1)
 
+**Notation.** The equations retain $z^r=(\mathbf H^r,C^r)$, $\rho_{r,t}$, $J_\star$, $B_\star$, $D_\star$ and $\mathcal J_{\mathrm{prior}}$. OrthoInj restores token-indexed $q_t,h_t^r,\zeta_t^r$, while the finite-depth bound uses $\bar h^R,h^\star$ from the appendix.
+
 **Figure 1 · How to read the representative figure.** The left panel presents two training improvements, the learned depth prior and OrthoInj. The center contrasts the recurrent path with an endpoint near a fixed point. The right panel summarizes four computational shortcuts. Its bars report separate experiments, not cumulative speedups from one combined system. In particular, the RL 2× refers to scoring and backward, not total training time. [Benhao Huang et al., 2026, Figure 1](https://arxiv.org/html/2610.06833v1#S0.F1) · [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) · Original retained · [View full size](/assets/reviews/looped-models-fixed-points/paper-figure-1.svg).
 
 ## The question
@@ -29,14 +31,16 @@ The authors connect four questions. Why can training backpropagate through only 
 
 ## Key idea: replacing a path with its endpoint
 
-The experimental backbone is Huginn. A prelude embeds the input; a recurrent core containing two Transformer blocks repeatedly receives that input representation; a coda converts the endpoint into next-token probabilities. The complete recurrent state `z` contains both hidden states `H` and attention key/value banks `C`. [§2](https://arxiv.org/html/2610.06833v1#S2)
+The experimental backbone is Huginn. A prelude embeds the input; a recurrent core containing two Transformer blocks repeatedly receives that input representation; a coda converts the endpoint into next-token probabilities. The complete recurrent state $z$ contains both hidden states $\mathbf H$ and attention key/value banks $C$. [§2](https://arxiv.org/html/2610.06833v1#S2)
 
-```text
-e = Pθ(x)                         # input representation from the prelude
-zʳ = (Hʳ, Cʳ)
-zʳ⁺¹ = Fθ(zʳ; x)                  # shared recurrent core
-z* = Fθ(z*; x)                    # fixed point
-```
+$$
+\begin{aligned}
+e&=P_\theta(x),\\
+z^r&=(\mathbf H^r,C^r),\\
+z^{r+1}&=F_\theta(z^r;x),\\
+z^\star&=F_\theta(z^\star;x).
+\end{aligned}
+$$
 
 At a mathematical fixed point, one more application leaves the state unchanged. The paper also uses the term for approximately stationary finite-depth states. These meanings must remain distinct: small state changes neither imply correct predictions nor establish convergence at the same rate for every input. [§2, Appendix A.2](https://arxiv.org/pdf/2610.06833v1#page=22)
 
@@ -58,9 +62,9 @@ A VJP, or vector–Jacobian product, applies a backward derivative without const
 
 Figure 2 plots relative changes between adjacent recurrent hidden states, with recurrence on the vertical axis and token position horizontally. A later token can settle before an earlier one, undermining a simple left-to-right convergence story. Across qualifying tokens from eight observed sequences, the Spearman correlation between position and convergence depth is 0.14. This is a measurement on those sequences, not a universal law about language. [Figure 2, Appendix C.4](https://arxiv.org/pdf/2610.06833v1#page=35)
 
-```text
-ρ(r,t) = ||hₜʳ − hₜʳ⁻¹||₂ / (||hₜʳ⁻¹||₂ + ε)
-```
+$$
+\rho_{r,t}=\frac{\|h_t^r-h_t^{r-1}\|_2}{\|h_t^{r-1}\|_2+\epsilon}.
+$$
 
 The figure identifies the first depth after which changes remain below 2% through the observation horizon, requiring at least four stable updates. With a horizon of 64, Appendix Table 19 reports that 99.74% of tokens in the Small PLN-5 model meet a 1% threshold. This describes **state stability** on a finite observation window and specified data. Under much stricter convergence checks, some inputs fail and others require hundreds of recurrences. [Appendix C.4, Table 19; A.1](https://arxiv.org/pdf/2610.06833v1#page=36)
 
@@ -71,37 +75,40 @@ The figure identifies the first depth after which changes remain below 2% throug
 
 ## Why backpropagating through a suffix can work
 
-TBPTT, truncated backpropagation through time, differentiates the last `b` recurrences and detaches earlier states. At an exact fixed point, let `J*` be the core's state Jacobian and `B*` its parameter derivative with state held fixed. With `I` denoting the identity matrix, the following sensitivity connects equilibrium differentiation to a truncated Neumann series. [§3.1, Eq. 1; Appendix A.2, Eqs. 14–17](https://arxiv.org/pdf/2610.06833v1#page=22)
+TBPTT, truncated backpropagation through time, differentiates the last $b$ recurrences and detaches earlier states. At an exact fixed point, let $J_\star$ be the core's state Jacobian and $B_\star$ its parameter derivative with state held fixed. With $I$ denoting the identity matrix, the following sensitivity connects equilibrium differentiation to a truncated Neumann series. [§3.1, Eq. 1; Appendix A.2, Eqs. 14–17](https://arxiv.org/pdf/2610.06833v1#page=22)
 
-```text
-D* = dz*/dθ = (I − J*)⁻¹ B*
-   = B* + J*B* + J*²B* + ...       # spectral radius(J*) < 1
+$$
+\begin{aligned}
+D_\star&=\frac{\mathrm dz^\star}{\mathrm d\theta}=(I-J_\star)^{-1}B_\star
+=\sum_{k=0}^{\infty}J_\star^kB_\star,\\
+D_b&=\sum_{k=0}^{b-1}J_\star^kB_\star,\\
+D_\star-D_b&=J_\star^bD_\star,\qquad \rho(J_\star)<1.
+\end{aligned}
+$$
 
-D_b = Σ[k=0..b−1] J*ᵏ B*
-D* − D_b = J*ᵇ D*
-```
-
-If `||J*||₂ ≤ κ < 1`, the omitted loss-gradient tail is bounded by `||B*||₂ ||g||₂ κᵇ/(1−κ)`, where `g` is the endpoint loss gradient. Direct parameter paths through input injection, the prelude, and the output head must remain differentiable. [Appendix A.2, Lemma 2](https://arxiv.org/pdf/2610.06833v1#page=23)
+If $\|J_\star\|_2\le\kappa<1$, the omitted loss-gradient tail is bounded by $\|B_\star\|_2\|g\|_2\kappa^b/(1-\kappa)$, where $g$ is the endpoint loss gradient. Direct parameter paths through input injection, the prelude, and the output head must remain differentiable. [Appendix A.2, Lemma 2](https://arxiv.org/pdf/2610.06833v1#page=23)
 
 However, **finite-depth and equilibrium objectives differ**. Equal endpoint values need not have equal parameter derivatives. Actual TBPTT uses changing Jacobians along the trajectory; endpoint Neumann estimation repeatedly uses the endpoint Jacobian. A small endpoint residual alone does not guarantee that these estimates agree. [Appendix A.2](https://arxiv.org/pdf/2610.06833v1#page=22)
 
-The experiments also show that excessive truncation hurts quality. For Medium PLN-5, windows `b≥4` keep WikiText PPL within 1% of full BPTT, while `b=2` is approximately 5.5% worse and `b=1` approximately 15% worse. On Small fixed-depth models, short windows improve robustness to extra depth and cache sharing while reducing base quality. An endpoint-Neumann-from-initialization control collapses at all five tested learning rates. A fixed-point interpretation does not make every gradient approximation safe. [Appendix C.3, Tables 17–18](https://arxiv.org/pdf/2610.06833v1#page=34)
+The experiments also show that excessive truncation hurts quality. For Medium PLN-5, windows $b\ge 4$ keep WikiText PPL within 1% of full BPTT, while $b=2$ is approximately 5.5% worse and $b=1$ approximately 15% worse. On Small fixed-depth models, short windows improve robustness to extra depth and cache sharing while reducing base quality. An endpoint-Neumann-from-initialization control collapses at all five tested learning rates. A fixed-point interpretation does not make every gradient approximation safe. [Appendix C.3, Tables 17–18](https://arxiv.org/pdf/2610.06833v1#page=34)
 
 Separate memory measurements report peak allocation of 48/86/124GB for windows 5/10/15 at local batch eight. Full BPTT at depth 30 runs out of memory; per-layer activation recomputation lowers memory to 28GiB but takes approximately 1.3 times the step time of window ten. These are configuration-specific measurements, not universal memory-reduction ratios. [§3.1, Appendix C.3](https://arxiv.org/pdf/2610.06833v1#page=33)
 
 ## When retaining only terminal KV is justified
 
-The model has four physical attention layers: one prelude, two core blocks, and one coda. At `R=5`, the logical depth is `1+2×5+1=12`. A visit-specific cache stores twelve banks; terminal sharing retains four, one per physical layer. At `R=16/32`, it retains four instead of 34/66. These are **KV-storage savings**, not corresponding reductions in total GPU memory or FLOPs. [§3.2, Table 20](https://arxiv.org/pdf/2610.06833v1#page=36)
+The model has four physical attention layers: one prelude, two core blocks, and one coda. At $R=5$, the logical depth is $1+2\times 5+1=12$. A visit-specific cache stores twelve banks; terminal sharing retains four, one per physical layer. At $R=16/32$, it retains four instead of 34/66. These are **KV-storage savings**, not corresponding reductions in total GPU memory or FLOPs. [§3.2, Table 20](https://arxiv.org/pdf/2610.06833v1#page=36)
 
-Lemma 1 shows that joint iteration and iteration with a converged prefix frozen reach the same limit if the prefix context converges, the current-token update is uniformly contractive on the specified invariant region, and it is Lipschitz in context. For finite prefix error `η`, two error terms remain. [§3.2, Lemma 1; Appendix A.1, Eq. 12](https://arxiv.org/pdf/2610.06833v1#page=20)
+Lemma 1 shows that joint iteration and iteration with a converged prefix frozen reach the same limit if the prefix context converges, the current-token update is uniformly contractive on the specified invariant region, and it is Lipschitz in context. For finite prefix error $\eta$, two error terms remain. [§3.2, Lemma 1; Appendix A.1, Eq. 12](https://arxiv.org/pdf/2610.06833v1#page=20)
 
-```text
-current-token error ≤ κᴿ × initial error + β(1−κᴿ)/(1−κ) × η
-```
+$$
+\|\bar h^R-h^\star\|
+\le\kappa^R\|\bar h^0-h^\star\|
++\frac{\beta(1-\kappa^R)}{1-\kappa}\,\eta.
+$$
 
-The first term measures unfinished current-token refinement. The second reflects an imperfect frozen context and does not vanish merely by adding recurrences. When `κ` approaches one, context error can be strongly amplified.
+The first term measures unfinished current-token refinement. The second reflects an imperfect frozen context and does not vanish merely by adding recurrences. When $\kappa$ approaches one, context error can be strongly amplified.
 
-Of 304 prefixes under strict empirical checks, 206 qualify for the fixed-depth model and 191 for PLN-5. Their median prefix convergence depths are 152.5 and 114, far beyond the operational depth of five. Freezing at depth five instead gives current-token endpoint gaps five to six orders of magnitude larger than freezing a strictly converged prefix. Practical sharing at `R=5` therefore rests on **finite-error analysis and measured quality**, rather than an assertion that those prefixes have reached exact fixed points. [Appendix A.1, Figure 6](https://arxiv.org/pdf/2610.06833v1#page=21)
+Of 304 prefixes under strict empirical checks, 206 qualify for the fixed-depth model and 191 for PLN-5. Their median prefix convergence depths are 152.5 and 114, far beyond the operational depth of five. Freezing at depth five instead gives current-token endpoint gaps five to six orders of magnitude larger than freezing a strictly converged prefix. Practical sharing at $R=5$ therefore rests on **finite-error analysis and measured quality**, rather than an assertion that those prefixes have reached exact fixed points. [Appendix A.1, Figure 6](https://arxiv.org/pdf/2610.06833v1#page=21)
 
 Appendix C.6 independently varies prefill and decoding depths over eight values between 1 and 32, giving an 8×8 comparison. Once decoding is sufficiently deep, prefill beyond five brings little gain. With shallow decoding, shallow prefill can work better. More prompt computation is not universally beneficial, and the two depths need not be equal. [Appendix C.6, Figure 11](https://arxiv.org/pdf/2610.06833v1#page=37)
 
@@ -109,14 +116,18 @@ Appendix C.6 independently varies prefill and decoding depths over eight values 
 
 The Huginn baseline samples from a shifted Poisson-lognormal, or PLN, distribution with mean depth five. The paper initializes a learned categorical distribution over depths 1–64 from that prior. This is **one global training distribution, not an input-dependent stopping policy**. One depth is sampled per microbatch before running the recurrence. [§4.1, Algorithm 2; Appendix B.3](https://arxiv.org/pdf/2610.06833v1#page=25)
 
-```text
-J_prior = −E[stop_gradient(A) log pφ(R)]
-          − λ_H H(pφ) + λ_m(E[R] − 5)²
-```
+$$
+\begin{aligned}
+\mathcal J_{\mathrm{prior}}(\phi)
+&=-\widehat{\mathbb E}_{n}\!\left[\operatorname{sg}(A_n)\log p_\phi(r)\right]\\
+&\quad-\lambda_H H(p_\phi)
++\lambda_m\!\left(\mathbb E_{p_\phi}[R]-\bar R\right)^2,\quad\bar R=5.
+\end{aligned}
+$$
 
-The advantage `A` comes from `exp(−CE)`, an inverse-perplexity reward, adjusted using moving averages and variance. The language model still trains with cross-entropy, or CE. Entropy `H` discourages collapse to one depth; the final term keeps mean depth near the compute budget. The controller reuses the already-computed model loss instead of adding another model forward pass. Defaults are `λ_H=0.01`, `λ_m=1`, and a maximum backward window of ten. [§4.1, Appendix B.3](https://arxiv.org/pdf/2610.06833v1#page=25)
+The advantage $A_n$ comes from $\exp(-CE)$, an inverse-perplexity reward, adjusted using moving averages and variance. The language model still trains with cross-entropy, or CE. Entropy $\mathbf H$ discourages collapse to one depth; the final term keeps mean depth near the compute budget. The controller reuses the already-computed model loss instead of adding another model forward pass. Defaults are $\lambda _H=0.01$, $\lambda _m=1$, and a maximum backward window of ten. [§4.1, Appendix B.3](https://arxiv.org/pdf/2610.06833v1#page=25)
 
-In Figure 4, the orange fixed-`R=5` model becomes unstable outside its training depth. PLN and learned-depth training remain more stable, with the learned prior lowering PPL relative to PLN. This does not mean every task improves monotonically with more recurrences. [Figure 4; Appendix C.5](https://arxiv.org/pdf/2610.06833v1#page=8)
+In Figure 4, the orange fixed-$R=5$ model becomes unstable outside its training depth. PLN and learned-depth training remain more stable, with the learned prior lowering PPL relative to PLN. This does not mean every task improves monotonically with more recurrences. [Figure 4; Appendix C.5](https://arxiv.org/pdf/2610.06833v1#page=8)
 
 <figure class="review-figure" id="paper-figure-4">
 <a href="/assets/reviews/looped-models-fixed-points/paper-figure-4.svg" target="_blank" rel="noopener noreferrer"><img src="/assets/reviews/looped-models-fixed-points/paper-figure-4.svg" width="496" height="168" alt="WikiText PPL across test depths 1–64 for S and M models, comparing fixed depth, PLN, and learned priors." loading="lazy" decoding="async"></a>
@@ -127,15 +138,17 @@ A consequential control appears in the appendix. At Small scale, sampling from t
 
 ## OrthoInj: preserving the injected direction
 
-Parcae-style injection carries the previous state into the core as `Λh+q`, where `q` is the injected input and `Λ` is a learned diagonal decay. The carryover can already contain a component along `q`, changing the effective magnitude of that direction. OrthoInj removes that component before adding `q`. [§4.2, Eqs. 7–8](https://arxiv.org/pdf/2610.06833v1#page=8)
+Parcae-style injection carries the previous state into the core as $\Lambda h_t^r+q_t$, where $q_t$ is the injected input and $Λ$ is a learned diagonal decay. The carryover can already contain a component along $q_t$, changing the effective magnitude of that direction. OrthoInj removes that component before adding $q_t$. [§4.2, Eqs. 7–8](https://arxiv.org/pdf/2610.06833v1#page=8)
 
-```text
-q = Δ ⊙ W e
-Q_q = I − qqᵀ / (||q||₂² + ε)
-core input = Q_q Λh + q
-```
+$$
+\begin{aligned}
+q_t&=\Delta\odot We_t,\\
+Q_{q_t}&=I-\frac{q_tq_t^\top}{\|q_t\|_2^2+\epsilon},\\
+\zeta_t^r&=Q_{q_t}\Lambda h_t^r+q_t.
+\end{aligned}
+$$
 
-Here `⊙` denotes elementwise multiplication. For nonzero `q` and `ε=0`, the component along `q` is exactly `q`; the implementation uses `ε=10⁻⁶`. The projection does not increase the norm of the decayed carryover, but this is **not a proof that the entire Transformer update is contractive**. The recipe also removes prelude RMSNorm. A 2×2 appendix comparison finds contributions from both changes to validation PPL, with a separately selected learning rate for each configuration. [§4.2; Appendix B.4, C.2, Table 14](https://arxiv.org/pdf/2610.06833v1#page=32)
+Here $\odot$ denotes elementwise multiplication. For nonzero $q_t$ and $\epsilon =0$, the component along $q_t$ is exactly $q_t$; the implementation uses $\epsilon =10^{-6}$. The projection does not increase the norm of the decayed carryover, but this is **not a proof that the entire Transformer update is contractive**. The recipe also removes prelude RMSNorm. A 2×2 appendix comparison finds contributions from both changes to validation PPL, with a separately selected learning rate for each configuration. [§4.2; Appendix B.4, C.2, Table 14](https://arxiv.org/pdf/2610.06833v1#page=32)
 
 In Table 16, the observed Parcae carryover amplifies rather than cancels the input direction. Median effective gains are approximately 2.18/2.75/3.43 at S/M/L. The measured intervention is therefore better described as stabilizing the input-direction magnitude than rescuing an input observed to disappear. [Appendix C.2, Table 16](https://arxiv.org/pdf/2610.06833v1#page=33)
 
@@ -157,7 +170,7 @@ There is an especially important PPL trap. **Terminal-KV PPL in Tables 2–3 and
 
 ## Results and evidence: what does the learned prior improve?
 
-The following Table 2 comparisons replace fixed PLN-5 with the learned prior at `λ_H=0.01`. All use test depth five, four terminal KV banks, and Parcae without prelude normalization. They do not combine the learned prior with OrthoInj. [Table 2](https://arxiv.org/pdf/2610.06833v1#page=10)
+The following Table 2 comparisons replace fixed PLN-5 with the learned prior at $\lambda _H=0.01$. All use test depth five, four terminal KV banks, and Parcae without prelude normalization. They do not combine the learned prior with OrthoInj. [Table 2](https://arxiv.org/pdf/2610.06833v1#page=10)
 
 | Scale | Val. PPL ↓ | WikiText PPL ↓ | Seven-task AVG, % ↑ | GSM8K, % ↑ |
 | --- | --- | --- | --- | --- |
@@ -165,11 +178,11 @@ The following Table 2 comparisons replace fixed PLN-5 with the learned prior at 
 | M | 4.00 → 3.93 | 12.55 → 12.28 | 49.06 → 49.07 | 13.72 → 15.62 |
 | L | 3.10 → 3.07 | 8.76 → 8.68 | 59.30 → 60.00 | 47.61 → 47.92 |
 
-PPL improves at all scales, but Medium AVG improves by just 0.01 percentage point (pp). Large training FLOPs increase from `1253` to `1273 ×10¹⁹`, approximately 1.6%. A matched mean-depth budget is not an exact FLOP match.
+PPL improves at all scales, but Medium AVG improves by just 0.01 percentage point (pp). Large training FLOPs increase from $1253$ to $1273 \times 10^{1}⁹$, approximately 1.6%. A matched mean-depth budget is not an exact FLOP match.
 
-At Large scale, learned-prior terminal-sharing AVG 60.00 is close to fixed-depth full-cache AVG 59.90. It still trails the distinct-weight twelve-layer Untied 12's 61.47. The roughly threefold reduction relative to Untied 12 concerns non-embedding parameters and KV-bank count. Quality exceeds same-physical-depth Untied 4, but training FLOPs are `1273/465≈2.74` times larger. **Parameter efficiency and compute efficiency are different claims.** [Tables 2, 6, 8](https://arxiv.org/pdf/2610.06833v1#page=28)
+At Large scale, learned-prior terminal-sharing AVG 60.00 is close to fixed-depth full-cache AVG 59.90. It still trails the distinct-weight twelve-layer Untied 12's 61.47. The roughly threefold reduction relative to Untied 12 concerns non-embedding parameters and KV-bank count. Quality exceeds same-physical-depth Untied 4, but training FLOPs are $1273/465\approx2.74$ times larger. **Parameter efficiency and compute efficiency are different claims.** [Tables 2, 6, 8](https://arxiv.org/pdf/2610.06833v1#page=28)
 
-In a matched-token comparison for the Large learned prior at `R=5`, terminal sharing raises validation PPL from 3.047 to 3.073, approximately 0.85%, and reduces GSM8K from 50.42% to 47.92%. At `R=16/32`, the PPL gap is at most 0.11%. “Nearly lossless sharing” must be read within those settings and metrics. [Table 20](https://arxiv.org/pdf/2610.06833v1#page=36)
+In a matched-token comparison for the Large learned prior at $R=5$, terminal sharing raises validation PPL from 3.047 to 3.073, approximately 0.85%, and reduces GSM8K from 50.42% to 47.92%. At $R=16/32$, the PPL gap is at most 0.11%. “Nearly lossless sharing” must be read within those settings and metrics. [Table 20](https://arxiv.org/pdf/2610.06833v1#page=36)
 
 ## OrthoInj gains depend on the metric
 
@@ -185,7 +198,7 @@ Large AVG gains only 0.04pp, while code performance declines. The prose claims l
 
 ## RL: avoiding recomputation of already-generated states
 
-RL generates responses, then scores the same tokens to update the policy. The authors save rollout endpoint `zᴿ` and, before any parameter update, apply the core once there to construct a differentiation graph. The forward value remains the saved state, while repeated endpoint-Jacobian VJPs approximate the gradient. **Neumann-4 means four state VJPs through the same graph plus the identity term: five series terms, not four forward passes.** [Algorithm 1; Appendix C.8](https://arxiv.org/pdf/2610.06833v1#page=40)
+RL generates responses, then scores the same tokens to update the policy. The authors save rollout endpoint $z^R$ and, before any parameter update, apply the core once there to construct a differentiation graph. The forward value remains the saved state, while repeated endpoint-Jacobian VJPs approximate the gradient. **Neumann-4 means four state VJPs through the same graph plus the identity term: five series terms, not four forward passes.** [Algorithm 1; Appendix C.8](https://arxiv.org/pdf/2610.06833v1#page=40)
 
 The comparison uses a Large learned-prior checkpoint, depth six, Dr. GRPO, and sixteen responses per training question. GSM8K training covers 400 questions; evaluation uses 500 fixed test questions and eight samples each. Here pass@1 averages the eight outcomes, unlike the main greedy accuracy; pass@8 counts questions with at least one successful response. [§5.4; Appendix C.8](https://arxiv.org/pdf/2610.06833v1#page=41)
 
@@ -201,7 +214,7 @@ Update time is the **median scoring-plus-backward time, excluding rollout and th
 
 For MBPP+ code RL, updates improve from 1.03 to 0.51 seconds, but total time **increases from 20.0 to 21.8 minutes** because rollout and code verification dominate. Pass@1 changes from 40.88 to 39.38 and pass@8 from 69 to 64. [Table 26](https://arxiv.org/pdf/2610.06833v1#page=43)
 
-Reuse minus full-BPTT GSM8K pass@1 is −1.55pp, with a paired question-bootstrap 95% interval of `[−3.13, 0.05]`. This conditions on one training seed; it establishes neither equivalence nor stability across seeds. Reuse/recompute gradient cosine is 0.997–0.999, versus 0.76–0.87 for reuse/full BPTT. The mean relative endpoint residual is 0.034, not zero. Reusing stale states across optimizer updates is untested. [Appendix C.8](https://arxiv.org/pdf/2610.06833v1#page=42)
+Reuse minus full-BPTT GSM8K pass@1 is −1.55pp, with a paired question-bootstrap 95% interval of $[-3.13,0.05]$. This conditions on one training seed; it establishes neither equivalence nor stability across seeds. Reuse/recompute gradient cosine is 0.997–0.999, versus 0.76–0.87 for reuse/full BPTT. The mean relative endpoint residual is 0.034, not zero. Reusing stale states across optimizer updates is untested. [Appendix C.8](https://arxiv.org/pdf/2610.06833v1#page=42)
 
 ## Distilled prefill: predicting only the prompt endpoint
 
@@ -215,7 +228,7 @@ A non-recurrent two-block student predicts the teacher's pre-coda endpoint. Init
 
 These are means over six warmed prefill repetitions, with 8K prompts and batch eight. The student path is approximately 1–4% faster than stopping teacher prefill after two recurrences and gains 0.5–0.9pp AVG. Against full teacher prefill, however, Large AVG loses 4.47pp and GSM8K loses 15.02pp. These measurements do not establish the same speedup for time to first token, total generation, or low-batch interactive serving. [Table 5, Appendix C.7.1](https://arxiv.org/pdf/2610.06833v1#page=13)
 
-Further controls expose handoff sensitivity. Feeding the student's own KV directly to the teacher costs 2–7pp AVG relative to the one-teacher-recurrence path. Standalone students do not beat Untied 4. Distilling a deeper `R=25` teacher gives 4.3–5.4× prefill speedups but larger quality losses; its student is slower and less accurate than the `R=5` student. This comparison uses **hidden loss only**, unlike the main hidden-plus-KL recipe. Lower hidden MSE can coexist with worse downstream quality, suggesting that a single state-distance metric does not capture decoder sensitivity. [Appendix C.7, Tables 22–23](https://arxiv.org/pdf/2610.06833v1#page=39)
+Further controls expose handoff sensitivity. Feeding the student's own KV directly to the teacher costs 2–7pp AVG relative to the one-teacher-recurrence path. Standalone students do not beat Untied 4. Distilling a deeper $R=25$ teacher gives 4.3–5.4× prefill speedups but larger quality losses; its student is slower and less accurate than the $R=5$ student. This comparison uses **hidden loss only**, unlike the main hidden-plus-KL recipe. Lower hidden MSE can coexist with worse downstream quality, suggesting that a single state-distance metric does not capture decoder sensitivity. [Appendix C.7, Tables 22–23](https://arxiv.org/pdf/2610.06833v1#page=39)
 
 ## Position among related work
 
@@ -257,7 +270,7 @@ The appendix answers questions that the main results alone leave unresolved. Thi
 | D.1–5, pp. 43–46 | Do identically named metrics score the same data and tokens? |
 | E.1–5, pp. 46–47 | How do learned exits, KV sharing, and prior distillation differ? |
 
-A useful next experiment would vary `R`, the TBPTT window, and prefix residual on the same checkpoint and tokens while measuring quality, memory, and total runtime. The question is how well state distance or PPL predicts generation success. Testing whether online prior adaptation itself matters requires repeating frozen-final-prior comparisons at Medium/Large scale with multiple seeds. Neither proposal was executed for this review.
+A useful next experiment would vary $R$, the TBPTT window, and prefix residual on the same checkpoint and tokens while measuring quality, memory, and total runtime. The question is how well state distance or PPL predicts generation success. Testing whether online prior adaptation itself matters requires repeating frozen-final-prior comparisons at Medium/Large scale with multiple seeds. Neither proposal was executed for this review.
 
 ## Sources and reading scope
 

@@ -3,7 +3,7 @@ title: "Deep Equilibrium Models: 층을 쌓는 대신 평형 상태를 학습하
 description: "DEQ의 고정점, Broyden 탐색과 암시적 미분을 예제로 설명하고, 주요 증명과 언어 모델 실험을 통해 메모리 이득·속도 비용·수렴 조건을 살펴본다."
 date: "2026-10-09"
 publishedAt: "2026-10-09T20:40:07+09:00"
-updatedAt: "2026-10-09T20:40:07+09:00"
+updatedAt: "2026-10-10T18:16:17+09:00"
 topics: ["language models", "fixed points", "implicit learning", "memory efficiency", "numerical optimization"]
 visibility: "public"
 lang: "ko"
@@ -19,80 +19,106 @@ thumbnailAlt: "공유 블록을 펼친 깊은 네트워크와 DEQ를 비교한 �
 
 깊은 신경망은 여러 층을 거치며 표현을 바꾼다. 학습할 때는 나중에 미분하기 위해 그 중간 상태들을 저장해야 한다. 그렇다면 <strong>같은 블록을 반복한 끝에 거의 변하지 않는 상태에 도달한다면, 그 상태 자체를 모델의 출력으로 정의할 수 있을까?</strong> 2019년의 *Deep Equilibrium Models*는 이 질문을 모델 설계와 학습 알고리즘으로 연결한다. 순전파에서는 평형 상태를 찾고, 역전파에서는 그 상태가 파라미터에 얼마나 민감한지를 계산한다. 깊이 방향의 activation 저장을 줄이는 대신 수치 해법의 비용과 안정성이 중요해진다. [§1–3, pp. 1–5](https://arxiv.org/pdf/1909.01377v2#page=1)
 
-<strong>대표 그림을 읽는 법.</strong> 위 줄은 같은 블록을 여러 층으로 펼치는 방식이다. 가운데 줄은 `f(z*, x) = z*`를 만족하는 끝점을 수치적으로 찾는다. 아래 줄은 끝점에서 선형 방정식을 풀어 gradient를 계산한다. 화살표는 각 줄의 계산 순서를 뜻한다. 반복 계산이 사라지는 것은 아니며, 순전파 탐색 경로 전체를 역전파하지 않는 것이 핵심이다. 이 글에서 직접 제작한 설명 그림이다. [크게 보기](/assets/reviews/deep-equilibrium-models/deq-core.svg)
+**표기 안내.** 시퀀스 식은 원문의 $z^{[i]}_{1:T}$, $x_{1:T}$, $z^\star_{1:T}$를 유지한다. 스칼라 예제에서는 첨자를 생략한다. 아래 implicit 미분 유도는 $J_{f_\theta}$를 쓰고, adjoint를 설명하는 $q,v$는 리뷰의 보조 기호다. Broyden의 $B^{[i]}_{g_\theta}$와 파라미터 미분을 구분한다.
+
+<strong>대표 그림을 읽는 법.</strong> 위 줄은 같은 블록을 여러 층으로 펼치는 방식이다. 가운데 줄은 $f_\theta(z^\star_{1:T};x_{1:T})=z^\star_{1:T}$를 만족하는 끝점을 수치적으로 찾는다. 아래 줄은 끝점에서 선형 방정식을 풀어 gradient를 계산한다. 화살표는 각 줄의 계산 순서를 뜻한다. 반복 계산이 사라지는 것은 아니며, 순전파 탐색 경로 전체를 역전파하지 않는 것이 핵심이다. 이 글에서 직접 제작한 설명 그림이다. [크게 보기](/assets/reviews/deep-equilibrium-models/deq-core.svg)
 
 ## 깊이를 늘릴 때 생기는 두 가지 비용
 
-일반적인 깊은 네트워크에서는 층마다 다른 파라미터를 사용한다. 층들이 가중치를 공유하도록 만들면 파라미터 수의 증가를 막을 수 있지만, 역전파를 위해 각 층의 중간 표현을 저장하는 문제는 남는다. DEQ가 출발하는 구조는 <strong>가중치 공유</strong>와 <strong>매 단계의 입력 주입</strong>을 함께 사용한다. 입력 `x`를 고정한 채 은닉 상태 `z`를 반복해서 갱신한다. [§2–3, 식 3–4](https://arxiv.org/pdf/1909.01377v2#page=3)
+일반적인 깊은 네트워크에서는 층마다 다른 파라미터를 사용한다. 층들이 가중치를 공유하도록 만들면 파라미터 수의 증가를 막을 수 있지만, 역전파를 위해 각 층의 중간 표현을 저장하는 문제는 남는다. DEQ가 출발하는 구조는 <strong>가중치 공유</strong>와 <strong>매 단계의 입력 주입</strong>을 함께 사용한다. 입력 $x$를 고정한 채 은닉 상태 $z$를 반복해서 갱신한다. [§2–3, 식 3–4](https://arxiv.org/pdf/1909.01377v2#page=3)
 
-```text
-z⁰ = 0
-zⁱ⁺¹ = fθ(zⁱ; x)       # 같은 θ, 매번 같은 입력 x 주입
-```
+$$
+\begin{aligned}
+z^{[0]}_{1:T}&=0,\\
+z^{[i+1]}_{1:T}&=f_\theta(z^{[i]}_{1:T};x_{1:T}).
+\end{aligned}
+$$
 
-여기서 `i`는 문장의 토큰 순서가 아니라 <strong>계산 깊이</strong>다. `x`와 `z`는 시퀀스 전체의 표현일 수 있다. 자기회귀 언어 모델이라면 시점 `t`의 출력이 미래 입력을 보지 못하도록 블록 안에 causal convolution이나 attention mask를 적용한다. 전체 시퀀스의 상태를 계산한다고 해서 미래 토큰의 정답을 이용하는 것은 아니다. [§2.2, §4](https://arxiv.org/pdf/1909.01377v2#page=3)
+여기서 $i$는 문장의 토큰 순서가 아니라 <strong>계산 깊이</strong>다. $x$와 $z$는 시퀀스 전체의 표현일 수 있다. 자기회귀 언어 모델이라면 시점 $t$의 출력이 미래 입력을 보지 못하도록 블록 안에 causal convolution이나 attention mask를 적용한다. 전체 시퀀스의 상태를 계산한다고 해서 미래 토큰의 정답을 이용하는 것은 아니다. [§2.2, §4](https://arxiv.org/pdf/1909.01377v2#page=3)
 
 DEQ는 ‘몇 층을 통과한 상태를 쓸까?’ 대신 ‘같은 변환을 다시 적용해도 바뀌지 않는 상태를 쓸 수 있을까?’라고 묻는다.
 
 ## 고정점으로 출력 정의하기: 작은 예제
 
-고정점 또는 평형 상태 `z*`는 다음 식을 만족한다.
+고정점 또는 평형 상태 $z^\star$는 다음 식을 만족한다.
 
-```text
-z* = fθ(z*; x)
-gθ(z; x) = fθ(z; x) − z
-따라서 gθ(z*; x) = 0
-```
+$$
+\begin{aligned}
+z^\star_{1:T}&=f_\theta(z^\star_{1:T};x_{1:T}),\\
+g_\theta(z_{1:T};x_{1:T})&=f_\theta(z_{1:T};x_{1:T})-z_{1:T},\\
+g_\theta(z^\star_{1:T};x_{1:T})&=0.
+\end{aligned}
+$$
 
-`f`를 계속 적용하는 것과 `g=0`이라는 방정식을 푸는 것은 같은 답을 목표로 할 수 있지만, 계산 방식과 수렴 성질은 다르다. DEQ는 두 번째 관점을 택한다. [§3.1, 식 5–7](https://arxiv.org/pdf/1909.01377v2#page=4)
+$f_\theta$를 계속 적용하는 것과 $g=0$이라는 방정식을 푸는 것은 같은 답을 목표로 할 수 있지만, 계산 방식과 수렴 성질은 다르다. DEQ는 두 번째 관점을 택한다. [§3.1, 식 5–7](https://arxiv.org/pdf/1909.01377v2#page=4)
 
-설명을 위해 `f(z; x)=0.5z+0.75x`, `x=2`인 스칼라 예제를 생각해 보자. 이는 논문의 실험이 아니라 이 글의 예제다.
+설명을 위해 $f(z; x)=0.5z+0.75x$, $x=2$인 스칼라 예제를 생각해 보자. 이는 논문의 실험이 아니라 이 글의 예제다.
 
-```text
-0 → 1.5 → 2.25 → 2.625 → ... → 3
-z* = 0.5z* + 1.5  ⇒  z* = 3
-```
+$$
+\begin{gathered}
+0\longrightarrow1.5\longrightarrow2.25\longrightarrow2.625\longrightarrow\cdots\longrightarrow3,\\
+z^\star=0.5z^\star+1.5\quad\Longrightarrow\quad z^\star=3.
+\end{gathered}
+$$
 
-정해진 횟수만큼 반복하면 `3`에 가까운 값을 얻는다. 평형 방정식으로 정의하면 출력은 `3`이다. 실제 DEQ에서는 이런 답을 닫힌 식으로 구할 수 없으므로 허용 오차와 반복 한도를 가진 수치 해법을 사용한다. ‘무한 깊이’는 출력의 정의를 설명하는 표현이지, 무한 번 계산하거나 유한한 비용으로 항상 정확한 답을 얻는다는 뜻은 아니다.
+정해진 횟수만큼 반복하면 $3$에 가까운 값을 얻는다. 평형 방정식으로 정의하면 출력은 $3$이다. 실제 DEQ에서는 이런 답을 닫힌 식으로 구할 수 없으므로 허용 오차와 반복 한도를 가진 수치 해법을 사용한다. ‘무한 깊이’는 출력의 정의를 설명하는 표현이지, 무한 번 계산하거나 유한한 비용으로 항상 정확한 답을 얻는다는 뜻은 아니다.
 
 ## 순전파: Broyden으로 평형 상태 찾기
 
-Newton 방법은 현재 잔차 `g(z)`와 Jacobian을 이용해 다음 후보를 만든다. Jacobian은 상태의 각 성분을 조금 바꿨을 때 함수의 각 출력이 얼마나 바뀌는지를 담은 미분 행렬이다. 큰 시퀀스에서는 그 행렬과 역행렬을 직접 만드는 것이 비싸다. 논문은 <strong>Broyden 방법</strong>으로 역 Jacobian의 근사를 갱신한다. [§3.1.1, 식 6–7, 10, p. 4](https://arxiv.org/pdf/1909.01377v2#page=4)
+Newton 방법은 현재 잔차 $g_\theta(z)$와 Jacobian을 이용해 다음 후보를 만든다. Jacobian은 상태의 각 성분을 조금 바꿨을 때 함수의 각 출력이 얼마나 바뀌는지를 담은 미분 행렬이다. 큰 시퀀스에서는 그 행렬과 역행렬을 직접 만드는 것이 비싸다. 논문은 <strong>Broyden 방법</strong>으로 역 Jacobian의 근사를 갱신한다. [§3.1.1, 식 6–7, 10, p. 4](https://arxiv.org/pdf/1909.01377v2#page=4)
 
-```text
-z_next = z − α H gθ(z; x)
-H ≈ (∂gθ/∂z)⁻¹
-```
+$$
+\begin{aligned}
+z^{[i+1]}_{1:T}&=z^{[i]}_{1:T}-\alpha B^{[i]}_{g_\theta}\,g_\theta(z^{[i]}_{1:T};x_{1:T}),\\
+B^{[i]}_{g_\theta}&\approx\left(J_{g_\theta}\big|_{z^{[i]}_{1:T}}\right)^{-1}.
+\end{aligned}
+$$
 
-`α`는 보폭이며, 역 Jacobian의 근사를 여기서는 `H`로 표기한다. 매번 큰 역행렬을 새로 구하는 대신 저차원 갱신으로 관리하며, 논문은 이 근사를 `−I`에서 초기화한다. 잔차가 충분히 작아지거나 반복 한도에 도달하면 멈춘다. 따라서 solver 설정도 모델을 실제로 실행하는 방법의 일부다.
+$\alpha$는 보폭이며, 역 Jacobian 근사는 원문의 $B^{[i]}_{g_\theta}$를 사용한다. 매번 큰 역행렬을 새로 구하는 대신 저차원 갱신으로 관리하며, 논문은 이 근사를 $-I$에서 초기화한다. 잔차가 충분히 작아지거나 반복 한도에 도달하면 멈춘다. 따라서 solver 설정도 모델을 실제로 실행하는 방법의 일부다.
 
-중요한 차이는 <strong>단순 반복이 불안정해도 방정식의 해는 존재할 수 있다</strong>는 점이다. 예를 들어 `f(z)=1.2z+1`의 고정점은 `−5`지만, `z=0`에서 단순 반복하면 `1, 2.2, 3.64, …`로 커진다. 해의 존재, 단순 반복의 수렴, root solver의 성공은 별개의 문제다. DEQ도 모든 입력에서 solver가 성공한다는 보장을 이 논문에서 얻지는 않는다. [§3.2, Appendix D, pp. 5, 14–15](https://arxiv.org/pdf/1909.01377v2#page=14)
+중요한 차이는 <strong>단순 반복이 불안정해도 방정식의 해는 존재할 수 있다</strong>는 점이다. 예를 들어 $f(z)=1.2z+1$의 고정점은 $-5$지만, $z=0$에서 단순 반복하면 $1, 2.2, 3.64, \ldots$로 커진다. 해의 존재, 단순 반복의 수렴, root solver의 성공은 별개의 문제다. DEQ도 모든 입력에서 solver가 성공한다는 보장을 이 논문에서 얻지는 않는다. [§3.2, Appendix D, pp. 5, 14–15](https://arxiv.org/pdf/1909.01377v2#page=14)
 
 ## 역전파: 왜 전체 탐색 경로를 저장하지 않아도 되는가
 
-순전파에서 끝점에 도달했더라도 학습하려면 파라미터 변화가 끝점에 미치는 영향을 알아야 한다. 여기서 <strong>암시적 미분</strong>을 사용한다. 먼저 `z*=fθ(z*; x)`의 양변을 파라미터 `θ`에 대해 미분한다. [Theorem 1, 식 8; Appendix A, 식 13–14](https://arxiv.org/pdf/1909.01377v2#page=13)
+순전파에서 끝점에 도달했더라도 학습하려면 파라미터 변화가 끝점에 미치는 영향을 알아야 한다. 여기서 <strong>암시적 미분</strong>을 사용한다. 먼저 $z^\star_{1:T}=f_\theta(z^\star_{1:T};x_{1:T})$의 양변을 파라미터 $\theta$에 대해 미분한다. [Theorem 1, 식 8; Appendix A, 식 13–14](https://arxiv.org/pdf/1909.01377v2#page=13)
 
-```text
-J = ∂fθ/∂z      # 끝점에서 상태에 대한 미분
-B = ∂fθ/∂θ      # 끝점을 고정했을 때 파라미터에 대한 미분
+$$
+\begin{aligned}
+J_{f_\theta}&=\left.\frac{\partial f_\theta}{\partial z_{1:T}}\right|_{z^\star_{1:T}},\\
+\frac{\mathrm dz^\star_{1:T}}{\mathrm d\theta}
+&=J_{f_\theta}\frac{\mathrm dz^\star_{1:T}}{\mathrm d\theta}
++\frac{\partial f_\theta(z^\star_{1:T};x_{1:T})}{\partial\theta},\\
+(I-J_{f_\theta})\frac{\mathrm dz^\star_{1:T}}{\mathrm d\theta}
+&=\frac{\partial f_\theta(z^\star_{1:T};x_{1:T})}{\partial\theta},\\
+\frac{\mathrm dz^\star_{1:T}}{\mathrm d\theta}
+&=(I-J_{f_\theta})^{-1}\frac{\partial f_\theta(z^\star_{1:T};x_{1:T})}{\partial\theta}.
+\end{aligned}
+$$
 
-dz*/dθ = J(dz*/dθ) + B
-(I − J)(dz*/dθ) = B
-dz*/dθ = (I − J)⁻¹ B
-```
+원문 Theorem 1의 row-gradient 표기는 아래와 같다. $J_{g_\theta}=J_{f_\theta}-I$이므로 앞 유도와 같다. 이어지는 adjoint는 열벡터로 전치해 쓴다.
 
-손실을 `ℓ`, 끝점에 대한 손실 gradient를 `q=∇zℓ`라고 하자. 큰 역행렬을 직접 만들지 않고 다음 선형 방정식을 풀면 된다. 벡터는 열벡터로 표기했다.
+$$
+\frac{\partial\ell}{\partial\theta}
+=-\frac{\partial\ell}{\partial z^\star_{1:T}}
+\left(J_{g_\theta}\big|_{z^\star_{1:T}}\right)^{-1}
+\frac{\partial f_\theta(z^\star_{1:T};x_{1:T})}{\partial\theta}.
+$$
 
-```text
-(I − J)ᵀ v = q
-∇θℓ = Bᵀv
-```
+손실을 $\ell$, 끝점에 대한 손실 gradient를 $q=\nabla_{z^\star_{1:T}}\ell$라고 하자. 큰 역행렬을 직접 만들지 않고 다음 선형 방정식을 풀면 된다. 벡터는 열벡터로 표기했다.
+
+$$
+\begin{aligned}
+q&=\nabla_{z^\star_{1:T}}\ell,\\
+(I-J_{f_\theta})^\top v&=q,\\
+\nabla_\theta\ell&=\left(\frac{\partial f_\theta}{\partial\theta}\right)^\top v.
+\end{aligned}
+$$
 
 이것이 증명의 핵심이다. 끝점과 그 주변의 미분만으로 파라미터 민감도를 구한다. 계산에서는 <strong>VJP(vector–Jacobian product)</strong>, 즉 Jacobian 전체를 만들지 않고 벡터에 대한 역방향 미분을 계산하는 연산을 사용한다. 순전파 solver의 모든 갱신을 자동미분 그래프로 보관할 필요가 없다. 출력 head나 손실이 파라미터에 직접 의존하는 경로는 그 미분을 따로 더해야 한다. [§3.1.2, 식 11, p. 5](https://arxiv.org/pdf/1909.01377v2#page=5)
 
-앞의 스칼라 예제에서 목표값을 `1`, 손실을 `½(z*−1)²`로 두면 `q=2`, `J=0.5`, `v=4`다. `f(z;x)=az+bx`의 `a=0.5`, `b=0.75`에 대해 `∂ℓ/∂a=12`, `∂ℓ/∂b=8`이 된다. 이 글의 계산을 중앙 차분으로 확인했으며, 최대 절대 오차는 약 `3.3×10⁻¹⁰`이었다. 이는 수식 설명을 위한 작은 검사이며 논문 모델의 학습 재현은 아니다.
+앞의 스칼라 예제에서 목표값을 $1$, 손실을 $\frac12(z^\star-1)^2$로 두면 $q=2$, $J_{f_\theta}=0.5$, $v=4$다. $f(z;x)=az+bx$의 $a=0.5$, $b=0.75$에 대해 $\partial\ell/\partial a=12$, $\partial\ell/\partial b=8$이 된다. 이 글의 계산을 중앙 차분으로 확인했으며, 최대 절대 오차는 약 $3.3\times 10^{-10}$이었다. 이는 수식 설명을 위한 작은 검사이며 논문 모델의 학습 재현은 아니다.
 
-이 식에는 조건이 있다. 함수가 해당 해 주변에서 미분 가능하고 <strong><code>I−J</code>가 가역</strong>이어야 한다. 논문의 역행렬 표기도 이 조건을 전제한다. 거의 특이한 행렬이라면 작은 잔차에도 상태나 gradient 오차가 크게 증폭될 수 있다. 또한 식은 정확한 평형 상태에 대한 식이고, 실제 구현은 근사 상태와 근사 선형 해를 사용한다. 잔차가 작다는 사실만으로 gradient가 언제나 정확하다고 말할 수는 없다. [Appendix A; RBP §3.2](https://proceedings.mlr.press/v80/liao18c/liao18c.pdf#page=3)
+이 식에는 조건이 있다. 함수가 해당 해 주변에서 미분 가능하고 <strong>$I-J_{f_\theta}$가 가역</strong>이어야 한다. 논문의 역행렬 표기도 이 조건을 전제한다. 거의 특이한 행렬이라면 작은 잔차에도 상태나 gradient 오차가 크게 증폭될 수 있다. 또한 식은 정확한 평형 상태에 대한 식이고, 실제 구현은 근사 상태와 근사 선형 해를 사용한다. 잔차가 작다는 사실만으로 gradient가 언제나 정확하다고 말할 수는 없다. [Appendix A; RBP §3.2](https://proceedings.mlr.press/v80/liao18c/liao18c.pdf#page=3)
 
 ## ‘상수 메모리’가 뜻하는 범위
 
@@ -113,15 +139,17 @@ Transformer 구현은 Transformer-XL의 문맥 처리와 상대 위치 표현을
 
 ## 표현력에 관한 두 증명은 어디까지 말하는가
 
-<strong>Theorem 2: 두 DEQ를 쌓은 결과를 하나의 더 큰 DEQ로 표현할 수 있다.</strong> 첫 평형 상태를 `u`, 둘째를 `w`라 하면, 결합 상태 `[u; w]`에 두 갱신을 함께 넣는다. [Appendix B, 식 15–16, p. 13](https://arxiv.org/pdf/1909.01377v2#page=13)
+<strong>Theorem 2: 두 DEQ를 쌓은 결과를 하나의 더 큰 DEQ로 표현할 수 있다.</strong> 첫 평형 상태를 $w^{(1)}_{1:T}$, 둘째를 $w^{(2)}_{1:T}$라 하면, 결합 상태 $[w^{(1)}_{1:T};w^{(2)}_{1:T}]$에 두 갱신을 함께 넣는다. [Appendix B, 식 15–16, p. 13](https://arxiv.org/pdf/1909.01377v2#page=13)
 
-```text
-u = f(u; x)
-w = h(w; u)
-Γ([u; w]; x) = [f(u; x); h(w; u)]
-```
+$$
+\Gamma_\Theta\!\left(\begin{bmatrix}w^{(1)}_{1:T}\\w^{(2)}_{1:T}\end{bmatrix};x_{1:T}\right)
+=\begin{bmatrix}
+f_{\theta^{[1]}}(w^{(1)}_{1:T};x_{1:T})\\
+v_{\theta^{[2]}}(w^{(2)}_{1:T};w^{(1)}_{1:T})
+\end{bmatrix}.
+$$
 
-`Γ`의 고정점에서는 두 원래 방정식이 동시에 성립한다. 결합 상태의 마지막 부분을 읽으면 쌓은 모델과 같은 출력을 얻는다. 다만 은닉 차원은 두 상태 차원의 <strong>합</strong>이 된다. 같은 폭의 블록 하나가 항상 같은 표현력을 갖거나, 합친 solver가 더 빠르다는 증명은 아니다. 본문의 함수 첨자 표기보다 구성이 명확한 Appendix B를 기준으로 읽었다.
+$\Gamma_\Theta$의 고정점에서는 두 원래 방정식이 동시에 성립한다. 결합 상태의 마지막 부분을 읽으면 쌓은 모델과 같은 출력을 얻는다. 다만 은닉 차원은 두 상태 차원의 <strong>합</strong>이 된다. 같은 폭의 블록 하나가 항상 같은 표현력을 갖거나, 합친 solver가 더 빠르다는 증명은 아니다. 본문의 함수 첨자 표기보다 구성이 명확한 Appendix B를 기준으로 읽었다.
 
 <strong>Theorem 3: 유한한 비공유 네트워크도 더 넓은 공유 네트워크에 넣을 수 있다.</strong> 각 층의 상태를 큰 벡터의 서로 다른 구획에 넣고, 한 구획의 결과를 다음 구획으로 보내는 block-shift 구조를 만든다. 이를 반복하면 각 구획이 원래 층의 출력을 차례로 계산한다. [Appendix C, p. 14](https://arxiv.org/pdf/1909.01377v2#page=14)
 
@@ -145,7 +173,7 @@ w = h(w; u)
 
 실험은 복사 과제, Penn Treebank(PTB), WikiText-103(WT103)로 구성된다. 언어 모델 지표인 <strong>perplexity(PPL)</strong>는 정답 토큰에 할당한 확률의 평균 음의 로그를 지수화한 값이며 낮을수록 좋다. 같은 데이터와 토큰화·어휘 등 평가 조건 안에서 비교해야 한다. PPL의 변화율을 정확도 변화율로 읽거나 PTB와 WT103의 값을 직접 비교하면 안 된다. [§5, Tables 1–3; Appendix F](https://arxiv.org/pdf/1909.01377v2#page=7)
 
-<strong>복사 과제는 긴 간격을 넘어 정보를 보존하는 작은 스트레스 테스트다.</strong> 처음 10개 기호를 기다림 구간 뒤에 다시 출력한다. `T=400` 설정의 실제 시퀀스 길이는 `T+20=420`이다. 약 14–16K 파라미터 모델에서 DEQ-Transformer의 보고 loss는 `3.5×10⁻⁶`, TCN은 `2.7×10⁻⁵`, LSTM은 `0.0501`, GRU는 `0.0491`이다. Table 1과 부록에 이 loss의 정확한 집계 정의가 명시되어 있지 않아 여기서는 원문의 ‘loss’ 표기를 유지한다. 이 결과는 일반 언어 이해나 추론 능력의 검증과 구분해야 한다. [Table 1, p. 7; Appendix F, p. 16](https://arxiv.org/pdf/1909.01377v2#page=16)
+<strong>복사 과제는 긴 간격을 넘어 정보를 보존하는 작은 스트레스 테스트다.</strong> 처음 10개 기호를 기다림 구간 뒤에 다시 출력한다. $T=400$ 설정의 실제 시퀀스 길이는 $T+20=420$이다. 약 14–16K 파라미터 모델에서 DEQ-Transformer의 보고 loss는 $3.5\times 10^{-6}$, TCN은 $2.7\times 10^{-5}$, LSTM은 $0.0501$, GRU는 $0.0491$이다. Table 1과 부록에 이 loss의 정확한 집계 정의가 명시되어 있지 않아 여기서는 원문의 ‘loss’ 표기를 유지한다. 이 결과는 일반 언어 이해나 추론 능력의 검증과 구분해야 한다. [Table 1, p. 7; Appendix F, p. 16](https://arxiv.org/pdf/1909.01377v2#page=16)
 
 다음은 원문의 주요 언어 모델 행을 선택해 다시 적은 표다. <strong>모든 메모리 값은 시퀀스 길이 150, batch size 15, 단어 임베딩 제외라는 공통 측정 조건</strong>이다. 실제 각 모델의 학습 설정 전체가 같다는 뜻은 아니다. 보조 손실, 전체 파라미터 수, 세부 구조도 모델별로 다르다. [Table 2 주석; Table 3, pp. 7–8](https://arxiv.org/pdf/1909.01377v2#page=7)
 
@@ -159,9 +187,9 @@ w = h(w; u)
 | WT103 | Transformer-XL 18층, medium, adaptive embedding | 110M / 72M | 23.6 | 9.0 |
 | WT103 | DEQ-Transformer, medium, adaptive embedding | 110M / 70M | 23.2 | 3.7 |
 
-PTB에서는 PPL이 거의 같은 수준이고 메모리는 크게 줄어든다. WT103의 Trellis 비교에서는 `24.7→3.3GB`, 약 <strong>86.6%</strong> 절감이다. 하지만 checkpointing을 이미 적용한 `5.2GB`와 비교하면 약 <strong>36.5%</strong>다. Transformer의 adaptive embedding 행에서는 `9.0→3.7GB`, 약 <strong>58.9%</strong>다. 이는 표의 반올림된 값을 이용한 계산이다. 초록의 ‘최대 88%’는 저자의 전체 요약 주장으로 구분하며, 모든 구조와 기준 모델에 적용되는 비율로 쓰지 않는다.
+PTB에서는 PPL이 거의 같은 수준이고 메모리는 크게 줄어든다. WT103의 Trellis 비교에서는 $24.7\to 3.3\,\mathrm{GB}$, 약 <strong>86.6%</strong> 절감이다. 하지만 checkpointing을 이미 적용한 $5.2\,\mathrm{GB}$와 비교하면 약 <strong>36.5%</strong>다. Transformer의 adaptive embedding 행에서는 $9.0\to 3.7\,\mathrm{GB}$, 약 <strong>58.9%</strong>다. 이는 표의 반올림된 값을 이용한 계산이다. 초록의 ‘최대 88%’는 저자의 전체 요약 주장으로 구분하며, 모든 구조와 기준 모델에 적용되는 비율로 쓰지 않는다.
 
-품질에서도 DEQ가 모든 행을 이기는 것은 아니다. PTB Table 2의 DARTS는 PPL `55.7`, WT103 Table 3의 훨씬 큰 Transformer-XL은 `18.7`이다. 규모와 학습 조건이 다른 행들이므로, 이 논문의 설득력은 절대적인 최고 PPL보다 <strong>비슷한 규모·품질에서 깊이 방향 저장을 줄일 수 있다는 사례</strong>에 있다. [Tables 2–3](https://arxiv.org/pdf/1909.01377v2#page=8)
+품질에서도 DEQ가 모든 행을 이기는 것은 아니다. PTB Table 2의 DARTS는 PPL $55.7$, WT103 Table 3의 훨씬 큰 Transformer-XL은 $18.7$이다. 규모와 학습 조건이 다른 행들이므로, 이 논문의 설득력은 절대적인 최고 PPL보다 <strong>비슷한 규모·품질에서 깊이 방향 저장을 줄일 수 있다는 사례</strong>에 있다. [Tables 2–3](https://arxiv.org/pdf/1909.01377v2#page=8)
 
 실행 시간에는 대가가 있다. Table 4의 값은 `DEQ 시간 / 비교 모델 시간`이므로 1보다 크면 느리다. [Table 4, p. 9](https://arxiv.org/pdf/1909.01377v2#page=9)
 
@@ -179,9 +207,9 @@ PTB에서는 PPL이 거의 같은 수준이고 메모리는 크게 줄어든다.
 <figcaption><span class="figure-label">Figure 2 · 학습이 진행되면 평형 탐색도 어려워질 수 있다</span>원문 v2 p. 8의 두 패널을 주변 본문에서 분리했다. 축·범례·곡선은 유지했다. <span class="figure-links"><a href="https://arxiv.org/pdf/1909.01377v2#page=8">Shaojie Bai, J. Zico Kolter, Vladlen Koltun, 2019, Figure 2</a> · <a href="/assets/reviews/deep-equilibrium-models/paper-figure-2.webp" target="_blank" rel="noopener noreferrer">크게 보기</a> · 검토를 위한 그림 인용; 권리는 원저자에게 있음</span></figcaption>
 </figure>
 
-<strong>왼쪽은 계산 부담을 읽는 그래프다.</strong> 가로축은 training epoch, 세로축은 Broyden 반복 수를 시퀀스의 시간 단계 수로 나눈 값이다. `0.9`를 ‘solver를 한 번도 실행하지 않았다’고 읽으면 안 된다. 길이 150으로 정규화된 값이며, 파란 선은 forward, 붉은 선은 backward다. 이 설정에서는 학습이 진행될수록 두 계산량이 증가한다. [Figure 2, §5, p. 8](https://arxiv.org/pdf/1909.01377v2#page=8)
+<strong>왼쪽은 계산 부담을 읽는 그래프다.</strong> 가로축은 training epoch, 세로축은 Broyden 반복 수를 시퀀스의 시간 단계 수로 나눈 값이다. $0.9$를 ‘solver를 한 번도 실행하지 않았다’고 읽으면 안 된다. 길이 150으로 정규화된 값이며, 파란 선은 forward, 붉은 선은 backward다. 이 설정에서는 학습이 진행될수록 두 계산량이 증가한다. [Figure 2, §5, p. 8](https://arxiv.org/pdf/1909.01377v2#page=8)
 
-<strong>오른쪽은 상태의 잔차를 읽는 그래프다.</strong> 가로축은 함수 평가 횟수이고, 세로축은 `‖f(z)−z‖`의 로그 축이다. PPL도 정답 상태까지의 거리도 아니다. 가중치 공유 Transformer의 단순 반복은 epoch 1에서는 내려가지만 epoch 12에서는 진동하며 큰 잔차를 유지한다. DEQ의 root 탐색은 두 시점 모두 훨씬 작은 잔차에 도달한다. 이는 단순 반복과 수치적 root 탐색의 차이를 보여준다. 유한층 기준 모델보다 벽시계 시간이 빠르다는 증거로 바꿀 수는 없다.
+<strong>오른쪽은 상태의 잔차를 읽는 그래프다.</strong> 가로축은 함수 평가 횟수이고, 세로축은 $\|f(z)-z\|_2$의 로그 축이다. PPL도 정답 상태까지의 거리도 아니다. 가중치 공유 Transformer의 단순 반복은 epoch 1에서는 내려가지만 epoch 12에서는 진동하며 큰 잔차를 유지한다. DEQ의 root 탐색은 두 시점 모두 훨씬 작은 잔차에 도달한다. 이는 단순 반복과 수치적 root 탐색의 차이를 보여준다. 유한층 기준 모델보다 벽시계 시간이 빠르다는 증거로 바꿀 수는 없다.
 
 ## 원문 그래프 3: 정밀도와 품질 사이의 선택
 
@@ -192,7 +220,7 @@ PTB에서는 PPL이 거의 같은 수준이고 메모리는 크게 줄어든다.
 
 왼쪽은 forward의 잔차 허용치를 키울수록 어디서 품질이 무너지는지를 보여준다. 가로축은 로그 축이고 값이 작을수록 엄격하다. 작은 허용치 구간에서는 validation PPL이 비슷하지만 너무 크게 완화하면 급격히 나빠진다. 오른쪽은 반복 한도를 늘릴수록 PPL이 개선되고, 추가 계산의 이득이 작아지는 모습을 보여준다. 음영은 원문에 있지만 그 집계 의미가 명시되지 않아 신뢰구간으로 해석하지 않는다. [Figure 3, §5, p. 9](https://arxiv.org/pdf/1909.01377v2#page=9)
 
-이 그림의 실험은 adaptive embedding 없는 medium DEQ-Transformer다. 본문은 <strong>길이 75인 시퀀스</strong>에서 `ε<0.1` 또는 반복 한도 30이 경쟁력 있는 결과를 냈다고 설명한다. 이 설정을 앞 표의 메모리 측정 조건인 길이 150이나 모든 모델의 최적 설정으로 일반화하면 안 된다. 그림의 지표는 validation PPL이며 앞 표의 test PPL과도 구분해야 한다.
+이 그림의 실험은 adaptive embedding 없는 medium DEQ-Transformer다. 본문은 <strong>길이 75인 시퀀스</strong>에서 $\epsilon <0.1$ 또는 반복 한도 30이 경쟁력 있는 결과를 냈다고 설명한다. 이 설정을 앞 표의 메모리 측정 조건인 길이 150이나 모든 모델의 최적 설정으로 일반화하면 안 된다. 그림의 지표는 validation PPL이며 앞 표의 test PPL과도 구분해야 한다.
 
 ## 구현에서 중요한 조건과 남은 한계
 

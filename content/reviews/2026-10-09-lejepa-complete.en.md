@@ -3,7 +3,7 @@ title: "[2/3] LeJEPA in full: from target distribution to theory, algorithm and 
 description: "A connected review of the 50-page paper: problem, related work, target distribution, SIGReg, training, experiments and limitations."
 date: "2026-10-09"
 publishedAt: "2026-10-09T23:54:43+09:00"
-updatedAt: "2026-10-09T23:59:48+09:00"
+updatedAt: "2026-10-10T18:16:19+09:00"
 topics: ["self-supervised learning", "representation learning", "joint embedding predictive architectures", "distribution matching", "computer vision"]
 visibility: "public"
 lang: "en"
@@ -18,6 +18,8 @@ thumbnailAlt: "LeJEPA combines within-image alignment to the global-view mean wi
 ---
 
 LeJEPA connects two questions in self-supervised representation learning: <strong>what embedding distribution is useful before downstream tasks are known, and how can that distribution be matched efficiently in large models?</strong> The authors motivate an isotropic Gaussian through statistical estimation, then combine a projected distribution loss, SIGReg, with agreement between image views. The connection between theory, algorithm and varied image experiments is its main strength. This article follows the complete argument of the 50-page paper while preserving proof assumptions and experimental conditions. [§§1–6](https://arxiv.org/pdf/2511.08544v3#page=1)
+
+**Notation.** Embedding vectors $\mathbf z_{n,v}$, global means $\boldsymbol\mu_n$, global-view count $V_g$ and loss $\mathcal L$ follow the paper. In complexity discussions, $M=|\mathcal A|$ counts directions and $T$ counts quadrature frequencies as auxiliary review symbols. $\mathcal L_{\mathrm{SIGReg}}$ abbreviates the per-view average; $1/K$ in the centered loss records Algorithm 2’s feature averaging.
 
 This is the complete version. The [introductory article](/en/reviews/lejepa-overview/) explains the two constraints intuitively; the [technical review](/en/reviews/lejepa-technical/) develops proofs, costs and equation checks.
 
@@ -61,13 +63,13 @@ The contribution is best located in the connection <strong>downstream estimation
 
 ## Why isotropy, and why a Gaussian?
 
-Consider feature matrix `X` and downstream labels `y=Xβ+ε`. The coefficient `β` specifies a task; `ε` is noise. Small feature variation along a task-relevant direction makes estimation difficult.
+Consider feature matrix $\mathbf Z$ and downstream labels $\mathbf y=\mathbf Z\boldsymbol\beta+\boldsymbol\varepsilon$. The coefficient $\boldsymbol\beta$ specifies a task; $\boldsymbol\varepsilon$ is noise. Small feature variation along a task-relevant direction makes estimation difficult.
 
-The paper examines ridge shrinkage bias and OLS coefficient variance. Under fixed-design, full-rank and homoscedastic-noise conditions, the variance trace is `σ²Σ(1/λk)`, where `λk` are eigenvalues of `XᵀX`. For fixed total energy, equal eigenvalues minimize this quantity. As a review-authored example, `(1,1)` gives reciprocal sum 2, whereas `(0.2,1.8)` gives approximately 5.56 despite the same trace. [§3.1; Appendix B.1–B.2, pp. 26–27](https://arxiv.org/pdf/2511.08544v3#page=26)
+The paper examines ridge shrinkage bias and OLS coefficient variance. Under fixed-design, full-rank and homoscedastic-noise conditions, the variance trace is $\sigma ^{2}\Sigma (1/\lambda k)$, where $\lambda_k$ are eigenvalues of $\mathbf Z^\top\mathbf Z$. For fixed total energy, equal eigenvalues minimize this quantity. As a review-authored example, $(1,1)$ gives reciprocal sum 2, whereas $(0.2,1.8)$ gives approximately 5.56 despite the same trace. [§3.1; Appendix B.1–B.2, pp. 26–27](https://arxiv.org/pdf/2511.08544v3#page=26)
 
 This establishes a reason for <strong>isotropic covariance</strong>, not Gaussian uniqueness. The authors next study neighborhood averaging and Nadaraya–Watson kernel regression, which predict a query from nearby labeled features.
 
-Their local bias contains both target-function variation and density variation. The density score is `∇log p`; its squared expectation `J(p)=E‖∇log p‖²` is Fisher information. With assumptions including an isotropic task-gradient prior, a bias component relates to `J(p)`. The kernel analysis controls a worst-case bias upper bound containing it. [§3.2; Appendix A, B.3–B.7](https://arxiv.org/pdf/2511.08544v3#page=24)
+Their local bias contains both target-function variation and density variation. The density score is $\nabla\log p$; its squared expectation $J(p)=\mathbb E\|\nabla\log p(X)\|_2^2$ is Fisher information. With assumptions including an isotropic task-gradient prior, a bias component relates to $J(p)$. The kernel analysis controls a worst-case bias upper bound containing it. [§3.2; Appendix A, B.3–B.7](https://arxiv.org/pdf/2511.08544v3#page=24)
 
 For regular densities with fixed covariance, a Gaussian minimizes Fisher information. Fixing the covariance trace further selects isotropy. These arguments use local approximations, smoothness, task-prior assumptions and relations between query and training distributions. They do not establish unconditional minimization of the exact total risk of every nonlinear predictor. The [technical review](/en/reviews/lejepa-technical/) details the conditions.
 
@@ -83,14 +85,16 @@ Matching finitely many moments also leaves ambiguity: distinct distributions can
 
 ## SIGReg: matching distributional fingerprints
 
-Project `z` onto a unit direction `a`, obtaining `s=aᵀz`. The empirical characteristic function is a sample average at frequency `t`:
+Project $\mathbf z$ onto a unit direction $\mathbf a$, obtaining $z=\mathbf a^\top\mathbf z$. The empirical characteristic function is a sample average at frequency $t$:
 
-```text
-φ̂a(t) = (1/N) Σn exp(i t aᵀzn)
-Gaussian target: φG(t) = exp(−t²/2)
-```
+$$
+\begin{aligned}
+\hat\varphi_{\mathbf a}(t)&=\frac1N\sum_{n=1}^N\exp\!\left(it\mathbf a^\top\mathbf z_n\right),\\
+\varphi_{\mathcal N}(t)&=\exp(-t^2/2).
+\end{aligned}
+$$
 
-The imaginary unit `i` can be implemented through cosine and sine averages. The Gaussian target is analytic, so target samples are unnecessary. SIGReg integrates the weighted squared difference across frequencies and averages over directions. The paper's Epps–Pulley statistic and Algorithm 1 use a scale multiplied by batch size `N`. [§4.3, Definition 2; Algorithm 1, p. 10](https://arxiv.org/pdf/2511.08544v3#page=10)
+The imaginary unit $i$ can be implemented through cosine and sine averages. The Gaussian target is analytic, so target samples are unnecessary. SIGReg integrates the weighted squared difference across frequencies and averages over directions. The paper's Epps–Pulley statistic and Algorithm 1 use a scale multiplied by batch size $N$. [§4.3, Definition 2; Algorithm 1, p. 10](https://arxiv.org/pdf/2511.08544v3#page=10)
 
 ![LeJEPA Figure 2: projected embedding densities compared with Gaussian targets.](/assets/reviews/lejepa/paper-figure-2.webp)
 
@@ -100,30 +104,32 @@ The imaginary unit `i` can be implemented through cosine and sine averages. The 
 
 Cramér–Wold links agreement along all directions with agreement of the original vector law. Training uses finite directions and frequency grids, so a small SIGReg loss is not certification of exact multivariate Gaussianity. Resampling directions discourages fitting only a fixed set of projections. [§4.1, §4.4; Appendix B.8–B.10](https://arxiv.org/pdf/2511.08544v3#page=6)
 
-Dense projection and CF evaluation cost approximately `O(NKM+NMT)` for `K` feature dimensions, `M` directions and `T` frequencies. With `K,M,T` fixed, this is linear in sample count and avoids all sample pairs. Increasing directions with dimension, or including encoder computation, changes the interpretation of “linear.” [§4.3, p. 9; Algorithm 1](https://arxiv.org/pdf/2511.08544v3#page=9)
+Dense projection and CF evaluation cost approximately $\mathcal O(NKM+NMT)$ for $K$ feature dimensions, $M$ directions and $T$ frequencies. With $K,M,T$ fixed, this is linear in sample count and avoids all sample pairs. Increasing directions with dimension, or including encoder computation, changes the interpretation of “linear.” [§4.3, p. 9; Algorithm 1](https://arxiv.org/pdf/2511.08544v3#page=9)
 
 ## Integrating the two losses
 
-Let `zn,v` denote the projected embedding of image `n`, view `v`. There are `Vg` global views and `V` total views. Algorithm 2 centers agreement on the mean of each image's global views:
+Let $\mathbf z_{n,v}$ denote the projected embedding of image $n$, view $v$. There are $V_g$ global views and $V$ total views. Algorithm 2 centers agreement on the mean of each image's global views:
 
-```text
-μn = (1/Vg) Σg zn,g
-Lpred = (1/NVK) Σn,v ||zn,v − μn||²
-Lsigreg = (1/V) Σv SIGReg({zn,v : n=1…N})
-L = (1−λ)Lpred + λLsigreg
-```
+$$
+\begin{aligned}
+\boldsymbol\mu_n&=\frac1{V_g}\sum_{g=1}^{V_g}\mathbf z_{n,g},\\
+\mathcal L_{\mathrm{pred}}&=\frac1{NVK}\sum_{n=1}^N\sum_{v=1}^V\|\mathbf z_{n,v}-\boldsymbol\mu_n\|_2^2,\\
+\mathcal L_{\mathrm{SIGReg}}&=\frac1V\sum_{v=1}^V\operatorname{SIGReg}\!\left(\{\mathbf z_{n,v}\}_{n=1}^N\right),\\
+\mathcal L_{\mathrm{LeJEPA}}&=(1-\lambda)\mathcal L_{\mathrm{pred}}+\lambda\mathcal L_{\mathrm{SIGReg}}.
+\end{aligned}
+$$
 
-Here `K` is embedding dimension. The formula averages feature coordinates as Algorithm 2's `.square().mean()` does. Gradients also flow through `μn`; it is not a frozen teacher target. Agreement groups views at fixed `n`, while SIGReg groups images at fixed `v`. A projector remains, and evaluated backbone features differ from regularized projected embeddings. Algorithm 2 sets global and all views equal for its non-ViT configuration, making the center an all-used-view mean in that case. [§5, Algorithm 2, pp. 11–12](https://arxiv.org/pdf/2511.08544v3#page=11)
+Here $K$ is embedding dimension. The formula averages feature coordinates as Algorithm 2's `.square().mean()` does. Gradients also flow through $\boldsymbol\mu_n$; it is not a frozen teacher target. Agreement groups views at fixed $n$, while SIGReg groups images at fixed $v$. A projector remains, and evaluated backbone features differ from regularized projected embeddings. Algorithm 2 sets global and all views equal for its non-ViT configuration, making the center an all-used-view mean in that case. [§5, Algorithm 2, pp. 11–12](https://arxiv.org/pdf/2511.08544v3#page=11)
 
 Equations 5–7 describe converting average pairwise distances into center distances as equivalent. Direct expansion leaves an additional <strong>variance of global views around their mean</strong>. This review follows the center objective explicitly specified by Algorithm 2. The [technical review](/en/reviews/lejepa-technical/) shows the missing term and a numerical example. This algebraic discrepancy alone does not establish that the experimental results are invalid. [§5, p. 12; Appendix B.6, p. 34](https://arxiv.org/pdf/2511.08544v3#page=34)
 
 ## Simple objectives still have training choices
 
-Section 6.1 specifies `λ=0.05`, two global and eight local views, batches of at least 128, 1,024 directions and 17 integration points on `[-5,5]`. Experiment Details 1 on p. 14 instead uses eight total views: two global and six local. Settings must be attached to each experiment. [§6.1; Experiment Details 1, pp. 13–14](https://arxiv.org/pdf/2511.08544v3#page=13)
+Section 6.1 specifies $\lambda =0.05$, two global and eight local views, batches of at least 128, 1,024 directions and 17 integration points on $[-5,5]$. Experiment Details 1 on p. 14 instead uses eight total views: two global and six local. Settings must be attached to each experiment. [§6.1; Experiment Details 1, pp. 13–14](https://arxiv.org/pdf/2511.08544v3#page=13)
 
-The experiments use AdamW, learning-rate warmup and cosine scheduling. Some architecture experiments cross-validate learning rates `5×10⁻³/5×10⁻⁴` and weight decays `0.1/0.01/10⁻⁵`. Optional SWA results appear in Table 4. “Without the heuristics” therefore describes simplifying the core anti-collapse structure, not eliminating every schedule or optimizer choice. [p. 14; Table 4, p. 42](https://arxiv.org/pdf/2511.08544v3#page=14)
+The experiments use AdamW, learning-rate warmup and cosine scheduling. Some architecture experiments cross-validate learning rates $5\times 10^{-3}/5\times 10^{-4}$ and weight decays $0.1/0.01/10^{-5}$. Optional SWA results appear in Table 4. “Without the heuristics” therefore describes simplifying the core anti-collapse structure, not eliminating every schedule or optimizer choice. [p. 14; Table 4, p. 42](https://arxiv.org/pdf/2511.08544v3#page=14)
 
-The [official repository snapshot](https://github.com/galilai-group/lejepa/tree/c293d291ca87cd4fddee9d3fffe4e914c7272052) inspected here has a MINIMAL example with 17 points on `[0,3]`, doubled positive-side weights, 256 directions and an all-view mean for invariance. This is not numerically identical to the paper's grid or global-view center. The example was read, not executed. Reproduction should pin both version and configuration.
+The [official repository snapshot](https://github.com/galilai-group/lejepa/tree/c293d291ca87cd4fddee9d3fffe4e914c7272052) inspected here has a MINIMAL example with 17 points on $[0,3]$, doubled positive-side weights, 256 directions and an all-view mean for invariance. This is not numerically identical to the paper's grid or global-view center. The example was read, not executed. Reproduction should pin both version and configuration.
 
 ## Experiment 1: sensitivity and backbone diversity
 
@@ -136,7 +142,7 @@ Table 1 studies ImageNet-1K, ViT-L/14, 100 epochs and frozen linear top-1 accura
 
 Smaller batches can work, but accuracy is not identical. One global view causes a substantial drop. Integration-range rows also differ by roughly two percentage points. This supports useful robustness over several settings rather than complete insensitivity.
 
-A separate ImageNet-100/ResNet-50 experiment varies views and `λ` together in Figure 8/Table 7: two views/λ=0.01 gives 83.49%, four/λ=0.02 gives 84.68%, and eight/λ=0.05 gives 84.32%. The best measured mixture is not identical across view counts. The default is a useful starting point rather than a unique optimum for every setting. [Figure 8, p. 13; Table 7, p. 43](https://arxiv.org/pdf/2511.08544v3#page=43)
+A separate ImageNet-100/ResNet-50 experiment varies views and $\lambda$ together in Figure 8/Table 7: two views/λ=0.01 gives 83.49%, four/λ=0.02 gives 84.68%, and eight/λ=0.05 gives 84.32%. The best measured mixture is not identical across view counts. The default is a useful starting point rather than a unique optimum for every setting. [Figure 8, p. 13; Table 7, p. 43](https://arxiv.org/pdf/2511.08544v3#page=43)
 
 Figure 9 evaluates approximately 50 models below 20M parameters from eight families on a ten-class ImageNet subset, with accuracy around 91.5–95%. The paper's aggregate 60+ architectures and Figure 1's 1.8B-model training curve do not mean every model was evaluated on full ImageNet and all transfer tasks. These results chiefly expand the evidence for architectural compatibility. [Figures 1, 9; §6.1, p. 14](https://arxiv.org/pdf/2511.08544v3#page=14)
 
@@ -148,7 +154,7 @@ Figure 9 evaluates approximately 50 models below 20M parameters from eight famil
 
 <strong>Figure 10 explained.</strong> The panels show ResNet-50/Galaxy10, ResNet-50/ImageNet-10 and ViT-B/14/ImageNet-1K. Horizontal and vertical axes are SIGReg and prediction losses, both logarithmic. Color indicates accuracy: red is higher, blue lower. Better accuracy generally concentrates toward the lower-left region where both losses are small. A single loss component is insufficient, and the measured relationship is not a universal law. Attribution: Balestriero and LeCun, [Figure 10, p. 15](https://arxiv.org/pdf/2511.08544v3#page=15), [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). Complete panels cropped and encoded as lossless WebP.
 
-Figure 11 reports Spearman magnitudes around 0.60–0.90, improving to roughly 0.93–0.99 after `λ⁰·⁴` scaling. Loss decreases while accuracy increases, yet the displayed values are positive; the signed convention is not clarified here. The defensible description is a strong inverse monotonic association under the measured conditions, rather than an unqualified positive correlation. [§6.2, Figure 11, p. 15](https://arxiv.org/pdf/2511.08544v3#page=15)
+Figure 11 reports Spearman magnitudes around 0.60–0.90, improving to roughly 0.93–0.99 after $\lambda ^{0}·^{4}$ scaling. Loss decreases while accuracy increases, yet the displayed values are positive; the signed convention is not clarified here. The defensible description is a strong inverse monotonic association under the measured conditions, rather than an unqualified positive correlation. [§6.2, Figure 11, p. 15](https://arxiv.org/pdf/2511.08544v3#page=15)
 
 This is not proof of universally label-free model selection on new domains. The scaling exponent is evaluated against labeled observations. A prospective test would fix it on previous domains and select checkpoints before seeing labels in a new domain.
 
@@ -188,7 +194,7 @@ Figure 13's thresholded attention regions and Figure 14's feature-PCA colors are
 
 Supplementary Figures 16–21 add distribution-test comparisons, regression/regularization illustrations, loss–accuracy relationships and quadrature results. Appendix D discusses spherical directions; E discusses Shapiro–Wilk order statistics; F supplies multivariate normality statistics. These are not all visualizations of learned image features. Figure 17's caption says anisotropy has lower variance, conflicting with the main isotropy discussion. Its conditions/labeling remain unresolved, so it is not used here as independent performance evidence. [pp. 43–50](https://arxiv.org/pdf/2511.08544v3#page=43)
 
-Table 6 measures SIGReg on a V100 SXM2 16GB over ten runs: `N=512,M=512,T=16` gives `0.465236±0.011642 ms`, and `N=8192` gives `6.188304±0.007226 ms`. Section 4.4 describes forward–backward timing. It is loss computation, not full encoder training. Embedding dimension `K` and separate forward/backward timings are absent from the table, limiting precise system comparisons. [§4.4; Table 6, p. 43](https://arxiv.org/pdf/2511.08544v3#page=43)
+Table 6 measures SIGReg on a V100 SXM2 16GB over ten runs: $N=512,M=512,T=16$ gives $0.465236\pm 0.011642 \,\mathrm{ms}$, and $N=8192$ gives $6.188304\pm 0.007226 \,\mathrm{ms}$. Section 4.4 describes forward–backward timing. It is loss computation, not full encoder training. Embedding dimension $K$ and separate forward/backward timings are absent from the table, limiting precise system comparisons. [§4.4; Table 6, p. 43](https://arxiv.org/pdf/2511.08544v3#page=43)
 
 ## Connecting proofs and experiments without merging their guarantees
 

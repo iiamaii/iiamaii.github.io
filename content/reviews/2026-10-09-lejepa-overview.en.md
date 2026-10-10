@@ -3,7 +3,7 @@ title: "[1/3] LeJEPA explained: align image views, match a Gaussian distribution
 description: "An accessible explanation of collapse, view agreement and Gaussian matching, with figures and carefully scoped experimental evidence."
 date: "2026-10-09"
 publishedAt: "2026-10-09T23:54:43+09:00"
-updatedAt: "2026-10-09T23:59:49+09:00"
+updatedAt: "2026-10-10T18:16:20+09:00"
 topics: ["self-supervised learning", "representation learning", "joint embedding predictive architectures", "distribution matching", "computer vision"]
 visibility: "public"
 lang: "en"
@@ -19,6 +19,8 @@ thumbnailAlt: "LeJEPA combines within-image alignment to the global-view mean wi
 
 Learning visual features without labels involves two competing requirements. Different crops of one photograph should retain shared information, but mapping every photograph to the same vector would destroy all discrimination. <strong>LeJEPA combines agreement between views of one image with standard-Gaussian distribution matching across different images.</strong> It constructs this objective without requiring an EMA teacher or stop-gradient and motivates its distribution target through downstream estimation theory. That theory has conditions; it does not guarantee the best accuracy on every real task. [Paper §§1–5, pp. 1–12](https://arxiv.org/pdf/2511.08544v3#page=1)
 
+**Notation.** Embedding vectors $\mathbf z_{n,v}$, global means $\boldsymbol\mu_n$, global-view count $V_g$ and loss $\mathcal L$ follow the paper. In complexity discussions, $M=|\mathcal A|$ counts directions and $T$ counts quadrature frequencies as auxiliary review symbols. $\mathcal L_{\mathrm{SIGReg}}$ abbreviates the per-view average; $1/K$ in the centered loss records Algorithm 2’s feature averaging.
+
 This is the introductory version of a three-article review. The [complete explanation](/en/reviews/lejepa-complete/) covers methods, related work and experiments. The [technical review](/en/reviews/lejepa-technical/) examines proof assumptions, computational costs and checked equations.
 
 <strong>Reading the hero diagram.</strong> At the top, related image views pass through a shared encoder and projector. The lower left aligns views <strong>within one image</strong> to their global-view mean. The lower right collects embeddings <strong>across images in each view</strong>, projects them onto random directions and matches their distributions to a standard Gaussian. The two losses are combined. Dots and curves are conceptual illustrations, not measured data. [Enlarge the diagram](/assets/reviews/lejepa/lejepa-core.svg)
@@ -27,13 +29,13 @@ This is the introductory version of a three-article review. The [complete explan
 
 Imagine two large crops of a cat photograph and a smaller crop around its ears. We want features that preserve common content despite changes in background or brightness. A <strong>view</strong> is an input produced from an original image through cropping and augmentation. Learning from such relationships without target labels is self-supervised learning.
 
-Matching views alone admits an unhelpful solution: the encoder can output `0` for every input. View distances then vanish, but cats and galaxies become indistinguishable. This is <strong>representation collapse</strong>. Using only a small subset of embedding dimensions can also create partial collapse. [§2, pp. 3–4](https://arxiv.org/pdf/2511.08544v3#page=3)
+Matching views alone admits an unhelpful solution: the encoder can output $0$ for every input. View distances then vanish, but cats and galaxies become indistinguishable. This is <strong>representation collapse</strong>. Using only a small subset of embedding dimensions can also create partial collapse. [§2, pp. 3–4](https://arxiv.org/pdf/2511.08544v3#page=3)
 
 LeJEPA therefore controls two separate axes. Agreement preserves information shared by views of one image. Distribution matching prevents representations of different images from concentrating into a point or a narrow set of directions. It does not ask the crops of a single photograph to spread out like Gaussian samples.
 
 ## Why target an isotropic Gaussian?
 
-A Gaussian is a normal distribution. <strong>Isotropic</strong> means equal variance in every direction. A standard multivariate Gaussian `N(0,I)` has zero mean and unit variance along every unit direction.
+A Gaussian is a normal distribution. <strong>Isotropic</strong> means equal variance in every direction. A standard multivariate Gaussian $\mathcal N(0,I)$ has zero mean and unit variance along every unit direction.
 
 The argument starts with the geometry useful for <strong>downstream tasks that are not yet known</strong>. In linear prediction, a direction with very little feature variation is difficult to estimate in the presence of noise. Distributing a fixed total variance evenly avoids especially weak directions. [§3.1, p. 5; Appendix B.1–B.2](https://arxiv.org/pdf/2511.08544v3#page=5)
 
@@ -57,13 +59,13 @@ Instead of checking only means and variances, the method compares <strong>charac
 
 An encoder produces image features, and a projector maps them into the space used by the losses. The Gaussian constraint acts on projected embeddings; it does not mean every internal model representation is Gaussian. Frozen probing below evaluates backbone features. [§5, Algorithm 2; §6](https://arxiv.org/pdf/2511.08544v3#page=11)
 
-A batch contains `N` different images, each with `V` views. For each image, the mean of its large global-view embeddings becomes the agreement center. All of that image's views are encouraged to approach it. Separately, SIGReg operates across the `N` images in each view.
+A batch contains $N$ different images, each with $V$ views. For each image, the mean of its large global-view embeddings becomes the agreement center. All of that image's views are encouraged to approach it. Separately, SIGReg operates across the $N$ images in each view.
 
-```text
-total loss = (1 − λ) × view-agreement loss + λ × SIGReg
-```
+$$
+\mathcal L_{\mathrm{LeJEPA}}=(1-\lambda)\mathcal L_{\mathrm{pred}}+\lambda\mathcal L_{\mathrm{SIGReg}}.
+$$
 
-The mixing coefficient `λ` defaults to `0.05`. The core design does not require an exponential-moving-average teacher, stop-gradient or a separate predictor network. Optimizer settings, learning rate, weight decay, crops, batch size, projection count and numerical integration settings still exist. The experiments also use learning-rate warmup and cosine scheduling. The “one hyperparameter” description primarily concerns the loss mixture, not an absence of all training choices. [§5–6.1, pp. 11–14](https://arxiv.org/pdf/2511.08544v3#page=11)
+The mixing coefficient $\lambda$ defaults to $0.05$. The core design does not require an exponential-moving-average teacher, stop-gradient or a separate predictor network. Optimizer settings, learning rate, weight decay, crops, batch size, projection count and numerical integration settings still exist. The experiments also use learning-rate warmup and cosine scheduling. The “one hyperparameter” description primarily concerns the loss mixture, not an absence of all training choices. [§5–6.1, pp. 11–14](https://arxiv.org/pdf/2511.08544v3#page=11)
 
 ## What the experiments show
 

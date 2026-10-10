@@ -2,7 +2,7 @@
 title: "Can a World Model Read Actions After the Camera Moves? SyncWorld and Visual Calibration"
 description: "SyncWorld uses a short action–video context to adapt to a new robot setup. This review separates video prediction from policy success and connects ten related papers to questions about transfer and inference cost."
 date: "2026-10-06"
-updatedAt: "2026-10-09T05:04:32Z"
+updatedAt: "2026-10-10T18:16:13+09:00"
 topics: ["world action model", "robot learning", "world simulation", "in-context learning", "visual calibration"]
 visibility: "public"
 lang: "en"
@@ -17,6 +17,8 @@ thumbnailAlt: "The model architecture from SyncWorld Figure 2"
 ---
 
 Does knowing a robot's numerical action tell us how it will move on screen? SyncWorld first observes a short action–video correspondence in a new setup, then uses that context to predict future video without additional training. Its reported results support the promise of this approach, but do not establish physical accuracy for every embodiment or policy improvement on every task. [SyncWorld §3–4, Appendix C.4.3 and E](https://arxiv.org/html/2609.09155v1#S3)
+
+**Notation.** The text uses the paper’s $\mathcal C^s$. C_s in the existing conceptual illustration is a simplified label for the same calibration context.
 
 ## The question
 
@@ -33,13 +35,13 @@ Earlier work had already addressed parts of this problem. IRASim models the alig
 
 Visual calibration records the robot moving in basic directions under a fixed camera. Positive and negative segments for six motion degrees of freedom—translation and rotation—form 12 segments, placed in a canonical order at the beginning of the context. The control space has three translation dimensions, three rotation dimensions, and one gripper dimension. This does not mean the robot has seven mechanical joints. Gripper control is excluded from directional calibration because its visual meaning is considered directly interpretable. [SyncWorld §3.1, Eq. 4, Appendix B.2.2–B.2.3](https://arxiv.org/html/2609.09155v1#S3.SS1)
 
-The conditioning relationship in Eq. 3 can be expressed in plain text as follows. This shows the roles of the inputs and output rather than reproducing the exact equation.
+The conditional distribution in Eq. 3 uses the following original notation.
 
-```text
-future video ~ W_theta(C_s, H_t, A_t)
-```
+$$
+I_{t+1:t+H}\sim W_{\theta}\!\left(\cdot\mid\mathcal{C}^{s},H_t,A_t\right).
+$$
 
-`C_s` is calibration context for setup `s`; `H_t` is the observation–action history; and `A_t` contains future actions. `W_theta` denotes a conditional distribution over future video, with model parameters `theta` fixed at deployment. Zero-shot here means no parameter retraining for the new setup. It does not mean that calibration observations or computation are unnecessary. [SyncWorld §3.1, Eq. 3](https://arxiv.org/html/2609.09155v1#S3.SS1)
+$\mathcal C^s$ is calibration context for setup $s$; $H_t$ is the observation–action history; and $A_t$ contains future actions. $W_\theta$ denotes a conditional distribution over future video, with model parameters $\theta$ fixed at deployment. Zero-shot here means no parameter retraining for the new setup. It does not mean that calibration observations or computation are unnecessary. [SyncWorld §3.1, Eq. 3](https://arxiv.org/html/2609.09155v1#S3.SS1)
 
 <figure class="review-figure" id="figure-syncworld-architecture">
 <a href="/assets/reviews/syncworld/paper-figure-2.webp" target="_blank" rel="noopener noreferrer"><img src="/assets/reviews/syncworld/paper-figure-2.webp" width="1600" height="704" alt="SyncWorld architecture: calibration, interaction history and future actions become pose embeddings and video latents that condition the DiT generating future video." loading="lazy" decoding="async"></a>

@@ -2,7 +2,7 @@
 title: "Fewer Steps, Less Waiting: Understanding RealtimeWAM"
 description: "How teacher endpoints compress action generation into one step, and KV-ready events reduce expert waiting. Read aggregate accuracy, perturbation losses, device-specific speedups and training cost together."
 date: "2026-10-06"
-updatedAt: "2026-10-09T05:04:32Z"
+updatedAt: "2026-10-10T18:16:14+09:00"
 topics: ["world action model", "robot learning", "policy distillation", "real-time inference", "gpu optimization"]
 visibility: "public"
 lang: "en"
@@ -17,6 +17,8 @@ thumbnailAlt: "Original Figure 2 showing the TACD teacher, EMA target, student a
 ---
 
 A world action model can predict useful actions and still deliver them too late for control. RealtimeWAM separately reduces **repeated action denoising** and **waiting between video and action experts**. It reports large H100 speedups, but these combine several execution optimizations and do not establish real-time control on every device or under every perturbation. [§4–5, Figure 5, Table 2](https://arxiv.org/html/2610.06617v1#S4)
+
+**Notation.** The equations use the paper’s $f_{\theta_{\mathrm S}}$, $v_{\theta_{\mathrm S}}$, $a_0^{\mathrm T}$, $u_{\theta_{\mathrm T}}$ and $\mathcal L_{\mathrm{TA}}$. $\operatorname{sg}$ denotes stop-gradient. The exact ODE endpoint $a_0^\star$ is distinct from the numerical teacher endpoint $a_0^{\mathrm T}$.
 
 ## What question does the paper ask?
 
@@ -42,15 +44,17 @@ Teacher-Anchored Consistency Distillation, or TACD, trains an action student to 
 
 The teacher starts from the **same noisy action and frozen video KV** as the student and takes ten steps. KV denotes the key/value representations read by attention. Its total displacement to the endpoint, divided by the current noise time, supplies an average velocity target. This differs from directly copying the teacher's instantaneous velocity at the current time. The local consistency term remains in the objective. [§4.1, Eq.7–8](https://arxiv.org/html/2610.06617v1#S4.SS1)
 
-```text
-f_S(a_t,t) = a_t - t v_S(a_t,t)
-a0_T = Solver(a_t,t,0; teacher)    # K=10 steps
-u_T = (a_t - a0_T)/t              # t>0
-L_TA = E ||v_S - stop_gradient(u_T)||²
-L = L_CD + 0.2 L_TA
-```
+$$
+\begin{aligned}
+f_{\theta_{\mathrm S}}(a_t,t)&=a_t-t\,v_{\theta_{\mathrm S}}(a_t,t),\\
+a_0^{\mathrm T}&=\texttt{Solver}(a_t,t,0;\theta_{\mathrm T}),\\
+u_{\theta_{\mathrm T}}(a_t,t)&=\frac{a_t-a_0^{\mathrm T}}{t},\quad t>0,\\
+\mathcal L_{\mathrm{TA}}&=\mathbb E_{a_t,t}\!\left[\left\|v_{\theta_{\mathrm S}}(a_t,t)-\operatorname{sg}\!\left[u_{\theta_{\mathrm T}}(a_t,t)\right]\right\|_2^2\right],\\
+\mathcal L&=\mathcal L_{\mathrm{CD}}+\lambda\mathcal L_{\mathrm{TA}},\quad \lambda=0.2.
+\end{aligned}
+$$
 
-`a_t` is a noisy action; time `t` is clean at zero and noise at one. `v_S` is the student velocity prediction, `f_S` its clean endpoint prediction, `a0_T` the teacher's numerical rollout endpoint, and `u_T` the corresponding interval-average velocity. `L_CD` is the local consistency loss and `L_TA` the teacher-anchor loss. The video expert is frozen and only action-expert LoRA parameters are trained. The teacher and EMA target are not called at deployment. [§4.1, §5.1](https://arxiv.org/html/2610.06617v1#S5.SS1)
+$a_t$ is a noisy action; time $t$ is clean at zero and noise at one. $v_{\theta_{\mathrm S}}$ is the student velocity prediction, $f_{\theta_{\mathrm S}}$ its clean endpoint prediction, $a_0^{\mathrm T}$ the teacher's numerical rollout endpoint, and $u_{\theta_{\mathrm T}}$ the corresponding interval-average velocity. $\mathcal L_{\mathrm{CD}}$ is the local consistency loss and $\mathcal L_{\mathrm{TA}}$ the teacher-anchor loss. The video expert is frozen and only action-expert LoRA parameters are trained. The teacher and EMA target are not called at deployment. [§4.1, §5.1](https://arxiv.org/html/2610.06617v1#S5.SS1)
 
 The target is a teacher action, rather than a verified optimal action in the environment. Appendix C's endpoint-error bound also includes numerical integration error; it is not a task-success guarantee. Teacher budgets of 5, 10 and 20 give RoboTwin overall success rates of 90.39, 90.84 and 90.77%, respectively. More teacher computation does not invariably improve success. [Eq.9, Appendix C.2–C.3, Table 4](https://arxiv.org/html/2610.06617v1#A3)
 

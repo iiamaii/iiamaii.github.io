@@ -3,6 +3,7 @@ import path from 'node:path';
 import { createHash } from 'node:crypto';
 import matter from 'gray-matter';
 import { Marked, Renderer } from 'marked';
+import { mathExtension } from './math.mjs';
 import { languages, languageRoute, localizedConfig, copy } from './i18n.mjs';
 import { createRenderer } from './render.mjs';
 import { normalizeTopic, normalizeTopics } from './topics.mjs';
@@ -74,7 +75,7 @@ function renderMarkdown(source, lang) {
   const headings = [];
   const used = new Set();
   const escape = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const parser = new Marked();
+  const parser = new Marked(mathExtension());
   parser.use({ renderer: {
     heading({ tokens, depth }) {
       const text = tokens.map(t => t.text ?? t.raw ?? '').join('');
@@ -153,6 +154,12 @@ const assetVersion = createHash('sha256').update(Buffer.concat(assetBuffers)).di
 await fs.rm(out, { recursive: true, force: true });
 await fs.mkdir(out, { recursive: true });
 await fs.cp(path.join(root, 'public'), out, { recursive: true });
+// KaTeX is rendered at build time; host its matching CSS/fonts without a CDN.
+const mathAssets = path.join(out, 'assets/vendor/katex');
+await fs.mkdir(mathAssets, { recursive: true });
+await fs.copyFile(path.join(root, 'node_modules/katex/dist/katex.min.css'), path.join(mathAssets, 'katex.min.css'));
+await fs.cp(path.join(root, 'node_modules/katex/dist/fonts'), path.join(mathAssets, 'fonts'), { recursive: true });
+await fs.copyFile(path.join(root, 'node_modules/katex/LICENSE'), path.join(mathAssets, 'LICENSE'));
 async function writePage(route, html) {
   const file = path.join(out, route.replace(/^\//, ''), 'index.html');
   await fs.mkdir(path.dirname(file), { recursive: true });

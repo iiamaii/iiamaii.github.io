@@ -2,7 +2,7 @@
 title: "카메라가 바뀌어도 행동을 읽을 수 있을까: SyncWorld와 시각 보정"
 description: "짧은 행동·영상 문맥으로 새 로봇 설정에 적응하는 SyncWorld를 살펴본다. 영상 예측의 개선과 정책 성공률을 구분하고, 관련 연구 10편을 통해 전이와 실행 비용의 남은 질문을 정리한다."
 date: "2026-10-06"
-updatedAt: "2026-10-09T05:04:32Z"
+updatedAt: "2026-10-10T18:16:13+09:00"
 topics: ["world action model", "robot learning", "world simulation", "in-context learning", "visual calibration"]
 visibility: "public"
 lang: "ko"
@@ -17,6 +17,8 @@ thumbnailAlt: "SyncWorld 원문 Figure 2의 모델 구조도"
 ---
 
 로봇의 행동 숫자를 안다고 화면 속 움직임까지 바로 알 수 있을까? SyncWorld는 새 설정에서 짧은 행동·영상 대응을 먼저 관찰하고, 추가 학습 없이 그 문맥을 이용해 미래 영상을 예측한다. 보고된 결과는 이 접근의 가능성을 보여주지만, 모든 몸체의 물리적 정확성이나 모든 과제의 정책 개선까지 입증하지는 않는다. [SyncWorld §3–4, 부록 C.4.3·E](https://arxiv.org/html/2609.09155v1#S3)
+
+**표기 안내.** 본문은 원문의 $\mathcal C^s$를 사용한다. 기존 설명 그림의 C_s는 같은 보정 문맥을 뜻하는 간략 표기다.
 
 ## 어떤 질문에서 출발했는가
 
@@ -33,13 +35,13 @@ thumbnailAlt: "SyncWorld 원문 Figure 2의 모델 구조도"
 
 시각 보정은 고정된 카메라에서 로봇이 기본 방향으로 움직이는 모습을 수집하는 과정이다. 위치와 회전의 여섯 자유도에 대해 양·음 방향 구간을 추출해, 총 12개 구간을 정해진 순서로 문맥 앞에 놓는다. 제어 공간은 위치 3개, 회전 3개, 그리퍼 1개의 차원으로 구성된다. 이것은 기계적 관절이 일곱 개라는 뜻이 아니다. 그리퍼는 영상에서 의미를 직접 읽을 수 있다는 이유로 방향 보정에서 제외한다. [SyncWorld §3.1, 식 4, 부록 B.2.2–B.2.3](https://arxiv.org/html/2609.09155v1#S3.SS1)
 
-식 3의 조건 관계를 평문으로 풀면 다음과 같다. 정확한 수식 대신 입력과 출력의 역할을 보여주는 표현이다.
+원문 식 3의 조건부 분포를 같은 기호로 쓰면 다음과 같다.
 
-```text
-future video ~ W_theta(C_s, H_t, A_t)
-```
+$$
+I_{t+1:t+H}\sim W_{\theta}\!\left(\cdot\mid\mathcal{C}^{s},H_t,A_t\right).
+$$
 
-`C_s`는 설정 `s`의 보정 문맥, `H_t`는 현재까지의 관찰·행동 이력, `A_t`는 앞으로 실행할 행동이다. `W_theta`는 미래 영상의 조건부 분포를 나타내며, `theta`는 배포 시 고정된 모델 파라미터다. 여기서 제로샷은 새 설정에 맞춰 파라미터를 다시 학습하지 않는다는 의미다. 보정 관찰이나 계산이 필요 없다는 의미로 줄여 읽으면 안 된다. [SyncWorld §3.1, 식 3](https://arxiv.org/html/2609.09155v1#S3.SS1)
+$\mathcal C^s$는 설정 $s$의 보정 문맥, $H_t$는 현재까지의 관찰·행동 이력, $A_t$는 앞으로 실행할 행동이다. $W_\theta$는 미래 영상의 조건부 분포를 나타내며, $\theta$는 배포 시 고정된 모델 파라미터다. 여기서 제로샷은 새 설정에 맞춰 파라미터를 다시 학습하지 않는다는 의미다. 보정 관찰이나 계산이 필요 없다는 의미로 줄여 읽으면 안 된다. [SyncWorld §3.1, 식 3](https://arxiv.org/html/2609.09155v1#S3.SS1)
 
 <figure class="review-figure" id="figure-syncworld-architecture">
 <a href="/assets/reviews/syncworld/paper-figure-2.webp" target="_blank" rel="noopener noreferrer"><img src="/assets/reviews/syncworld/paper-figure-2.webp" width="1600" height="704" alt="SyncWorld 구조: 보정 에피소드·상호작용 이력·미래 행동이 자세 임베딩과 영상 잠재 표현으로 변환되어 DiT의 조건이 되고 미래 영상이 생성된다." loading="lazy" decoding="async"></a>

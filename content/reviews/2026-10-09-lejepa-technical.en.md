@@ -3,7 +3,7 @@ title: "[3/3] LeJEPA technical review: proof conditions, SIGReg and checked equa
 description: "Examines Gaussian minimality, projected identification, ECF gradients and bias, computational cost and a missing term in the distance-loss derivation."
 date: "2026-10-09"
 publishedAt: "2026-10-09T23:54:43+09:00"
-updatedAt: "2026-10-09T23:59:47+09:00"
+updatedAt: "2026-10-10T18:16:18+09:00"
 topics: ["self-supervised learning", "representation learning", "joint embedding predictive architectures", "distribution matching", "computer vision"]
 visibility: "public"
 lang: "en"
@@ -19,13 +19,15 @@ thumbnailAlt: "LeJEPA combines within-image alignment to the global-view mean wi
 
 Assessing LeJEPA's “provable” claim requires separating three questions: <strong>when a Gaussian helps downstream estimation, when projected distribution equality identifies the original distribution, and how finite batches and numerical grids approximate that goal.</strong> This review develops those connections, records an equation discrepancy checked against the PDF, and reports small calculations executed specifically for the review. The aim is to understand both the theoretical contribution and the additional validation needed for training. [§§3–5; Appendices A–B](https://arxiv.org/pdf/2511.08544v3#page=24)
 
+**Notation.** Embedding vectors $\mathbf z_{n,v}$, global means $\boldsymbol\mu_n$, global-view count $V_g$ and loss $\mathcal L$ follow the paper. In complexity discussions, $M=|\mathcal A|$ counts directions and $T$ counts quadrature frequencies as auxiliary review symbols. $\mathcal L_{\mathrm{SIGReg}}$ abbreviates the per-view average; $1/K$ in the centered loss records Algorithm 2’s feature averaging. Linear design $\mathbf Z$ and ridge coefficient $\lambda$ follow §3.1. $G=\mathbf Z^\top\mathbf Z$, unscaled discrepancy $D$ and distance decomposition $A,B,C$ are review definitions. $z_n=\mathbf a^\top\mathbf z_n$ is the scalar projection in §4; $s$ is the inverse window bandwidth used in Appendix B.12.
+
 This is the technical version. The [introductory review](/en/reviews/lejepa-overview/) explains the intuition; the [complete explanation](/en/reviews/lejepa-complete/) maps related work and experiments.
 
 <strong>The hero's sample axes.</strong> Views of one image align with their global-view mean. Distribution regularization operates across different images in each view, after the projector. It does not constrain every backbone layer or the crop set of one photograph to be Gaussian. Both branches receive gradients; core agreement has no stop-gradient. [Enlarge](/assets/reviews/lejepa/lejepa-core.svg)
 
 ## Notation and levels of analysis
 
-`N`: different images per batch. `V`: views per image. `Vg`: global views. `K`: projected embedding dimension. `M`: projection directions. `T`: frequency-grid points. `zn,v` is an encoder-plus-projector embedding.
+$N$: different images per batch. $V$: views per image. $V_g$: global views. $K$: projected embedding dimension. $M$: projection directions. $T$: frequency-grid points. $\mathbf z_{n,v}$ is an encoder-plus-projector embedding.
 
 | Level | Object of the claim | Additional requirement for training |
 | --- | --- | --- |
@@ -34,29 +36,34 @@ This is the technical version. The [introductory review](/en/reviews/lejepa-over
 | Training loss | Finite-batch ECF discrepancy averaged across directions | Optimizer, encoder Jacobian, numerical error, generalization |
 | Experiments | Particular data, models and evaluation protocols | Matched-budget reproduction, new domains, seed variation |
 
-Equations are restated with some notation changes for readability. Review-authored examples are distinguished from reported paper results.
+Original notation is retained where possible; auxiliary symbols introduced for the derivations are defined above. Review-authored examples are distinguished from reported paper results.
 
 ## Linear analysis: why equal directional variance helps
 
-Assume a fixed full-column-rank feature matrix `X`, labels `y=Xβ+ε`, conditional zero-mean noise and noise covariance `σ²I`. Write `G=XᵀX` and ridge coefficient `η>0`. [Lemma 1; Appendix B.1, p. 26](https://arxiv.org/pdf/2511.08544v3#page=26)
+Assume a fixed full-column-rank feature matrix $\mathbf Z$, labels $\mathbf y=\mathbf Z\boldsymbol\beta+\boldsymbol\varepsilon$, conditional zero-mean noise and noise covariance $\sigma ^{2}I$. Write $G=\mathbf Z^\top\mathbf Z$ and ridge coefficient $\lambda>0$. [Lemma 1; Appendix B.1, p. 26](https://arxiv.org/pdf/2511.08544v3#page=26)
 
-```text
-β̂ridge = (G + ηI)⁻¹Xᵀy
-E[β̂ridge | X] − β = −η(G + ηI)⁻¹β
-```
+$$
+\begin{aligned}
+\hat{\boldsymbol\beta}_{\mathrm{ridge}}&=(G+\lambda I)^{-1}\mathbf Z^\top\mathbf y,\\
+\mathbb E[\hat{\boldsymbol\beta}_{\mathrm{ridge}}\mid\mathbf Z]-\boldsymbol\beta
+&=-\lambda(G+\lambda I)^{-1}\boldsymbol\beta.
+\end{aligned}
+$$
 
-Along an eigenvector of `G`, shrinkage is `η/(λk+η)`. A weak direction therefore creates an unfavorable task relative to an isotropic design with the same total energy. This is an existence argument, not a claim that isotropy improves every specific task.
+Along an eigenvector of $G$, shrinkage is $\lambda/(\lambda_k+\lambda)$. A weak direction therefore creates an unfavorable task relative to an isotropic design with the same total energy. This is an existence argument, not a claim that isotropy improves every specific task.
 
-For OLS (`η=0`), coefficient variance gives the next argument. [Lemma 2; Appendix B.2, p. 27](https://arxiv.org/pdf/2511.08544v3#page=27)
+For OLS ($\lambda=0$), coefficient variance gives the next argument. [Lemma 2; Appendix B.2, p. 27](https://arxiv.org/pdf/2511.08544v3#page=27)
 
-```text
-Cov(β̂OLS | X) = σ²G⁻¹
-tr Cov = σ² Σk 1/λk
-With Σk λk = c > 0: Σk 1/λk ≥ K²/c
-Equality: every λk = c/K
-```
+$$
+\begin{aligned}
+\operatorname{Cov}(\hat{\boldsymbol\beta}_{\mathrm{OLS}}\mid\mathbf Z)&=\sigma^2G^{-1},\\
+\operatorname{tr}\operatorname{Cov}(\hat{\boldsymbol\beta}_{\mathrm{OLS}}\mid\mathbf Z)&=\sigma^2\sum_{k=1}^K\frac1{\lambda_k},\\
+\sum_{k=1}^K\lambda_k=c>0&\quad\Longrightarrow\quad\sum_{k=1}^K\frac1{\lambda_k}\ge\frac{K^2}{c},\\
+\text{equality: }&\lambda_k=c/K\quad\text{for all }k.
+\end{aligned}
+$$
 
-Convexity of the reciprocal function, or Cauchy–Schwarz, proves the last inequality. In the review's two-dimensional calculation, eigenvalues `(1,1)` give reciprocal sum 2; `(0.2,1.8)` give approximately 5.5556 despite the same trace of 2.
+Convexity of the reciprocal function, or Cauchy–Schwarz, proves the last inequality. In the review's two-dimensional calculation, eigenvalues $(1,1)$ give reciprocal sum 2; $(0.2,1.8)$ give approximately 5.5556 despite the same trace of 2.
 
 This motivates <strong>isotropic covariance</strong>. It does not uniquely determine a Gaussian joint density, guarantee prediction risk under arbitrary test distributions, or establish learned-encoder performance.
 
@@ -64,35 +71,38 @@ This motivates <strong>isotropic covariance</strong>. It does not uniquely deter
 
 Neighborhood averaging predicts from nearby labels; Nadaraya–Watson regression uses kernel weights. Small-radius/bandwidth expansions combine target curvature with density variation. The key kinds of terms are: [§3.2; Appendix A, B.3–B.7, pp. 24–35](https://arxiv.org/pdf/2511.08544v3#page=24)
 
-```text
-Density–task interaction: ∇m(x) · ∇log p(x)
-Target curvature: Δm(x) / 2
-J(p) = ∫ ||∇log p(x)||² p(x) dx
-```
+$$
+\begin{aligned}
+\nabla m(\mathbf x)\cdot\nabla\log p(\mathbf x),\qquad&\frac12\Delta m(\mathbf x),\\
+J(p)&=\int\|\nabla\log p(\mathbf x)\|_2^2p(\mathbf x)\,\mathrm d\mathbf x.
+\end{aligned}
+$$
 
-Here `m` is the target function and `∇log p` is the density score. If a task-gradient prior has zero mean and second moment `τg²I`, the squared score contribution becomes `τg²J(p)`.
+Here $m$ is the target function and $\nabla\log p$ is the density score. If a task-gradient prior has zero mean and second moment $\tau_g^2I$, the squared score contribution becomes $\tau_g^2J(p)$.
 
-Appendix B.4 additionally discusses decorrelation between gradient and curvature terms. Without it, a cross term remains `O(r⁴)`, the same order as other squared-bias terms. It cannot simply be treated as lower order. Interpreting curvature as independent of `p` also needs task-prior conditions. A controlled bias component is consequently not unconditional unique minimization of total bias. [Appendix B.4, p. 29](https://arxiv.org/pdf/2511.08544v3#page=29)
+Appendix B.4 additionally discusses decorrelation between gradient and curvature terms. Without it, a cross term remains $\mathcal O(r^{4})$, the same order as other squared-bias terms. It cannot simply be treated as lower order. Interpreting curvature as independent of $p$ also needs task-prior conditions. A controlled bias component is consequently not unconditional unique minimization of total bias. [Appendix B.4, p. 29](https://arxiv.org/pdf/2511.08544v3#page=29)
 
-The kernel argument bounds worst-case bias using a quantity containing `2B²+8L²J(p)`, with `L,B` target smoothness bounds. It minimizes an upper bound, not the exact risk of every target. Pointwise variance depends on query density; cancellation in an integrated variance requires integrability and compatible train/query distributions. [Appendix B.7, pp. 34–35](https://arxiv.org/pdf/2511.08544v3#page=34)
+The kernel argument bounds worst-case bias using a quantity containing $2B^{2}+8L^{2}J(p)$, with $L,B$ target smoothness bounds. It minimizes an upper bound, not the exact risk of every target. Pointwise variance depends on query density; cancellation in an integrated variance requires integrability and compatible train/query distributions. [Appendix B.7, pp. 34–35](https://arxiv.org/pdf/2511.08544v3#page=34)
 
 ## The essential Gaussian-minimality proof
 
-Assume zero mean, covariance `Σ≻0`, a smooth density and sufficient boundary decay. With score `u(x)=∇log p(x)`, integration by parts gives `E[u(X)Xᵀ]=−I`. Non-negativity of a squared norm yields: [Appendix A; B.5, pp. 32–33](https://arxiv.org/pdf/2511.08544v3#page=32)
+Assume zero mean, covariance $\Sigma\succ0$, a smooth density and sufficient boundary decay. With score $u(\mathbf x)=\nabla\log p(\mathbf x)$, integration by parts gives $\mathbb E[u(X)X^\top]=-I$. Non-negativity of a squared norm yields: [Appendix A; B.5, pp. 32–33](https://arxiv.org/pdf/2511.08544v3#page=32)
 
-```text
-0 ≤ E ||u(X) + Σ⁻¹X||²
-  = J(p) − tr(Σ⁻¹)
-Therefore J(p) ≥ tr(Σ⁻¹)
-```
+$$
+\begin{aligned}
+0&\le\mathbb E\|u(X)+\Sigma^{-1}X\|_2^2\\
+&=J(p)-\operatorname{tr}(\Sigma^{-1}),\\
+J(p)&\ge\operatorname{tr}(\Sigma^{-1}).
+\end{aligned}
+$$
 
-Equality requires `u(x)=−Σ⁻¹x` almost everywhere. Integrating gives `log p(x)=constant−½xᵀΣ⁻¹x`: a Gaussian density. With `trΣ=c` fixed, `trΣ⁻¹≥K²/c`, with equality at `Σ=(c/K)I`. Normalizing the target covariance to `I` gives the standard isotropic Gaussian.
+Equality requires $u(\mathbf x)=-\Sigma^{-1}\mathbf x$ almost everywhere. Integrating gives $\log p(\mathbf x)=\text{const}-\frac12\mathbf x^\top\Sigma^{-1}\mathbf x$: a Gaussian density. With $\operatorname{tr}\Sigma=c$ fixed, $\operatorname{tr}\Sigma^{-1}\ge K^2/c$, with equality at $\Sigma=(c/K)I$. Normalizing the target covariance to $I$ gives the standard isotropic Gaussian.
 
 This proves minimality of the Fisher objective under the conditions. Whether deterministic embeddings of a finite image dataset form a smooth full-dimensional density, and whether actual downstream tasks follow the prior, remain separate questions.
 
 ## Why all Gaussian projections identify the vector law
 
-The vector characteristic function is `φZ(t)=E exp(i tᵀZ)`. Every nonzero `t` can be written `t=s a` for a unit direction `a`. Agreement for every scalar frequency in every direction therefore implies agreement of vector characteristic functions at every `t`. Uniqueness of characteristic functions identifies the distribution. [§4.1; Appendix B.8, p. 35](https://arxiv.org/pdf/2511.08544v3#page=35)
+The vector characteristic function is $\varphi_Z(\mathbf t)=\mathbb E\exp(i\mathbf t^\top Z)$. Every nonzero $t$ can be written $\mathbf t=s\mathbf a$ for a unit direction $\mathbf a$. Agreement for every scalar frequency in every direction therefore implies agreement of vector characteristic functions at every $t$. Uniqueness of characteristic functions identifies the distribution. [§4.1; Appendix B.8, p. 35](https://arxiv.org/pdf/2511.08544v3#page=35)
 
 ![LeJEPA Figure 5: Gaussian-looking coordinate marginals do not establish Gaussianity of an X-shaped joint density.](/assets/reviews/lejepa/paper-figure-5.webp)
 
@@ -106,85 +116,95 @@ Candidates also include CDF distances and order-statistic tests such as Shapiro�
 
 ## ECF discrepancy: computation and gradient control
 
-For projected samples `sn=aᵀzn`, define an unscaled discrepancy `D`:
+For projected samples $z_n=\mathbf a^\top\mathbf z_n$, define an unscaled discrepancy $D$:
 
-```text
-φ̂a(t) = (1/N) Σn [cos(t sn) + i sin(t sn)]
-ψ(t) = exp(−t²/2)
-D(a) = ∫ |φ̂a(t) − ψ(t)|² w(t) dt
-SIGReg = (1/M) Σm N D(am)    # Algorithm 1's scale
-```
+$$
+\begin{aligned}
+\hat\varphi_{\mathbf a}(t)&=\frac1N\sum_{n=1}^N[\cos(tz_n)+i\sin(tz_n)],\\
+\varphi_{\mathcal N}(t)&=\exp(-t^2/2),\\
+D(\mathbf a)&=\int|\hat\varphi_{\mathbf a}(t)-\varphi_{\mathcal N}(t)|^2w(t)\,\mathrm dt,\\
+\operatorname{SIGReg}&=\frac1M\sum_{m=1}^M N D(\mathbf a_m).
+\end{aligned}
+$$
 
-The squared complex difference is `(mean cosine−ψ)²+(mean sine)²`. Characteristic functions exist even without high-order moments. Sample means need no sorting and can be combined across workers using shared directions and grids. Unequal local batches require sample-count weighting; collectives must pass gradients. These are implementation requirements identified in the review, not executed DDP results. [§4.3; Algorithm 1](https://arxiv.org/pdf/2511.08544v3#page=10)
+The squared complex difference is $\left(\frac1N\sum_n\cos(tz_n)-\varphi_{\mathcal N}(t)\right)^2+\left(\frac1N\sum_n\sin(tz_n)\right)^2$. Characteristic functions exist even without high-order moments. Sample means need no sorting and can be combined across workers using shared directions and grids. Unequal local batches require sample-count weighting; collectives must pass gradients. These are implementation requirements identified in the review, not executed DDP results. [§4.3; Algorithm 1](https://arxiv.org/pdf/2511.08544v3#page=10)
 
-Theorem 4's appendix bounds derivatives of unscaled `D` for `w(t)=exp(−s²t²)`, using `|φ̂|≤1`, `|ψ|≤1` and `∫|t|w(t)dt=1/s²`:
+Theorem 4's appendix bounds derivatives of unscaled $D$ for $w(t)=\exp(-s^2t^2)$, using $|\hat\varphi|\le1$, $|\varphi_{\mathcal N}|\le1$ and $\int|t|w(t)\,\mathrm dt=1/s^2$:
 
-```text
-|∂D/∂sn| ≤ 4/(N s²)
-For ND: |∂(ND)/∂sn| ≤ 4/s²
-```
+$$
+\begin{aligned}
+\left|\frac{\partial D}{\partial z_n}\right|&\le\frac4{Ns^2},\\
+\left|\frac{\partial(ND)}{\partial z_n}\right|&\le\frac4{s^2}.
+\end{aligned}
+$$
 
-The scale matters when interpreting dependence on `N`. Differentiating network parameters adds encoder/projector Jacobians through the chain rule. <strong>A sample-loss derivative bound is not a bound on all parameter gradients or a global SGD convergence proof.</strong> [Theorem 4; Appendix B.12, pp. 37–38](https://arxiv.org/pdf/2511.08544v3#page=37)
+The scale matters when interpreting dependence on $N$. Differentiating network parameters adds encoder/projector Jacobians through the chain rule. <strong>A sample-loss derivative bound is not a bound on all parameter gradients or a global SGD convergence proof.</strong> [Theorem 4; Appendix B.12, pp. 37–38](https://arxiv.org/pdf/2511.08544v3#page=37)
 
 ## Sampling bias and finite frequency grids
 
-For independent samples, `exp(it sn)` has unit magnitude. Separating matching and distinct sample indices gives: [Theorem 6; Appendix B.13, pp. 38–40](https://arxiv.org/pdf/2511.08544v3#page=38)
+For independent samples, $\exp(it z_n)$ has unit magnitude. Separating matching and distinct sample indices gives: [Theorem 6; Appendix B.13, pp. 38–40](https://arxiv.org/pdf/2511.08544v3#page=38)
 
-```text
-E |φ̂(t) − ψ(t)|²
- = |φ(t) − ψ(t)|² + (1 − |φ(t)|²)/N
-```
+$$
+\mathbb E|\hat\varphi(t)-\varphi_{\mathcal N}(t)|^2
+=|\varphi(t)-\varphi_{\mathcal N}(t)|^2+\frac{1-|\varphi(t)|^2}{N}.
+$$
 
-The extra term is `O(1/N)` for the unscaled discrepancy. Under conditions allowing differentiation under expectation, related gradient bias is analyzed at that scale. Multiplication by `N`, as in Algorithm 1, makes the <strong>absolute extra term O(1)</strong>. Claims of vanishing absolute bias must therefore specify normalization. A finite Gaussian batch also does not have exactly zero loss.
+The extra term is $\mathcal O(1/N)$ for the unscaled discrepancy. Under conditions allowing differentiation under expectation, related gradient bias is analyzed at that scale. Multiplication by $N$, as in Algorithm 1, makes the <strong>absolute extra term O(1)</strong>. Claims of vanishing absolute bias must therefore specify normalization. A finite Gaussian batch also does not have exactly zero loss.
 
-A review-authored Monte Carlo check used `N=32`, standard-Gaussian samples, `t=1` and 20,000 replicates. Mean unscaled squared discrepancy was `0.0198677`; theory predicts `(1−e⁻¹)/32=0.0197538`, with Monte Carlo standard error `0.0001505`. This checks a small formula, not neural-network training.
+A review-authored Monte Carlo check used $N=32$, standard-Gaussian samples, $t=1$ and 20,000 replicates. Mean unscaled squared discrepancy was $0.0198677$; theory predicts $(1-e^{-1})/32=0.0197538$, with Monte Carlo standard error $0.0001505$. This checks a small formula, not neural-network training.
 
-Quadrature creates another approximation. Algorithm 1 uses 17 equally spaced frequencies on `[-5,5]`, spacing `Δ=0.625`. In a review-authored 1D example, translating a Gaussian by `2π/Δ≈10.0531` leaves its CF unchanged at every grid point: frequencies are integer multiples of `Δ`, so the phase factor is one.
+Quadrature creates another approximation. Algorithm 1 uses 17 equally spaced frequencies on $[-5,5]$, spacing $\Delta =0.625$. In a review-authored 1D example, translating a Gaussian by $2\pi/\Delta\approx10.0531$ leaves its CF unchanged at every grid point: frequencies are integer multiples of $\Delta$, so the phase factor is one.
 
-```text
-Maximum CF difference on the grid: approximately 2.24×10⁻¹⁶
-CF difference at off-grid t=0.3: approximately 1.9082
-```
+$$
+\begin{aligned}
+\max_{t\in\mathrm{grid}}|\varphi(t)-\varphi_{\mathcal N}(t)|&\approx2.24\times10^{-16},\\
+|\varphi(0.3)-\varphi_{\mathcal N}(0.3)|&\approx1.9082.
+\end{aligned}
+$$
 
 This shows that a <strong>fixed 1D frequency grid cannot certify full distributional equality</strong>. It does not refute population CF uniqueness and does not demonstrate failure of high-dimensional training with resampled directions. Increasing sample count alone does not remove gaps in a fixed quadrature grid.
 
 ## Projection count and the meaning of linear complexity
 
-Dense projection multiplies `N×K` by `K×M`; CF evaluation uses `T` frequencies for each projected value:
+Dense projection multiplies $N\times K$ by $K\times M$; CF evaluation uses $T$ frequencies for each projected value:
 
-```text
-Time: O(NKM + NMT)
-Naive intermediate CF tensor: O(NMT)
-```
+$$
+\begin{aligned}
+\text{time}&:\;\mathcal O(NKM+NMT),\\
+\text{intermediate CF tensor}&:\;\mathcal O(NMT).
+\end{aligned}
+$$
 
-With `K,M,T` fixed, cost is linear in `N`. It is linear in `K` only with `M` fixed; if `M∝K`, projection becomes `O(NK²)`. Encoder computation and optimizer storage are outside these expressions. Gaussian-weighted CF/kernel connections are useful, but linear-time MMD estimators predate this work. [§4.3, p. 9; Gretton et al., abstract](https://www.jmlr.org/papers/volume13/gretton12a/gretton12a.pdf#page=1)
+With $K,M,T$ fixed, cost is linear in $N$. It is linear in $K$ only with $M$ fixed; if $M\propto K$, projection becomes $\mathcal O(NK^{2})$. Encoder computation and optimizer storage are outside these expressions. Gaussian-weighted CF/kernel connections are useful, but linear-time MMD estimators predate this work. [§4.3, p. 9; Gretton et al., abstract](https://www.jmlr.org/papers/volume13/gretton12a/gretton12a.pdf#page=1)
 
-Theorem 5 includes a rate of the form `M^(−2α/(K−1))` under smoothness `α`, quasi-uniform directional coverage and exact projection constraints. Constants and density norms also depend on dimension and smoothness. At fixed `α`, the exponent worsens with dimension. This is not unconditional removal of the curse of dimensionality. Random finite-slice training curves provide a different kind of evidence. [Appendix B.10, pp. 36–37](https://arxiv.org/pdf/2511.08544v3#page=36)
+Theorem 5 includes a rate of the form $M^{-2\alpha/(K-1)}$ under smoothness $\alpha$, quasi-uniform directional coverage and exact projection constraints. Constants and density norms also depend on dimension and smoothness. At fixed $\alpha$, the exponent worsens with dimension. This is not unconditional removal of the curse of dimensionality. Random finite-slice training curves provide a different kind of evidence. [Appendix B.10, pp. 36–37](https://arxiv.org/pdf/2511.08544v3#page=36)
 
 ![LeJEPA Figure 7: discrepancy versus projection count for fixed and resampled directions.](/assets/reviews/lejepa/paper-figure-7.webp)
 
 [Enlarge figure](/assets/reviews/lejepa/paper-figure-7.webp)
 
-<strong>Figure 7 explained.</strong> The horizontal axis is projection count `M` on a logarithmic scale; the vertical axis is expected projected discrepancy. Green uses resampled directions, blue fixed directions. Resampling reaches lower discrepancy at smaller `M` in this experiment. The fitted `β` and `R²` summarize this experiment rather than guarantee convergence on arbitrary data. The graph is not downstream accuracy. Attribution: Balestriero and LeCun, [Figure 7, p. 10](https://arxiv.org/pdf/2511.08544v3#page=10), [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). Complete graph/legend cropped and encoded as lossless WebP.
+<strong>Figure 7 explained.</strong> The horizontal axis is projection count $M$ on a logarithmic scale; the vertical axis is expected projected discrepancy. Green uses resampled directions, blue fixed directions. Resampling reaches lower discrepancy at smaller $M$ in this experiment. The fitted $\boldsymbol\beta$ and $R^{2}$ summarize this experiment rather than guarantee convergence on arbitrary data. The graph is not downstream accuracy. Attribution: Balestriero and LeCun, [Figure 7, p. 10](https://arxiv.org/pdf/2511.08544v3#page=10), [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). Complete graph/legend cropped and encoded as lossless WebP.
 
-Table 6 reports V100 loss timings of `0.465236±0.011642 ms` at `N=512,M=512,T=16` and `6.188304±0.007226 ms` at `N=8192`. Section 4.4 describes forward–backward timing. These are SIGReg measurements, not full pretraining time. The table omits embedding dimension `K` and separate forward/backward times, so precise matched-system comparisons need more detail. [§4.4, p. 10; Table 6, p. 43](https://arxiv.org/pdf/2511.08544v3#page=43)
+Table 6 reports V100 loss timings of $0.465236\pm 0.011642 \,\mathrm{ms}$ at $N=512,M=512,T=16$ and $6.188304\pm 0.007226 \,\mathrm{ms}$ at $N=8192$. Section 4.4 describes forward–backward timing. These are SIGReg measurements, not full pretraining time. The table omits embedding dimension $K$ and separate forward/backward times, so precise matched-system comparisons need more detail. [§4.4, p. 10; Table 6, p. 43](https://arxiv.org/pdf/2511.08544v3#page=43)
 
 ## A checked equation discrepancy: pairwise and center distances
 
-Equations 5–7 and Appendix B.6 describe replacing average distances between all views and global views with distances to their global mean. For one image, let `μ=(1/Vg)Σg zg`. The exact identity is:
+Equations 5–7 and Appendix B.6 describe replacing average distances between all views and global views with distances to their global mean. For one image, let $\boldsymbol\mu=\frac1{V_g}\sum_{g=1}^{V_g}\mathbf z_g$. The exact identity is:
 
-```text
-A = (1/VVg) Σv,g ||zv − zg||²
-B = (1/V) Σv ||zv − μ||²
-C = (1/Vg) Σg ||zg − μ||²
-A = B + C
-```
+$$
+\begin{aligned}
+A&=\frac1{VV_g}\sum_{v=1}^V\sum_{g=1}^{V_g}\|\mathbf z_v-\mathbf z_g\|_2^2,\\
+B&=\frac1V\sum_{v=1}^V\|\mathbf z_v-\boldsymbol\mu\|_2^2,\\
+C&=\frac1{V_g}\sum_{g=1}^{V_g}\|\mathbf z_g-\boldsymbol\mu\|_2^2,\\
+A&=B+C.
+\end{aligned}
+$$
 
-Expanding `zv−zg=(zv−μ)−(zg−μ)` removes the cross term after summing over global views, but leaves `C`. This term depends on model parameters and cannot generally be dropped as a constant.
+Expanding $\mathbf z_v-\mathbf z_g=(\mathbf z_v-\boldsymbol\mu)-(\mathbf z_g-\boldsymbol\mu)$ removes the cross term after summing over global views, but leaves $C$. This term depends on model parameters and cannot generally be dropped as a constant.
 
-In the review's scalar example, both the all-view and global-view sets are `[0,2]`: `μ=1`, `A=2`, `B=1`, `C=1`. The rendered PDF was checked directly, including Appendix Equations 23→24; the observation is not attributed to OCR. [§5, p. 12; Appendix B.6, p. 34](https://arxiv.org/pdf/2511.08544v3#page=34)
+In the review's scalar example, both the all-view and global-view sets are $[0,2]$: $\mu =1$, $A=2$, $B=1$, $C=1$. The rendered PDF was checked directly, including Appendix Equations 23→24; the observation is not attributed to OCR. [§5, p. 12; Appendix B.6, p. 34](https://arxiv.org/pdf/2511.08544v3#page=34)
 
-The identity above uses vector squared distances. Algorithm 2's `.square().mean()` also averages feature dimension `K`, so its agreement loss is `B/K`; the missing term is correspondingly `C/K`. This remains a clearly defined center objective. The review explains it and flags the claimed exact equivalence with `A`. <strong>The discrepancy does not by itself invalidate reported accuracies or reveal the exact code used for every experiment.</strong> Comparing both objectives under matched training conditions is a separate research question.
+The identity above uses vector squared distances. Algorithm 2's `.square().mean()` also averages feature dimension $K$, so its agreement loss is $B/K$; the missing term is correspondingly $C/K$. This remains a clearly defined center objective. The review explains it and flags the claimed exact equivalence with $A$. <strong>The discrepancy does not by itself invalidate reported accuracies or reveal the exact code used for every experiment.</strong> Comparing both objectives under matched training conditions is a separate research question.
 
 ## Distinguishing the PDF from the current official example
 
@@ -192,7 +212,7 @@ The official README and MINIMAL at [commit c293d291](https://github.com/galilai-
 
 | Choice | Paper | Inspected MINIMAL example |
 | --- | --- | --- |
-| Frequency grid | Algorithm 1: 17 points on `[-5,5]` | 17 points on `[0,3]`, doubled weights using symmetry |
+| Frequency grid | Algorithm 1: 17 points on $[-5,5]$ | 17 points on $[0,3]$, doubled weights using symmetry |
 | Directions | Algorithm 1 default 256; §6.1 recommends 1,024 | 256 |
 | Agreement center | Algorithm 2: global-view mean | All-view mean |
 | Teacher/detach | Absent from core design | Also absent from core agreement |
@@ -203,7 +223,7 @@ Positive-half integration is a reasonable use of symmetry, but changed endpoints
 
 Table 1 assesses trainability and sensitivity; Figure 9 expands architecture coverage; Table 2 shows use across downstream tasks; Figure 12/Table 3 examine small specialized domains. None certifies all density smoothness or task-prior assumptions for learned representations.
 
-The ImageNet-1K transfer averages at one shot/ten shots/all labels are `29.55/60.95/79.48%` for LeJEPA ViT-L, `30.20/60.51/78.50%` for plain I-JEPA and `32.05/62.92/80.70%` for +STOP. Model/training conditions are 304M/100 epochs versus 632M/300 epochs. These support a promising method with conditional comparisons, not unconditional superiority or exactly threefold total compute savings. [Table 2, p. 16](https://arxiv.org/pdf/2511.08544v3#page=16)
+The ImageNet-1K transfer averages at one shot/ten shots/all labels are 29.55/60.95/79.48% for LeJEPA ViT-L, 30.20/60.51/78.50% for plain I-JEPA and 32.05/62.92/80.70% for +STOP. Model/training conditions are 304M/100 epochs versus 632M/300 epochs. These support a promising method with conditional comparisons, not unconditional superiority or exactly threefold total compute savings. [Table 2, p. 16](https://arxiv.org/pdf/2511.08544v3#page=16)
 
 Proposed follow-ups are to evaluate held-out directions and denser frequency grids, compare center and exact pairwise losses under the same settings, and compare alternative objectives with matched backbone/augmentations/compute. Keep frozen and finetuned results and seed variation separate. Potential counterexamples include low training loss with poor unseen projections, or task-relevant anisotropy benefiting a particular target. These experiments were not run here.
 

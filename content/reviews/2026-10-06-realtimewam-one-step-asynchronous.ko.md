@@ -2,7 +2,7 @@
 title: "반복과 대기를 함께 줄이기: RealtimeWAM의 한 단계 비동기 행동 생성"
 description: "Teacher 끝점 지도로 행동 생성을 한 단계로 압축하고 KV 준비 이벤트로 전문가 대기를 줄이는 방법을 읽는다. 평균 성공률, 교란 조건, GPU별 누적 가속과 학습 비용을 구분한다."
 date: "2026-10-06"
-updatedAt: "2026-10-09T05:04:32Z"
+updatedAt: "2026-10-10T18:16:14+09:00"
 topics: ["world action model", "robot learning", "policy distillation", "real-time inference", "gpu optimization"]
 visibility: "public"
 lang: "ko"
@@ -17,6 +17,8 @@ thumbnailAlt: "TACD의 teacher·EMA·student와 shared video KV를 보여주는 
 ---
 
 월드 액션 모델이 다음 행동을 잘 예측해도, 그 행동을 너무 늦게 내놓으면 로봇 제어에 쓰기 어렵다. RealtimeWAM은 **행동을 만드는 반복 횟수**와 **영상·행동 전문가 사이의 대기**를 따로 줄인다. H100에서 큰 가속을 보고하지만, 그 수치는 여러 실행 최적화를 합친 결과이며 모든 교란 조건이나 장비의 실시간 제어를 보장하지는 않는다. [원문 §4–5, Figure 5, Table 2](https://arxiv.org/html/2610.06617v1#S4)
+
+**표기 안내.** 식은 원문의 $f_{\theta_{\mathrm S}}$, $v_{\theta_{\mathrm S}}$, $a_0^{\mathrm T}$, $u_{\theta_{\mathrm T}}$, $\mathcal L_{\mathrm{TA}}$를 사용한다. $\operatorname{sg}$는 stop-gradient이며, $a_0^\star$라는 정확한 ODE 끝점과 수치 teacher 끝점 $a_0^{\mathrm T}$를 구분한다.
 
 ## 어떤 질문에서 출발했는가
 
@@ -42,15 +44,17 @@ TACD(Teacher-Anchored Consistency Distillation)는 학생 행동 모델이 한 �
 
 teacher는 학생과 **같은 잡음 행동, 같은 고정 영상 KV**에서 출발해 10단계를 진행한다. KV는 attention이 읽는 key/value 표현이다. teacher가 도달한 끝점까지의 전체 변위를 현재 잡음 시간으로 나눈 평균 속도를 학생의 목표로 삼는다. 현재 시각에서 teacher가 내는 순간 속도만 복사하는 것과는 다르다. local consistency 항도 함께 유지한다. [§4.1, 식 7–8](https://arxiv.org/html/2610.06617v1#S4.SS1)
 
-```text
-f_S(a_t,t) = a_t - t v_S(a_t,t)
-a0_T = Solver(a_t,t,0; teacher)    # K=10 steps
-u_T = (a_t - a0_T)/t              # t>0
-L_TA = E ||v_S - stop_gradient(u_T)||²
-L = L_CD + 0.2 L_TA
-```
+$$
+\begin{aligned}
+f_{\theta_{\mathrm S}}(a_t,t)&=a_t-t\,v_{\theta_{\mathrm S}}(a_t,t),\\
+a_0^{\mathrm T}&=\texttt{Solver}(a_t,t,0;\theta_{\mathrm T}),\\
+u_{\theta_{\mathrm T}}(a_t,t)&=\frac{a_t-a_0^{\mathrm T}}{t},\quad t>0,\\
+\mathcal L_{\mathrm{TA}}&=\mathbb E_{a_t,t}\!\left[\left\|v_{\theta_{\mathrm S}}(a_t,t)-\operatorname{sg}\!\left[u_{\theta_{\mathrm T}}(a_t,t)\right]\right\|_2^2\right],\\
+\mathcal L&=\mathcal L_{\mathrm{CD}}+\lambda\mathcal L_{\mathrm{TA}},\quad \lambda=0.2.
+\end{aligned}
+$$
 
-`a_t`는 잡음이 섞인 행동, `t`는 0이 clean이고 1이 noise인 시간, `v_S`는 학생의 속도 예측이다. `f_S`는 학생의 clean endpoint 예측, `a0_T`는 teacher의 수치 적분 끝점, `u_T`는 그 끝점까지의 평균 속도다. `L_CD`는 local consistency loss이고 `L_TA`는 teacher anchor loss다. 영상 전문가는 고정하고 행동 전문가의 LoRA 파라미터만 학습한다. teacher와 EMA target은 배포 시 호출하지 않는다. [§4.1, §5.1](https://arxiv.org/html/2610.06617v1#S5.SS1)
+$a_t$는 잡음이 섞인 행동, $t$는 0이 clean이고 1이 noise인 시간, $v_{\theta_{\mathrm S}}$는 학생의 속도 예측이다. $f_{\theta_{\mathrm S}}$는 학생의 clean endpoint 예측, $a_0^{\mathrm T}$는 teacher의 수치 적분 끝점, $u_{\theta_{\mathrm T}}$는 그 끝점까지의 평균 속도다. $\mathcal L_{\mathrm{CD}}$는 local consistency loss이고 $\mathcal L_{\mathrm{TA}}$는 teacher anchor loss다. 영상 전문가는 고정하고 행동 전문가의 LoRA 파라미터만 학습한다. teacher와 EMA target은 배포 시 호출하지 않는다. [§4.1, §5.1](https://arxiv.org/html/2610.06617v1#S5.SS1)
 
 이 감독의 한계도 분명하다. 목표는 teacher가 내는 행동이지 환경의 최적 행동을 확인한 정답이 아니다. Appendix C의 오차 상한에는 teacher 수치 적분 오차도 들어가며, 성공률 보장으로 바뀌지 않는다. teacher 단계 수 5·10·20의 RoboTwin overall은 각각 90.39·90.84·90.77%로, 더 많은 teacher 연산이 항상 더 높은 성공률을 주지도 않는다. [식 9, Appendix C.2–C.3, Table 4](https://arxiv.org/html/2610.06617v1#A3)
 

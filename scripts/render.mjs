@@ -38,6 +38,7 @@ ${published ? `<meta property="article:published_time" content="${esc(published)
 <link rel="shortcut icon" href="${versioned('/favicon.ico')}">
 <script src="${versioned('/assets/theme.js')}"></script>
 <link rel="stylesheet" href="${versioned('/assets/style.css')}">
+${route.startsWith('/reviews/') && route !== '/reviews/' ? `<link rel="stylesheet" href="${versioned('/assets/vendor/katex/katex.min.css')}">` : ''}
 <link rel="alternate" type="application/rss+xml" title="${esc(site.title)}" href="${href('/feed.xml')}">
 <script src="${versioned('/assets/site.js')}" defer></script>
 ${scripts}

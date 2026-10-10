@@ -3,7 +3,7 @@ title: "[1/3] LeJEPA 입문: 같은 이미지는 가깝게, 표현 분포는 Gau
 description: "표현 붕괴와 두 손실의 역할을 쉽게 설명하고, Gaussian 목표·임의 투영·주요 실험을 그림과 함께 읽는다."
 date: "2026-10-09"
 publishedAt: "2026-10-09T23:54:43+09:00"
-updatedAt: "2026-10-09T23:59:49+09:00"
+updatedAt: "2026-10-10T18:16:20+09:00"
 topics: ["self-supervised learning", "representation learning", "joint embedding predictive architectures", "distribution matching", "computer vision"]
 visibility: "public"
 lang: "ko"
@@ -19,6 +19,8 @@ thumbnailAlt: "LeJEPA의 두 제약 설명도: 한 이미지의 뷰들은 전역
 
 정답 라벨 없이 사진의 특징을 학습할 때는 두 문제가 동시에 생긴다. 같은 사진의 다른 부분은 비슷한 표현으로 묶고 싶지만, 모든 사진을 같은 값으로 보내면 아무것도 구분하지 못한다. <strong>LeJEPA는 ‘같은 이미지의 뷰는 합의하게 하고, 여러 이미지의 표현 분포는 표준 Gaussian에 맞추자’는 두 조건으로 이 문제를 풀려 한다.</strong> 복잡한 교사 모델이나 gradient 차단 없이 학습 목적을 구성하고, 그 분포를 선택하는 이유를 통계적 추정 이론과 연결한다. 다만 그 이론이 모든 실제 과제의 성능을 보장하는 것은 아니다. [원문 §§1–5, pp. 1–12](https://arxiv.org/pdf/2511.08544v3#page=1)
 
+**표기 안내.** 임베딩 벡터 $\mathbf z_{n,v}$, 전역 평균 $\boldsymbol\mu_n$, 전역 뷰 수 $V_g$와 손실 $\mathcal L$은 원문 표기를 따른다. 본문 계산 비용에서 $M=|\mathcal A|$는 방향 수이고 $T$는 적분 주파수 수를 뜻하는 리뷰 보조 기호다. $\mathcal L_{\mathrm{SIGReg}}$는 뷰별 SIGReg 평균의 약칭이며, 중심 손실의 $1/K$는 Algorithm 2의 feature 평균을 표시한다.
+
 이 글은 세 버전 중 입문 편이다. 방법·관련 연구·실험을 빠짐없이 따라가려면 [전체 해설](/reviews/lejepa-complete/), 증명의 조건과 수식 검토가 궁금하면 [기술 심층 리뷰](/reviews/lejepa-technical/)로 이어갈 수 있다.
 
 <strong>대표 그림을 읽는 법.</strong> 위쪽은 이미지의 여러 뷰를 같은 encoder와 projector로 처리하는 흐름이다. 아래 왼쪽은 <strong>한 이미지 안에서</strong> 뷰들의 표현을 전역 뷰의 평균에 모은다. 아래 오른쪽은 <strong>각 뷰에서 여러 이미지에 걸쳐</strong> 표현을 모아 임의 방향으로 투영한 분포를 표준 Gaussian에 맞춘다. 아래 두 가지 손실을 합쳐 학습한다. 점과 곡선은 개념 설명용이며 측정 데이터가 아니다. [대표 그림 확대](/assets/reviews/lejepa/lejepa-core.svg)
@@ -27,13 +29,13 @@ thumbnailAlt: "LeJEPA의 두 제약 설명도: 한 이미지의 뷰들은 전역
 
 고양이 사진을 크게 잘라 만든 두 뷰와 귀 주변을 작게 잘라 만든 뷰를 생각해 보자. 밝기나 배경이 달라도 공통 내용을 포착하는 표현을 얻고 싶다. 이런 식으로 라벨 없이 여러 뷰를 묶는 학습을 자기지도학습이라고 한다. 여기서 <strong>뷰</strong>는 같은 원본 이미지에서 crop과 augmentation으로 만든 입력이다.
 
-문제는 뷰 사이 거리를 줄이라는 조건만으로는 의미 있는 특징을 얻지 못한다는 것이다. encoder가 모든 입력에 `0`을 출력하면 뷰 사이 거리는 완벽하게 줄어든다. 하지만 고양이와 은하 사진도 구별할 수 없다. 이를 <strong>표현 붕괴</strong>라고 부른다. 몇 개 차원만 사용하는 부분 붕괴도 문제다. [§2, pp. 3–4](https://arxiv.org/pdf/2511.08544v3#page=3)
+문제는 뷰 사이 거리를 줄이라는 조건만으로는 의미 있는 특징을 얻지 못한다는 것이다. encoder가 모든 입력에 $0$을 출력하면 뷰 사이 거리는 완벽하게 줄어든다. 하지만 고양이와 은하 사진도 구별할 수 없다. 이를 <strong>표현 붕괴</strong>라고 부른다. 몇 개 차원만 사용하는 부분 붕괴도 문제다. [§2, pp. 3–4](https://arxiv.org/pdf/2511.08544v3#page=3)
 
 LeJEPA의 첫 번째 조건은 같은 이미지의 뷰들이 공유하는 정보를 유지하는 것이다. 두 번째 조건은 서로 다른 이미지들의 표현이 하나의 점이나 좁은 방향으로 몰리지 않도록 분포를 제어하는 것이다. 두 조건은 서로 다른 축에서 작동한다. 한 사진의 crop들만 Gaussian처럼 흩뜨리는 방법으로 이해하면 안 된다.
 
 ## 왜 둥글게 퍼진 Gaussian을 목표로 삼을까
 
-Gaussian은 종 모양의 정규분포다. <strong>등방성</strong>은 특정 방향에 치우치지 않고 모든 방향에 같은 분산을 갖는다는 뜻이다. 표준 다변량 Gaussian `N(0, I)`는 평균이 0이고 각 방향의 분산이 1이다. 서로 다른 이미지의 표현들이 이런 분포를 이루도록 유도한다.
+Gaussian은 종 모양의 정규분포다. <strong>등방성</strong>은 특정 방향에 치우치지 않고 모든 방향에 같은 분산을 갖는다는 뜻이다. 표준 다변량 Gaussian $\mathcal N(0,I)$는 평균이 0이고 각 방향의 분산이 1이다. 서로 다른 이미지의 표현들이 이런 분포를 이루도록 유도한다.
 
 논문의 출발점은 ‘보기 좋은 분포’가 아니라 <strong>나중에 어떤 예측 문제를 풀게 될지 모르는 상황에서 유리한 표현 기하</strong>다. 선형 예측기의 경우, 표현이 어떤 방향으로 거의 변하지 않으면 그 방향에 의존하는 과제를 배우기 어렵다. 동일한 전체 분산을 여러 방향에 균등하게 나누면 이런 약한 방향을 줄일 수 있다. [§3.1, p. 5; Appendix B.1–B.2](https://arxiv.org/pdf/2511.08544v3#page=5)
 
@@ -57,13 +59,13 @@ Gaussian은 종 모양의 정규분포다. <strong>등방성</strong>은 특정 
 
 학습 구조에는 이미지 특징을 만드는 encoder와 그 특징을 손실용 공간으로 옮기는 projector가 있다. 따라서 ‘모델의 모든 내부 표현이 Gaussian’이라고 말할 수는 없다. Gaussian 제약은 projector 뒤의 표현에 적용하고, 아래 평가 중 frozen probe는 backbone 특징을 사용한다. [§5, Algorithm 2; §6](https://arxiv.org/pdf/2511.08544v3#page=11)
 
-한 batch에 서로 다른 이미지가 `N`개, 이미지마다 뷰가 `V`개 있다고 하자. 큰 전역 뷰들의 평균 표현을 기준으로 모든 뷰의 거리를 줄인다. 별도로 각 뷰에서 `N`개 이미지 표현에 SIGReg를 적용한다. 최종 손실은 다음과 같다.
+한 batch에 서로 다른 이미지가 $N$개, 이미지마다 뷰가 $V$개 있다고 하자. 큰 전역 뷰들의 평균 표현을 기준으로 모든 뷰의 거리를 줄인다. 별도로 각 뷰에서 $N$개 이미지 표현에 SIGReg를 적용한다. 최종 손실은 다음과 같다.
 
-```text
-전체 손실 = (1 − λ) × 뷰 합의 손실 + λ × SIGReg 손실
-```
+$$
+\mathcal L_{\mathrm{LeJEPA}}=(1-\lambda)\mathcal L_{\mathrm{pred}}+\lambda\mathcal L_{\mathrm{SIGReg}}.
+$$
 
-`λ`는 두 조건의 비중을 정한다. 논문 기본값은 `0.05`다. 핵심 구조는 이동평균 교사(EMA teacher), stop-gradient, 별도 예측 네트워크를 요구하지 않는다. 그렇다고 설정할 것이 모두 사라진 것은 아니다. optimizer, learning rate, weight decay, crop, batch 크기, 투영 수와 수치 적분 설정은 여전히 있다. 논문은 학습률 warmup과 cosine schedule도 사용한다. ‘하이퍼파라미터 하나’는 주로 손실의 혼합 계수에 대한 표현으로 읽는 것이 정확하다. [§5–6.1, pp. 11–14](https://arxiv.org/pdf/2511.08544v3#page=11)
+$\lambda$는 두 조건의 비중을 정한다. 논문 기본값은 $0.05$다. 핵심 구조는 이동평균 교사(EMA teacher), stop-gradient, 별도 예측 네트워크를 요구하지 않는다. 그렇다고 설정할 것이 모두 사라진 것은 아니다. optimizer, learning rate, weight decay, crop, batch 크기, 투영 수와 수치 적분 설정은 여전히 있다. 논문은 학습률 warmup과 cosine schedule도 사용한다. ‘하이퍼파라미터 하나’는 주로 손실의 혼합 계수에 대한 표현으로 읽는 것이 정확하다. [§5–6.1, pp. 11–14](https://arxiv.org/pdf/2511.08544v3#page=11)
 
 ## 실험은 무엇을 보여주었나
 

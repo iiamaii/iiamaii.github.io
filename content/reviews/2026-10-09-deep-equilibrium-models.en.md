@@ -3,7 +3,7 @@ title: "Deep Equilibrium Models: learning an endpoint instead of stacking layers
 description: "An accessible guide to fixed points, Broyden solves and implicit differentiation, with the main proofs and language-model experiments explaining memory savings, runtime costs and convergence conditions."
 date: "2026-10-09"
 publishedAt: "2026-10-09T20:40:07+09:00"
-updatedAt: "2026-10-09T20:40:07+09:00"
+updatedAt: "2026-10-10T18:16:17+09:00"
 topics: ["language models", "fixed points", "implicit learning", "memory efficiency", "numerical optimization"]
 visibility: "public"
 lang: "en"
@@ -19,80 +19,106 @@ thumbnailAlt: "A comparison between unrolled shared layers and a DEQ: solve nume
 
 A deep neural network changes its representation through successive layers. Training usually requires retaining intermediate states for differentiation. <strong>If repeated application of the same block reaches a nearly unchanged state, could that state itself define the model's output?</strong> The 2019 paper *Deep Equilibrium Models* turns this question into an architecture and training algorithm. The forward pass finds an equilibrium; the backward pass computes how that equilibrium responds to parameters. Activation storage across depth shrinks, while numerical cost and stability become central concerns. [§1–3, pp. 1–5](https://arxiv.org/pdf/1909.01377v2#page=1)
 
-<strong>Reading the overview figure.</strong> The top row unrolls a shared block into successive layers. The middle row numerically solves `f(z*, x) = z*`. The bottom row solves a linear system at that endpoint for gradients. Arrows indicate computation order within each row. Iterative work remains; the key is avoiding backpropagation through the entire forward solver trajectory. This is an original illustration made for this review. [Enlarge](/assets/reviews/deep-equilibrium-models/deq-core.svg)
+**Notation.** Sequence equations retain $z^{[i]}_{1:T}$, $x_{1:T}$ and $z^\star_{1:T}$ from the paper; scalar examples omit sequence subscripts. The implicit derivation uses $J_{f_\theta}$; $q,v$ are auxiliary review symbols for the adjoint. The inverse approximation $B^{[i]}_{g_\theta}$ is distinct from the parameter derivative.
+
+<strong>Reading the overview figure.</strong> The top row unrolls a shared block into successive layers. The middle row numerically solves $f_\theta(z^\star_{1:T};x_{1:T})=z^\star_{1:T}$. The bottom row solves a linear system at that endpoint for gradients. Arrows indicate computation order within each row. Iterative work remains; the key is avoiding backpropagation through the entire forward solver trajectory. This is an original illustration made for this review. [Enlarge](/assets/reviews/deep-equilibrium-models/deq-core.svg)
 
 ## Two costs of increasing depth
 
-An ordinary deep network has different parameters at different layers. Sharing weights across depth prevents parameter count from growing with the number of repetitions, but does not remove the need to store intermediate activations for backpropagation. DEQ starts from a structure with both <strong>weight sharing</strong> and <strong>input injection at every update</strong>. With input `x` fixed, it repeatedly updates hidden state `z`. [§2–3, Equations 3–4](https://arxiv.org/pdf/1909.01377v2#page=3)
+An ordinary deep network has different parameters at different layers. Sharing weights across depth prevents parameter count from growing with the number of repetitions, but does not remove the need to store intermediate activations for backpropagation. DEQ starts from a structure with both <strong>weight sharing</strong> and <strong>input injection at every update</strong>. With input $x$ fixed, it repeatedly updates hidden state $z$. [§2–3, Equations 3–4](https://arxiv.org/pdf/1909.01377v2#page=3)
 
-```text
-z⁰ = 0
-zⁱ⁺¹ = fθ(zⁱ; x)       # shared θ, the same input x injected each time
-```
+$$
+\begin{aligned}
+z^{[0]}_{1:T}&=0,\\
+z^{[i+1]}_{1:T}&=f_\theta(z^{[i]}_{1:T};x_{1:T}).
+\end{aligned}
+$$
 
-Here `i` indexes <strong>computational depth</strong>, not the order of tokens in a sentence. Both `x` and `z` can represent an entire sequence. For autoregressive language modeling, causal convolution or an attention mask prevents output at position `t` from depending on future inputs. Computing sequence states together does not permit access to future target tokens. [§2.2, §4](https://arxiv.org/pdf/1909.01377v2#page=3)
+Here $i$ indexes <strong>computational depth</strong>, not the order of tokens in a sentence. Both $x$ and $z$ can represent an entire sequence. For autoregressive language modeling, causal convolution or an attention mask prevents output at position $t$ from depending on future inputs. Computing sequence states together does not permit access to future target tokens. [§2.2, §4](https://arxiv.org/pdf/1909.01377v2#page=3)
 
 Instead of asking how many layers should define the output, DEQ asks whether a state unchanged by another application of the block can define it.
 
 ## Defining an output by a fixed point
 
-A fixed point, or equilibrium `z*`, satisfies:
+A fixed point, or equilibrium $z^\star$, satisfies:
 
-```text
-z* = fθ(z*; x)
-gθ(z; x) = fθ(z; x) − z
-Therefore gθ(z*; x) = 0
-```
+$$
+\begin{aligned}
+z^\star_{1:T}&=f_\theta(z^\star_{1:T};x_{1:T}),\\
+g_\theta(z_{1:T};x_{1:T})&=f_\theta(z_{1:T};x_{1:T})-z_{1:T},\\
+g_\theta(z^\star_{1:T};x_{1:T})&=0.
+\end{aligned}
+$$
 
-Repeatedly applying `f` and solving the equation `g=0` can target the same answer, but their computation and convergence properties differ. DEQ adopts the root-finding view. [§3.1, Equations 5–7](https://arxiv.org/pdf/1909.01377v2#page=4)
+Repeatedly applying $f_\theta$ and solving the equation $g=0$ can target the same answer, but their computation and convergence properties differ. DEQ adopts the root-finding view. [§3.1, Equations 5–7](https://arxiv.org/pdf/1909.01377v2#page=4)
 
-Consider the scalar function `f(z; x)=0.5z+0.75x` with `x=2`. This is an explanatory example for this review, not an experiment from the paper.
+Consider the scalar function $f(z; x)=0.5z+0.75x$ with $x=2$. This is an explanatory example for this review, not an experiment from the paper.
 
-```text
-0 → 1.5 → 2.25 → 2.625 → ... → 3
-z* = 0.5z* + 1.5  ⇒  z* = 3
-```
+$$
+\begin{gathered}
+0\longrightarrow1.5\longrightarrow2.25\longrightarrow2.625\longrightarrow\cdots\longrightarrow3,\\
+z^\star=0.5z^\star+1.5\quad\Longrightarrow\quad z^\star=3.
+\end{gathered}
+$$
 
-A finite number of iterations gives a value close to `3`; the equilibrium equation defines the output as `3`. Real DEQs do not generally have such a closed-form answer. They use numerical solvers with tolerances and iteration limits. “Infinite depth” describes the output definition. It does not mean executing infinitely many operations or always obtaining an exact answer at finite cost.
+A finite number of iterations gives a value close to $3$; the equilibrium equation defines the output as $3$. Real DEQs do not generally have such a closed-form answer. They use numerical solvers with tolerances and iteration limits. “Infinite depth” describes the output definition. It does not mean executing infinitely many operations or always obtaining an exact answer at finite cost.
 
 ## Forward computation: finding an equilibrium with Broyden's method
 
-Newton's method updates a candidate state using the residual `g(z)` and its Jacobian. A Jacobian records how each output changes when each state component changes. Building and inverting that matrix is expensive for large sequences. The paper uses <strong>Broyden's method</strong> to update an approximation of the inverse Jacobian. [§3.1.1, Equations 6–7 and 10, p. 4](https://arxiv.org/pdf/1909.01377v2#page=4)
+Newton's method updates a candidate state using the residual $g_\theta(z)$ and its Jacobian. A Jacobian records how each output changes when each state component changes. Building and inverting that matrix is expensive for large sequences. The paper uses <strong>Broyden's method</strong> to update an approximation of the inverse Jacobian. [§3.1.1, Equations 6–7 and 10, p. 4](https://arxiv.org/pdf/1909.01377v2#page=4)
 
-```text
-z_next = z − α H gθ(z; x)
-H ≈ (∂gθ/∂z)⁻¹
-```
+$$
+\begin{aligned}
+z^{[i+1]}_{1:T}&=z^{[i]}_{1:T}-\alpha B^{[i]}_{g_\theta}\,g_\theta(z^{[i]}_{1:T};x_{1:T}),\\
+B^{[i]}_{g_\theta}&\approx\left(J_{g_\theta}\big|_{z^{[i]}_{1:T}}\right)^{-1}.
+\end{aligned}
+$$
 
-`α` is a step size. I denote the inverse approximation by `H` here. It is maintained through low-rank updates instead of constructing a new large inverse each time; the paper initializes the approximation at `−I`. Computation stops when the residual becomes small enough or the iteration limit is reached. Solver settings therefore form part of the model's execution procedure.
+$\alpha$ is a step size. The inverse approximation uses the paper’s $B^{[i]}_{g_\theta}$. It is maintained through low-rank updates instead of constructing a new large inverse each time; the paper initializes the approximation at $-I$. Computation stops when the residual becomes small enough or the iteration limit is reached. Solver settings therefore form part of the model's execution procedure.
 
-Crucially, <strong>a root can exist even when naive iteration is unstable</strong>. The function `f(z)=1.2z+1` has a fixed point at `−5`, but iteration from zero produces `1, 2.2, 3.64, …`. Existence of a root, convergence of repeated application, and successful root finding are distinct questions. This paper does not provide a guarantee that a DEQ solver succeeds for every input. [§3.2, Appendix D, pp. 5, 14–15](https://arxiv.org/pdf/1909.01377v2#page=14)
+Crucially, <strong>a root can exist even when naive iteration is unstable</strong>. The function $f(z)=1.2z+1$ has a fixed point at $-5$, but iteration from zero produces $1, 2.2, 3.64, \ldots$. Existence of a root, convergence of repeated application, and successful root finding are distinct questions. This paper does not provide a guarantee that a DEQ solver succeeds for every input. [§3.2, Appendix D, pp. 5, 14–15](https://arxiv.org/pdf/1909.01377v2#page=14)
 
 ## Backward computation: why the whole search path need not be saved
 
-After obtaining an endpoint, training requires its sensitivity to parameter changes. <strong>Implicit differentiation</strong> supplies that sensitivity. Differentiate both sides of `z*=fθ(z*; x)` with respect to `θ`. [Theorem 1, Equation 8; Appendix A, Equations 13–14](https://arxiv.org/pdf/1909.01377v2#page=13)
+After obtaining an endpoint, training requires its sensitivity to parameter changes. <strong>Implicit differentiation</strong> supplies that sensitivity. Differentiate both sides of $z^\star_{1:T}=f_\theta(z^\star_{1:T};x_{1:T})$ with respect to $\theta$. [Theorem 1, Equation 8; Appendix A, Equations 13–14](https://arxiv.org/pdf/1909.01377v2#page=13)
 
-```text
-J = ∂fθ/∂z      # state derivative at the endpoint
-B = ∂fθ/∂θ      # parameter derivative with the state held fixed
+$$
+\begin{aligned}
+J_{f_\theta}&=\left.\frac{\partial f_\theta}{\partial z_{1:T}}\right|_{z^\star_{1:T}},\\
+\frac{\mathrm dz^\star_{1:T}}{\mathrm d\theta}
+&=J_{f_\theta}\frac{\mathrm dz^\star_{1:T}}{\mathrm d\theta}
++\frac{\partial f_\theta(z^\star_{1:T};x_{1:T})}{\partial\theta},\\
+(I-J_{f_\theta})\frac{\mathrm dz^\star_{1:T}}{\mathrm d\theta}
+&=\frac{\partial f_\theta(z^\star_{1:T};x_{1:T})}{\partial\theta},\\
+\frac{\mathrm dz^\star_{1:T}}{\mathrm d\theta}
+&=(I-J_{f_\theta})^{-1}\frac{\partial f_\theta(z^\star_{1:T};x_{1:T})}{\partial\theta}.
+\end{aligned}
+$$
 
-dz*/dθ = J(dz*/dθ) + B
-(I − J)(dz*/dθ) = B
-dz*/dθ = (I − J)⁻¹ B
-```
+Theorem 1 writes the following row-gradient formula. Since $J_{g_\theta}=J_{f_\theta}-I$, it is equivalent to the derivation above. The adjoint below uses transposed column-vector gradients.
 
-Let `ℓ` be the loss and `q=∇zℓ` its endpoint gradient. Using column-vector notation, solve the following linear system instead of explicitly constructing the inverse:
+$$
+\frac{\partial\ell}{\partial\theta}
+=-\frac{\partial\ell}{\partial z^\star_{1:T}}
+\left(J_{g_\theta}\big|_{z^\star_{1:T}}\right)^{-1}
+\frac{\partial f_\theta(z^\star_{1:T};x_{1:T})}{\partial\theta}.
+$$
 
-```text
-(I − J)ᵀ v = q
-∇θℓ = Bᵀv
-```
+Let $\ell$ be the loss and $q=\nabla_{z^\star_{1:T}}\ell$ its endpoint gradient. Using column-vector notation, solve the following linear system instead of explicitly constructing the inverse:
+
+$$
+\begin{aligned}
+q&=\nabla_{z^\star_{1:T}}\ell,\\
+(I-J_{f_\theta})^\top v&=q,\\
+\nabla_\theta\ell&=\left(\frac{\partial f_\theta}{\partial\theta}\right)^\top v.
+\end{aligned}
+$$
 
 This is the core proof: local derivatives at the endpoint determine its parameter sensitivity. Computation uses <strong>vector–Jacobian products (VJPs)</strong>, which differentiate against a vector without building the full Jacobian. The entire series of forward solver updates need not remain in an automatic-differentiation graph. Direct parameter dependencies through the output head or loss must be differentiated separately and added. [§3.1.2, Equation 11, p. 5](https://arxiv.org/pdf/1909.01377v2#page=5)
 
-For the scalar example, choose target `1` and loss `½(z*−1)²`. Then `q=2`, `J=0.5`, and `v=4`. Writing `f(z;x)=az+bx` with `a=0.5`, `b=0.75` gives `∂ℓ/∂a=12` and `∂ℓ/∂b=8`. I checked this example against central finite differences; the maximum absolute error was approximately `3.3×10⁻¹⁰`. This validates a small explanatory calculation, not training of the paper's models.
+For the scalar example, choose target $1$ and loss $\frac12(z^\star-1)^2$. Then $q=2$, $J_{f_\theta}=0.5$, and $v=4$. Writing $f(z;x)=az+bx$ with $a=0.5$, $b=0.75$ gives $\partial\ell/\partial a=12$ and $\partial\ell/\partial b=8$. I checked this example against central finite differences; the maximum absolute error was approximately $3.3\times 10^{-10}$. This validates a small explanatory calculation, not training of the paper's models.
 
-The derivation has conditions. The function must be differentiable around the selected solution, and <strong><code>I−J</code> must be invertible</strong>. The paper's inverse notation presupposes this requirement. A nearly singular system can amplify state or gradient errors despite a small residual. Moreover, the formula describes an exact equilibrium, while implementation uses an approximate state and approximate linear solve. A small residual alone does not guarantee an accurate gradient. [Appendix A; RBP §3.2](https://proceedings.mlr.press/v80/liao18c/liao18c.pdf#page=3)
+The derivation has conditions. The function must be differentiable around the selected solution, and <strong>$I-J_{f_\theta}$ must be invertible</strong>. The paper's inverse notation presupposes this requirement. A nearly singular system can amplify state or gradient errors despite a small residual. Moreover, the formula describes an exact equilibrium, while implementation uses an approximate state and approximate linear solve. A small residual alone does not guarantee an accurate gradient. [Appendix A; RBP §3.2](https://proceedings.mlr.press/v80/liao18c/liao18c.pdf#page=3)
 
 ## What “constant memory” covers
 
@@ -113,15 +139,17 @@ The Transformer implementation uses Transformer-XL's context handling and relati
 
 ## What the two representation proofs establish
 
-<strong>Theorem 2: two stacked DEQs can be represented by one larger DEQ.</strong> Let the first equilibrium be `u` and the second `w`. Place both updates in a combined state `[u; w]`. [Appendix B, Equations 15–16, p. 13](https://arxiv.org/pdf/1909.01377v2#page=13)
+<strong>Theorem 2: two stacked DEQs can be represented by one larger DEQ.</strong> Let the first equilibrium be $w^{(1)}_{1:T}$ and the second $w^{(2)}_{1:T}$. Place both updates in a combined state $[w^{(1)}_{1:T};w^{(2)}_{1:T}]$. [Appendix B, Equations 15–16, p. 13](https://arxiv.org/pdf/1909.01377v2#page=13)
 
-```text
-u = f(u; x)
-w = h(w; u)
-Γ([u; w]; x) = [f(u; x); h(w; u)]
-```
+$$
+\Gamma_\Theta\!\left(\begin{bmatrix}w^{(1)}_{1:T}\\w^{(2)}_{1:T}\end{bmatrix};x_{1:T}\right)
+=\begin{bmatrix}
+f_{\theta^{[1]}}(w^{(1)}_{1:T};x_{1:T})\\
+v_{\theta^{[2]}}(w^{(2)}_{1:T};w^{(1)}_{1:T})
+\end{bmatrix}.
+$$
 
-At a fixed point of `Γ`, both original equations hold. Reading the final part of the state reproduces the stacked output. However, the combined hidden dimension is the <strong>sum</strong> of the two state dimensions. This does not prove equal expressivity for a single block at unchanged width or faster solution of the combined system. I follow the construction in Appendix B, whose function subscripts are clearer than those in the main-text equation.
+At a fixed point of $\Gamma_\Theta$, both original equations hold. Reading the final part of the state reproduces the stacked output. However, the combined hidden dimension is the <strong>sum</strong> of the two state dimensions. This does not prove equal expressivity for a single block at unchanged width or faster solution of the combined system. I follow the construction in Appendix B, whose function subscripts are clearer than those in the main-text equation.
 
 <strong>Theorem 3: a finite untied network can be embedded in a wider tied network.</strong> Put each layer's state in a separate part of a larger vector and construct a block-shift update that passes one part's result to the next. Repetition computes the original layer outputs in sequence. [Appendix C, p. 14](https://arxiv.org/pdf/1909.01377v2#page=14)
 
@@ -145,7 +173,7 @@ Describing DEQ as the first invention of fixed-point differentiation would miss 
 
 The experiments cover a copy task, Penn Treebank (PTB), and WikiText-103 (WT103). <strong>Perplexity (PPL)</strong> exponentiates average negative log probability of target tokens; lower is better. Comparisons require compatible data, tokenization, vocabulary and evaluation conditions. A percentage change in PPL is not a percentage change in accuracy, and PTB and WT103 values should not be compared directly. [§5, Tables 1–3; Appendix F](https://arxiv.org/pdf/1909.01377v2#page=7)
 
-<strong>The copy task is a small stress test of retaining information across a delay.</strong> The model reproduces ten initial symbols after a waiting interval. For `T=400`, the total sequence length is `T+20=420`. Models have approximately 14–16K parameters. Reported losses are `3.5×10⁻⁶` for DEQ-Transformer, `2.7×10⁻⁵` for TCN, `0.0501` for LSTM, and `0.0491` for GRU. Table 1 and the appendix do not explicitly define this loss's exact aggregation, so I retain the paper's label “loss.” This does not establish general language understanding or reasoning ability. [Table 1, p. 7; Appendix F, p. 16](https://arxiv.org/pdf/1909.01377v2#page=16)
+<strong>The copy task is a small stress test of retaining information across a delay.</strong> The model reproduces ten initial symbols after a waiting interval. For $T=400$, the total sequence length is $T+20=420$. Models have approximately 14–16K parameters. Reported losses are $3.5\times 10^{-6}$ for DEQ-Transformer, $2.7\times 10^{-5}$ for TCN, $0.0501$ for LSTM, and $0.0491$ for GRU. Table 1 and the appendix do not explicitly define this loss's exact aggregation, so I retain the paper's label “loss.” This does not establish general language understanding or reasoning ability. [Table 1, p. 7; Appendix F, p. 16](https://arxiv.org/pdf/1909.01377v2#page=16)
 
 The following table transcribes selected language-model rows. <strong>All memory values use sequence length 150, batch size 15, and exclude word embeddings.</strong> This common measurement setup does not mean every training setting is identical. Auxiliary losses, parameter totals and architectural details differ. [Table 2 note; Table 3, pp. 7–8](https://arxiv.org/pdf/1909.01377v2#page=7)
 
@@ -159,9 +187,9 @@ The following table transcribes selected language-model rows. <strong>All memory
 | WT103 | 18-layer medium Transformer-XL, adaptive embedding | 110M / 72M | 23.6 | 9.0 |
 | WT103 | Medium DEQ-Transformer, adaptive embedding | 110M / 70M | 23.2 | 3.7 |
 
-On PTB, PPL is nearly unchanged while memory decreases substantially. WT103 Trellis memory falls from `24.7` to `3.3GB`, approximately <strong>86.6%</strong>. Against the checkpointed `5.2GB` baseline, the reduction is approximately <strong>36.5%</strong>. In the adaptive-embedding Transformer rows, `9.0→3.7GB` corresponds to approximately <strong>58.9%</strong>. These calculations use rounded table values. The abstract's “up to 88%” is the authors' aggregate claim, not a percentage that applies to every block and baseline.
+On PTB, PPL is nearly unchanged while memory decreases substantially. WT103 Trellis memory falls from $24.7$ to $3.3\,\mathrm{GB}$, approximately <strong>86.6%</strong>. Against the checkpointed $5.2\,\mathrm{GB}$ baseline, the reduction is approximately <strong>36.5%</strong>. In the adaptive-embedding Transformer rows, $9.0\to 3.7\,\mathrm{GB}$ corresponds to approximately <strong>58.9%</strong>. These calculations use rounded table values. The abstract's “up to 88%” is the authors' aggregate claim, not a percentage that applies to every block and baseline.
 
-DEQ does not beat every row on quality. PTB Table 2 includes DARTS at PPL `55.7`; WT103 Table 3 includes a much larger Transformer-XL at `18.7`. These rows differ in scale and training conditions. The persuasive evidence is therefore less about the absolute best PPL and more about <strong>reducing depth-wise activation storage at similar model scale and quality</strong>. [Tables 2–3](https://arxiv.org/pdf/1909.01377v2#page=8)
+DEQ does not beat every row on quality. PTB Table 2 includes DARTS at PPL $55.7$; WT103 Table 3 includes a much larger Transformer-XL at $18.7$. These rows differ in scale and training conditions. The persuasive evidence is therefore less about the absolute best PPL and more about <strong>reducing depth-wise activation storage at similar model scale and quality</strong>. [Tables 2–3](https://arxiv.org/pdf/1909.01377v2#page=8)
 
 Runtime comes at a cost. Table 4 reports `DEQ time / baseline time`, so values above one indicate slower execution. [Table 4, p. 9](https://arxiv.org/pdf/1909.01377v2#page=9)
 
@@ -179,9 +207,9 @@ In these experiments, DEQ saves memory but runs more slowly. These are not unive
 <figcaption><span class="figure-label">Figure 2 · Equilibrium solving can become harder during training</span>The two panels were isolated from surrounding prose on v2 p. 8. Axes, legends and curves are preserved. <span class="figure-links"><a href="https://arxiv.org/pdf/1909.01377v2#page=8">Shaojie Bai, J. Zico Kolter, Vladlen Koltun, 2019, Figure 2</a> · <a href="/assets/reviews/deep-equilibrium-models/paper-figure-2.webp" target="_blank" rel="noopener noreferrer">Enlarge</a> · Figure quotation for critical review; rights remain with the original authors</span></figcaption>
 </figure>
 
-<strong>The left panel describes computational work.</strong> Its horizontal axis is training epoch; the vertical axis divides Broyden iterations by the number of sequence time steps. A value of `0.9` does not mean the solver performed less than one iteration: this plot normalizes by sequence length 150. Blue is forward computation, and red is backward computation. Both increase as training progresses in this setting. [Figure 2, §5, p. 8](https://arxiv.org/pdf/1909.01377v2#page=8)
+<strong>The left panel describes computational work.</strong> Its horizontal axis is training epoch; the vertical axis divides Broyden iterations by the number of sequence time steps. A value of $0.9$ does not mean the solver performed less than one iteration: this plot normalizes by sequence length 150. Blue is forward computation, and red is backward computation. Both increase as training progresses in this setting. [Figure 2, §5, p. 8](https://arxiv.org/pdf/1909.01377v2#page=8)
 
-<strong>The right panel describes a residual.</strong> The horizontal axis counts function evaluations; the vertical axis plots `‖f(z)−z‖` logarithmically. It is neither PPL nor distance to a known correct state. Naive iteration of the weight-tied Transformer decreases the residual at epoch 1 but oscillates at a large residual at epoch 12. DEQ root finding reaches much smaller residuals at both epochs. This supports a distinction between naive iteration and numerical root finding, not a claim of faster wall-clock execution than a finite-depth baseline.
+<strong>The right panel describes a residual.</strong> The horizontal axis counts function evaluations; the vertical axis plots $\|f(z)-z\|_2$ logarithmically. It is neither PPL nor distance to a known correct state. Naive iteration of the weight-tied Transformer decreases the residual at epoch 1 but oscillates at a large residual at epoch 12. DEQ root finding reaches much smaller residuals at both epochs. This supports a distinction between naive iteration and numerical root finding, not a claim of faster wall-clock execution than a finite-depth baseline.
 
 ## Original Figure 3: choosing precision and quality
 
@@ -192,7 +220,7 @@ In these experiments, DEQ saves memory but runs more slowly. These are not unive
 
 The left panel shows where relaxing the forward residual tolerance damages quality. Its horizontal axis is logarithmic; smaller values are stricter. Validation PPL stays similar across small tolerances, then worsens sharply when tolerance becomes too loose. The right panel shows improving PPL as the iteration limit grows, with diminishing gains from additional computation. The original includes shaded regions but does not specify their aggregation, so I do not interpret them as confidence intervals. [Figure 3, §5, p. 9](https://arxiv.org/pdf/1909.01377v2#page=9)
 
-These experiments use the medium DEQ-Transformer without adaptive embeddings. The accompanying text describes competitive results with `ε<0.1` or an iteration limit of 30 <strong>for sequences of length 75</strong>. This should not be generalized to the length-150 memory benchmark or treated as an optimal setting for every model. The figure reports validation PPL, distinct from the test PPL in the earlier table.
+These experiments use the medium DEQ-Transformer without adaptive embeddings. The accompanying text describes competitive results with $\epsilon <0.1$ or an iteration limit of 30 <strong>for sequences of length 75</strong>. This should not be generalized to the length-150 memory benchmark or treated as an optimal setting for every model. The figure reports validation PPL, distinct from the test PPL in the earlier table.
 
 ## Practical conditions and remaining limits
 
