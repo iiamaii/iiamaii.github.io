@@ -1,9 +1,9 @@
 ---
 title: "[3/3] LeJEPA 기술 심층 리뷰: 증명 조건, SIGReg와 수식 검토"
-description: "Gaussian 최소성, 투영 식별, ECF gradient·표본 bias·계산 비용을 분석하고 원문 거리 손실의 누락 항을 확인한다."
+description: "원문 §3→§4→§5의 논증과 부록 A·B를 따라 주요 정리, 보조정리, 중간 유도와 미확인 간극을 자세히 읽는다."
 date: "2026-10-09"
 publishedAt: "2026-10-09T23:54:43+09:00"
-updatedAt: "2026-10-10T18:16:18+09:00"
+updatedAt: "2026-10-11T19:23:15+09:00"
 topics: ["self-supervised learning", "representation learning", "joint embedding predictive architectures", "distribution matching", "computer vision"]
 visibility: "public"
 lang: "ko"
@@ -17,221 +17,295 @@ thumbnail: "/assets/reviews/lejepa/lejepa-core.svg"
 thumbnailAlt: "LeJEPA의 두 제약 설명도: 한 이미지의 뷰들은 전역 뷰 평균에 정렬하고, 각 뷰에서 여러 이미지의 표현은 임의 방향으로 투영해 표준 Gaussian과 맞춘다."
 ---
 
-LeJEPA의 ‘provable’이라는 표현을 평가하려면 세 층위를 나눠 읽어야 한다. <strong>어떤 조건에서 Gaussian이 후속 추정에 유리한지, 어떤 조건에서 투영 분포의 일치가 원래 분포의 일치를 뜻하는지, 유한 batch와 수치 grid의 손실이 그 목표를 얼마나 근사하는지</strong>다. 이 글은 그 연결을 직접 전개하고, 원문 수식에서 확인한 불일치와 리뷰 작성자가 실행한 작은 검사를 기록한다. 이론의 가치와 실제 학습에 필요한 검증을 함께 보는 것이 목적이다. [§§3–5; Appendix A–B](https://arxiv.org/pdf/2511.08544v3#page=24)
+**LeJEPA의 이론을 이해하려면 등방성 공분산을 선택하는 선형 분석, Gaussian 모양을 선택하는 Fisher information 분석, 그 목표를 유한 투영으로 학습하는 구현을 구분해야 한다.** 이 글은 그 연결을 원문 §3→§4→§5 순서로 따라가며 Appendix A·B의 주요 증명을 펼친다. 저자의 진술과 리뷰가 보충한 유도, 남아 있는 간극을 구분한다. [§§3–5; Appendix A–B](https://arxiv.org/pdf/2511.08544v3#page=5)
 
-**표기 안내.** 임베딩 벡터 $\mathbf z_{n,v}$, 전역 평균 $\boldsymbol\mu_n$, 전역 뷰 수 $V_g$와 손실 $\mathcal L$은 원문 표기를 따른다. 본문 계산 비용에서 $M=|\mathcal A|$는 방향 수이고 $T$는 적분 주파수 수를 뜻하는 리뷰 보조 기호다. $\mathcal L_{\mathrm{SIGReg}}$는 뷰별 SIGReg 평균의 약칭이며, 중심 손실의 $1/K$는 Algorithm 2의 feature 평균을 표시한다. 선형 회귀의 $\mathbf Z$와 ridge 계수 $\lambda$는 원문 §3.1 표기다. $G=\mathbf Z^\top\mathbf Z$, 무스케일 차이 $D$, 거리 분해 $A,B,C$는 리뷰 정의다. $z_n=\mathbf a^\top\mathbf z_n$는 §4의 스칼라 투영이며, $s$는 부록 B.12의 창 폭 역수다.
+**[3/3] 정리·증명 심층 편**이다. [입문](/reviews/lejepa-overview/) → [전체 해설](/reviews/lejepa-complete/) → 이 글 순서가 권장된다. §§1–2의 문제·배경과 §6 전체 실험은 전체 해설에서 읽는다. 아래에서는 주요 정리의 가정과 계산에 집중하며, 부록 증명은 그 정리가 나오는 본문 위치로 옮겼다.
 
-세 버전 중 기술 심층 편이다. 문제의 직관은 [입문 요약](/reviews/lejepa-overview/), 전체 관련 연구·실험 지도는 [전체 해설](/reviews/lejepa-complete/)에서 설명한다.
+**표기 대응.** $\mathbf Z\in\mathbb R^{N\times K}$는 표현 행렬, $\mathbf z_{n,v}$는 이미지·뷰 표현이다. 선형 증명의 $\mathbf X$, $p$, $\lambda_{\rm wd}$는 본문의 $\mathbf Z$, $K$, ridge 계수에 대응한다. 여기서 일반 밀도 $p$는 선형 증명의 차원 기호와 다른 역할이다. Appendix의 $d,n$은 해당 계산의 차원·표본 수다. $M=|\mathcal A|$, 주파수 수 $T$, $\widehat D=EP/N$는 설명을 위한 약칭이다.
 
-<strong>대표 그림의 계산 단위.</strong> 한 이미지의 뷰들은 전역 뷰 평균에 정렬한다. 분포 손실은 각 뷰에서 여러 이미지의 projected embedding에 적용한다. Gaussian 목표를 backbone의 모든 내부 층이나 한 이미지의 crop 집합에 적용한다고 읽으면 안 된다. 두 경로 모두 gradient를 받고, 핵심 구조에는 stop-gradient가 없다. [개념도 확대](/assets/reviews/lejepa/lejepa-core.svg)
+## 3 Latent Euclidean — 목표 분포의 이론
 
-## 표기와 분석의 층위를 먼저 고정하기
+### 3.1 Linear Probing — Lemmas 1–2와 Appendix B.1–B.2
 
-$N$은 batch의 서로 다른 이미지 수, $V$는 이미지당 뷰 수, $V_g$는 전역 뷰 수, $K$는 projected embedding 차원, $M$은 투영 방향 수, $T$는 적분 주파수 수다. $\mathbf z_{n,v}$는 encoder와 projector를 거친 벡터다.
+고정 설계에서 $\mathbf y=\mathbf Z\boldsymbol\beta_{\rm true}+\boldsymbol\varepsilon$이고 $\mathbb E[\boldsymbol\varepsilon\mid\mathbf Z]=0$, $\operatorname{Cov}(\boldsymbol\varepsilon\mid\mathbf Z)=\sigma^2I$라 하자. $\mathbf Z$는 full column rank다. 같은 column span과 총 에너지의 두 표현을 비교한다. 원문 선형 결과는 계수 추정에 관한 것이다.
 
-| 층위 | 주장의 대상 | 실제 학습으로 옮길 때 추가로 필요한 것 |
-| --- | --- | --- |
-| 후속 추정 이론 | 고정 설계의 선형 회귀, smooth density의 국소·kernel 예측 | 실제 표현·과제·분포가 가정을 만족하는지 |
-| 분포 식별 이론 | 모든 방향과 모든 주파수, 또는 정해진 증가·검정 조건 | 유한 방향·grid가 보지 못하는 차이 |
-| 학습 손실 | finite batch의 ECF discrepancy 평균 | optimizer, encoder Jacobian, 수치 오차와 일반화 |
-| 실험 | 특정 데이터·모델·평가 protocol | 같은 예산의 재현, 새 도메인과 seed 변동 |
+**Lemma 1의 진술.** 비등방성에서는 양의 ridge 정규화 아래 등방성보다 bias가 큰 과제가 존재한다. 먼저 ridge 목적을 미분하고 normal equation을 풀면,
 
-원문의 기호를 가능한 유지하고, 계산 전개에 추가한 보조 기호는 위에서 정의했다. 직접 계산한 예제는 원문의 보고 결과와 구분했다.
+$$
+\hat{\boldsymbol\beta}
+=(\mathbf Z^\top\mathbf Z+\lambda_{\rm wd}I)^{-1}\mathbf Z^\top\mathbf y.
+$$
 
-## 선형 결과: 공분산을 둥글게 만드는 이유
-
-고정된 feature 행렬 $\mathbf Z$와 정답 $\mathbf y=\mathbf Z\boldsymbol\beta+\boldsymbol\varepsilon$를 생각하자. $\mathbf Z$는 full column rank이고 잡음은 조건부 평균 0, 공분산 $\sigma ^{2}I$라고 가정한다. $G=\mathbf Z^\top\mathbf Z$, ridge 계수를 $\lambda>0$라 하면 다음이 성립한다. [Lemma 1; Appendix B.1, p. 26](https://arxiv.org/pdf/2511.08544v3#page=26)
+조건부 기대값에서 잡음이 사라진다. $\mathbf G=\mathbf Z^\top\mathbf Z$를 리뷰 약칭으로 두면,
 
 $$
 \begin{aligned}
-\hat{\boldsymbol\beta}_{\mathrm{ridge}}&=(G+\lambda I)^{-1}\mathbf Z^\top\mathbf y,\\
-\mathbb E[\hat{\boldsymbol\beta}_{\mathrm{ridge}}\mid\mathbf Z]-\boldsymbol\beta
-&=-\lambda(G+\lambda I)^{-1}\boldsymbol\beta.
+\mathbb E[\hat{\boldsymbol\beta}\mid\mathbf Z]-\boldsymbol\beta_{\rm true}
+&=\left[(\mathbf G+\lambda_{\rm wd}I)^{-1}\mathbf G-I\right]\boldsymbol\beta_{\rm true}\\
+&=-\lambda_{\rm wd}(\mathbf G+\lambda_{\rm wd}I)^{-1}\boldsymbol\beta_{\rm true}.
 \end{aligned}
 $$
 
-$G$의 고윳값이 작은 방향에서는 $\lambda/(\lambda_k+\lambda)$만큼 강하게 shrink된다. 같은 전체 에너지를 가진 등방성 설계와 비교할 때, 약한 방향에 놓인 불리한 과제가 존재한다는 논증이다. 어떤 특정 과제에서도 등방성 표현이 더 좋다는 전칭 명제가 아니다.
+중간 전환은 $\mathbf G=(\mathbf G+\lambda_{\rm wd}I)-\lambda_{\rm wd}I$를 대입한 것이다. $\mathbf G=\mathbf Q\boldsymbol\Lambda\mathbf Q^\top$에서 bias의 각 고유방향 성분은 $\lambda_{\rm wd}/(\lambda_k+\lambda_{\rm wd})$만큼 줄어든다. $\bar\lambda=K^{-1}\sum_k\lambda_k$라 두고 가장 작은 고윳값의 방향에 실제 과제를 잡으면,
 
-OLS, 즉 $\lambda=0$에서는 다음 계수 분산을 얻는다. [Lemma 2; Appendix B.2, p. 27](https://arxiv.org/pdf/2511.08544v3#page=27)
+$$
+\frac{\lambda_{\rm wd}}{\lambda_{\min}+\lambda_{\rm wd}}
+>\frac{\lambda_{\rm wd}}{\bar\lambda+\lambda_{\rm wd}}.
+$$
+
+이것이 존재 양화의 이유다. 가장 큰 고윳값 방향에서는 반대 효과도 가능하므로 모든 과제로 강화하면 안 된다. Appendix B.1에서 작은 고윳값의 index 표기가 흔들리지만 proof가 사용하는 것은 위의 최소 방향이다. [Lemma 1; Appendix B.1, p. 26](https://arxiv.org/pdf/2511.08544v3#page=26)
+
+**Lemma 2의 진술.** ridge를 0으로 두면 계수 분산의 trace는 등방성에서 최소다. $\hat{\boldsymbol\beta}-\boldsymbol\beta_{\rm true}=\mathbf G^{-1}\mathbf Z^\top\boldsymbol\varepsilon$이므로,
 
 $$
 \begin{aligned}
-\operatorname{Cov}(\hat{\boldsymbol\beta}_{\mathrm{OLS}}\mid\mathbf Z)&=\sigma^2G^{-1},\\
-\operatorname{tr}\operatorname{Cov}(\hat{\boldsymbol\beta}_{\mathrm{OLS}}\mid\mathbf Z)&=\sigma^2\sum_{k=1}^K\frac1{\lambda_k},\\
-\sum_{k=1}^K\lambda_k=c>0&\quad\Longrightarrow\quad\sum_{k=1}^K\frac1{\lambda_k}\ge\frac{K^2}{c},\\
-\text{equality: }&\lambda_k=c/K\quad\text{for all }k.
+\operatorname{Cov}(\hat{\boldsymbol\beta}\mid\mathbf Z)
+&=\mathbf G^{-1}\mathbf Z^\top(\sigma^2I)\mathbf Z\mathbf G^{-1}
+=\sigma^2\mathbf G^{-1},\\
+\operatorname{tr}\operatorname{Cov}(\hat{\boldsymbol\beta}\mid\mathbf Z)
+&=\sigma^2\sum_{k=1}^K\frac1{\lambda_k}
+\ge\sigma^2\frac K{\bar\lambda}.
 \end{aligned}
 $$
 
-마지막 부등식은 역수 함수의 볼록성 또는 Cauchy–Schwarz로 확인한다. 리뷰의 2차원 예제에서 고윳값 $(1,1)$은 역수 합 2, $(0.2,1.8)$은 약 5.5556이다. 같은 trace 2라도 작은 고윳값이 비용을 키운다.
+마지막은 양수에서 $1/x$의 엄격한 볼록성과 Jensen 부등식이다. 고윳값이 모두 같아야 등호다. 고정된 test 표현 $\mathbf q$의 예측 분산은 $\sigma^2\mathbf q^\top\mathbf G^{-1}\mathbf q$이므로 계수 trace 최소화와 모든 query 위험 최소화는 다른 진술이다. 선형 분석이 선택한 것은 공분산 모양이지 Gaussian 법칙 전체가 아니다. [Lemma 2; Appendix B.2, p. 27](https://arxiv.org/pdf/2511.08544v3#page=27)
 
-이 결과는 feature 공간의 <strong>등방성 공분산</strong>에 관한 것이다. Gaussian joint density의 유일성, 임의 test 분포에서의 prediction risk, 학습된 encoder의 성능까지 자동으로 따라오지는 않는다.
+### 3.2 Nonlinear Probing — Theorem 1과 Appendix A, B.3–B.7
 
-## 비선형 결과: Fisher information은 어느 항을 제어하는가
+**가정부터 읽기.** $p_z\in C^3$이고 필요한 도함수가 유계이며 Fisher information·공분산이 유한하다. 목표 함수 $\eta\in C^2$이며 query도 학습 밀도를 따른다. 반경·bandwidth가 작고 국소 평균을 추정할 표본이 충분해야 한다. kernel은 정규화·대칭·등방적 2차 moment·유한 roughness를 갖는다. 부분적분에는 경계항이 사라지는 꼬리 조건이 필요하다. [Appendix A, pp. 24–26](https://arxiv.org/pdf/2511.08544v3#page=24)
 
-이웃 평균은 query 주변의 표본 정답을 평균하고, Nadaraya–Watson regression은 거리 kernel로 가중 평균한다. 작은 radius·bandwidth에서 정답 함수 $m(\mathbf x)$의 곡률과 표현 밀도 $p(\mathbf x)$의 변화가 bias에 함께 나타난다. 개념적으로 다음 두 종류의 항이 들어간다. [§3.2; Appendix A, B.3–B.7, pp. 24–35](https://arxiv.org/pdf/2511.08544v3#page=24)
+**Lemma 4 — kNN pointwise bias: 왜 밀도의 score가 등장하는가.** Appendix B.3는 반경 내 평균을 밀도 적분의 비율로 근사한다. 비어 있는 이웃 문제와 유한 표본 비율의 오차를 생략한 국소 surrogate이며 PPP 조건을 사용한다. $\mathbf u$를 중심에서의 변위로 쓰면,
+
+$$
+\mathbb E[\widehat{\mathbf y}(\mathbf q)]\simeq
+\frac{\int_{\|\mathbf u\|\le r_0}\eta(\mathbf q+\mathbf u)p(\mathbf q+\mathbf u)\,d\mathbf u}
+{\int_{\|\mathbf u\|\le r_0}p(\mathbf q+\mathbf u)\,d\mathbf u}.
+$$
+
+**리뷰 보충 유도.** 단위 공 부피를 $v_K$라 두면 대칭성으로 1차 적분은 0이고 2차 적분은 다음과 같다. 원문 중간 줄의 부피 약칭을 이 식으로 풀었다.
+
+$$
+\int_{B(0,r_0)}\mathbf u\,d\mathbf u=0,\qquad
+\int_{B(0,r_0)}\mathbf u\mathbf u^\top d\mathbf u
+=\frac{v_Kr_0^{K+2}}{K+2}I.
+$$
+
+분모의 2차 항은 $\Delta p$, 분자의 2차 항은 product rule로 $\Delta(\eta p)=p\Delta\eta+\eta\Delta p+2\nabla\eta^\top\nabla p$다. 비율에서 $\eta\Delta p$가 상쇄되어,
+
+$$
+\mathrm{Bias}(\mathbf q)=\frac{r_0^2}{K+2}
+\left(\nabla\eta(\mathbf q)^\top\nabla\log p(\mathbf q)
++\frac12\Delta\eta(\mathbf q)\right)+o(r_0^2).
+$$
+
+위 표기는 본문의 $K$와 query 위치를 유지했다. $C^2$만으로 3차 Taylor 잔차가 유계라고 단정할 수는 없으므로, 원문의 일부 $O(\|\mathbf u\|^3)$ 중간 표기보다 약한 $o(r_0^2)$ 진술을 사용한다. [Lemma 4; Appendix B.3, p. 27](https://arxiv.org/pdf/2511.08544v3#page=27)
+
+**Theorem 7의 연결.** $A=\nabla\eta^\top\nabla\log p$, $C=\Delta\eta/2$는 Appendix B.4의 약칭이다. 이를 제곱하면 $\mathbb E[A^2]+2\mathbb E[AC]+\mathbb E[C^2]$가 모두 나온다. task prior가 각 위치에서 평균 0·등방적 2차 moment $\tau_g^2I$를 갖는다면,
+
+$$
+\mathbb E_{\mathbf z,\eta}[A(\mathbf z)^2]
+=\mathbb E_{\mathbf z}\left[
+\nabla\log p(\mathbf z)^\top(\tau_g^2I)\nabla\log p(\mathbf z)\right]
+=\tau_g^2J(p).
+$$
+
+교차항은 gradient와 Laplacian의 추가 비상관 조건이 있어야 0이 된다. 곡률항도 task의 위치별 2차 moment가 일정해야 밀도에 독립이라고 할 수 있다. 원문의 $\tau_g^2J(p)$ 항과 $O(r_0^4)$ 잔차는 같은 차수다. 잔차의 $p$ 의존성을 통제하지 않으면 이 식만으로 정확한 integrated bias 전체의 유일 최소를 얻지는 못한다. [Theorem 7; Appendix B.4, pp. 28–29](https://arxiv.org/pdf/2511.08544v3#page=28)
+
+**Lemma 6와 Theorem 9 — Fisher information의 하한.** 원문은 location family의 matrix Cramér–Rao bound를 사용한다. 필요한 정규성 아래, 평균 0·공분산 $\Sigma\succ0$인 밀도의 score $\mathbf s(\mathbf z)=\nabla\log p(\mathbf z)$에 대해 $J(p)\ge\operatorname{tr}(\Sigma^{-1})$이고 등호는 Gaussian이다.
+
+**리뷰 보충 유도: Cramér–Rao의 이 경우를 직접 확인.** 부분적분으로 $\mathbb E[\mathbf s(\mathbf z)\mathbf z^\top]=-I$다. 경계항이 0이어야 한다. 따라서,
 
 $$
 \begin{aligned}
-\nabla m(\mathbf x)\cdot\nabla\log p(\mathbf x),\qquad&\frac12\Delta m(\mathbf x),\\
-J(p)&=\int\|\nabla\log p(\mathbf x)\|_2^2p(\mathbf x)\,\mathrm d\mathbf x.
+0&\preceq\mathbb E\left[
+(\mathbf s+\Sigma^{-1}\mathbf z)(\mathbf s+\Sigma^{-1}\mathbf z)^\top\right]\\
+&=\mathbb E[\mathbf s\mathbf s^\top]-\Sigma^{-1}.
 \end{aligned}
 $$
 
-$\nabla\log p$는 밀도의 score다. 이 score가 큰 영역에서는 이웃 분포의 기울기가 단순 평균 추정에 영향을 준다. 과제 gradient의 평균이 0이고 second moment가 $\tau_g^2I$인 사전 가정을 쓰면 score 항을 제곱한 기대값이 $\tau_g^2J(p)$로 정리된다.
+trace를 취하면 하한이다. 등호에서는 잔차가 거의 확실하게 0이라 $\nabla\log p=-\Sigma^{-1}\mathbf z$다. 정규성 아래 적분하면 $p\propto\exp(-\mathbf z^\top\Sigma^{-1}\mathbf z/2)$가 된다. 이제 총 분산 $\operatorname{tr}\Sigma=c$를 고정하면,
 
-단, 원문의 부록 B.4는 gradient와 곡률 항의 decorrelation을 추가로 다룬다. 그 조건이 없으면 cross term도 $\mathcal O(r^{4})$로 남으며 같은 차수라고 해서 작게 무시할 수 없다. 곡률 항이 $p$와 무관하다는 해석에도 과제 사전 가정이 필요하다. 따라서 ‘leading 항 하나가 작다’와 ‘전체 bias가 무조건 유일하게 최소’는 구분한다. [Appendix B.4, p. 29](https://arxiv.org/pdf/2511.08544v3#page=29)
+$$
+J(p)\ge\sum_{k=1}^K\frac1{\lambda_k}
+\ge\frac{K^2}{c},\qquad
+\Sigma=\frac cK I\ \text{at equality}.
+$$
 
-kernel 분석은 target gradient·Hessian의 bound 등을 이용한 최악 경우 bias 상한에 $2B^{2}+8L^{2}J(p)$ 형태를 넣는다. 여기서 $L$, $B$는 smoothness bound이며 SIGReg 손실과 다른 기호다. 이 상한을 줄이는 분포를 선택하는 논증이지, 모든 target의 정확한 risk를 그대로 최소화한 식은 아니다. pointwise variance는 query 밀도에 의존하고, integrated variance에서의 밀도 상쇄도 적분 가능성·동일 train/query 분포 등의 조건을 요구한다. [Appendix B.7, pp. 34–35](https://arxiv.org/pdf/2511.08544v3#page=34)
+이는 Fisher functional에 대한 유일 최적성이다. Appendix B.4는 determinant·Frobenius·spectral-radius 제약도 다룬다. 같은 방향의 논리이므로 trace를 자세히 전개하고 나머지 제약의 원문 위치를 남긴다. 제목이 ‘Recovery of VCReg’로 붙어 있지만 Lemma 6·Theorem 9에서 사용하는 결과는 이 Fisher 하한이다. [Lemma 6, Theorem 9; Appendix B.4, pp. 30–32](https://arxiv.org/pdf/2511.08544v3#page=30)
 
-## Gaussian 최소성의 핵심 증명
+**Lemma 5 — Kernel bias와 variance.** 분자·분모 기대값을 kernel 변수로 치환해 2차 전개한다. 대칭성으로 1차 항이 없어지고 $\int\mathbf u\mathbf u^\top K(\mathbf u)d\mathbf u=\mu_2(K)I$를 사용한다. 비율의 중간 계산은,
 
-평균 0, 공분산 $\Sigma\succ0$, smooth density와 경계항이 사라지는 조건을 둔다. score를 $u(\mathbf x)=\nabla\log p(\mathbf x)$라 하면 적분 부분으로 $\mathbb E[u(X)X^\top]=-I$다. 아래 제곱 평균의 non-negativity를 사용한다. [Appendix A; B.5, pp. 32–33](https://arxiv.org/pdf/2511.08544v3#page=32)
+$$
+\frac{a_0+h^2a_2+o(h^2)}{b_0+h^2b_2+o(h^2)}
+=\frac{a_0}{b_0}+h^2\frac{a_2b_0-a_0b_2}{b_0^2}+o(h^2).
+$$
+
+$a_0=\eta p$, $b_0=p>0$에 대입하면,
 
 $$
 \begin{aligned}
-0&\le\mathbb E\|u(X)+\Sigma^{-1}X\|_2^2\\
-&=J(p)-\operatorname{tr}(\Sigma^{-1}),\\
-J(p)&\ge\operatorname{tr}(\Sigma^{-1}).
+\mathrm{Bias}(\mathbf q)&=\frac{h^2\mu_2(K)}2
+\left(\Delta\eta(\mathbf q)+2\nabla\eta(\mathbf q)^\top\nabla\log p(\mathbf q)\right)+o(h^2),\\
+\mathrm{Var}(\mathbf q)&=\frac{R(K)}{nh^d}\frac{v(\mathbf q)}{p(\mathbf q)}
++o((nh^d)^{-1}).
 \end{aligned}
 $$
 
-등호는 $u(\mathbf x)=-\Sigma^{-1}\mathbf x$가 거의 모든 곳에서 성립할 때다. 이를 적분하면 $\log p(\mathbf x)=\text{const}-\frac12\mathbf x^\top\Sigma^{-1}\mathbf x$, 즉 Gaussian이다. 더 나아가 $\operatorname{tr}\Sigma=c$를 고정하면 $\operatorname{tr}\Sigma^{-1}\ge K^2/c$이고 등호는 $\Sigma=(c/K)I$다. 목표 공분산을 $I$로 정규화하면 표준 등방성 Gaussian이 된다.
+여기서 $d=K$, $n=N$, $R(K)=\int K^2$, $v(\mathbf q)=\operatorname{Var}(Y\mid\mathbf q)$다. 분자 기대값/분모 기대값은 유한 표본에서 비율의 기대값과 같지 않다. 표본 분모의 fluctuation을 통제하는 국소 표본·점근 조건이 필요하다. 분산을 유도할 때도 원문 중간 줄의 $\operatorname{Var}(K_hY)=\mathbb E[K_h^2v]$는 일반적 정확 등식이 아니다. **리뷰 보충 설명:** delta method에서 $Y-\eta(\mathbf q)$로 중심화한 비율 잔차가 leading conditional-noise 항을 만든다고 읽어야 한다. 원문의 유한 표본 잔차 전체를 따로 증명한 것은 아니다. [Lemma 5; Appendix B.5, pp. 32–33](https://arxiv.org/pdf/2511.08544v3#page=32)
 
-이 증명은 Fisher objective의 최소성을 설명한다. 실제 finite image dataset의 결정적 임베딩이 매끄러운 full-dimensional density를 이루는지, downstream task prior가 가정과 맞는지는 별도 질문이다. 이 조건을 분리해야 ‘provable’이 무엇을 보장하는지 정확해진다.
-
-## 모든 투영이 Gaussian이면 왜 원래 분포도 Gaussian인가
-
-벡터 $Z$의 특성함수는 $\varphi_Z(\mathbf t)=\mathbb E\exp(i\mathbf t^\top Z)$다. 임의 $\mathbf t\ne0$는 $\mathbf t=s\mathbf a$, $\|\mathbf a\|_2=1$로 쓸 수 있다. 그러므로 모든 방향 $\mathbf a$의 모든 스칼라 주파수 $s$에서 투영 특성함수가 같으면 벡터 특성함수도 모든 $t$에서 같다. 특성함수의 유일성이 원래 분포의 일치를 준다. 이것이 Cramér–Wold 연결의 간단한 증명이다. [§4.1; Appendix B.8, p. 35](https://arxiv.org/pdf/2511.08544v3#page=35)
-
-![LeJEPA Figure 5: 좌표별 정규성만으로 결합 정규성을 판정할 수 없는 X자 분포 예.](/assets/reviews/lejepa/paper-figure-5.webp)
-
-[그림 확대](/assets/reviews/lejepa/paper-figure-5.webp)
-
-<strong>Figure 5를 이 증명과 연결하기.</strong> 왼쪽 두 주변 histogram만 보면 Gaussian처럼 보여도, X자 결합 분포는 대각 방향의 투영에서 다른 밀도를 보인다. 세 번째 패널의 각 행은 색 화살표 방향에 대응하고, 마지막 패널은 통계의 방향별 반응이다. ‘모든 방향’이라는 조건을 몇 개 좌표의 평균·분산으로 바꿀 수 없다는 예다. 저자: Balestriero·LeCun, [Figure 5, p. 8](https://arxiv.org/pdf/2511.08544v3#page=8), [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). 전체 패널 crop·PDF rasterization·무손실 WebP 변환.
-
-원문 Eq. 4의 최대 검정 통계와 실제 학습에서 사용하는 평균 손실도 구분해야 한다. 부록 B.9의 consistency 논증에는 증가하며 dense해지는 방향 집합, global null threshold의 보정, 대립 분포를 분리하는 근방의 검정력이 필요하다. 유한한 방향의 평균 학습 손실이 곧 level-α 검정은 아니다. 귀무가설을 기각하지 못한 것도 Gaussian이라는 증명이 아니다.
-
-후보에는 CDF 기반 거리, Shapiro–Wilk 같은 순서 통계도 있다. 이들은 정렬·표본 간 순서 관계와 분산 통신을 다뤄야 한다. 정렬이 모든 구간에서 미분 불가능하다는 뜻은 아니다. 순서가 고정된 영역에서는 piecewise 미분이 가능하지만 순서가 바뀌는 경계의 비매끄러움과 계산 구조가 ECF 평균과 다르다. Appendix E–F는 비교 통계의 정의를 보완한다. [§4.2, pp. 7–9; Appendix E–F, pp. 43–46](https://arxiv.org/pdf/2511.08544v3#page=7)
-
-## ECF 손실: 계산과 gradient의 장점
-
-방향 $\mathbf a$에 대한 표본 투영 $z_n=\mathbf a^\top\mathbf z_n$를 사용한다. 아래 $D$는 batch 크기를 곱하지 않은 discrepancy다.
+**Theorem 8 — 무엇을 최소화했는가.** target의 $\|\nabla\eta\|\le L$, $|\Delta\eta|\le B$에서 $(a+b)^2\le2a^2+2b^2$와 Cauchy–Schwarz를 차례로 쓰면,
 
 $$
 \begin{aligned}
-\hat\varphi_{\mathbf a}(t)&=\frac1N\sum_{n=1}^N[\cos(tz_n)+i\sin(tz_n)],\\
-\varphi_{\mathcal N}(t)&=\exp(-t^2/2),\\
-D(\mathbf a)&=\int|\hat\varphi_{\mathbf a}(t)-\varphi_{\mathcal N}(t)|^2w(t)\,\mathrm dt,\\
-\operatorname{SIGReg}&=\frac1M\sum_{m=1}^M N D(\mathbf a_m).
+\mathrm{ISB}_{\rm kernel}
+&\le\left(\frac{h^2\mu_2(K)}2\right)^2
+\left(2\int(\Delta\eta)^2p+8\int(\nabla\eta^\top\nabla\log p)^2p\right)+o(h^4)\\
+&\le\left(\frac{h^2\mu_2(K)}2\right)^2(2B^2+8L^2J(p))+o(h^4).
 \end{aligned}
 $$
 
-복소수 차이의 제곱은 $\left(\frac1N\sum_n\cos(tz_n)-\varphi_{\mathcal N}(t)\right)^2+\left(\frac1N\sum_n\sin(tz_n)\right)^2$로 계산한다. 고차 moment의 존재가 없어도 특성함수는 항상 존재한다. 정렬 없이 표본 평균을 계산할 수 있고, 이 평균은 분산 환경에서도 공통 방향·grid를 사용하면 합칠 수 있다. 다만 local batch 크기가 다르면 sample-count 가중 평균이 필요하고 gradient를 전달하는 collective도 확인해야 한다. 이 분산 구현 조건은 리뷰의 검토 사항이며 이번에 실행한 DDP 결과가 아니다. [§4.3; Algorithm 1](https://arxiv.org/pdf/2511.08544v3#page=10)
+Gaussian이 최소화하는 것은 이 $J(p)$ 기반 상한이다. bound의 최소화가 정확한 bias의 최소화나 sharp minimax equality를 자동으로 주지는 않는다. 적분 분산에서는 leading 항의 $p$가 query 가중 $p$와 상쇄되지만 $\int v(\mathbf z)d\mathbf z$의 유한성·지원 영역·균일 잔차 통제가 필요하다. Appendix A의 Theorem 8 박스에 제곱이 누락된 표기가 있지만 본문 Theorem 1과 B.7의 유도는 squared bias다. [Theorem 8; Appendix B.7, p. 34](https://arxiv.org/pdf/2511.08544v3#page=34)
 
-원문 Theorem 4의 부록 증명은 $w(t)=\exp(-s^2t^2)$일 때 unscaled $D$의 각 표본에 대한 derivative를 제어한다. $|\hat\varphi|\le1$, $|\varphi_{\mathcal N}|\le1$과 $\int|t|w(t)\,\mathrm dt=1/s^2$를 이용한다.
+### 3.3 Geometric and Practical Insights
+
+Figure 3의 반복 logistic 경계는 등방성 직관의 경험적 설명이다. OLS의 coefficient variance 증명과 같은 정리는 아니다. Figure 17의 ‘anisotropic lower variance’ 캡션은 Lemma 2와 상충해 미확인으로 남긴다. [§3.3; Figure 17](https://arxiv.org/pdf/2511.08544v3#page=48)
+
+## 4 SIGReg — 식별과 안정성, 유한 방향의 조건
+
+### 4.1 Hypothesis Testing as a Judge — Lemma 3, Theorem 2
+
+**Lemma 3와 Appendix B.8의 Theorem 10(Cramér–Wold).** 모든 unit 방향의 투영 법칙이 같다고 하자. 임의의 $\mathbf t\ne0$는 $\mathbf t=r\mathbf a$로 쓸 수 있다. 따라서,
+
+$$
+\varphi_X(\mathbf t)=\mathbb E[e^{ir\mathbf a^\top X}]
+=\mathbb E[e^{ir\mathbf a^\top Y}]=\varphi_Y(\mathbf t).
+$$
+
+$\mathbf t=0$에서는 둘 다 1이다. 모든 벡터 주파수에서 CF가 같고 CF의 유일성 정리를 적용하면 $X\overset d=Y$다. 유한 방향 일치로 양화를 줄일 수는 없다. 약한 수렴 부분은 projection 수렴과 Lévy 연속성 정리를 연결한다. [Lemma 3; Appendix B.8, p. 35](https://arxiv.org/pdf/2511.08544v3#page=35)
+
+**Theorem 2의 proof path.** 결합 검정은 방향별 통계의 max와 전체 귀무가설 threshold를 사용한다. 전역 false-positive 제어는 개별 검정의 유의수준을 그대로 재사용해서는 안 된다. 예를 들어 Bonferroni를 적용하면 각 방향의 수준을 $\alpha/|\mathcal A|$로 두어 union bound로 전체 $\alpha$를 제어할 수 있다. 이 예시는 리뷰 보충 설명이다.
+
+power 쪽은 분리 방향 $\mathbf a^\star$ 주변 $U$에서 검정이 강하고, 방향 집합 mesh가 0으로 가서 결국 $U$ 안에 점을 갖는다는 경로다. 이동하는 방향 $\mathbf a_n$을 쓰려면 $U$에서 충분히 균일한 power 조건이 필요하다. B.9의 $\inf_a\lim_n$ 표기만으로 $\lim_n\inf_a$를 바로 얻을 수는 없어 이 교환의 엄밀화는 미확인이다. SIGReg의 학습용 **평균**을 이 max 검정의 정리와 동일시하지 않는다. [Theorem 2; Appendix B.9, p. 36](https://arxiv.org/pdf/2511.08544v3#page=36)
+
+### 4.2 SIGReg: Sketching the Epps–Pulley Test
+
+#### 4.2.1 Moments — Theorem 3와 Appendix B.11
+
+원문 Theorem 3에서 유한 moment 차수 $K$는 여기의 embedding 차원과 다른 역할이다. 서로 다른 실수 $x_0,\ldots,x_{K+1}$에 확률 질량을 두자. $A_{rj}=x_j^r$ ($r=0,\ldots,K$)는 $(K+1)\times(K+2)$ 행렬이므로 kernel에 0이 아닌 $\mathbf v$가 있다. $r=0$ 행에서 $\sum_jv_j=0$다.
+
+양의 확률 벡터 $\mathbf p$와 충분히 작은 $\varepsilon$를 선택하면 $\mathbf p^\pm=\mathbf p\pm\varepsilon\mathbf v$는 서로 다른 유효 확률이지만 $A\mathbf p^+=A\mathbf p^-$다. 따라서 0차부터 $K$차까지 moment가 같아도 분포가 다를 수 있다. 높은 moment는 sample-gradient에 $x_i^{k-1}$ 같은 다항식이 생겨 전역 유계성이 깨질 수 있다. [Theorem 3; Appendix B.11–B.12, p. 37](https://arxiv.org/pdf/2511.08544v3#page=37)
+
+![Figure 5: Gaussian 주변 분포로도 X자 결합 분포가 생길 수 있다.](/assets/reviews/lejepa/paper-figure-5.webp)
+
+**Figure 5 읽기.** 주변 histogram과 identity covariance만으로는 X자 결합 구조가 드러나지 않는다. 사선 투영과 방향별 통계가 이를 검출한다. 곡선은 서로 다른 검정의 반응이며 같은 척도의 정확도는 아니다. [확대](/assets/reviews/lejepa/paper-figure-5.webp) · [Figure 5, p. 8](https://arxiv.org/pdf/2511.08544v3#page=8). Balestriero·LeCun, [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), 전체 패널 crop·무손실 WebP 변환.
+
+#### 4.2.2 CDF — 계산 요구와 대안
+
+원문의 선택 기준은 식별성뿐 아니라 gradient 안정성과 DDP 처리다. CDF·순서통계의 정렬 및 분산 표본 수집 부담을 비교한다. Appendix E의 Shapiro–Wilk, F의 multivariate 통계는 대안 배경으로 축약한다. 이들 모든 검정의 독립 정확성·구현은 검증하지 않았다. [§4.2.2; Appendices E–F](https://arxiv.org/pdf/2511.08544v3#page=44)
+
+#### 4.2.3 CF — Theorem 4의 유도와 정규화
+
+Appendix B.12의 Gaussian window 표기를 그대로 사용한다. $x_i=\mathbf a^\top\mathbf z_i$는 투영 스칼라이며,
+
+$$
+\widehat\varphi_N(t)=\frac1N\sum_{i=1}^Ne^{itx_i},\quad
+\varphi_G(t)=e^{-t^2/2},\quad w_s(t)=e^{-s^2t^2},
+\qquad
+\widehat D=\int w_s(t)|\widehat\varphi_N(t)-\varphi_G(t)|^2dt.
+$$
+
+원문 본문 Epps–Pulley 식의 $EP=N\widehat D$와 다르게 $\widehat D$에는 $N$배가 없다. $|\widehat\varphi_N|,|\varphi_G|\le1$이고 $\partial_{x_i}\widehat\varphi_N=it e^{itx_i}/N$이므로,
 
 $$
 \begin{aligned}
-\left|\frac{\partial D}{\partial z_n}\right|&\le\frac4{Ns^2},\\
-\left|\frac{\partial(ND)}{\partial z_n}\right|&\le\frac4{s^2}.
+|\partial_{x_i}\widehat D|
+&\le\frac4N\int w_s(t)|t|dt=\frac4{Ns^2},\\
+|\partial_{x_i}^2\widehat D|
+&\le\left(\frac2{N^2}+\frac4N\right)\int w_s(t)t^2dt
+\le\frac{6\sqrt\pi}{2Ns^3}.
 \end{aligned}
 $$
 
-같은 스케일을 유지해야 ‘N이 커지면 gradient가 작아진다’는 해석의 혼동을 피한다. 네트워크 파라미터로 미분하면 encoder·projector Jacobian이 chain rule에 추가된다. <strong>표본 loss derivative의 bound는 전체 parameter gradient의 bound나 SGD의 전역 수렴 증명이 아니다.</strong> [Theorem 4; Appendix B.12, pp. 37–38](https://arxiv.org/pdf/2511.08544v3#page=37)
+**리뷰 보충 유도.** 첫 줄은 오차의 크기가 최대 2임을 사용한다. 두 번째 미분에는 $2|\partial\widehat\varphi_N|^2$와 $2\operatorname{Re}[(\widehat\varphi_N-\varphi_G)\overline{\partial^2\widehat\varphi_N}]$가 나온다. Gaussian 가중에서 $\int|t|w_s=1/s^2$, $\int t^2w_s=\sqrt\pi/(2s^3)$이므로 입력 크기와 무관한 bound다. dominated convergence를 위해 이 적분들이 유한해야 한다.
 
-## 표본 bias와 유한한 주파수 grid
+본문 Theorem 4의 $\sigma$는 $s=1/\sigma$로 연결할 수 있지만, $EP$라고 쓴 $O(1/N)$ bound의 유도는 $\widehat D$에 해당한다. 실제 $EP$에는 $N$을 곱해 $|\partial EP|\le4/s^2$다. **boundedness는 유지되지만 $1/N$ 감소의 대상이 다르다.** parameter gradient에는 $\sum_i|\partial_{x_i}D|\|\mathbf a^\top\partial_{\boldsymbol\theta}f_{\boldsymbol\theta}\|$ 형태의 Jacobian이 들어간다. [Theorem 4; Appendix B.12, pp. 37–38](https://arxiv.org/pdf/2511.08544v3#page=37)
 
-독립 표본에서 복소수 $\exp(it z_n)$의 크기는 1이다. 같은 표본 인덱스와 다른 인덱스를 나눠 합하면 다음 기대값을 얻는다. [Theorem 6; Appendix B.13, pp. 38–40](https://arxiv.org/pdf/2511.08544v3#page=38)
+Algorithm 1은 17개 주파수 $[-5,5]$, target/window $e^{-t^2/2}$, CF 평균 all-reduce, trapezoidal 적분과 전체 $N$배를 사용한다. equal-sized GPU batch라면 로컬 CF 평균의 평균이 전체 CF 평균이다. sample 쌍을 만드는 대신 matrix projection과 CF 평균을 계산해 dense 비용은 $\mathcal O(NKM+NMT)$다. 분산 autograd 동작과 전체 모델 메모리는 여기서 실행 검증하지 않았다. [Algorithm 1; Table 6](https://arxiv.org/pdf/2511.08544v3#page=10)
+
+**리뷰 보충 예제: 유한 주파수의 식별 한계.** 17개 grid의 간격은 $\Delta t=0.625$다. $X\sim\mathcal N(0,1)$을 $c=2\pi/\Delta t$만큼 평행이동한 $Y=X+c$는 각 grid에서 $e^{itc}=1$이므로 동일한 CF 값을 낸다. grid 밖에서는 다르다. 이것은 1D 고정 grid의 예이며 고차원 재표집 학습 전체의 반례나 모든 주파수 Cramér–Wold 정리의 반례는 아니다. 정확 적분의 식별성과 수치 근사를 구분하기 위한 예제다.
+
+### 4.3 How SIGReg Beats the Curse of Dimensionality — Theorem 5
+
+원문의 rate를 보존하면,
 
 $$
-\mathbb E|\hat\varphi(t)-\varphi_{\mathcal N}(t)|^2
-=|\varphi(t)-\varphi_{\mathcal N}(t)|^2+\frac{1-|\varphi(t)|^2}{N}.
+\mathbb E_{\mathbf a}\int_{\mathbb R}
+|\varphi_{\mathbf a}(t)-\varphi_{\mathcal N}(t)|^2dt
+\le C(K,\alpha)M^{-2\alpha/(K-1)}
+\int_0^\infty\|\varphi_{\cdot}(r)-\varphi_{\mathcal N}(r)\|_{H^\alpha(\mathcal S^{K-1})}^2dr.
 $$
 
-unscaled discrepancy에는 $\mathcal O(1/N)$ 추가 항이 있고, regularity를 두고 미분과 기대값을 교환하면 관련 gradient bias도 이 스케일로 분석한다. 그러나 Algorithm 1처럼 $N$을 곱하면 <strong>추가 항의 절대 크기는 O(1)</strong>이 된다. 상대적 scale이나 정규화를 밝히지 않은 채 ‘scaled 손실의 절대 bias가 0으로 간다’고 말하면 안 된다. 목표 Gaussian에서 finite batch 손실도 정확히 0은 아니다.
+원문은 $p_{\boldsymbol\theta}\in H^\alpha(\mathbb R^K)$, 선택된 방향에서 전체 투영 법칙이 일치함을 가정한다. **Appendix B.10의 논리:** 구면 조화함수에서 차수 $L$까지의 근사 오차가 대략 $L^{-\alpha}$이고, 준균일 방향 $M$개는 $L\sim M^{1/(K-1)}$와 연결된다. 이를 제곱해 $M^{-2\alpha/(K-1)}$를 얻고 주파수에 대해 적분한다. Marcinkiewicz–Zygmund 조건은 유한 점의 값으로 조화함수 공간을 안정적으로 복원하는 역할이다.
 
-리뷰의 Monte Carlo 검사는 $N=32$, 표준 Gaussian, $t=1$, 20,000회 반복에서 unscaled squared discrepancy를 계산했다. 평균 $0.0198677$, 이론값 $(1-e^{-1})/32=0.0197538$, Monte Carlo standard error $0.0001505$였다. 이론식과 맞는 작은 표본 검사이며 신경망 실험 재현이 아니다.
+**미확인 조건.** Euclidean 밀도의 Sobolev 정규성에서 필요한 angular CF norm·주파수 적분이 어떻게 유한해지는지, 점 배치와 보간 연산자의 안정성 조건, 인용 원전의 lemma·정리 적용을 독립적으로 모두 검증하지 않았다. 임의 방향 배치·단순한 random 표본 수에 이 rate를 무조건 적용하지 않는다. $C(K,\alpha)$와 norm의 차원 의존성도 있어 $O(K)$ 방향만으로 모든 분포의 오차가 작다는 일반 보장은 아니다. [Theorem 5; Appendix B.10, pp. 36–37](https://arxiv.org/pdf/2511.08544v3#page=36)
 
-수치 적분은 별도 근사다. 원문 Algorithm 1은 $[-5,5]$의 등간격 17점을 사용한다. 리뷰에서 그 grid의 간격 $\Delta =0.625$를 확인하고, 1D Gaussian의 평균을 $2\pi/\Delta\approx10.0531$만큼 옮기는 예제를 계산했다. grid의 모든 $t$가 $\Delta$의 정수배여서 phase shift가 1이고 특성함수 값이 그대로다.
+![Figure 7: 고정 방향과 step별 방향 재표집의 synthetic discrepancy 비교.](/assets/reviews/lejepa/paper-figure-7.webp)
+
+**Figure 7 읽기.** 가로축은 방향 수 $M$, 세로축은 최종 기대 directional statistic이다. 초록 재표집이 파랑 고정보다 적은 방향으로 낮은 discrepancy를 얻는다. 누적 coverage를 보여주는 합성 실험이며 신경망 SGD의 전역 수렴 증명이 아니다. Figure 6도 두 차원의 X 구조를 둔 표본을 encoder 없이 직접 최적화한 별도 실험이다. [확대](/assets/reviews/lejepa/paper-figure-7.webp) · [Figure 7, p. 10; Figure 6, p. 9](https://arxiv.org/pdf/2511.08544v3#page=10). Balestriero·LeCun, [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), 전체 패널 crop·무손실 WebP 변환.
+
+## 5 LeJEPA — 실제 손실의 표본·정규화 확인
+
+### 5.1 SIGReg + Prediction Loss — Theorem 6, Appendix B.6·B.13
+
+**Theorem 6: 표본 bias가 어디에서 오는가.** 한 투영·주파수에서 $U_j=e^{itx_j}$라 두자(리뷰 약칭). 독립 표본이면 대각 쌍의 기대값은 1, 비대각 쌍은 $|\varphi_P|^2$다. 따라서,
 
 $$
 \begin{aligned}
-\max_{t\in\mathrm{grid}}|\varphi(t)-\varphi_{\mathcal N}(t)|&\approx2.24\times10^{-16},\\
-|\varphi(0.3)-\varphi_{\mathcal N}(0.3)|&\approx1.9082.
+\mathbb E|\widehat\varphi_N|^2
+&=\frac{N+N(N-1)|\varphi_P|^2}{N^2}
+=|\varphi_P|^2+\frac{1-|\varphi_P|^2}N,\\
+\mathbb E|\widehat\varphi_N-\varphi_G|^2
+&=|\varphi_P-\varphi_G|^2+\frac{1-|\varphi_P|^2}N.
 \end{aligned}
 $$
 
-이것은 <strong>고정된 1D 주파수 grid만으로 분포 식별을 인증할 수 없다는 예</strong>다. 모든 주파수를 사용하는 population 정리의 반례가 아니고, 고차원에서 방향을 계속 resample하는 LeJEPA 학습이 이 실패를 겪었다는 실험도 아니다. 표본 수를 늘리는 것으로 quadrature의 관측 빈틈이 자동으로 사라지지는 않는다는 점을 보여준다.
+가중 적분 후 $\mathbb E\widehat D=D+N^{-1}\int w_s(1-|\varphi_P|^2)$다. 미분과 기대값 교환의 지배 조건 아래 parameter-gradient bias는 $-N^{-1}\int w_s\nabla_{\boldsymbol\theta}|\varphi_P|^2$다. 이 $O(1/N)$은 unscaled $\widehat D$와 그 population counterpart를 비교한 절대 bias다.
 
-## 방향 수와 계산 복잡도: ‘선형’의 고정 변수를 밝히기
+$EP=N\widehat D$와 $ND$를 비교하면 추가항의 절대 크기는 $O(1)$다. 기준 loss도 $N$배이므로 정규화한 bias가 작아진다는 취지는 유지되지만, Algorithm 1의 그대로인 loss·gradient가 절대적으로 $O(1/N)$ bias라고 쓸 수는 없다. deterministic quadrature에서도 표본 기대값의 대수는 같고, 별도의 적분 근사 오차가 있다. 원문은 U-statistic·sample splitting 대안을 탐구하지 않는다. [Theorem 6; Appendix B.13, pp. 38–39](https://arxiv.org/pdf/2511.08544v3#page=38)
 
-dense projection은 $N\times K$와 $K\times M$의 곱이고, 각 투영에서 $T$개 주파수를 계산한다. 따라서 손실 계산은 대략 다음 비용이다.
+**Eq. (5)→(6): 빠진 항을 전개하기.** 원문은 전역 뷰와 모든 뷰의 pairwise 평균을 중심 평균으로 바꾼다. $\boldsymbol\mu_n=V_g^{-1}\sum_{g=1}^{V_g}\mathbf z_{n,g}$이고 $\boldsymbol\delta_g=\mathbf z_{n,g}-\boldsymbol\mu_n$라 두면 $\sum_g\boldsymbol\delta_g=0$다.
 
 $$
 \begin{aligned}
-\text{time}&:\;\mathcal O(NKM+NMT),\\
-\text{intermediate CF tensor}&:\;\mathcal O(NMT).
+\frac1{V_gV}\sum_{g=1}^{V_g}\sum_{v=1}^V
+\|\mathbf z_{n,g}-\mathbf z_{n,v}\|^2
+&=\frac1V\sum_{v=1}^V\|\boldsymbol\mu_n-\mathbf z_{n,v}\|^2\\
+&\quad+\frac1{V_g}\sum_{g=1}^{V_g}\|\mathbf z_{n,g}-\boldsymbol\mu_n\|^2.
 \end{aligned}
 $$
 
-$K,M,T$를 고정하면 $N$에 선형이다. $M$을 고정하면 projection이 $K$에 선형이지만 $M\propto K$로 늘리면 그 항은 $\mathcal O(NK^{2})$가 된다. encoder 계산·optimizer 메모리는 이 식 밖에 있다. Gaussian weighted CF와 kernel MMD의 관계는 유용하지만, 기존 MMD에도 선형 추정기가 있었으므로 선형 비용을 최초의 발명이라고 소개하지 않는다. [§4.3, p. 9; Gretton et al., 초록](https://www.jmlr.org/papers/volume13/gretton12a/gretton12a.pdf#page=1)
+**리뷰 보충 유도.** 각 차이를 $\boldsymbol\delta_g+(\boldsymbol\mu_n-\mathbf z_{n,v})$로 나누어 제곱한다. 교차항은 $\sum_g\boldsymbol\delta_g=0$으로 없어지고 두 제곱 항은 남는다. B.6에서 평균 제곱과 제곱 평균을 같다고 한 마지막 단계는 이 분산을 빠뜨린다. 전역 뷰가 모두 같아야 추가항이 0이다. scalar 뷰 $[0,2]$, $V_g=V=2$에서는 pairwise가 2, center가 1, 추가 variance가 1이다. 학습 parameter에 의존하므로 일반적인 상수 생략은 아니다. [Eq. (5)–(7); Appendix B.6, pp. 33–34](https://arxiv.org/pdf/2511.08544v3#page=33)
 
-Theorem 5에는 smoothness $\alpha$, quasi-uniform 방향, 정확한 투영 제약 등 아래 $M^{-2\alpha/(K-1)}$ 형태의 근사율이 등장한다. 상수와 density norm도 차원·smoothness에 의존한다. 고정된 $\alpha$에서 차원이 커지면 지수는 나빠진다. 따라서 차원의 저주를 무조건 없앴다는 결론은 아니다. 실제 random finite slice 평균의 학습 곡선은 이 정리와 다른 종류의 근거다. [Appendix B.10, pp. 36–37](https://arxiv.org/pdf/2511.08544v3#page=36)
+**Algorithm 2의 구현을 따로 읽기.** 실제 code의 중심 loss는 $(NVK)^{-1}\sum_{n,v}\|\mathbf z_{n,v}-\boldsymbol\mu_n\|^2$다. $1/K$는 feature 좌표까지 평균한 결과다. SIGReg는 뷰마다 $N$개 이미지 표현에 적용하고 뷰 평균을 낸다. Eq. (5)의 pairwise 식과 구현을 동일 목적이라고 단정하지 않되, 보고된 실험은 논문이 제시한 center 기반 pipeline으로 설명한다. predictor·EMA teacher·stop-gradient는 필수 구성에서 빠지고 projector·optimizer·schedule은 남는다. [§5.1, Algorithm 2](https://arxiv.org/pdf/2511.08544v3#page=11)
 
-![LeJEPA Figure 7: 방향 수에 따른 고정 방향과 resampled 방향의 discrepancy 비교.](/assets/reviews/lejepa/paper-figure-7.webp)
+### 5.2 Relation to Prior Work — Appendix B.14
 
-[그림 확대](/assets/reviews/lejepa/paper-figure-7.webp)
+정확한 CF 적분은 kernel discrepancy와 연결되지만 quadrature 구현은 모든 sample pair를 만들지 않는다. moment test로 제한하면 모든 unit $\mathbf a$에서 $\mathbb E[\mathbf a^\top\mathbf z]=0$, $\operatorname{Var}(\mathbf a^\top\mathbf z)=1$을 요구한다.
 
-<strong>Figure 7 해설.</strong> 가로축 $M$은 slice 수(log scale), 세로축은 투영 discrepancy의 기대값이다. 초록은 방향을 다시 뽑는 조건, 파랑은 고정한 조건이다. 이 실험에서는 resampling이 작은 $M$에서도 낮은 discrepancy에 도달한다. 표시된 $\boldsymbol\beta$와 $R^{2}$는 해당 실험의 적합 요약이며 임의 데이터에서의 수렴 보장이 아니다. downstream 정확도 그래프도 아니다. 출처: Balestriero·LeCun, [Figure 7, p. 10](https://arxiv.org/pdf/2511.08544v3#page=10), [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). 해당 그림의 전체 graph와 legend를 crop·무손실 WebP 변환했다.
+첫 조건에서 평균을 $\boldsymbol\mu$라 하고 $\mathbf a=\boldsymbol\mu/\|\boldsymbol\mu\|$를 선택하면, 평균이 0이 아니란 가정과 모순되어 $\boldsymbol\mu=0$이다. 둘째 조건은 $\mathbf a^\top\Sigma\mathbf a=1$이다. $\mathbf a=\mathbf e_i$에서 대각 1, $\mathbf a=(\mathbf e_i+\mathbf e_j)/\sqrt2$에서 비대각 0이므로 $\Sigma=I$다.
 
-Table 6의 V100 손실 시간은 $N=512,M=512,T=16$에서 $0.465236\pm 0.011642 \,\mathrm{ms}$, $N=8192$에서 $6.188304\pm 0.007226 \,\mathrm{ms}$다. §4.4는 forward–backward 측정이라고 설명한다. 이는 SIGReg의 측정이고 전체 pretraining 시간은 아니다. 표에 embedding 차원 $K$가 없고 forward/backward별 시간이 나뉘지 않아 동일 조건의 시스템 비교는 추가 기록이 필요하다. [§4.4, p. 10; Table 6, p. 43](https://arxiv.org/pdf/2511.08544v3#page=43)
+이는 moment-level constraint의 recovery다. VICReg 원래의 standard-deviation hinge와 비대각 공분산 penalty를 포함하는 동일 목적함수라는 증명은 아니다. VICReg는 공분산 계산에 centering을 사용하지만 평균을 0으로 맞추는 별도 손실을 요구하지 않는다. sliced score matching·sliced Wasserstein·MMD와의 방법 비교 및 원전 읽은 범위는 [전체 해설 §5.2](/reviews/lejepa-complete/#52-relation-to-prior-work)에 있다. [§5.2; Appendix B.14, pp. 39–40](https://arxiv.org/pdf/2511.08544v3#page=39)
 
-## 직접 확인한 수식 주의점: 쌍별 거리와 중심 거리
+## 6–7 실험·결론으로 연결하기
 
-원문 Eq. 5–7 및 Appendix B.6은 모든 뷰와 전역 뷰 사이의 평균 제곱 거리를, 전역 평균에 대한 중심 거리로 바꾼다. 한 이미지에 대해 전역 평균을 $\boldsymbol\mu=\frac1{V_g}\sum_{g=1}^{V_g}\mathbf z_g$라고 두면 정확한 전개는 다음과 같다.
+본문 §6.1–6.5의 순서대로 안정성·loss 신호·도메인 내 학습·규모/전이·의미 구조를 [전체 해설](/reviews/lejepa-complete/)에 보존했다. 위 증명과 실험의 역할은 다르다. OLS 계수 이론이 모든 classification 정확도를 증명하지 않으며, CF 안정성은 모든 구조의 SGD 전역 수렴을 증명하지 않는다. Galaxy10·IN-1K 결과는 조건부 실용 근거이고, PCA·attention은 정성 근거다.
 
-$$
-\begin{aligned}
-A&=\frac1{VV_g}\sum_{v=1}^V\sum_{g=1}^{V_g}\|\mathbf z_v-\mathbf z_g\|_2^2,\\
-B&=\frac1V\sum_{v=1}^V\|\mathbf z_v-\boldsymbol\mu\|_2^2,\\
-C&=\frac1{V_g}\sum_{g=1}^{V_g}\|\mathbf z_g-\boldsymbol\mu\|_2^2,\\
-A&=B+C.
-\end{aligned}
-$$
+## 출처와 읽은 범위
 
-$\mathbf z_v-\mathbf z_g=(\mathbf z_v-\boldsymbol\mu)-(\mathbf z_g-\boldsymbol\mu)$로 전개하면 cross term은 전역 뷰에 대해 합한 뒤 사라진다. 하지만 마지막 제곱 항 $C$는 남는다. $C$는 파라미터에 의존하므로 일반적으로 상수처럼 생략할 수 없다.
-
-리뷰의 scalar 예제에서 전체·전역 뷰를 모두 $[0,2]$로 두면 $\mu =1$, $A=2$, $B=1$, $C=1$이다. 원문 PDF를 시각적으로 대조했고 부록 Eq. 23→24에서 빠진 항을 확인했다. OCR 문제로 판단한 것은 아니다. [§5, p. 12; Appendix B.6, p. 34](https://arxiv.org/pdf/2511.08544v3#page=34)
-
-위 항등식은 벡터 제곱거리 기준이다. Algorithm 2의 `.square().mean()`은 feature 차원 $K$도 평균하므로 그 구현의 합의 손실은 $B/K$다. 누락 항도 같은 스케일에서 $C/K$로 남는다. 중심 기반 목적은 명확하게 정의된 학습 목적이다. 따라서 이 글은 그 목적을 설명하며, 쌍별 $A$와 정확히 동치라는 서술에만 주의를 남긴다. <strong>이 불일치가 보고된 정확도를 무효화한다거나 어떤 코드로 모든 실험을 실행했는지까지 밝혀 준다는 뜻은 아니다.</strong> 두 목적의 차이는 같은 예산으로 구현·학습해 검증할 별도 연구 질문이다.
-
-## 논문 알고리즘과 현재 공식 예제를 구분하기
-
-재현을 시작할 때 PDF와 현재 저장소 예제를 동일한 것으로 취급하면 설정이 섞인다. 이 리뷰는 공식 저장소 [commit c293d291](https://github.com/galilai-group/lejepa/tree/c293d291ca87cd4fddee9d3fffe4e914c7272052)의 README와 MINIMAL을 직접 읽었고 실행하지 않았다.
-
-| 축 | 논문에서 확인한 설정 | 해당 MINIMAL 예제 |
-| --- | --- | --- |
-| 주파수 grid | Algorithm 1: 17점 $[-5,5]$ | 17점 $[0,3]$, 대칭성을 이용해 가중치 doubling |
-| 방향 수 | Algorithm 1 기본 256; §6.1 권장 1,024 | 256 |
-| 합의 중심 | Algorithm 2: 전역 뷰들의 평균 | 모든 뷰의 평균 |
-| teacher·detach | 핵심 구조에 없음 | 핵심 합의에도 없음 |
-
-대칭 적분에서 양의 반구간을 쓰는 것은 타당한 계산 선택일 수 있다. 다만 끝점과 grid 간격도 바뀌므로 숫자상 같은 quadrature는 아니다. 예제 작성일도 PDF v3 이후다. 본문 default의 총 10개 뷰와 Experiment Details 1의 총 8개 뷰 역시 각각 기록해야 한다.
-
-## 실험이 이론을 얼마나 검증하는가
-
-Table 1의 batch ablation은 학습 가능성과 민감도를 확인한다. Figure 9의 여러 backbone은 목적의 구조 범위를 넓힌다. Table 2의 전이는 다양한 후속 과제에서 representation이 쓰인다는 증거다. Figure 12·Table 3은 전문 도메인의 작은 직접 학습이 강할 수 있음을 보여준다. 어떤 결과도 실제 표현 density가 모든 smoothness·task-prior 가정을 만족한다고 인증하지는 않는다.
-
-ImageNet-1K 사전학습 전이 평균에서 LeJEPA ViT-L은 1-shot/10-shot/전체 라벨 29.55/60.95/79.48%, plain I-JEPA는 30.20/60.51/78.50%, +STOP은 32.05/62.92/80.70%다. 모델은 304M/100 epoch 대 632M/300 epoch로 다르다. 이 표는 유망한 결과와 비교의 조건을 함께 보여준다. 조건 없는 우위나 정확히 3배의 총 계산 절감을 증명하지 않는다. [Table 2, p. 16](https://arxiv.org/pdf/2511.08544v3#page=16)
-
-이 리뷰의 후속 제안은 세 가지다. 학습에 쓰지 않은 방향·더 촘촘한 grid의 discrepancy를 측정한다. 중심 손실과 정확한 쌍별 손실을 같은 설정에서 비교한다. 동일 backbone·augmentation·총 예산으로 대안 손실을 비교하고 frozen/finetuning, 여러 seed의 결과를 따로 기록한다. 예상 반례는 낮은 training loss에도 unseen projection이 나쁜 경우, target-relevant한 비등방성이 downstream에 도움이 되는 경우다. 이번에 이 실험들은 실행하지 않았다.
-
-## 출처·읽은 범위·검증 상태
-
-- 원문: *LeJEPA: Provable and Scalable Self-Supervised Learning Without the Heuristics*, Randall Balestriero·Yann LeCun, 최초 공개 2025-11-11, 검토 v3(2025-11-14), [공식 서지](https://arxiv.org/abs/2511.08544).
-- 1차 읽기: pp. 1–3, 17–18과 전체 절 구조에서 문제·컨셉·흐름을 파악. 2차 읽기: 본문 pp. 1–18, Appendix A–F pp. 24–46, 보충 Figures 16–21 pp. 47–50. 참고문헌 pp. 18–23은 관련 원전 서지를 선택 확인. 주요 수식·표·축은 원본 PDF 이미지와 대조했다.
-- 관련 원전 범위: VICReg v3 pp. 3–4, DINO v2 pp. 2–3, I-JEPA v3 pp. 3–4, Gaussian Embeddings v1 pp. 1, 3–4, Gretton et al. 2012 PDF pp. 1, 3–4. 비교 내용은 [전체 해설](/reviews/lejepa-complete/)에 있다.
-- 대표 그림은 직접 제작한 설명도([CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)); 기본 Light(300), 강조 Semi Bold(600). 원문 그림의 저자·위치·CC BY-SA 4.0·crop/인코딩 변경은 각 캡션에 남겼다.
-- <strong>실행한 검증:</strong> 리뷰 작성자의 4개 검사—중심 거리 항등식, 고정 1D grid alias, OLS 역고윳값 합, ECF sampling bias Monte Carlo. 위 수치는 이 작은 검사에서 나온 것이며 공개 모델의 재현 결과가 아니다.
-- <strong>미실행:</strong> 공식 코드 실행, GPU 사전학습, downstream probe·finetuning, DDP, 학습 seed 재현, 논문 시간·메모리 재측정, 전체 증명의 형식 검증. 형식 증명 도구로 검증했다고 주장하지 않는다.
+- 원문: Balestriero·LeCun, *LeJEPA: Provable and Scalable Self-Supervised Learning Without the Heuristics*. 최초 공개 2025-11-11, 검토본 v3(2025-11-14), 50쪽. [공식 서지·버전 이력](https://arxiv.org/abs/2511.08544).
+- 이번 1차 읽기(2026-10-11): 초록·서론·결론, 전체 목차·Figure 1–2 설명으로 논증 지도를 먼저 작성했다. 2차 읽기: 본문 §§1–7, Appendix A·B.1–B.14의 주요 증명과 C의 추가 표·캡션, D–F의 대안 설명을 PDF·저자 LaTeX로 대조했다. 구면 보간의 인용 원전과 모든 참고문헌의 전문은 독립 재검증하지 않았다.
+- 대응·축약: §§3–5의 순서와 핵심 정리·lemma 번호를 유지했다. Appendix B.6은 예측 손실의 본문 위치 §5.1로 이동했다. trace 제약을 자세히 전개하고 나머지 covariance 제약은 원문으로 연결했다. §§1–2·§6의 전체 설명은 전체 해설로 분담했다. D–F의 검정별 전체 공식은 중심 기여가 아니므로 축약했다.
+- 리뷰 보충: normal-equation 전환, ball moment의 부피 전개, Fisher 잔차 행렬 증명, gradient 2차 bound, Bonferroni 예시, 고정 1D grid alias, 중심 손실의 정확한 분산 항. 추가 조건을 원문 정리의 무조건적 증명으로 표시하지 않는다.
+- 직접 실행: 중심 항등식(2=1+1), 동일 trace OLS 예제(2 대 5.5556), 고정 grid CF alias(약 $2.24\times10^{-16}$), ECF 표본 bias Monte Carlo(20,000회). **미실행:** 공식 코드·GPU 학습·probe·finetuning·DDP·seed·모델 runtime/memory 재현, 전체 증명의 형식 검증. 작은 계산은 논문 모델 재현이 아니다.
+- 미확인: Theorem 5 참조 원전과 norm 전환, Theorem 2의 균일 power 극한, kNN의 전체 잔차 독립성, kernel의 유한 표본 잔차; Figure 11 부호, Figure 12 오차막대, Figure 17 캡션, Table 5 사전학습 칸 상충. 기존 승인 그림만 동일 파일로 사용했다.
+- 대표 자체 그림: [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), Light 300·강조 600. 원문 그림의 귀속·이용 조건·변환은 각 캡션에 기록했다.

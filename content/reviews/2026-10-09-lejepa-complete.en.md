@@ -1,9 +1,9 @@
 ---
 title: "[2/3] LeJEPA in full: from target distribution to theory, algorithm and experiments"
-description: "A connected review of the 50-page paper: problem, related work, target distribution, SIGReg, training, experiments and limitations."
+description: "A section-aligned account of the theory, SIGReg design, related work, and central experiments, including conditions and contrary results."
 date: "2026-10-09"
 publishedAt: "2026-10-09T23:54:43+09:00"
-updatedAt: "2026-10-10T18:16:19+09:00"
+updatedAt: "2026-10-11T19:23:16+09:00"
 topics: ["self-supervised learning", "representation learning", "joint embedding predictive architectures", "distribution matching", "computer vision"]
 visibility: "public"
 lang: "en"
@@ -17,207 +17,290 @@ thumbnail: "/assets/reviews/lejepa/lejepa-core.svg"
 thumbnailAlt: "LeJEPA combines within-image alignment to the global-view mean with across-image Gaussian matching through random projections in each view."
 ---
 
-LeJEPA connects two questions in self-supervised representation learning: <strong>what embedding distribution is useful before downstream tasks are known, and how can that distribution be matched efficiently in large models?</strong> The authors motivate an isotropic Gaussian through statistical estimation, then combine a projected distribution loss, SIGReg, with agreement between image views. The connection between theory, algorithm and varied image experiments is its main strength. This article follows the complete argument of the 50-page paper while preserving proof assumptions and experimental conditions. [§§1–6](https://arxiv.org/pdf/2511.08544v3#page=1)
+**LeJEPA starts with a question about favorable embeddings for unknown downstream tasks, then connects its distribution target to a practical regularizer and image-training pipeline.** The authors analyze linear and local nonlinear probes, choose an isotropic Gaussian target, and combine SIGReg with image-view agreement. Its conditions and finite approximations matter; the connected argument across distribution choice, computation, and experiments is the central contribution. [Sections 1–7](https://arxiv.org/pdf/2511.08544v3#page=1)
 
-**Notation.** Embedding vectors $\mathbf z_{n,v}$, global means $\boldsymbol\mu_n$, global-view count $V_g$ and loss $\mathcal L$ follow the paper. In complexity discussions, $M=|\mathcal A|$ counts directions and $T$ counts quadrature frequencies as auxiliary review symbols. $\mathcal L_{\mathrm{SIGReg}}$ abbreviates the per-view average; $1/K$ in the centered loss records Algorithm 2’s feature averaging.
+This is **[2/3] the complete, section-aligned commentary**. Read [1/3 introduction](/en/reviews/lejepa-overview/) → this article → [3/3 theorem and proof commentary](/en/reviews/lejepa-technical/). Headings and subsection numbers follow the paper. Main statements and assumptions remain where they occur; long intermediate calculations move to the technical version in the same Section 3→4→5 order.
 
-This is the complete version. The [introductory article](/en/reviews/lejepa-overview/) explains the two constraints intuitively; the [technical review](/en/reviews/lejepa-technical/) develops proofs, costs and equation checks.
+**Notation.** We retain $f_{\boldsymbol\theta}$, $\mathbf z_{n,v}$, $\mathbf Z$, $K$, $V_g$, and $\boldsymbol\mu_n$. $M=|\mathcal A|$ abbreviates the direction count; $T$ is a review shorthand for the frequency-grid size. The ridge coefficient $\lambda$ in Section 3 and loss-mixing coefficient $\lambda$ in Section 5 have different roles. Where the appendix uses $d$ for dimension or $n$ for sample count, the correspondence is stated.
 
-<strong>The hero diagram's distinction.</strong> All views pass through the same encoder and projector, but the two losses collect different samples. The left branch groups views of one image; the right groups different images within each view. Agreement preserves shared content, and distribution matching discourages point or directional collapse. The Gaussian constraint acts after the projector. [Enlarge](/assets/reviews/lejepa/lejepa-core.svg)
+The thumbnail’s objectives gather samples along different axes: within-image agreement on the lower left and across-image regularization within each view on the lower right. The Gaussian constraint acts after the projector. [Enlarge](/assets/reviews/lejepa/lejepa-core.svg)
 
-## A map of the argument
+## 1 Introduction — The problem and the authors’ route
 
-| Paper section | Question | Main connection |
-| --- | --- | --- |
-| §§1–2, pp. 1–4 | Is bringing related views together sufficient? | Agreement needs non-degeneracy |
-| §3, pp. 5–6 | Which distribution helps subsequent prediction? | Linear isotropy and nonlinear Fisher information |
-| §4, pp. 6–11 | How can high-dimensional Gaussianity be encouraged? | Random 1D projections, characteristic functions, SIGReg |
-| §5, pp. 11–12 | What does the encoder actually optimize? | Global-view-centered agreement plus per-view distribution matching |
-| §6, pp. 13–18 | Does it work across architectures, scales and domains? | Sensitivity, backbone diversity, transfer, Galaxy10 |
-| Appendices A–F, pp. 24–46; Figures 16–21, pp. 47–50 | What assumptions and additional results matter? | Local-estimation conditions, numerical approximations, supplementary evidence |
+Self-supervised learning uses relationships between inputs instead of target labels. For images, this connects crops and augmentations of one source image. Minimizing embedding distances alone also permits constant outputs. Avoiding collapse while supporting different datasets and architectures calls for an explicit objective.
 
-The paper expands LeJEPA as <strong>Latent-Euclidean JEPA</strong>; the repository README also uses Lean Joint-Embedding Predictive Architecture. Here the paper's formulation is the reference. JEPA learns relationships in representation space instead of reconstructing pixels directly. This implementation primarily studies symmetric image multi-crop agreement. It does not evaluate action-conditioned future prediction or control. [§2.1, p. 4](https://arxiv.org/pdf/2511.08544v3#page=4), [official README](https://github.com/galilai-group/lejepa)
+The authors argue that accumulating empirical mechanisms increases configuration costs, while anti-collapse theory alone does not select a favorable feature geometry. Section 2 defines JEPA’s requirements; Section 3 derives a distribution target through downstream prediction. Section 4 makes high-dimensional matching tractable; Section 5 assembles the objective. Section 6 evaluates stability, loss informativeness, domains, scale, and semantic structure. [Section 1, pp. 1–3](https://arxiv.org/pdf/2511.08544v3#page=1)
 
-## The problem: invariance alone can erase information
+## 2 Background and Notations — Definitions and design requirements
 
-Large and small crops from one photograph should retain common content. Minimizing their feature distance encourages this. Yet a constant encoder also makes every distance zero. We need both agreement within an image and an informative distribution across images.
+### 2.1 Notations and Definitions
 
-- <strong>Within an image:</strong> do features preserve shared information when the view changes?
-- <strong>Across images:</strong> does the distribution retain directions and variation useful for distinguishing inputs?
+The input tensor has shape $(N,V,D)$: $N$ independent samples, $V$ views each, and input dimension $D$. The encoder $f_{\boldsymbol\theta}:\mathbb R^D\to\mathbb R^K$ produces $K$-dimensional embeddings. $\mathbf Z\in\mathbb R^{N\times K}$ collects embeddings for one view.
 
-Previous methods use negatives, teachers, stop-gradient, centering, variance or covariance constraints to construct this balance. LeJEPA specifies a distributional target and asks why it should help subsequent predictors. Its core combines symmetric agreement with distribution regularization; a predictor and EMA teacher are not required. This does not establish that a predictor is unnecessary in every asymmetric prediction task. [§§2, 5](https://arxiv.org/pdf/2511.08544v3#page=3)
+JEPA requires predictability between related embeddings and retention of information that distinguishes inputs. A separate predictor can be omitted for symmetric image-view agreement. The same conclusion does not automatically apply to information-asymmetric context/target or time/action-conditioned prediction. This paper principally evaluates image representation learning. [Section 2.1, p. 4](https://arxiv.org/pdf/2511.08544v3#page=4)
 
-## Related work: locating the difference
+### 2.2 The Need for Reliable Pretraining
 
-Five primary sources were read for this comparison. Coverage is limited to the method/definition sections listed below, rather than full reviews of every source.
+A useful pretraining method should support small datasets and convolutional or hybrid architectures as well as large natural-image datasets and ViTs. Retuning interacting teacher updates, temperatures, or prototypes makes specialized-domain use difficult. This motivates Sections 6.1 and 6.3. [Section 2.2](https://arxiv.org/pdf/2511.08544v3#page=4)
 
-| Work | Collapse-prevention or distribution mechanism | Connection and distinction |
-| --- | --- | --- |
-| [VICReg](https://arxiv.org/pdf/2105.04906v3#page=3), §§3.1–3.3, pp. 3–4 | View agreement, a lower bound on coordinate standard deviation, suppression of off-diagonal covariance | Already symmetric without stop-gradient, a teacher or negatives. LeJEPA targets projected distributions beyond low-order statistics. VICReg's original penalty is not identical to exact zero mean and identity covariance. |
-| [DINO](https://arxiv.org/pdf/2104.14294v2#page=2), §3, pp. 2–3 | EMA teacher, centering/sharpening, teacher–student probability cross-entropy | LeJEPA replaces teacher-output rules with an explicit Gaussian target. Original DINO also studies convolutional networks; architectural variety was not first introduced here. |
-| [I-JEPA](https://arxiv.org/pdf/2301.08243v3#page=3), §3, pp. 3–4 | Predict masked target-block features from a context with a predictor and EMA target encoder | Asymmetric block prediction and symmetric crop agreement are different tasks. Table 2 must be read together with model and training conditions. |
-| [Gaussian Embeddings](https://arxiv.org/pdf/2510.05949v1#page=1), pp. 1, 3–4 | Gaussian density through representation transformations and Jacobian volume | Shares interest in Gaussian embeddings, but not the same downstream bias/variance argument or sliced characteristic-function objective. |
-| [Gretton et al., MMD](https://www.jmlr.org/papers/volume13/gretton12a/gretton12a.pdf), PDF pp. 1, 3–4 | Compare kernel mean embeddings of distributions | Background for Gaussian-weighted CF/kernel discrepancies. Standard pairwise estimators are quadratic, but linear-time MMD estimators already existed. LeJEPA is not the first linear-time distribution comparison. |
+### 2.3 The Need for Actionable Theory
 
-The contribution is best located in the connection <strong>downstream estimation theory → target distribution → tractable loss → simple training structure</strong>, rather than claiming every ingredient is new.
+Non-collapse is a necessary starting point but does not identify which representation is favorable downstream. The authors seek theory that selects an embedding law before specific labels are known. The following results motivate that choice; they do not directly prove the performance of an entire neural network. [Section 2.3](https://arxiv.org/pdf/2511.08544v3#page=4)
 
-## Why isotropy, and why a Gaussian?
+## 3 Latent Euclidean — Embeddings Should Be Isotropic Gaussian
 
-Consider feature matrix $\mathbf Z$ and downstream labels $\mathbf y=\mathbf Z\boldsymbol\beta+\boldsymbol\varepsilon$. The coefficient $\boldsymbol\beta$ specifies a task; $\boldsymbol\varepsilon$ is noise. Small feature variation along a task-relevant direction makes estimation difficult.
+### 3.1 Linear Probing
 
-The paper examines ridge shrinkage bias and OLS coefficient variance. Under fixed-design, full-rank and homoscedastic-noise conditions, the variance trace is $\sigma ^{2}\Sigma (1/\lambda k)$, where $\lambda_k$ are eigenvalues of $\mathbf Z^\top\mathbf Z$. For fixed total energy, equal eigenvalues minimize this quantity. As a review-authored example, $(1,1)$ gives reciprocal sum 2, whereas $(0.2,1.8)$ gives approximately 5.56 despite the same trace. [§3.1; Appendix B.1–B.2, pp. 26–27](https://arxiv.org/pdf/2511.08544v3#page=26)
+Start with fixed embeddings and linear prediction of labels $\mathbf y$. The paper’s OLS notation includes ridge regularization:
 
-This establishes a reason for <strong>isotropic covariance</strong>, not Gaussian uniqueness. The authors next study neighborhood averaging and Nadaraya–Watson kernel regression, which predict a query from nearby labeled features.
+$$
+\hat\beta=\underset{\beta\in\mathbb R^K}{\arg\min}
+\|\mathbf y-\mathbf Z\beta\|_2^2+\lambda\|\beta\|_2^2.
+$$
 
-Their local bias contains both target-function variation and density variation. The density score is $\nabla\log p$; its squared expectation $J(p)=\mathbb E\|\nabla\log p(X)\|_2^2$ is Fisher information. With assumptions including an isotropic task-gradient prior, a bias component relates to $J(p)$. The kernel analysis controls a worst-case bias upper bound containing it. [§3.2; Appendix A, B.3–B.7](https://arxiv.org/pdf/2511.08544v3#page=24)
+$\mathbf Z_{\rm iso}$ and $\mathbf Z_{\rm aniso}$ have the same column span and total energy, with different covariance shapes. Appendices B.1–B.2 use fixed design, full rank, and centered homoscedastic noise.
 
-For regular densities with fixed covariance, a Gaussian minimizes Fisher information. Fixing the covariance trace further selects isotropy. These arguments use local approximations, smoothness, task-prior assumptions and relations between query and training distributions. They do not establish unconditional minimization of the exact total risk of every nonlinear predictor. The [technical review](/en/reviews/lejepa-technical/) details the conditions.
+**Lemma 1 — Anisotropy amplifies bias.** For $\lambda>0$, **there exists** a downstream task with greater coefficient-estimation bias under anisotropy. Choosing a true task coefficient along a small-eigenvalue direction increases ridge shrinkage. This is not a greater-bias statement for every label vector.
 
-## What variance and covariance can miss
+**Lemma 2 — Anisotropy amplifies variance.** With $\lambda=0$, isotropy minimizes total coefficient variance. Writing $\lambda_k$ for the eigenvalues of the Gram matrix $\mathbf Z^\top\mathbf Z$,
 
-![LeJEPA Figure 5: an X-shaped non-Gaussian joint density can have Gaussian-like coordinate marginals but different directional projections.](/assets/reviews/lejepa/paper-figure-5.webp)
+$$
+\operatorname{tr}\operatorname{Var}(\hat{\boldsymbol\beta}\mid\mathbf Z)
+=\sigma^2\sum_{k=1}^K\frac1{\lambda_k}.
+$$
 
-[Enlarge figure](/assets/reviews/lejepa/paper-figure-5.webp)
+At fixed energy, the reciprocal sum is minimized by equal eigenvalues. A review example gives 2 for $(1,1)$ versus about 5.56 for $(0.2,1.8)$. A conclusion about **coefficient variance** should not be equated with prediction risk at every test point. The ridge expansion and Jensen step appear in the [technical version, Section 3.1](/en/reviews/lejepa-technical/#31-linear-probing-lemmas-12-and-appendices-b1b2). [Section 3.1; Appendices B.1–B.2, pp. 26–27](https://arxiv.org/pdf/2511.08544v3#page=26)
 
-<strong>Figure 5 explained.</strong> The coordinate histograms on the left have similar bell shapes. The second panel's joint density is X-shaped rather than multivariate Gaussian. The third shows densities projected along the colored directions. The fourth compares responses of regularizers/test statistics across those directions. These responses are not all probabilities on a common scale, nor downstream accuracy. The point is that <strong>apparently satisfactory marginal statistics need not identify the joint distribution</strong>. Attribution: Balestriero and LeCun, [Figure 5, p. 8](https://arxiv.org/pdf/2511.08544v3#page=8), [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). Complete panels cropped and encoded as lossless WebP.
+### 3.2 Nonlinear Probing
 
-Matching finitely many moments also leaves ambiguity: distinct distributions can share a finite set of moments. Increasing moment order can make tails dominate values and gradients. LeJEPA instead compares characteristic functions. [§4.2, Theorem 3, pp. 7–9](https://arxiv.org/pdf/2511.08544v3#page=7)
+Many distributions have isotropic covariance. To motivate the Gaussian shape, the authors analyze radius-based kNN and Nadaraya–Watson kernel regression:
 
-## SIGReg: matching distributional fingerprints
+$$
+\widehat{\mathbf y}(\mathbf q)=\frac1{|\mathcal N_{r_0}(\mathbf q)|}
+\sum_{n\in\mathcal N_{r_0}(\mathbf q)}\mathbf y_n,
+\qquad
+\mathcal N_{r_0}(\mathbf q)=\{n:\|\mathbf z_n-\mathbf q\|\le r_0\}.
+$$
 
-Project $\mathbf z$ onto a unit direction $\mathbf a$, obtaining $z=\mathbf a^\top\mathbf z$. The empirical characteristic function is a sample average at frequency $t$:
+$$
+\widehat{\mathbf y}(\mathbf q)=
+\frac{\sum_{n=1}^N K_h(\mathbf q-\mathbf z_n)\mathbf y_n}
+{\sum_{n=1}^N K_h(\mathbf q-\mathbf z_n)}.
+$$
+
+$\mathbf q$ is the query embedding, $r_0$ the neighborhood radius, and $h$ the bandwidth. The paper reuses $K$ for both the kernel function and embedding dimension. Radius-based kNN differs from selecting a fixed number of neighbors.
+
+**Theorem 1 — Isotropic Gaussian Optimality** connects integrated squared bias to Fisher information:
 
 $$
 \begin{aligned}
-\hat\varphi_{\mathbf a}(t)&=\frac1N\sum_{n=1}^N\exp\!\left(it\mathbf a^\top\mathbf z_n\right),\\
-\varphi_{\mathcal N}(t)&=\exp(-t^2/2).
+\mathrm{ISB}_{k\text{-NN}}&=\frac{r_0^4}{(K+2)^2}\tau_g^2J(p)+O(r_0^4),\\
+\mathrm{ISB}_{\rm kernel}&\le
+\left(\frac{h^2\mu_2(K)}2\right)^2
+\left(2B^2+8L^2J(p)\right)+o(h^4),\\
+J(p)&=\int\|\nabla\log p(\mathbf z)\|_2^2p(\mathbf z)\,d\mathbf z.
 \end{aligned}
 $$
 
-The imaginary unit $i$ can be implemented through cosine and sine averages. The Gaussian target is analytic, so target samples are unnecessary. SIGReg integrates the weighted squared difference across frequencies and averages over directions. The paper's Epps–Pulley statistic and Algorithm 1 use a scale multiplied by batch size $N$. [§4.3, Definition 2; Algorithm 1, p. 10](https://arxiv.org/pdf/2511.08544v3#page=10)
+The density must be sufficiently smooth with finite Fisher information and covariance, and queries follow the training density. The kNN analysis uses a small radius and an isotropic task-gradient prior. The kernel analysis uses small $h$, sufficient local sample density, a symmetric normalized kernel, and bounds $\|\nabla\eta\|\le L$, $|\Delta\eta|\le B$. Here $B$ is a curvature bound, distinct from the batch notation in Section 5. [Appendix A, Lemmas 4–5, Theorems 7–8](https://arxiv.org/pdf/2511.08544v3#page=24)
 
-![LeJEPA Figure 2: projected embedding densities compared with Gaussian targets.](/assets/reviews/lejepa/paper-figure-2.webp)
+At fixed covariance $\Sigma$, $J(p)\ge\operatorname{tr}(\Sigma^{-1})$, with equality for a Gaussian. A fixed total-variance budget then selects isotropic $\Sigma$. This is the mathematical core of the target choice. However, the kNN remainder $O(r_0^4)$ has the same order as the displayed term; eliminating its cross term requires extra orthogonality. The kernel expression is a worst-case bias **upper bound**. These calculations alone do not establish a unique minimum of exact ISB or total MSE for every task. Read the authors’ optimality claim with its conditions and the scope of the argument. Taylor expansions and the Fisher lower bound are developed in the [technical version, Section 3.2](/en/reviews/lejepa-technical/#32-nonlinear-probing-theorem-1-and-appendices-a-b3b7). [Section 3.2; Appendices B.3–B.7](https://arxiv.org/pdf/2511.08544v3#page=28)
 
-[Enlarge figure](/assets/reviews/lejepa/paper-figure-2.webp)
+### 3.3 Geometric and Practical Insights
 
-<strong>Figure 2 explained.</strong> The input distribution is mapped into embedding space, then projected along colored directions. On the right, the horizontal axis is the projection coordinate, black curves are targets and shading illustrates discrepancies. These are explanatory densities, not ImageNet measurements. Attribution: Balestriero and LeCun, [Figure 2, p. 3](https://arxiv.org/pdf/2511.08544v3#page=3), [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). Complete panels cropped and encoded as lossless WebP.
+The authors illustrate estimated coefficients and decision boundaries under fixed total variance. Figure 3 repeats logistic regression on 100 samples for a two-class task, comparing isotropic and anisotropic decision boundaries. This is an empirical connection to OLS theory, rather than an identical instantiation of its assumptions. Appendix Figure 18 visualizes regularization and bias. Figure 17’s variance-direction caption conflicts with Lemma 2, so it is not used as independent confirmation. [Section 3.3, Figure 3; Figure 17, p. 48](https://arxiv.org/pdf/2511.08544v3#page=6)
 
-Cramér–Wold links agreement along all directions with agreement of the original vector law. Training uses finite directions and frequency grids, so a small SIGReg loss is not certification of exact multivariate Gaussianity. Resampling directions discourages fitting only a fixed set of projections. [§4.1, §4.4; Appendix B.8–B.10](https://arxiv.org/pdf/2511.08544v3#page=6)
+## 4 SIGReg — Reliable Isotropic Gaussian Regularization in High-Dimension
 
-Dense projection and CF evaluation cost approximately $\mathcal O(NKM+NMT)$ for $K$ feature dimensions, $M$ directions and $T$ frequencies. With $K,M,T$ fixed, this is linear in sample count and avoids all sample pairs. Increasing directions with dimension, or including encoder computation, changes the interpretation of “linear.” [§4.3, p. 9; Algorithm 1](https://arxiv.org/pdf/2511.08544v3#page=9)
+### 4.1 Hypothesis Testing as a Judge
 
-## Integrating the two losses
+Instead of estimating the full high-dimensional density, compare one-dimensional laws. Let $P_{\boldsymbol\theta}$ be the embedding law and $Q=\mathcal N(0,I)$ the target. **Lemma 3 — Hyperspherical Cramér–Wold** equates equality of all unit-direction projection laws with equality of vector laws. Appendix B.8 proves this through characteristic functions and $\mathbf t=r\mathbf a$.
 
-Let $\mathbf z_{n,v}$ denote the projected embedding of image $n$, view $v$. There are $V_g$ global views and $V$ total views. Algorithm 2 centers agreement on the mean of each image's global views:
+**Theorem 2 — Sufficiency of directional tests** concerns consistency of combined projection tests. Appendix B.9 requires vanishing directional mesh, a threshold calibrated for the global null, and power in a neighborhood of a separating direction. It does not certify arbitrary distributions from a few finite directions. The maximum statistic for testing also differs from the averaged training objective:
+
+$$
+\operatorname{SIGReg}(\{\mathbf z_n\}_{n=1}^N)
+=\frac1{|\mathcal A|}\sum_{\mathbf a\in\mathcal A}
+T(\{\mathbf a^\top\mathbf z_n\}_{n=1}^N).
+$$
+
+This is the directional average in Definition 2. Section 4.2 chooses the statistic $T$. [Section 4.1, Lemma 3, Theorem 2, Definition 2; Appendices B.8–B.9](https://arxiv.org/pdf/2511.08544v3#page=6)
+
+![Figure 2: Input distribution, embedding space, and directional density comparisons.](/assets/reviews/lejepa/paper-figure-2.webp)
+
+**Reading Figure 2.** Each colored arrow in the middle yields a projected density on the right. The horizontal coordinate is the projection; black is the Gaussian target. Gray discrepancy is conceptual, not downstream accuracy. [Enlarge](/assets/reviews/lejepa/paper-figure-2.webp) · [Figure 2, p. 3](https://arxiv.org/pdf/2511.08544v3#page=3). Balestriero and LeCun, [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/); full-panel crop and lossless WebP conversion.
+
+### 4.2 SIGReg: Sketching the Epps–Pulley Test Is Stable and Scalable
+
+#### 4.2.1 Moments Are Unstable and Insufficient
+
+**Theorem 3** constructs different distributions matching moments through any fixed finite order. Mean, variance, and covariance alone cannot establish a joint Gaussian law. Increasing the order also creates polynomial gradients that can grow on tail samples. The linear-algebra construction in Appendix B.11 is explained in the [technical version, Section 4.2](/en/reviews/lejepa-technical/#42-sigreg-sketching-the-eppspulley-test). [Section 4.2.1; Appendix B.11](https://arxiv.org/pdf/2511.08544v3#page=7)
+
+![Figure 5: Gaussian coordinate marginals and identity covariance can coexist with an X-shaped joint law.](/assets/reviews/lejepa/paper-figure-5.webp)
+
+**Reading Figure 5.** Coordinate densities are Gaussian and covariance is identity, while joint samples form an X. An oblique projection reveals a non-Gaussian density. The right panel plots test responses by direction; the statistics need not share a common scale. The lesson is the difference between plausible coordinate summaries and matching a joint law. [Enlarge](/assets/reviews/lejepa/paper-figure-5.webp) · [Figure 5, p. 8](https://arxiv.org/pdf/2511.08544v3#page=8). Balestriero and LeCun, [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/); full-panel crop and lossless WebP conversion.
+
+#### 4.2.2 Cumulative Density Functions Are Impractical
+
+A CDF gives the probability below a threshold and can represent a distribution. The paper emphasizes sorting/order-statistic costs, gathering samples across GPUs, and approximations suited to gradient learning. This should not be exaggerated into a claim that sorting is nowhere differentiable. The practical judgment concerns this training and distributed-computation setting. [Section 4.2.2, p. 9](https://arxiv.org/pdf/2511.08544v3#page=9)
+
+#### 4.2.3 Characteristic Functions Are Stable, Scalable and Identifiable
+
+A characteristic function averages a complex exponential. The directional subscripts below map the main text’s $\hat\phi_X$, $\phi$ to the projection and Gaussian target. Its empirical version uses sample means; the Gaussian target is analytic:
+
+$$
+\hat\varphi_{\mathbf a}(t)=\frac1N\sum_{n=1}^N e^{it\mathbf a^\top\mathbf z_n},
+\qquad \varphi_{\mathcal N}(t)=e^{-t^2/2}.
+$$
+
+$$
+EP(\mathbf a)=N\int_{\mathbb R}
+|\hat\varphi_{\mathbf a}(t)-\varphi_{\mathcal N}(t)|^2w(t)\,dt.
+$$
+
+The paper’s Epps–Pulley equation uses a Gaussian weight $w(t)$. **Theorem 4 — Stability of Epps–Pulley Test** relies on $|e^{itz}|=1$, giving bounded CFs independently of input magnitude. However, Appendix B.12 derives the $O(1/N)$ sample-gradient bound for the **unscaled distance**, $EP/N$. Multiplying by $N$ to obtain $EP=N\widehat D$ multiplies the gradient too. The [technical version, Section 4.2.3](/en/reviews/lejepa-technical/#423-cf-deriving-theorem-4-and-checking-normalization) retains this distinction. Parameter gradients also contain the encoder Jacobian, so bounded CF factors alone cannot establish an unconditional gradient bound for the whole network. [Section 4.2.3, Epps–Pulley equation, Theorem 4; Appendix B.12](https://arxiv.org/pdf/2511.08544v3#page=9)
+
+**Reading Algorithm 1.** Normalize columns of a $K\times M$ Gaussian matrix to obtain unit directions. Multiply $\mathbf Z\mathbf A$ by frequencies and average complex exponentials. Synchronize the step seed across GPUs and all-reduce the CF mean. On 17 points in $[-5,5]$, weight the squared Gaussian-CF error with a Gaussian window, apply trapezoidal integration, then multiply by the global sample count $N$. SIGReg averages the directional statistics. This describes the paper’s Algorithm 1, not a fresh execution of current official code. [Algorithm 1, p. 10](https://arxiv.org/pdf/2511.08544v3#page=10)
+
+Dense cost is $\mathcal O(NKM+NMT)$ using review shorthands $M,T$. It is linear in $N$ with $K,M,T$ fixed, not a claim about every cost including the encoder. Table 6 reports 10 loss-forward/backward runs (mean ± std) on a V100-SXM2-16GB: $(N,M,T)=(512,512,16)$ gives $0.465236\pm0.011642$ ms; $(8192,512,16)$ gives $6.188304\pm0.007226$ ms. Embedding dimension is absent from the table. These are not end-to-end training comparisons. [Table 6, p. 43](https://arxiv.org/pdf/2511.08544v3#page=43)
+
+### 4.3 How SIGReg Beats the Curse of Dimensionality
+
+The paper proceeds through **smoothness**, **SGD resampling**, and **synthetic validation**. Theorem 5 gives a direction-count rate $M^{-2\alpha/(K-1)}$, where $\alpha$ is Sobolev regularity. Appendix B.10 references spherical-harmonic approximation and interpolation with quasi-uniform points. Large smoothness alone does not guarantee small practical error for arbitrary $O(K)$ directions: dimension/smoothness-dependent constants and norms remain. [Section 4.3, Theorem 5; Appendix B.10](https://arxiv.org/pdf/2511.08544v3#page=10)
+
+![Figure 7: Final directional statistic by number of directions, fixed versus resampled.](/assets/reviews/lejepa/paper-figure-7.webp)
+
+**Reading Figure 7.** Horizontal: directions $M$ per step. Vertical: expected directional statistic after training, where lower means closer matching. Green resampled directions achieve low discrepancy with fewer directions than blue fixed directions. This is synthetic optimization, not ImageNet accuracy or a formal convergence rate. [Enlarge](/assets/reviews/lejepa/paper-figure-7.webp) · [Figure 7, p. 10](https://arxiv.org/pdf/2511.08544v3#page=10). Balestriero and LeCun, [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/); full-panel crop and lossless WebP conversion.
+
+The synthetic experiment then **directly optimizes samples** whose coordinates are mostly Gaussian but whose first two dimensions have an X structure. Section 4.3 mentions a $D=512$, $M=16$ case, whereas Figure 6’s caption specifies $N=100$, $D=1024$, $M=10$. These settings are not equated. Removing encoder constraints isolates the loss; semantic learning from images is assessed separately in Section 6. [Section 4.3, p. 11](https://arxiv.org/pdf/2511.08544v3#page=11) · [Figure 6, p. 9](https://arxiv.org/pdf/2511.08544v3#page=9)
+
+## 5 LeJEPA — Stable and Scalable Implementation
+
+### 5.1 LeJEPA: SIGReg + Prediction Loss
+
+Create $V_g$ global and $V_l$ local views, with $V=V_g+V_l$, then process them through the encoder and projector. $\boldsymbol\mu_n$ averages global-view embeddings. The following describes Algorithm 2’s center-based objective:
 
 $$
 \begin{aligned}
-\boldsymbol\mu_n&=\frac1{V_g}\sum_{g=1}^{V_g}\mathbf z_{n,g},\\
-\mathcal L_{\mathrm{pred}}&=\frac1{NVK}\sum_{n=1}^N\sum_{v=1}^V\|\mathbf z_{n,v}-\boldsymbol\mu_n\|_2^2,\\
-\mathcal L_{\mathrm{SIGReg}}&=\frac1V\sum_{v=1}^V\operatorname{SIGReg}\!\left(\{\mathbf z_{n,v}\}_{n=1}^N\right),\\
-\mathcal L_{\mathrm{LeJEPA}}&=(1-\lambda)\mathcal L_{\mathrm{pred}}+\lambda\mathcal L_{\mathrm{SIGReg}}.
+\boldsymbol\mu_n&=\frac1{V_g}\sum_{v=1}^{V_g}\mathbf z_{n,v},\\
+\mathcal L_{\rm pred}^{\rm code}&=\frac1{NVK}\sum_{n=1}^N\sum_{v=1}^V
+\|\mathbf z_{n,v}-\boldsymbol\mu_n\|_2^2,\\
+\mathcal L_{\rm SIGReg}&=\frac1V\sum_{v=1}^V\operatorname{SIGReg}(\{\mathbf z_{n,v}\}_{n=1}^N),\\
+\mathcal L_{\rm LeJEPA}&=(1-\lambda)\mathcal L_{\rm pred}^{\rm code}+\lambda\mathcal L_{\rm SIGReg}.
 \end{aligned}
 $$
 
-Here $K$ is embedding dimension. The formula averages feature coordinates as Algorithm 2's `.square().mean()` does. Gradients also flow through $\boldsymbol\mu_n$; it is not a frozen teacher target. Agreement groups views at fixed $n$, while SIGReg groups images at fixed $v$. A projector remains, and evaluated backbone features differ from regularized projected embeddings. Algorithm 2 sets global and all views equal for its non-ViT configuration, making the center an all-used-view mean in that case. [§5, Algorithm 2, pp. 11–12](https://arxiv.org/pdf/2511.08544v3#page=11)
+$\mathcal L_{\rm pred}^{\rm code}$ and $\mathcal L_{\rm SIGReg}$ are review abbreviations; $1/K$ exposes the code’s feature-coordinate mean. The total loss uses batch notation $B$ in the paper, corresponding to $N$ here. Do not confuse the within-image center axis with the across-image SIGReg axis.
 
-Equations 5–7 describe converting average pairwise distances into center distances as equivalent. Direct expansion leaves an additional <strong>variance of global views around their mean</strong>. This review follows the center objective explicitly specified by Algorithm 2. The [technical review](/en/reviews/lejepa-technical/) shows the missing term and a numerical example. This algebraic discrepancy alone does not establish that the experimental results are invalid. [§5, p. 12; Appendix B.6, p. 34](https://arxiv.org/pdf/2511.08544v3#page=34)
+**Two equation checks.** Theorem 6’s $O(1/N)$ sampling and gradient bias applies to the unscaled CF distance $EP/N$. Moving from the global/all-view pair average in Eq. (5) to the center average in Eq. (6) also leaves a within-global-view variance term. That term depends on learned parameters and cannot be dropped as an arbitrary constant. Appendices B.6 and B.13 and the [technical version, Section 5.1](/en/reviews/lejepa-technical/#51-sigreg-prediction-loss-theorem-6-appendices-b6-and-b13) compare the exact identity and sampling expectation. [Section 5.1, Eqs. (5)–(7), Theorem 6, Algorithm 2](https://arxiv.org/pdf/2511.08544v3#page=11)
 
-## Simple objectives still have training choices
+The core architecture requires no prototypes, stop-gradient, EMA target teacher, or separate predictor. It still uses a projector; evaluation uses backbone features. Removing a predictor for symmetric image agreement does not establish that every JEPA task needs none. Optimizers, loaders, and learning-rate schedules remain ordinary configuration choices.
 
-Section 6.1 specifies $\lambda =0.05$, two global and eight local views, batches of at least 128, 1,024 directions and 17 integration points on $[-5,5]$. Experiment Details 1 on p. 14 instead uses eight total views: two global and six local. Settings must be attached to each experiment. [§6.1; Experiment Details 1, pp. 13–14](https://arxiv.org/pdf/2511.08544v3#page=13)
+### 5.2 Relation to Prior Work
 
-The experiments use AdamW, learning-rate warmup and cosine scheduling. Some architecture experiments cross-validate learning rates $5\times 10^{-3}/5\times 10^{-4}$ and weight decays $0.1/0.01/10^{-5}$. Optional SWA results appear in Table 4. “Without the heuristics” therefore describes simplifying the core anti-collapse structure, not eliminating every schedule or optimizer choice. [p. 14; Table 4, p. 42](https://arxiv.org/pdf/2511.08544v3#page=14)
+The paper discusses sliced score matching, sliced Wasserstein, exact integration and MMD, then the moment-limited VICReg connection, in that order. Projection and distribution discrepancy already exist in other fields; the contribution locates them within a JEPA objective. Appendix B.14 shows that zero mean and unit variance in every direction force zero vector mean and identity covariance. It does not establish numerical equality with VICReg’s original standard-deviation hinge and covariance penalties. [Section 5.2; Appendix B.14, pp. 39–40](https://arxiv.org/pdf/2511.08544v3#page=12)
 
-The [official repository snapshot](https://github.com/galilai-group/lejepa/tree/c293d291ca87cd4fddee9d3fffe4e914c7272052) inspected here has a MINIMAL example with 17 points on $[0,3]$, doubled positive-side weights, 256 directions and an all-view mean for invariance. This is not numerically identical to the paper's grid or global-view center. The example was read, not executed. Reproduction should pin both version and configuration.
+The following five primary-method comparisons were directly checked in the earlier analysis. They now appear at the paper’s related-work location. The reading scope is the indicated method sections, not a fresh full-paper rereading.
 
-## Experiment 1: sensitivity and backbone diversity
-
-Table 1 studies ImageNet-1K, ViT-L/14, 100 epochs and frozen linear top-1 accuracy (%). Selected rows from separate ablations are shown below. [Table 1, p. 13](https://arxiv.org/pdf/2511.08544v3#page=13)
-
-| Ablation | Values | Top-1 accuracy |
+| Primary source and reading scope | Central method | Relation to LeJEPA |
 | --- | --- | --- |
-| Batch size | 128 / 256 / 512 / 1024 | 72.20 / 74.15 / 74.72 / 74.07 |
-| Global-view count, four total views | 1 / 2 | 53.06 / 72.26 |
+| [VICReg, Sections 3.1–3.3, pp. 3–4](https://arxiv.org/pdf/2105.04906v3#page=3) | Agreement, standard-deviation floor, off-diagonal covariance penalty | Symmetric anti-collapse predates LeJEPA; SIGReg targets projected laws beyond finitely many moments. |
+| [DINO, Section 3, pp. 2–3](https://arxiv.org/pdf/2104.14294v2#page=2) | EMA teacher, centering/sharpening, output-probability agreement | LeJEPA uses an explicit Gaussian target and symmetric agreement. Architectural diversity itself is not new here. |
+| [I-JEPA, Section 3, pp. 3–4](https://arxiv.org/pdf/2301.08243v3#page=3) | A predictor maps context to target-block representations | Information-asymmetric prediction differs from symmetric crop agreement. |
+| [Gaussian Embeddings, pp. 1, 3–4](https://arxiv.org/pdf/2510.05949v1#page=1) | Gaussian density, representation transformations, Jacobian volume | Shared Gaussian terminology differs from the downstream-estimation/sliced-CF argument. |
+| [Gretton et al., MMD, PDF pp. 1, 3–4](https://www.jmlr.org/papers/volume13/gretton12a/gretton12a.pdf) | Kernel mean embeddings for comparing distributions | Background for exact integration. MMD also has linear-time estimators, so LeJEPA is not the first linear-time distribution comparison. |
 
-Smaller batches can work, but accuracy is not identical. One global view causes a substantial drop. Integration-range rows also differ by roughly two percentage points. This supports useful robustness over several settings rather than complete insensitivity.
+## 6 LeJEPA: Empirical Validation
 
-A separate ImageNet-100/ResNet-50 experiment varies views and $\lambda$ together in Figure 8/Table 7: two views/λ=0.01 gives 83.49%, four/λ=0.02 gives 84.68%, and eight/λ=0.05 gives 84.32%. The best measured mixture is not identical across view counts. The default is a useful starting point rather than a unique optimum for every setting. [Figure 8, p. 13; Table 7, p. 43](https://arxiv.org/pdf/2511.08544v3#page=43)
+Follow Sections 6.1→6.5. Numbers are **paper-reported** accuracy percentages, with higher being better. Frozen probing trains a labeled classifier while keeping the encoder fixed; finetuning also updates the backbone. Unlabeled pretraining does not imply label-free evaluation.
 
-Figure 9 evaluates approximately 50 models below 20M parameters from eight families on a ten-class ImageNet subset, with accuracy around 91.5–95%. The paper's aggregate 60+ architectures and Figure 1's 1.8B-model training curve do not mean every model was evaluated on full ImageNet and all transfer tasks. These results chiefly expand the evidence for architectural compatibility. [Figures 1, 9; §6.1, p. 14](https://arxiv.org/pdf/2511.08544v3#page=14)
+### 6.1 LeJEPA’s Stability Across Hyper-Parameters and Architectures
 
-## Experiment 2: can loss indicate feature quality?
+The first question is whether useful training survives configuration and architecture changes. Table 1 evaluates **ImageNet-1K, ViT-Large/14, 100 epochs, frozen linear top-1**.
 
-![LeJEPA Figure 10: accuracy colors in the plane of SIGReg and prediction losses.](/assets/reviews/lejepa/paper-figure-10.webp)
+| Ablation | Representative reported results | Interpretation |
+| --- | --- | --- |
+| Integration range, 17 grid points | $M=512$: $[-1,1]$ 72.13 → $[-5,5]$ 74.21 | The 2.08-point gap means the range is not irrelevant. |
+| Batch size | 128: 72.20; 256: 74.15; 512: 74.72; 1024: 74.07 | Small batches can train; accuracy is neither equal nor monotonic. |
+| Global views, 4 total | $V_g=1$: 53.06; $V_g=2$: 72.26 | View configuration can have a large effect. |
+| Global views, 10 total | $V_g=2$: 74.06; $V_g=4$: 75.08 | A recommended default is not the optimum of every ablation. |
+| Registers, $M=4096$ | 0: 75.61; 8: 75.84 | The improvement is small in this comparison. |
 
-[Enlarge figure](/assets/reviews/lejepa/paper-figure-10.webp)
+[Table 1, p. 13](https://arxiv.org/pdf/2511.08544v3#page=13). Do not combine separate ablation rows into one purported configuration.
 
-<strong>Figure 10 explained.</strong> The panels show ResNet-50/Galaxy10, ResNet-50/ImageNet-10 and ViT-B/14/ImageNet-1K. Horizontal and vertical axes are SIGReg and prediction losses, both logarithmic. Color indicates accuracy: red is higher, blue lower. Better accuracy generally concentrates toward the lower-left region where both losses are small. A single loss component is insufficient, and the measured relationship is not a universal law. Attribution: Balestriero and LeCun, [Figure 10, p. 15](https://arxiv.org/pdf/2511.08544v3#page=15), [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). Complete panels cropped and encoded as lossless WebP.
+The recommended recipe uses $\lambda=0.05$, two global/eight local views, $N\ge128$, $M=1024$, and 17 points on $[-5,5]$. However, Experiment Details 1 uses two global/six local views, **eight total**, with AdamW, warmup/cosine scheduling, and learning-rate/weight-decay candidates. These are different settings and are recorded separately.
 
-Figure 11 reports Spearman magnitudes around 0.60–0.90, improving to roughly 0.93–0.99 after $\lambda ^{0}·^{4}$ scaling. Loss decreases while accuracy increases, yet the displayed values are positive; the signed convention is not clarified here. The defensible description is a strong inverse monotonic association under the measured conditions, rather than an unqualified positive correlation. [§6.2, Figure 11, p. 15](https://arxiv.org/pdf/2511.08544v3#page=15)
+Figure 9 evaluates about 50 timm models below 20M parameters, across eight architecture families, on IN-10. It is not an IN-1K result for every model. Figure 8 and Table 7 examine $\lambda$ and views; their low-sensitivity interpretation coexists with degraded extreme configurations. For ResNet50/eight views, $\lambda=0.020$ gives 83.49 versus 77.72 at $0.500$. [Section 6.1, Figures 8 and 9; Table 7, p. 43](https://arxiv.org/pdf/2511.08544v3#page=14)
 
-This is not proof of universally label-free model selection on new domains. The scaling exponent is evaluated against labeled observations. A prospective test would fix it on previous domains and select checkpoints before seeing labels in a new domain.
+Table 4, on IN-100 for 400 epochs, compares projector depth, predictor, and SWA. SWA averages model weights and is optional here. Without a predictor, ViT-S with a three-layer projector improves from 81.07 to 84.12 with SWA. The corresponding ResNet50 comparison is 83.93→83.50, without improvement. This does not show an EMA teacher is necessary to prevent collapse. [Table 4, p. 42](https://arxiv.org/pdf/2511.08544v3#page=42)
 
-## Experiment 3: transfer averages and task-specific differences
+### 6.2 LeJEPA’s Training Loss Is Informative of Downstream Performance
 
-Table 2 evaluates DTD, Aircraft, Cars, CIFAR-10/100, Flowers102, Food101 and Pets. These averages (%) belong to its ImageNet-1K-pretrained block. [Table 2, p. 16](https://arxiv.org/pdf/2511.08544v3#page=16)
+The second question is whether training loss signals representation quality before label-based evaluation. Minimizing one term alone is insufficient: agreement alone permits collapse; Gaussian matching alone does not ensure shared image content.
 
-| Pretrained model | Parameters | Epochs | 1 label/class | 10 labels/class | All labels |
-| --- | --- | --- | --- | --- | --- |
-| I-JEPA | 632M | 300 | 30.20 | 60.51 | 78.50 |
-| I-JEPA + STOP | 632M | 300 | 32.05 | 62.92 | 80.70 |
-| LeJEPA ViT-L | 304M | 100 | 29.55 | 60.95 | 79.48 |
+![Figure 10: Downstream accuracy in the prediction-loss and SIGReg-loss plane.](/assets/reviews/lejepa/paper-figure-10.webp)
 
-With a smaller model and fewer epochs, LeJEPA is competitive with plain I-JEPA and exceeds some averages. Its one-shot average is lower, and +STOP is stronger at all three label budgets. It does not beat every I-JEPA variant.
+**Reading Figure 10.** Coordinates are prediction and SIGReg losses; color encodes downstream accuracy, increasing from blue to red. Inspect the lower-left frontier where both objectives are low. One low coordinate is insufficient. Different $\lambda$ values also complicate direct comparison of final total losses. [Enlarge](/assets/reviews/lejepa/paper-figure-10.webp) · [Figure 10, p. 15](https://arxiv.org/pdf/2511.08544v3#page=15). Balestriero and LeCun, [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/); full-panel crop and lossless WebP conversion.
 
-At ten shots, LeJEPA versus plain I-JEPA gives 64.72 versus 57.68% on DTD, 92.53 versus 88.24% on Flowers102 and 50.90 versus 43.97% on Food101, but 77.00 versus 83.23% on Pets. With all labels, CIFAR-10/100 are also lower: 96.50/83.71 versus 97.54/86.42%. A macro average alone hides these strengths and weaknesses.
+Figure 11 investigates an adjustment such as $\mathcal L/\lambda^\alpha$ and Spearman association. The text reports 85% rising to 99% near $\alpha\approx0.4$. The sign convention for lower loss versus higher accuracy is unclear, so this review describes **strong monotonic association**. Selecting $\alpha$ uses observed downstream results; this is not a prospective guarantee of the same label-free selection rule in a new domain. [Section 6.2, Figures 10–11; supplementary Figures 19 and 21](https://arxiv.org/pdf/2511.08544v3#page=15)
 
-100 versus 300 epochs compares passes over images. Different model sizes, crops, resolutions and operations prevent reading this as exactly one-third wall time or FLOPs. The ImageNet-22K 900-epoch block is a separate pretraining condition.
+### 6.3 In-Domain LeJEPA Outperforms Frontier Model Transfer Learning
 
-## Experiment 4: learning directly in a small specialized domain
+The third question is whether a small model pretrained directly in a specialized domain can be preferable to a general foundation model. Galaxy10 contains about 11,000 training images in ten morphology classes. LeJEPA uses its default pipeline for **400 epochs** of in-domain pretraining. DINOv2/v3 bring general-image pretraining to the comparison.
 
-![LeJEPA Figure 12: Galaxy10 accuracy across downstream label budgets with full finetuning and frozen encoders.](/assets/reviews/lejepa/paper-figure-12.webp)
+![Figure 12: Galaxy10 by downstream label count, with full finetuning and frozen evaluation.](/assets/reviews/lejepa/paper-figure-12.webp)
 
-[Enlarge figure](/assets/reviews/lejepa/paper-figure-12.webp)
+**Reading Figure 12.** Horizontal: downstream labels per class. Vertical: accuracy. Left: full finetuning. Right: frozen evaluation. LeJEPA curves correspond to small domain-trained architectures, with clear strengths at larger label counts. Three seeds are reported; the error-bar summary is not specified as standard deviation or confidence intervals, so no such interpretation is inferred. [Enlarge](/assets/reviews/lejepa/paper-figure-12.webp) · [Figure 12, p. 16](https://arxiv.org/pdf/2511.08544v3#page=16). Balestriero and LeCun, [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/); full-panel crop and lossless WebP conversion.
 
-<strong>Figure 12 explained.</strong> The horizontal axis is downstream labels per class; the vertical axis is accuracy (%). Left: full finetuning updates the backbone. Right: frozen evaluation keeps it fixed. Orange/brown curves are LeJEPA models pretrained on Galaxy10 for 400 epochs. Blue curves are generally pretrained DINOv2/v3 models. This shows the potential of small in-domain learning, not a loss-only comparison with architecture, data and compute matched. Three seeds are reported; the exact error-bar statistic is unspecified. Attribution: Balestriero and LeCun, [Figure 12, p. 16](https://arxiv.org/pdf/2511.08544v3#page=16), [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). Complete panels cropped and encoded as lossless WebP.
+| Table 3 model | All-label frozen | All-label finetuning | 1-shot frozen |
+| --- | --- | --- | --- |
+| LeJEPA ConvNeXtV2-Nano | 76.52 | 82.72 | 28.74 |
+| LeJEPA ResNet-34 | 78.17 | 83.28 | 31.08 |
+| LeJEPA LeViT-128 | 69.00 | 79.41 | 25.85 |
+| DINOv2 Small | 67.62 | 78.34 | 27.68 |
+| DINOv3 ViT-S/16 | 71.38 | 81.60 | 30.17 |
 
-Galaxy10 has ten galaxy classes and 11,008 training images according to Table 5. Full-label frozen accuracy in Table 3 is 78.17% for LeJEPA ResNet-34, 76.52% for ConvNeXt Nano, 67.62% for DINOv2 Small and 71.38% for DINOv3 Small. Full finetuning gives 83.28, 82.72, 78.34 and 81.60%, respectively. Separating fixed-feature quality from adaptation of the full model clarifies the result. [Table 3, p. 42](https://arxiv.org/pdf/2511.08544v3#page=42)
+[Table 3, p. 42](https://arxiv.org/pdf/2511.08544v3#page=42). Both all-label strengths and 1-shot exceptions remain visible. Different domains, architectures, and budgets make this broader than a controlled loss-only substitution.
 
-At one-shot frozen evaluation, LeJEPA LeViT reaches 25.85% versus DINOv3 Small's 30.17%, so not all LeJEPA architectures lead. Table 5 also gives Flowers102 accuracy of 82.19% for LeJEPA ResNeXt versus I-JEPA's 85.76%. Galaxy10 values differ between Tables 3 and 5 and are not pooled as one protocol here. Table 5's I-JEPA row name conflicts with its pretraining-data cell; that detail remains unverified. [Tables 3, 5, pp. 42–43](https://arxiv.org/pdf/2511.08544v3#page=43)
+Table 5 extends to small datasets, including 1,020 training samples in flowers102. Frozen flowers102 gives 74.57 for ResNet18, 82.19 for ResNeXt26ts, and 85.76 for the I-JEPA comparison. Galaxy10 gives 77.29 for ResNet34 versus 62.93 for I-JEPA. Practical small-data learning does not mean first place everywhere. The I-JEPA row name says IN-22K while its pretraining cell says IN-1K; the exact source configuration remains unconfirmed. Galaxy10 results in Tables 3 and 5 are not pooled. [Table 5, p. 43](https://arxiv.org/pdf/2511.08544v3#page=43)
 
-## Additional evidence: visual structure and cost
+### 6.4 LeJEPA Scales Across Data and Models
 
-Section 6.4 reports ImageNet-1K online evaluation of 77.1% for ViT-L and 78.5% for ConvNeXt-H. These differ from Table 1's post-training frozen evaluation and Table 2's transfer macro averages. The abstract's ViT-H 79% is not treated as the same detailed configuration. [§6.4, p. 17](https://arxiv.org/pdf/2511.08544v3#page=17)
+For larger data/models, IN-1K online linear probing gives 77.1 for ViT-L (0.3B) and 78.5 for ConvNeXtV2-H (0.6B). These differ from the **eight-task transfer average** below. The abstract’s roughly 79% for ViT-H is not merged into the same row either. [Section 6.4, p. 17](https://arxiv.org/pdf/2511.08544v3#page=17)
 
-Figure 13's thresholded attention regions and Figure 14's feature-PCA colors are qualitative observations of visual structure. They are not segmentation IoU benchmarks. Separately fitted per-image PCA colors do not form universal semantic coordinates across images. [§6.5, pp. 17–18](https://arxiv.org/pdf/2511.08544v3#page=17)
+| Table 2 model and budget | 1-shot average | 10-shot average | All-label average |
+| --- | --- | --- | --- |
+| LeJEPA ViT-L, 304M, IN-1K, 100 epochs | 29.55 | 60.95 | 79.48 |
+| LeJEPA ConvNeXtV2-H, 660M, IN-1K, 100 epochs | 31.58 | 60.70 | 77.56 |
+| I-JEPA ViT-H, 632M, IN-1K, 300 epochs | 30.20 | 60.51 | 78.50 |
+| I-JEPA ViT-H + STOP, same size/data/epochs | 32.05 | 62.92 | 80.70 |
+| I-JEPA ViT-H, IN-22K, 900 epochs | 35.15 | 63.28 | 80.82 |
 
-Supplementary Figures 16–21 add distribution-test comparisons, regression/regularization illustrations, loss–accuracy relationships and quadrature results. Appendix D discusses spherical directions; E discusses Shapiro–Wilk order statistics; F supplies multivariate normality statistics. These are not all visualizations of learned image features. Figure 17's caption says anisotropy has lower variance, conflicting with the main isotropy discussion. Its conditions/labeling remain unresolved, so it is not used here as independent performance evidence. [pp. 43–50](https://arxiv.org/pdf/2511.08544v3#page=43)
+[Table 2, p. 16](https://arxiv.org/pdf/2511.08544v3#page=16). Strengths on DTD, flowers102, and food101 coexist with weaknesses on CIFAR and pets. ViT-L exceeds base I-JEPA in all-label average but is below it in 1-shot average. +STOP exceeds ViT-L on all three averages. The IN-22K row belongs to a different budget group.
 
-Table 6 measures SIGReg on a V100 SXM2 16GB over ten runs: $N=512,M=512,T=16$ gives $0.465236\pm 0.011642 \,\mathrm{ms}$, and $N=8192$ gives $6.188304\pm 0.007226 \,\mathrm{ms}$. Section 4.4 describes forward–backward timing. It is loss computation, not full encoder training. Embedding dimension $K$ and separate forward/backward timings are absent from the table, limiting precise system comparisons. [§4.4; Table 6, p. 43](https://arxiv.org/pdf/2511.08544v3#page=43)
+100 versus 300 epochs demonstrates a shorter schedule, not a measured threefold reduction in wall-clock or FLOPs across different models, resolutions, crops, and hardware. Figure 1’s ViT-gigantic (1.8B) curve illustrates large-model optimization stability; it is not a table establishing downstream superiority at every scale. [Section 6.4; Figure 1](https://arxiv.org/pdf/2511.08544v3#page=1)
 
-## Connecting proofs and experiments without merging their guarantees
+### 6.5 Emergent Semantic Structure in LeJEPA Representations
 
-The theory motivates the Gaussian target. SIGReg analysis explains properties of computing that target, including characteristic-function existence, sample-gradient control and finite-sample bias. Experiments show that finite directions and grids can train useful representations with real backbones.
+Figure 13 thresholds [CLS] attention to reveal foregrounds in video frames. Figure 14 maps patch features to RGB using the first three PCA components for ViT-L trained on IN-1K for 100 epochs. These are qualitative evidence of spatial and semantic organization after unlabeled pretraining.
 
-These are different guarantees. Smooth-density population statements differ from finite-batch training. A bounded derivative with respect to a sample is not a bound on all encoder gradients or global SGD convergence. Distribution matching does not imply highest accuracy on every downstream task. [§§3–4, Theorems 4–6; Appendix B](https://arxiv.org/pdf/2511.08544v3#page=24)
+PCA is computed **independently per image**, so equal colors do not imply a shared semantic direction across images. Temporal consistency is illustrated, without an IoU or video-segmentation benchmark score. The figures should not be generalized to action/future-prediction performance. See the complete panels and videos in [Figures 13–14](https://arxiv.org/pdf/2511.08544v3#page=17) and the [official project page](https://rbalestr-lab.github.io/lejepa/).
 
-My assessment is that LeJEPA is a compelling simple image-SSL baseline to reproduce, particularly for specialized domains where general pretrained representations transfer poorly. The next questions concern semantics preserved by augmentation, comparisons at matched compute, and whether unseen projections/frequencies confirm distribution matching beyond the training loss.
+## 7 Conclusion — The authors’ conclusion and its scope
 
-## Designing the next checks
+The authors connect an isotropic Gaussian motivation, stable and scalable SIGReg, a simple LeJEPA objective, and experiments across architectures and domains. Selecting a representation distribution first provides an alternative starting point for designing anti-collapse training mechanisms. Their conclusion emphasizes theory guiding a practical design. [Section 7, p. 18](https://arxiv.org/pdf/2511.08544v3#page=18)
 
-First, compare against VICReg or I-JEPA-family alternatives with the same backbone, crops, resolution, optimizer and total compute. Record label budgets, seed variation, actual time and memory alongside top-1.
+## Review interpretation and open questions
 
-Second, evaluate distribution discrepancy using held-out directions and a finer frequency grid. This tests whether low training SIGReg generalizes to unobserved distributional measurements.
+This review locates the contribution in **combining a rationale for distribution choice with a tractable constraint**. Exact total-risk optimality, identification through finite grids, and domain-specific loss/accuracy relationships need further verification. The omitted variance in Eqs. (5)–(6) and normalization differences in Theorems 4 and 6 also deserve explicit treatment before implementation or reproduction.
 
-Third, fix loss scaling and checkpoint selection using previous domains, then evaluate selection before revealing labels in a new domain. This converts retrospective correlation into a prospective test. These are proposed follow-up experiments, not results obtained in this review.
+Long proofs are expanded rather than removed in the [technical version: ridge/local bias/Fisher bounds in Section 3, identification/stability/directional approximation in Section 4, and sampling expectations/omitted terms in Section 5](/en/reviews/lejepa-technical/), following the paper’s order.
 
-## Sources, reading coverage and validation
+## Sources and reading scope
 
-- Paper: *LeJEPA: Provable and Scalable Self-Supervised Learning Without the Heuristics*, Randall Balestriero and Yann LeCun, [arXiv 2511.08544](https://arxiv.org/abs/2511.08544). First submission 2025-11-11; reviewed v3, revised 2025-11-14, 50 pages.
-- First pass: pp. 1–3, 17–18 and the section structure to establish the problem and argument. Second pass: main text pp. 1–18, Appendices A–F pp. 24–46, supplementary Figures 16–21 pp. 47–50. The bibliography on pp. 18–23 was checked selectively.
-- Related sources: VICReg v3 pp. 3–4, DINO v2 pp. 2–3, I-JEPA v3 pp. 3–4, Gaussian Embeddings v1 pp. 1, 3–4, Gretton et al. 2012 PDF pp. 1, 3–4 (printed pp. 723, 725–726). Coverage is the cited methods/definitions, not every source in full.
-- Code: README and MINIMAL at [commit c293d291](https://github.com/galilai-group/lejepa/tree/c293d291ca87cd4fddee9d3fffe4e914c7272052), read but not executed.
-- Hero: one original conceptual diagram based on §§4–5 and Algorithms 1–2, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), font weight 300 with emphasis 600. Paper-figure captions record attribution and CC BY-SA 4.0. Complete panels were cropped, rasterized and losslessly encoded without editing plotted data.
-- <strong>Executed:</strong> review-authored center-distance identity, fixed 1D grid alias, OLS reciprocal-eigenvalue sum and ECF sampling-bias calculations. These are not model reproductions; details are in the [technical review](/en/reviews/lejepa-technical/).
-- <strong>Not run:</strong> official code, GPU training, frozen/finetuning reproduction, repeated-seed training, DDP, paper runtime/memory remeasurement and full formal proof verification. Conflicting settings and the unspecified error-bar definition remain explicitly recorded above.
+- Primary source: *LeJEPA: Provable and Scalable Self-Supervised Learning Without the Heuristics*, Randall Balestriero and Yann LeCun. First public release: November 11, 2025. Reviewed version: v3, November 14, 2025, 50 pages. [Official metadata and version history](https://arxiv.org/abs/2511.08544). PDF, official HTML, and author LaTeX were obtained and compared.
+- First pass for this revision, October 11, 2026: abstract, introduction, conclusion, section structure, and Figure 1–2 explanations, with a saved map and verification questions. Second pass: Sections 1–7; Appendix A; central statements/proofs in B.1–B.14; additional tables/captions in C; alternatives in D–F. The entire reference list and the underlying spherical-interpolation lemmas/theorems were not independently reverified.
+- The five related-method readings were performed in the October 9 analysis. Their versions/pages remain in the table; this is not a claim of fresh full-paper rereading.
+- Correspondence: all main sections/subsections are retained. Long A–B calculations move to the technical version. C’s Tables 3–7 appear beside the relevant experiments/costs; repetitive graphs are summarized. D–F are condensed to material needed for Section 4’s alternative comparison. Repeated table rows and every cited paper’s full text are excluded.
+- Direct verification: four review-authored algebra/numerical illustrations. **Not run:** official code, GPU pretraining, probe/finetuning/DDP/seed reproduction, whole-model speed/memory measurement, or full formal proof verification. **Unconfirmed:** Figure 11 sign convention, Figure 12 error-bar definition, Figure 17 caption conflict, Table 5 I-JEPA pretraining-data conflict, and Theorem 5’s cited primary details.
+- Thumbnail: review-authored concept diagram, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), Light 300/Semi Bold 600. Paper figures follow their caption locations and [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). All image files are identical existing approved assets.
