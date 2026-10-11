@@ -3,7 +3,7 @@ title: "[2/3] LeJEPA 전체 해설: 목표 분포에서 이론·알고리즘·�
 description: "원문 §§1–7과 하위 절을 유지하며 목표 분포의 이론, SIGReg 설계, 관련 연구, 핵심 실험과 반대 결과를 설명한다."
 date: "2026-10-09"
 publishedAt: "2026-10-09T23:54:43+09:00"
-updatedAt: "2026-10-11T19:23:16+09:00"
+updatedAt: "2026-10-11T20:35:20+09:00"
 topics: ["self-supervised learning", "representation learning", "joint embedding predictive architectures", "distribution matching", "computer vision"]
 visibility: "public"
 lang: "ko"
@@ -17,7 +17,7 @@ thumbnail: "/assets/reviews/lejepa/lejepa-core.svg"
 thumbnailAlt: "LeJEPA의 두 제약 설명도: 한 이미지의 뷰들은 전역 뷰 평균에 정렬하고, 각 뷰에서 여러 이미지의 표현은 임의 방향으로 투영해 표준 Gaussian과 맞춘다."
 ---
 
-**LeJEPA의 논증은 ‘후속 과제에 유리한 표현 분포는 무엇인가’에서 시작해, 그 분포를 안정적으로 맞추는 손실과 실제 이미지 학습으로 이어진다.** 저자들은 선형·국소 비선형 probe를 분석해 등방성 Gaussian을 목표로 삼고, SIGReg와 이미지 뷰 합의를 결합한다. 이론의 조건과 근사 구현을 구분해야 하지만, 분포 선택·계산·실험을 함께 설명하는 설계가 이 논문의 핵심이다. [§§1–7](https://arxiv.org/pdf/2511.08544v3#page=1)
+**LeJEPA의 논증은 ‘후속 과제(downstream task)에 유리한 표현 분포는 무엇인가’에서 시작해, 그 분포를 안정적으로 맞추는 손실과 실제 이미지 학습으로 이어진다.** 저자들은 선형·국소 비선형 프로브(probe)를 분석해 등방성 가우시안(isotropic Gaussian)을 목표로 삼고, SIGReg(Sketched Isotropic Gaussian Regularization)와 이미지 뷰 합의(view agreement)를 결합한다. 이론의 조건과 근사 구현을 구분해야 하지만, 분포 선택·계산·실험을 함께 설명하는 설계가 이 논문의 핵심이다. [§§1–7](https://arxiv.org/pdf/2511.08544v3#page=1)
 
 이 글은 **[2/3] 원문 순서의 전체 해설**이다. [1/3 입문](/reviews/lejepa-overview/) → 이 글 → [3/3 정리·증명 심층](/reviews/lejepa-technical/) 순으로 읽으면 된다. 아래 제목과 하위 절 번호는 원문을 따른다. 주요 증명의 진술·조건은 해당 위치에 남기고, 긴 중간 계산은 심층 편의 같은 §3→§4→§5 순서로 연결했다.
 
@@ -27,7 +27,7 @@ thumbnailAlt: "LeJEPA의 두 제약 설명도: 한 이미지의 뷰들은 전역
 
 ## 1 Introduction — 저자가 풀려는 문제와 전체 경로
 
-자기지도학습은 정답 라벨 대신 입력들 사이의 관계로 특징을 배운다. 이미지에서는 같은 원본에서 만든 crop·augmentation을 연결한다. 하지만 표현 거리만 줄이면 상수 출력도 해가 된다. 붕괴를 피하면서 다양한 데이터·구조에 적용하려면 학습 목적 자체를 명확히 해야 한다.
+자기지도학습(self-supervised learning)은 정답 라벨 대신 입력들 사이의 관계로 특징을 배운다. 이미지에서는 같은 원본에서 만든 crop·augmentation을 연결한다. 하지만 표현 거리만 줄이면 상수 출력도 해가 된다. 표현 붕괴(representation collapse)를 피하면서 다양한 데이터·구조에 적용하려면 학습 목적 자체를 명확히 해야 한다.
 
 저자들은 경험적으로 유용한 장치들이 늘어나면서 재설정 비용이 커지고, 붕괴 방지 이론만으로는 어떤 표현 기하가 좋은지 결정하기 어렵다고 지적한다. 제안의 경로는 다음과 같다. §2에서 JEPA의 요구를 정하고, §3에서 후속 예측을 통해 목표 분포를 고른다. §4는 고차원 분포 일치를 계산하고, §5는 학습 손실을 구성한다. §6은 안정성·손실 신호·도메인·규모·의미 구조를 평가한다. [§1, pp. 1–3](https://arxiv.org/pdf/2511.08544v3#page=1)
 
@@ -35,9 +35,9 @@ thumbnailAlt: "LeJEPA의 두 제약 설명도: 한 이미지의 뷰들은 전역
 
 ### 2.1 Notations and Definitions
 
-입력 데이터의 크기는 $(N,V,D)$다. $N$은 독립 표본 수, $V$는 표본마다 만든 뷰 수, $D$는 입력 차원이다. encoder $f_{\boldsymbol\theta}:\mathbb R^D\to\mathbb R^K$가 $K$차원 표현을 만든다. $\mathbf Z\in\mathbb R^{N\times K}$는 한 뷰에서 모은 표현 행렬이다.
+입력 데이터의 크기는 $(N,V,D)$다. $N$은 독립 표본 수, $V$는 표본마다 만든 뷰(view) 수, $D$는 입력 차원이다. 인코더(encoder) $f_{\boldsymbol\theta}:\mathbb R^D\to\mathbb R^K$가 $K$차원 표현을 만든다. $\mathbf Z\in\mathbb R^{N\times K}$는 한 뷰에서 모은 표현 행렬이다.
 
-JEPA의 두 요구는 관련 입력의 표현을 예측할 수 있다는 것과, 표현이 입력을 구별하는 정보를 잃지 않는다는 것이다. 같은 이미지의 대칭적 뷰 합의에서는 별도 predictor를 빼는 선택이 가능하다. 정보가 다른 context와 target, 시간·행동 조건부 예측에는 같은 결론을 그대로 적용할 수 없다. 이 논문의 실험은 주로 이미지 표현 학습이다. [§2.1, p. 4](https://arxiv.org/pdf/2511.08544v3#page=4)
+JEPA의 두 요구는 관련 입력의 표현을 예측할 수 있는 **예측 가능성**(predictability)과, 표현이 입력을 구별하는 정보를 잃지 않는 **표현의 비퇴화성**(non-degeneracy)이다. 같은 이미지의 대칭적 뷰 합의에서는 별도 예측기(predictor)를 빼는 선택이 가능하다. 정보가 다른 context와 target, 시간·행동 조건부 예측에는 같은 결론을 그대로 적용할 수 없다. 이 논문의 실험은 주로 이미지 표현 학습이다. [§2.1, p. 4](https://arxiv.org/pdf/2511.08544v3#page=4)
 
 ### 2.2 The Need for Reliable Pretraining
 
@@ -51,18 +51,18 @@ JEPA의 두 요구는 관련 입력의 표현을 예측할 수 있다는 것과,
 
 ### 3.1 Linear Probing
 
-표현을 고정하고 라벨 $\mathbf y$를 선형 예측하는 문제부터 시작한다. 원문의 OLS 표기는 ridge 정규화까지 포함한다.
+표현을 고정하고 라벨 $\mathbf y$를 선형 예측하는 문제부터 시작한다. 원문의 최소제곱법(ordinary least squares, OLS) 표기는 리지 정규화(ridge regularization)까지 포함한다.
 
 $$
 \hat\beta=\underset{\beta\in\mathbb R^K}{\arg\min}
 \|\mathbf y-\mathbf Z\beta\|_2^2+\lambda\|\beta\|_2^2.
 $$
 
-$\mathbf Z_{\rm iso}$와 $\mathbf Z_{\rm aniso}$는 같은 column span과 총 에너지를 갖고 공분산 모양만 다르게 비교한다. 고정 설계, full rank, 평균 0·동일 분산의 잡음 등 Appendix B.1–B.2의 조건을 사용한다.
+$\mathbf Z_{\rm iso}$와 $\mathbf Z_{\rm aniso}$는 같은 열공간(column span)과 총 에너지를 갖고 공분산 모양만 다르게 비교한다. 고정 설계(fixed design), 열들이 선형 독립인 조건(full column rank), 평균 0·동일 분산의 잡음 등 Appendix B.1–B.2의 조건을 사용한다.
 
-**Lemma 1 — Anisotropy amplifies bias.** $\lambda>0$일 때, 비등방성 표현에서는 등방성보다 계수 추정 bias가 커지는 후속 과제가 **존재한다**. 작은 고윳값 방향으로 실제 과제 계수를 잡으면 ridge의 shrinkage가 더 크기 때문이다. 모든 라벨에서 bias가 더 크다는 진술은 아니다.
+**Lemma 1 — Anisotropy amplifies bias.** $\lambda>0$일 때, 비등방성(anisotropy) 표현에서는 등방성(isotropy)보다 계수 추정 편향(bias)이 커지는 후속 과제가 **존재한다**. 작은 고윳값(eigenvalue) 방향으로 실제 과제 계수를 잡으면 ridge의 수축(shrinkage)이 더 크기 때문이다. 모든 라벨에서 bias가 더 크다는 진술은 아니다.
 
-**Lemma 2 — Anisotropy amplifies variance.** $\lambda=0$에서 계수 분산의 합은 등방성에서 최소다. $\lambda_k$를 Gram 행렬 $\mathbf Z^\top\mathbf Z$의 고윳값으로 쓰면,
+**Lemma 2 — Anisotropy amplifies variance.** $\lambda=0$에서 계수 분산(variance)의 합은 등방성에서 최소다. $\lambda_k$를 그람 행렬(Gram matrix) $\mathbf Z^\top\mathbf Z$의 고윳값으로 쓰면,
 
 $$
 \operatorname{tr}\operatorname{Var}(\hat{\boldsymbol\beta}\mid\mathbf Z)
@@ -73,7 +73,7 @@ $$
 
 ### 3.2 Nonlinear Probing
 
-등방성 공분산을 갖는 분포는 많다. Gaussian이라는 모양을 선택할 근거를 얻기 위해 저자들은 반경 기반 kNN과 Nadaraya–Watson kernel regression을 분석한다.
+등방성 공분산(isotropic covariance)을 갖는 분포는 많다. Gaussian이라는 모양을 선택할 근거를 얻기 위해 저자들은 반경 기반 최근접 이웃(k-nearest neighbors, kNN)과 Nadaraya–Watson 커널 회귀(kernel regression)를 분석한다.
 
 $$
 \widehat{\mathbf y}(\mathbf q)=\frac1{|\mathcal N_{r_0}(\mathbf q)|}
@@ -88,9 +88,9 @@ $$
 {\sum_{n=1}^N K_h(\mathbf q-\mathbf z_n)}.
 $$
 
-$\mathbf q$는 질의 표현, $r_0$는 이웃 반경, $h$는 kernel bandwidth다. 여기의 kernel 함수 $K$와 표현 차원 $K$는 원문이 재사용하는 기호다. 반경 kNN은 고정 개수의 이웃을 고르는 통상적 kNN과 구분한다.
+$\mathbf q$는 질의 표현, $r_0$는 이웃 반경, $h$는 커널 대역폭(kernel bandwidth)이다. 여기의 kernel 함수 $K$와 표현 차원 $K$는 원문이 재사용하는 기호다. 반경 kNN은 고정 개수의 이웃을 고르는 통상적 kNN과 구분한다.
 
-**Theorem 1 — Isotropic Gaussian Optimality.** 저자들은 integrated squared bias를 다음처럼 연결한다.
+**Theorem 1 — Isotropic Gaussian Optimality.** 저자들은 적분 제곱 편향(integrated squared bias, ISB)을 다음처럼 연결한다.
 
 $$
 \begin{aligned}
@@ -102,7 +102,7 @@ J(p)&=\int\|\nabla\log p(\mathbf z)\|_2^2p(\mathbf z)\,d\mathbf z.
 \end{aligned}
 $$
 
-가정은 중요하다. 밀도는 충분히 매끄럽고 Fisher information·공분산이 유한해야 하며, query는 train과 같은 밀도를 따른다. kNN은 작은 반경과 task-gradient의 등방성 사전 가정, kernel은 작은 $h$·충분한 국소 표본·대칭 정규화 kernel과 $\|\nabla\eta\|\le L$, $|\Delta\eta|\le B$ 조건을 사용한다. $B$는 여기서 곡률 상한이며 §5의 batch 기호와 다르다. [Appendix A, Lemmas 4–5; Theorems 7–8](https://arxiv.org/pdf/2511.08544v3#page=24)
+가정은 중요하다. 밀도는 충분히 매끄럽고 피셔 정보(Fisher information)·공분산(covariance)이 유한해야 하며, query는 train과 같은 밀도를 따른다. kNN은 작은 반경과 task-gradient의 등방성 사전 가정, kernel은 작은 $h$·충분한 국소 표본·대칭 정규화 kernel과 $\|\nabla\eta\|\le L$, $|\Delta\eta|\le B$ 조건을 사용한다. $B$는 여기서 곡률 상한이며 §5의 batch 기호와 다르다. [Appendix A, Lemmas 4–5; Theorems 7–8](https://arxiv.org/pdf/2511.08544v3#page=24)
 
 고정 공분산 $\Sigma$에서 $J(p)\ge\operatorname{tr}(\Sigma^{-1})$이고 등호는 Gaussian에서 성립한다. 총 분산까지 고정하면 등방성 $\Sigma$가 선택된다. 이 연결이 Gaussian 목표의 수학적 중심이다. 다만 kNN의 $O(r_0^4)$ 항은 주항과 같은 차수이며 교차항 제거에는 추가 직교 조건이 필요하다. kernel 식은 최악 경우 bias의 **상한**이다. 따라서 이 계산만으로 모든 과제의 정확한 ISB·전체 MSE가 유일하게 최소라고 결론내릴 수는 없다. 저자의 최적성 주장은 그 조건과 논증 범위 안에서 읽는다. 자세한 Taylor 전개와 Fisher 하한은 [심층 편 §3.2](/reviews/lejepa-technical/#32-nonlinear-probing-theorem-1과-appendix-a-b3b7)에 있다. [§3.2; Appendix B.3–B.7](https://arxiv.org/pdf/2511.08544v3#page=28)
 
@@ -114,9 +114,9 @@ $$
 
 ### 4.1 Hypothesis Testing as a Judge
 
-고차원 밀도를 직접 추정하지 않고 방향별 1D 법칙을 비교한다. 표현 법칙을 $P_{\boldsymbol\theta}$, 목표를 $Q=\mathcal N(0,I)$라 한다. **Lemma 3 — Hyperspherical Cramér–Wold**는 모든 unit 방향에서 두 투영 법칙이 같음과 원래 법칙의 같음을 연결한다. $\mathbf t=r\mathbf a$로 특성함수를 비교하는 증명이 Appendix B.8에 있다.
+고차원 밀도를 직접 추정하지 않고 방향별 1D 법칙을 비교한다. 표현 법칙을 $P_{\boldsymbol\theta}$, 목표를 $Q=\mathcal N(0,I)$라 한다. **Lemma 3 — Hyperspherical Cramér–Wold**는 모든 unit 방향에서 두 투영 법칙이 같음과 원래 법칙의 같음을 연결한다. $\mathbf t=r\mathbf a$로 특성함수(characteristic function, CF)를 비교하는 증명이 Appendix B.8에 있다.
 
-**Theorem 2 — Sufficiency of directional tests**는 방향별 검정을 결합한 일관성을 논한다. Appendix B.9는 방향 집합의 mesh가 0으로 가는 조건, 전체 귀무가설에 맞춘 threshold, 분포를 구별하는 방향 주변에서의 검정력을 요구한다. 유한한 임의 방향 몇 개가 모든 분포를 인증한다는 정리가 아니다. 검정의 max 통계와 학습용 평균 SIGReg도 구분해야 한다.
+**Theorem 2 — Sufficiency of directional tests**는 방향별 검정을 결합한 일관성(consistency)을 논한다. Appendix B.9는 방향 집합의 mesh가 0으로 가는 조건, 전체 귀무가설(null hypothesis)에 맞춘 임계값(threshold), 분포를 구별하는 방향 주변에서의 검정력(statistical power)을 요구한다. 유한한 임의 방향 몇 개가 모든 분포를 인증한다는 정리가 아니다. 검정의 max 통계와 학습용 평균 SIGReg도 구분해야 한다.
 
 $$
 \operatorname{SIGReg}(\{\mathbf z_n\}_{n=1}^N)
@@ -142,11 +142,11 @@ $$
 
 #### 4.2.2 Cumulative Density Functions Are Impractical
 
-CDF는 한 임계값 이하의 확률을 재는 누적분포함수다. 분포를 표현할 수 있지만, 원문은 순서 통계·정렬과 여러 GPU의 표본을 모으는 비용, gradient 학습에 맞춘 근사를 문제로 든다. 정렬이 모든 점에서 미분 불가능하다는 뜻으로 과장할 필요는 없다. 핵심은 선택한 학습·분산 처리 요구에 비해 실용성이 떨어진다는 평가다. [§4.2.2, p. 9](https://arxiv.org/pdf/2511.08544v3#page=9)
+누적분포함수(cumulative distribution function, CDF)는 한 임계값 이하의 확률을 잰다. 분포를 표현할 수 있지만, 원문은 순서통계(order statistics)·정렬과 여러 GPU의 표본을 모으는 비용, gradient 학습에 맞춘 근사를 문제로 든다. 정렬이 모든 점에서 미분 불가능하다는 뜻으로 과장할 필요는 없다. 핵심은 선택한 학습·분산 처리 요구에 비해 실용성이 떨어진다는 평가다. [§4.2.2, p. 9](https://arxiv.org/pdf/2511.08544v3#page=9)
 
 #### 4.2.3 Characteristic Functions Are Stable, Scalable and Identifiable
 
-특성함수는 복소 exponential의 기대값이다. 아래 방향 첨자 표기는 본문의 $\hat\phi_X$, $\phi$를 해당 투영과 Gaussian 목표에 연결한 것이다. 표본은 평균으로 계산하고 Gaussian 목표는 닫힌 식을 사용한다.
+특성함수(characteristic function, CF)는 복소 지수함수의 기대값이다. 아래 방향 첨자 표기는 본문의 $\hat\phi_X$, $\phi$를 해당 투영과 Gaussian 목표에 연결한 것이다. 표본은 평균으로 계산하고 Gaussian 목표는 닫힌 식을 사용한다.
 
 $$
 \hat\varphi_{\mathbf a}(t)=\frac1N\sum_{n=1}^N e^{it\mathbf a^\top\mathbf z_n},
@@ -160,13 +160,13 @@ $$
 
 원문의 Epps–Pulley 식은 Gaussian 가중 $w(t)$를 사용한다. **Theorem 4 — Stability of Epps–Pulley Test**의 근거는 $|e^{itz}|=1$이라 입력 크기에 관계없이 CF가 유계라는 사실이다. 다만 Appendix B.12의 $O(1/N)$ sample-gradient 유도는 $EP/N$인 **비례배수 없는 거리**에 대한 것이다. $EP=N\widehat D$에는 gradient도 $N$배다. 이 정규화 차이를 포함한 계산은 [심층 편 §4.2.3](/reviews/lejepa-technical/#423-cf-theorem-4의-유도와-정규화)에 남겼다. encoder parameter의 gradient에는 encoder Jacobian도 들어가므로 CF 유계성만으로 전체 신경망 gradient 상한을 무조건 정할 수는 없다. [§4.2.3, Epps–Pulley 식, Theorem 4; Appendix B.12](https://arxiv.org/pdf/2511.08544v3#page=9)
 
-**Algorithm 1을 읽는 순서.** $K\times M$ Gaussian 행렬의 열을 unit 길이로 정규화해 방향을 만든다. $\mathbf Z\mathbf A$를 주파수와 곱해 empirical CF를 계산한다. step seed를 맞춰 GPU마다 같은 방향을 사용하고 CF 평균을 all-reduce한다. $[-5,5]$의 17개 grid에서 Gaussian CF와의 오차를 Gaussian 가중해 trapezoidal 적분한 뒤 전체 표본 수 $N$을 곱한다. 각 방향 통계는 SIGReg에서 평균한다. 이 설명은 원문 Algorithm 1 기준이며 최신 공식 코드 실행 결과가 아니다. [Algorithm 1, p. 10](https://arxiv.org/pdf/2511.08544v3#page=10)
+**Algorithm 1을 읽는 순서.** $K\times M$ Gaussian 행렬의 열을 unit 길이로 정규화해 방향을 만든다. $\mathbf Z\mathbf A$를 주파수와 곱해 표본 특성함수(empirical characteristic function, ECF)를 계산한다. step seed를 맞춰 GPU마다 같은 방향을 사용하고 CF 평균을 all-reduce한다. $[-5,5]$의 17개 grid에서 Gaussian CF와의 오차를 Gaussian 가중해 trapezoidal 적분한 뒤 전체 표본 수 $N$을 곱한다. 각 방향 통계는 SIGReg에서 평균한다. 이 설명은 원문 Algorithm 1 기준이며 최신 공식 코드 실행 결과가 아니다. [Algorithm 1, p. 10](https://arxiv.org/pdf/2511.08544v3#page=10)
 
 dense 계산 비용은 보조 기호 $M,T$를 쓰면 $\mathcal O(NKM+NMT)$다. $K,M,T$를 고정할 때 $N$에 선형이며 encoder까지 포함한 모든 비용이 선형이라는 뜻은 아니다. 원문 Table 6은 V100-SXM2-16GB에서 loss forward/backward의 10회 측정(mean ± std)이다. $(N,M,T)=(512,512,16)$은 $0.465236\pm0.011642$ ms, $(8192,512,16)$은 $6.188304\pm0.007226$ ms다. embedding 차원은 표에 미보고이며 전체 학습 속도 비교로 바꾸지 않는다. [Table 6, p. 43](https://arxiv.org/pdf/2511.08544v3#page=43)
 
 ### 4.3 How SIGReg Beats the Curse of Dimensionality
 
-원문은 **smoothness**, **SGD resampling**, **합성 데이터 검증**의 순서로 설명한다. Theorem 5의 감소율은 방향 수 $M$에 대해 $M^{-2\alpha/(K-1)}$이며, $\alpha$는 Sobolev 매끄러움이다. Appendix B.10은 구면 조화함수의 근사와 준균일한 점 배치에서의 보간을 참조한다. 매끄러움이 크다는 사실만으로 임의의 $O(K)$ 방향에서 실용 오차가 항상 작다고 결론낼 수 없다. 차원·매끄러움에 따른 상수와 norm도 남아 있다. [§4.3, Theorem 5; Appendix B.10](https://arxiv.org/pdf/2511.08544v3#page=10)
+원문은 **매끄러움**(smoothness), **SGD 방향 재표집**(resampling), **합성 데이터 검증**(synthetic validation)의 순서로 설명한다. Theorem 5의 감소율은 방향 수 $M$에 대해 $M^{-2\alpha/(K-1)}$이며, $\alpha$는 소볼레프 매끄러움(Sobolev smoothness)이다. Appendix B.10은 구면 조화함수(spherical harmonics)의 근사와 준균일한 점 배치(quasi-uniform point placement)에서의 보간(interpolation)을 참조한다. 매끄러움이 크다는 사실만으로 임의의 $O(K)$ 방향에서 실용 오차가 항상 작다고 결론낼 수 없다. 차원·매끄러움에 따른 상수와 norm도 남아 있다. [§4.3, Theorem 5; Appendix B.10](https://arxiv.org/pdf/2511.08544v3#page=10)
 
 ![Figure 7: 방향 수에 따른 최종 directional statistic, 고정 방향과 재표집 비교.](/assets/reviews/lejepa/paper-figure-7.webp)
 
@@ -178,7 +178,7 @@ dense 계산 비용은 보조 기호 $M,T$를 쓰면 $\mathcal O(NKM+NMT)$다. $
 
 ### 5.1 LeJEPA: SIGReg + Prediction Loss
 
-한 이미지에 전역 뷰 $V_g$개와 지역 뷰 $V_l$개, 총 $V=V_g+V_l$개를 만든다. 각 뷰를 encoder·projector로 처리한다. $\boldsymbol\mu_n$은 전역 뷰 표현의 평균이다. Algorithm 2의 실제 중심 기반 손실을 설명하면 다음과 같다.
+한 이미지에 전역 뷰(global view) $V_g$개와 지역 뷰(local view) $V_l$개, 총 $V=V_g+V_l$개를 만든다. 각 뷰를 인코더(encoder)·투영 헤드(projector)로 처리한다. $\boldsymbol\mu_n$은 전역 뷰 표현의 평균이다. Algorithm 2의 실제 중심 기반 손실을 설명하면 다음과 같다.
 
 $$
 \begin{aligned}
@@ -194,11 +194,11 @@ $\mathcal L_{\rm pred}^{\rm code}$와 $\mathcal L_{\rm SIGReg}$는 리뷰의 약
 
 **두 가지 수식 확인.** Theorem 6의 표본·gradient bias는 $EP/N$인 비례배수 없는 CF 거리에서 $O(1/N)$이다. Eq. (5)의 전역-전체 pairwise 평균과 Eq. (6)의 중심 평균 사이에는 전역 뷰의 내부 분산이 추가된다. 이 항은 학습 parameter에 의존하므로 임의의 상수로 버릴 수 없다. 원문 Appendix B.6, B.13과 [심층 편 §5.1](/reviews/lejepa-technical/#51-sigreg-prediction-loss-theorem-6-appendix-b6b13)에서 정확한 항등식과 표본 기대값을 나란히 설명한다. [§5.1, Eq. (5)–(7), Theorem 6; Algorithm 2](https://arxiv.org/pdf/2511.08544v3#page=11)
 
-핵심 구조에는 prototype·stop-gradient·EMA target teacher·별도 predictor가 필수가 아니다. projector는 여전히 사용하며 평가에서는 backbone을 활용한다. 이미지의 대칭 합의에서 predictor를 제거했다는 사실과 모든 JEPA 과제에서 predictor가 불필요하다는 주장은 구분한다. 보통 optimizer·data loader·학습률 schedule을 포함한 설정도 남는다.
+핵심 구조에는 프로토타입(prototype)·기울기 차단(stop-gradient)·지수이동평균 교사(exponential moving average teacher, EMA teacher)·별도 예측기(predictor)가 필수가 아니다. projector는 여전히 사용하며 평가에서는 backbone을 활용한다. 이미지의 대칭 합의에서 predictor를 제거했다는 사실과 모든 JEPA 과제에서 predictor가 불필요하다는 주장은 구분한다. 보통 optimizer·data loader·학습률 schedule을 포함한 설정도 남는다.
 
 ### 5.2 Relation to Prior Work
 
-원문은 sliced score matching, sliced Wasserstein, 정확 적분과 MMD, VICReg의 moment 제한 연결을 이 순서로 설명한다. 투영이라는 재료와 분포 discrepancy가 다른 분야에 존재했음을 인정하면서 JEPA 손실로 결합한 위치를 설명한다. Appendix B.14는 모든 방향의 평균 0·분산 1이 전체 평균 0·공분산 $I$를 강제함을 보인다. 이것은 VICReg 원래의 표준편차 하한 hinge·공분산 penalty와 수치적으로 똑같은 손실이라는 증명은 아니다. [§5.2; Appendix B.14, pp. 39–40](https://arxiv.org/pdf/2511.08544v3#page=12)
+원문은 sliced score matching, sliced Wasserstein, 정확 적분과 MMD, VICReg의 moment 제한 연결을 이 순서로 설명한다. 투영이라는 재료와 분포 discrepancy가 다른 분야에 존재했음을 인정하면서 JEPA 손실로 결합한 위치를 설명한다. Appendix B.14는 모든 방향의 평균 0·분산 1이 전체 평균 0·공분산 $I$를 강제함을 보인다. 이것은 VICReg 원래의 표준편차 하한 힌지(hinge)·공분산 페널티(penalty)와 수치적으로 똑같은 손실이라는 증명은 아니다. [§5.2; Appendix B.14, pp. 39–40](https://arxiv.org/pdf/2511.08544v3#page=12)
 
 다음은 이전 분석에서 직접 확인한 주요 원전 5개의 방법 비교다. 이번에는 이 표를 원문의 관련 연구 위치로 옮겼다. 읽은 범위는 각 방법 절이며 전문 재독으로 표시하지 않는다.
 
@@ -212,7 +212,7 @@ $\mathcal L_{\rm pred}^{\rm code}$와 $\mathcal L_{\rm SIGReg}$는 리뷰의 약
 
 ## 6 LeJEPA: Empirical Validation
 
-실험을 원문의 §6.1→§6.5 순서로 읽는다. 수치는 **논문 보고**, 정확도 단위는 %, 높을수록 좋다. Frozen probe는 encoder를 고정하고 라벨로 분류기를 학습하는 평가이며 finetuning은 backbone도 수정한다. 자기지도 사전학습에 라벨이 없다는 것과 평가에 라벨이 없다는 것은 다르다.
+실험을 원문의 §6.1→§6.5 순서로 읽는다. 수치는 **논문 보고**, 정확도 단위는 %, 높을수록 좋다. 표현 고정 프로브(frozen probe)는 인코더(encoder)를 고정하고 라벨로 분류기를 학습하는 평가이며 미세조정(finetuning)은 특징 추출기(backbone)도 수정한다. 자기지도 사전학습에 라벨이 없다는 것과 평가에 라벨이 없다는 것은 다르다.
 
 ### 6.1 LeJEPA’s Stability Across Hyper-Parameters and Architectures
 
@@ -226,13 +226,13 @@ $\mathcal L_{\rm pred}^{\rm code}$와 $\mathcal L_{\rm SIGReg}$는 리뷰의 약
 | 전역 뷰, 전체 10개 | $V_g=2$: 74.06; $V_g=4$: 75.08 | 권장값 하나가 모든 설정의 최댓값은 아니다. |
 | register, $M=4096$ | 0개: 75.61; 8개: 75.84 | 이 비교에서 개선은 작다. |
 
-[Table 1, p. 13](https://arxiv.org/pdf/2511.08544v3#page=13). 서로 다른 ablation 행을 합쳐 하나의 모델 설정처럼 읽지 않는다.
+[Table 1, p. 13](https://arxiv.org/pdf/2511.08544v3#page=13). 서로 다른 구성요소 변경 실험(ablation) 행을 합쳐 하나의 모델 설정처럼 읽지 않는다.
 
 원문의 권장 recipe는 $\lambda=0.05$, 전역 2·지역 8뷰, $N\ge128$, $M=1024$, 17점 $[-5,5]$다. 한편 Experiment Details 1의 공통 실험 설정은 전역 2·지역 6뷰의 **총 8뷰**, AdamW, warmup·cosine schedule이며 learning rate와 weight decay 후보를 사용한다. 권장 recipe와 실험 공통 설정이 다르므로 구분해 기록했다.
 
 Figure 9는 IN-10에서 20M 미만의 약 50개 timm 모델, 8개 구조 계열을 frozen 평가한다. 이는 모든 모델의 IN-1K 결과가 아니다. Figure 8과 Table 7의 $\lambda$·뷰 수 분석도 낮은 민감도를 주장하지만 극단 설정의 성능 하락은 남아 있다. 예를 들어 ResNet50·8뷰에서 $\lambda=0.020$은 83.49, $0.500$은 77.72다. [§6.1, Figures 8·9; Table 7, p. 43](https://arxiv.org/pdf/2511.08544v3#page=14)
 
-추가 ablation인 Table 4(IN-100, 400 epoch)는 projector 깊이, predictor, SWA를 비교한다. SWA는 학습 모델들의 가중치 평균이며 여기서 선택적 보완이다. predictor 없이 ViT-S 3층 projector는 81.07, SWA를 쓰면 84.12다. ResNet50의 같은 비교는 83.93→83.50으로 개선되지 않는다. EMA teacher가 붕괴 방지에 필수라는 결과는 아니다. [Table 4, p. 42](https://arxiv.org/pdf/2511.08544v3#page=42)
+추가 ablation인 Table 4(IN-100, 400 epoch)는 projector 깊이, predictor, SWA를 비교한다. 확률적 가중치 평균(stochastic weight averaging, SWA)은 학습 모델들의 가중치 평균이며 여기서 선택적 보완이다. predictor 없이 ViT-S 3층 projector는 81.07, SWA를 쓰면 84.12다. ResNet50의 같은 비교는 83.93→83.50으로 개선되지 않는다. EMA teacher가 붕괴 방지에 필수라는 결과는 아니다. [Table 4, p. 42](https://arxiv.org/pdf/2511.08544v3#page=42)
 
 ### 6.2 LeJEPA’s Training Loss Is Informative of Downstream Performance
 
@@ -242,11 +242,11 @@ Figure 9는 IN-10에서 20M 미만의 약 50개 timm 모델, 8개 구조 계열�
 
 **Figure 10 읽기.** 두 좌표는 prediction과 SIGReg 손실, 색은 downstream 정확도이며 파랑에서 빨강으로 높아진다. 두 손실이 함께 낮은 왼쪽 아래의 frontier를 봐야 한다. 한 축만 낮다고 높은 성능은 아니다. 서로 다른 $\lambda$가 만드는 최종 loss 값을 단순 비교하는 문제도 보인다. [확대](/assets/reviews/lejepa/paper-figure-10.webp) · [Figure 10, p. 15](https://arxiv.org/pdf/2511.08544v3#page=15). Balestriero·LeCun, [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), 전체 패널 crop·무손실 WebP 변환.
 
-Figure 11은 $\mathcal L/\lambda^\alpha$ 같은 보정과 Spearman 관련성을 조사한다. 본문은 85%에서 $\alpha\approx0.4$의 99%를 보고한다. 낮은 손실·높은 정확도 관계에 대한 부호 규약은 명료하지 않아 **높은 단조 관련성**으로 표현한다. $\alpha$ 선택에는 관측한 downstream 결과가 쓰인다. 새로운 도메인에서 평가 라벨 없이 같은 보정이 통한다는 전향적 보장은 아니다. [§6.2, Figures 10–11, 추가 Figures 19·21](https://arxiv.org/pdf/2511.08544v3#page=15)
+Figure 11은 $\mathcal L/\lambda^\alpha$ 같은 보정과 스피어만 순위상관(Spearman rank correlation)을 조사한다. 본문은 85%에서 $\alpha\approx0.4$의 99%를 보고한다. 낮은 손실·높은 정확도 관계에 대한 부호 규약은 명료하지 않아 **높은 단조 관련성**으로 표현한다. $\alpha$ 선택에는 관측한 downstream 결과가 쓰인다. 새로운 도메인에서 평가 라벨 없이 같은 보정이 통한다는 전향적 보장은 아니다. [§6.2, Figures 10–11, 추가 Figures 19·21](https://arxiv.org/pdf/2511.08544v3#page=15)
 
 ### 6.3 In-Domain LeJEPA Outperforms Frontier Model Transfer Learning
 
-세 번째 질문은 일반 이미지 foundation model을 가져오는 대신 전문 도메인에서 작은 모델을 직접 사전학습할 가치가 있는가다. Galaxy10은 약 11,000개 학습 이미지와 10개 은하 형태 클래스다. LeJEPA는 기본 pipeline으로 **400 epoch** 도메인 내 사전학습을 한다. DINOv2/v3는 일반 이미지 사전학습 모델을 가져온 비교다.
+세 번째 질문은 일반 이미지 기반 모델(foundation model)을 가져오는 대신 전문 도메인에서 작은 모델을 직접 사전학습할 가치가 있는가다. Galaxy10은 약 11,000개 학습 이미지와 10개 은하 형태 클래스다. LeJEPA는 기본 pipeline으로 **400 epoch** 도메인 내 사전학습(in-domain pretraining)을 한다. DINOv2/v3는 일반 이미지 사전학습 모델을 가져온 비교다.
 
 ![Figure 12: Galaxy10의 라벨 수별 full finetuning과 frozen 평가.](/assets/reviews/lejepa/paper-figure-12.webp)
 
@@ -266,7 +266,7 @@ Table 5는 flowers102의 1,020개 학습 표본 등 작은 데이터로 넓힌�
 
 ### 6.4 LeJEPA Scales Across Data and Models
 
-큰 데이터와 모델에서는 IN-1K online linear probe가 ViT-L(0.3B) 77.1, ConvNeXtV2-H(0.6B) 78.5다. 이 수치와 아래 **8개 전이 데이터셋 평균**은 다른 평가다. 초록의 ViT-H 약 79%도 같은 행으로 합치지 않는다. [§6.4, p. 17](https://arxiv.org/pdf/2511.08544v3#page=17)
+큰 데이터와 모델에서는 IN-1K 온라인 선형 프로브(online linear probe)가 ViT-L(0.3B) 77.1, ConvNeXtV2-H(0.6B) 78.5다. 이 수치와 아래 **8개 전이학습(transfer learning) 데이터셋 평균**은 다른 평가다. 초록의 ViT-H 약 79%도 같은 행으로 합치지 않는다. [§6.4, p. 17](https://arxiv.org/pdf/2511.08544v3#page=17)
 
 | Table 2 모델·조건 | 1-shot 평균 | 10-shot 평균 | 전체 라벨 평균 |
 | --- | --- | --- | --- |
@@ -282,7 +282,7 @@ Table 5는 flowers102의 1,020개 학습 표본 등 작은 데이터로 넓힌�
 
 ### 6.5 Emergent Semantic Structure in LeJEPA Representations
 
-Figure 13은 [CLS] attention을 threshold해 영상 프레임의 전경을 드러낸다. Figure 14는 ViT-L, IN-1K, 100 epoch의 patch 특징을 PCA의 상위 세 성분으로 RGB에 표시한다. 이 결과는 라벨 없는 사전학습에서도 공간·의미 구조가 생길 수 있다는 정성적 근거다.
+Figure 13은 [CLS] attention을 threshold해 영상 프레임의 전경(foreground)을 드러낸다. Figure 14는 ViT-L, IN-1K, 100 epoch의 패치(patch) 특징을 주성분분석(principal component analysis, PCA)의 상위 세 성분으로 RGB에 표시한다. 이 결과는 라벨 없는 사전학습에서도 공간·의미 구조가 생길 수 있다는 정성적 근거다.
 
 PCA는 **이미지마다 따로** 수행하므로 같은 색이 모든 이미지에서 같은 의미 방향을 뜻하지 않는다. 영상의 시간적 일관성도 예시이며 IoU나 영상 segmentation benchmark 점수는 보고하지 않는다. 그림을 행동·미래 예측 성능으로 확장하지 않는다. 원문 전체 패널과 영상은 [Figures 13–14](https://arxiv.org/pdf/2511.08544v3#page=17), [공식 프로젝트 페이지](https://rbalestr-lab.github.io/lejepa/)에서 확인할 수 있다.
 
