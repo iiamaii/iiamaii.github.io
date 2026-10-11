@@ -2,7 +2,7 @@
 title: "끝점으로 반복 경로를 대신할 수 있을까: Looped Models와 고정점의 효율"
 description: "고정점 관점으로 TBPTT·KV 공유·RL 상태 재사용·distilled prefill을 분석한다. 전문과 부록을 읽고, 업데이트 가속과 전체 시간·정확도 손실을 구분한다."
 date: "2026-10-08"
-updatedAt: "2026-10-10T18:16:15+09:00"
+updatedAt: "2026-10-11T22:33:18+09:00"
 publishedAt: "2026-10-08T16:55:04+09:00"
 topics: ["language models", "looped models", "fixed points", "efficient inference", "reinforcement learning"]
 translationKey: "looped-models-fixed-points"
@@ -17,7 +17,7 @@ thumbnail: "/assets/reviews/looped-models-fixed-points/paper-figure-1.svg"
 thumbnailAlt: "깊이 분포와 직교 입력 주입, 고정점 근처의 반복 궤적, 학습 activation·KV 캐시·prefill·RL 채점과 역전파의 비용 절감을 연결한 논문 Figure 1."
 ---
 
-반복형 언어 모델이 같은 계산을 거듭하다가 거의 변하지 않는 상태에 도달한다면, 그곳까지의 **모든 계산 경로를 계속 보관하고 다시 실행해야 할까?** 이 논문은 고정점을 ‘계산을 멈출 위치’뿐 아니라 ‘계산 경로를 대신할 상태’로 바라본다. 학습의 역전파, 추론의 KV 캐시, 강화학습의 재계산, 긴 프롬프트의 처리에 이 관점을 적용한다. 다만 캐시 절감, 업데이트 가속, prefill 가속은 서로 다른 실험이며, 정확도와 전체 실행 시간의 대가는 각각 확인해야 한다. [§1–3, §5, PDF pp. 1–13](https://arxiv.org/pdf/2610.06833v1#page=1)
+반복형 언어 모델(looped language model)이 같은 계산을 거듭하다가 거의 변하지 않는 상태에 도달한다면, 그곳까지의 **모든 계산 경로를 계속 보관하고 다시 실행해야 할까?** 이 논문은 고정점(fixed point)을 ‘계산을 멈출 위치’뿐 아니라 ‘계산 경로를 대신할 상태’로 바라본다. 학습의 역전파(backpropagation), 추론의 키·값 캐시(key/value cache, KV cache), 강화학습(reinforcement learning, RL)의 재계산, 긴 프롬프트의 처리에 이 관점을 적용한다. 다만 캐시 절감, 업데이트 가속, 프롬프트 초기 처리(prefill) 가속은 서로 다른 실험이며, 정확도와 전체 실행 시간의 대가는 각각 확인해야 한다. [§1–3, §5, PDF pp. 1–13](https://arxiv.org/pdf/2610.06833v1#page=1)
 
 **표기 안내.** 원문의 $z^r=(\mathbf H^r,C^r)$, $\rho_{r,t}$, $J_\star$, $B_\star$, $D_\star$와 $\mathcal J_{\mathrm{prior}}$를 유지한다. OrthoInj는 토큰 첨자 $q_t,h_t^r,\zeta_t^r$를 복구했고, 유한 깊이 오차는 부록의 $\bar h^R,h^\star$로 쓴다.
 
@@ -25,13 +25,13 @@ thumbnailAlt: "깊이 분포와 직교 입력 주입, 고정점 근처의 반복
 
 ## 어떤 질문에서 출발했는가
 
-일반적인 Transformer는 서로 다른 가중치를 가진 층들을 차례로 통과한다. **Looped language model**은 일부 층의 가중치를 공유하고 같은 블록을 여러 번 실행한다. 가중치를 늘리지 않고 토큰당 계산량을 늘릴 수 있지만, 반복별 중간 상태를 모두 저장하면 학습 메모리와 생성 중 캐시가 반복 횟수만큼 커진다. 긴 입력을 처음 읽는 **prefill**도 비싸진다. 이후 토큰을 하나씩 생성하는 단계는 **decoding**이다. [§1–2](https://arxiv.org/html/2610.06833v1#S2)
+일반적인 Transformer는 서로 다른 가중치를 가진 층들을 차례로 통과한다. **반복형 언어 모델**(looped language model)은 일부 층에서 가중치 공유(weight sharing)를 사용하고 같은 블록을 여러 번 실행한다. 가중치를 늘리지 않고 토큰당 계산량을 늘릴 수 있지만, 반복별 중간 상태를 모두 저장하면 학습 메모리와 생성 중 캐시가 반복 횟수만큼 커진다. 긴 입력을 처음 읽는 **프롬프트 초기 처리**(prefill)도 비싸진다. 이후 토큰을 하나씩 생성하는 단계는 **디코딩**(decoding)이다. [§1–2](https://arxiv.org/html/2610.06833v1#S2)
 
 저자들은 네 가지 질문을 연결한다. 마지막 몇 번만 역전파해도 되는 이유는 무엇인가? 이전 토큰의 마지막 KV만 재사용해도 되는가? 강화학습에서 이미 생성할 때 계산한 상태를 다시 계산해야 하는가? 프롬프트의 끝점 상태를 작은 모델이 대신 예측할 수 있는가? 이를 가능하게 하는 상태를 만들기 위해 학습 중 반복 횟수의 분포와 입력 주입 방식도 바꾼다. [§3–4](https://arxiv.org/html/2610.06833v1#S3)
 
 ## 핵심 아이디어: 끝점으로 경로를 대신하기
 
-실험 모델은 Huginn 구조다. Prelude가 입력을 표현으로 바꾸고, 두 Transformer 블록으로 된 recurrent core가 그 표현을 매번 주입받으며 반복한다. Coda는 최종 상태를 다음 토큰 확률로 바꾼다. 다음 표기의 상태 $z$에는 은닉 상태 $\mathbf H$와 attention의 key/value 표현을 저장하는 $C$가 함께 들어간다. [§2](https://arxiv.org/html/2610.06833v1#S2)
+실험 모델은 Huginn 구조다. 입력 처리부(prelude)가 입력을 표현으로 바꾸고, 두 Transformer 블록으로 된 반복 핵심 블록(recurrent core)이 그 표현을 매번 주입받으며 반복한다. 출력 처리부(coda)는 최종 상태를 다음 토큰 확률로 바꾼다. 다음 표기의 상태 $z$에는 은닉 상태(hidden state) $\mathbf H$와 attention의 key/value 표현을 저장하는 $C$가 함께 들어간다. [§2](https://arxiv.org/html/2610.06833v1#S2)
 
 $$
 \begin{aligned}
@@ -46,12 +46,12 @@ $$
 
 | 적용 구간 | 줄이는 것 | 남아 있는 계산 또는 조건 |
 | --- | --- | --- |
-| 사전학습의 TBPTT | 오래된 반복의 activation 저장과 역전파 | 순전파는 뽑힌 깊이까지 실행 |
-| Terminal KV sharing | 이전 토큰의 반복별 KV bank | 현재 토큰은 계속 반복하며 자기 반복의 KV 사용 |
+| 사전학습의 시간축 절단 역전파(truncated backpropagation through time, TBPTT) | 오래된 반복의 활성값(activation) 저장과 역전파 | 순전파는 뽑힌 깊이까지 실행 |
+| 최종 반복 KV 공유(terminal KV sharing) | 이전 토큰의 반복별 KV bank | 현재 토큰은 계속 반복하며 자기 반복의 KV 사용 |
 | RL rollout-state reuse | 생성한 토큰의 끝점을 복원하는 재계산 | 한 번의 core 순전파와 여러 역방향 VJP, rollout 자체 |
 | Distilled prefill | 프롬프트의 여러 teacher 반복 | student, teacher 한 번의 반복·coda, 이후 teacher decoding |
 
-VJP(vector–Jacobian product)는 Jacobian 전체를 만들지 않고 벡터에 대한 역방향 미분을 계산하는 연산이다. 네 방법을 모두 결합한 하나의 배포 시스템에서 누적 가속을 측정한 논문으로 읽으면 안 된다. 특히 RL 실험의 생성·평가는 반복별 KV를 유지한다. [§3, Appendix C.8](https://arxiv.org/pdf/2610.06833v1#page=40)
+벡터–야코비안 곱(vector–Jacobian product, VJP)은 야코비안(Jacobian) 전체를 만들지 않고 벡터에 대한 역방향 미분을 계산하는 연산이다. 네 방법을 모두 결합한 하나의 배포 시스템에서 누적 가속을 측정한 논문으로 읽으면 안 된다. 특히 RL 실험의 생성·평가는 반복별 KV를 유지한다. [§3, Appendix C.8](https://arxiv.org/pdf/2610.06833v1#page=40)
 
 <figure class="review-figure" id="paper-figure-3">
 <a href="/assets/reviews/looped-models-fixed-points/paper-figure-3.svg" target="_blank" rel="noopener noreferrer"><img src="/assets/reviews/looped-models-fixed-points/paper-figure-3.svg" width="508" height="160" alt="좌: 마지막 역전파 창, 중: terminal prefix KV 공유, 우: student prompt prefill과 recurrent teacher decoding의 원문 구조도." loading="lazy" decoding="async"></a>
@@ -60,7 +60,7 @@ VJP(vector–Jacobian product)는 Jacobian 전체를 만들지 않고 벡터에 
 
 ## 토큰은 같은 순서와 속도로 수렴하지 않는다
 
-원문 그림 2는 반복을 세로축, 토큰 위치를 가로축으로 두고 인접 반복 사이의 상대 은닉 상태 변화를 색으로 표시한다. 뒤 토큰이 앞 토큰보다 먼저 안정되는 경우도 있다. ‘문장의 앞부분부터 차례로 고정된다’는 단순한 설명이 맞지 않는 이유다. 관측한 8개 시퀀스에서 수렴한 토큰들을 모았을 때 위치와 수렴 깊이의 Spearman 상관은 0.14다. 이 수치를 모든 언어·문서에 대한 일반 법칙으로 확대할 수는 없다. [Figure 2, Appendix C.4](https://arxiv.org/pdf/2610.06833v1#page=35)
+원문 그림 2는 반복을 세로축, 토큰 위치를 가로축으로 두고 인접 반복 사이의 상대 은닉 상태 변화를 색으로 표시한다. 뒤 토큰이 앞 토큰보다 먼저 안정되는 경우도 있다. ‘문장의 앞부분부터 차례로 고정된다’는 단순한 설명이 맞지 않는 이유다. 관측한 8개 시퀀스에서 수렴한 토큰들을 모았을 때 위치와 수렴 깊이의 스피어만 순위 상관(Spearman rank correlation)은 0.14다. 이 수치를 모든 언어·문서에 대한 일반 법칙으로 확대할 수는 없다. [Figure 2, Appendix C.4](https://arxiv.org/pdf/2610.06833v1#page=35)
 
 $$
 \rho_{r,t}=\frac{\|h_t^r-h_t^{r-1}\|_2}{\|h_t^{r-1}\|_2+\epsilon}.
@@ -75,7 +75,7 @@ $$
 
 ## 마지막 몇 번만 역전파해도 되는 이유와 그 한계
 
-TBPTT(truncated backpropagation through time)는 마지막 $b$번만 미분하고 그 이전 상태를 분리한다. 정확한 고정점에서 $J_\star$를 상태에 대한 core의 Jacobian, $B_\star$를 상태를 고정했을 때 파라미터에 대한 미분으로 정의하면, 다음 관계가 나온다. $I$는 항등행렬이다. [§3.1, 식 1; Appendix A.2, 식 14–17](https://arxiv.org/pdf/2610.06833v1#page=22)
+시간축 절단 역전파(truncated backpropagation through time, TBPTT)는 마지막 $b$번만 미분하고 그 이전 상태를 분리한다. 정확한 고정점에서 $J_\star$를 상태에 대한 core의 Jacobian, $B_\star$를 상태를 고정했을 때 파라미터에 대한 미분으로 정의하면, 다음 관계가 나온다. $I$는 항등행렬이다. [§3.1, 식 1; Appendix A.2, 식 14–17](https://arxiv.org/pdf/2610.06833v1#page=22)
 
 $$
 \begin{aligned}
@@ -86,19 +86,19 @@ D_\star-D_b&=J_\star^bD_\star,\qquad \rho(J_\star)<1.
 \end{aligned}
 $$
 
-마지막 몇 번의 미분은 고정점 민감도의 Neumann 급수를 일부만 남기는 것과 연결된다. $\|J_\star\|_2\le\kappa<1$이라면 손실 gradient의 생략 오차 상한은 $\|B_\star\|_2\|g\|_2\kappa^b/(1-\kappa)$다. $g$는 끝점 상태에 대한 손실 gradient다. 입력 주입·prelude·출력 head로 직접 이어지는 파라미터 경로도 유지해야 한다. [Appendix A.2, Lemma 2](https://arxiv.org/pdf/2610.06833v1#page=23)
+마지막 몇 번의 미분은 고정점 민감도(sensitivity)의 노이만 급수(Neumann series)를 일부만 남기는 것과 연결된다. $\|J_\star\|_2\le\kappa<1$이라면 손실 기울기(gradient)의 생략 오차 상한은 $\|B_\star\|_2\|g\|_2\kappa^b/(1-\kappa)$다. $g$는 끝점 상태에 대한 손실 gradient다. 입력 주입·prelude·출력 head로 직접 이어지는 파라미터 경로도 유지해야 한다. [Appendix A.2, Lemma 2](https://arxiv.org/pdf/2610.06833v1#page=23)
 
-하지만 **유한한 반복의 목적함수와 평형 상태의 목적함수는 다르다.** 끝점 값이 같아도 파라미터에 대한 미분은 다를 수 있다. 실제 TBPTT는 경로 위의 서로 다른 Jacobian을 사용하고, 끝점 Neumann 근사는 같은 끝점 Jacobian을 반복해서 사용한다. 끝점 잔차가 작다는 사실 하나만으로 둘이 가깝다고 보장할 수 없다. [Appendix A.2](https://arxiv.org/pdf/2610.06833v1#page=22)
+하지만 **유한한 반복의 목적함수와 평형 상태의 목적함수는 다르다.** 끝점 값이 같아도 파라미터에 대한 미분은 다를 수 있다. 실제 TBPTT는 경로 위의 서로 다른 Jacobian을 사용하고, 끝점 Neumann 근사는 같은 끝점 Jacobian을 반복해서 사용한다. 끝점 잔차(residual)가 작다는 사실 하나만으로 둘이 가깝다고 보장할 수 없다. [Appendix A.2](https://arxiv.org/pdf/2610.06833v1#page=22)
 
-실험에서도 창을 지나치게 줄이면 품질이 낮아진다. Medium PLN-5에서 $b\ge 4$의 WikiText PPL은 full BPTT의 1% 안이지만, $b=2$는 약 5.5%, $b=1$은 약 15% 높다. Small 고정 깊이 모델에서는 짧은 창이 깊이 증가와 캐시 공유에 대한 안정성을 높이면서 기본 품질을 떨어뜨린다. 학습 초기부터 끝점 Neumann 근사만 사용한 대조군은 시험한 다섯 학습률에서 모두 붕괴했다. ‘고정점 관점이 있으니 어떤 gradient 근사도 안전하다’는 결론은 성립하지 않는다. [Appendix C.3, Tables 17–18](https://arxiv.org/pdf/2610.06833v1#page=34)
+실험에서도 창을 지나치게 줄이면 품질이 낮아진다. Medium PLN-5에서 $b\ge 4$의 WikiText 퍼플렉서티(perplexity, PPL)는 전체 시간축 역전파(full backpropagation through time, full BPTT)의 1% 안이지만, $b=2$는 약 5.5%, $b=1$은 약 15% 높다. Small 고정 깊이 모델에서는 짧은 창이 깊이 증가와 캐시 공유에 대한 안정성을 높이면서 기본 품질을 떨어뜨린다. 학습 초기부터 끝점 Neumann 근사만 사용한 대조군은 시험한 다섯 학습률에서 모두 붕괴했다. ‘고정점 관점이 있으니 어떤 gradient 근사도 안전하다’는 결론은 성립하지 않는다. [Appendix C.3, Tables 17–18](https://arxiv.org/pdf/2610.06833v1#page=34)
 
-메모리 이득은 별도 측정에서 확인한다. 역전파 창 5/10/15의 peak allocation은 local batch 8에서 48/86/124GB였다. 깊이 30의 full BPTT는 메모리 부족을 일으켰고, 층별 activation recomputation은 28GiB로 낮추지만 창 10 대비 step 시간이 약 1.3배였다. 이 수치를 일반적인 모든 학습 설정의 메모리 절감률로 환산할 수는 없다. [§3.1, Appendix C.3](https://arxiv.org/pdf/2610.06833v1#page=33)
+메모리 이득은 별도 측정에서 확인한다. 역전파 창 5/10/15의 peak allocation은 local batch 8에서 48/86/124GB였다. 깊이 30의 full BPTT는 메모리 부족을 일으켰고, 층별 활성값 재계산(activation recomputation)은 28GiB로 낮추지만 창 10 대비 step 시간이 약 1.3배였다. 이 수치를 일반적인 모든 학습 설정의 메모리 절감률로 환산할 수는 없다. [§3.1, Appendix C.3](https://arxiv.org/pdf/2610.06833v1#page=33)
 
 ## 마지막 KV만 저장할 수 있는 조건
 
 이 모델은 prelude 1개, core 2개, coda 1개의 물리적 attention 층을 갖는다. $R=5$면 논리적으로 $1+2\times 5+1=12$번 층을 방문한다. 반복별 캐시는 bank 12개를 저장하지만 terminal sharing은 물리적 층별 마지막 bank 4개만 남긴다. $R=16$이면 34개, $R=32$이면 66개 대신 4개다. 이는 **KV 저장량**의 절감이며 전체 GPU 메모리나 FLOPs가 같은 비율로 줄어든다는 뜻은 아니다. [§3.2, Table 20](https://arxiv.org/pdf/2610.06833v1#page=36)
 
-Lemma 1은 이전 토큰들의 문맥이 수렴하고, 현재 토큰의 업데이트가 해당 영역에서 일관되게 수축하며 문맥 변화에 Lipschitz 연속이면, 함께 반복하는 방식과 수렴한 prefix를 고정한 방식이 같은 극한에 도달한다고 보인다. 유한한 prefix 오차 $\eta$에 대해서는 다음 두 항이 남는다. [§3.2, Lemma 1; Appendix A.1, 식 12](https://arxiv.org/pdf/2610.06833v1#page=20)
+Lemma 1은 이전 토큰들의 문맥이 수렴하고, 현재 토큰의 업데이트가 해당 영역에서 일관되게 수축(contraction)하며 문맥 변화에 대해 립시츠 연속(Lipschitz continuous)이면, 함께 반복하는 방식과 수렴한 prefix를 고정한 방식이 같은 극한에 도달한다고 보인다. 유한한 prefix 오차 $\eta$에 대해서는 다음 두 항이 남는다. [§3.2, Lemma 1; Appendix A.1, 식 12](https://arxiv.org/pdf/2610.06833v1#page=20)
 
 $$
 \|\bar h^R-h^\star\|
@@ -125,7 +125,7 @@ $$
 \end{aligned}
 $$
 
-$A_n$는 $\exp(-CE)$, 즉 inverse perplexity 기반 reward를 이동평균과 분산으로 조정한 advantage다. 모델 자체는 기존 cross-entropy(CE)로 학습한다. Entropy $\mathbf H$는 분포가 한 깊이에만 몰리는 것을 막고, 마지막 항은 평균 깊이를 예산 근처에 유지한다. 모델 학습을 위해 이미 계산한 손실을 사용하므로 controller를 위해 별도 모델 순전파를 더하지 않는다. 기본 $\lambda _H=0.01$, $\lambda _m=1$, 역전파 창의 최대 길이는 10이다. [§4.1, Appendix B.3](https://arxiv.org/pdf/2610.06833v1#page=25)
+$A_n$는 $\exp(-CE)$, 즉 역 퍼플렉서티(inverse perplexity) 기반 보상(reward)을 이동평균과 분산으로 조정한 어드밴티지(advantage)다. 모델 자체는 기존 교차엔트로피(cross-entropy, CE)로 학습한다. 엔트로피(entropy) $\mathbf H$는 분포가 한 깊이에만 몰리는 것을 막고, 마지막 항은 평균 깊이를 예산 근처에 유지한다. 모델 학습을 위해 이미 계산한 손실을 사용하므로 controller를 위해 별도 모델 순전파를 더하지 않는다. 기본 $\lambda _H=0.01$, $\lambda _m=1$, 역전파 창의 최대 길이는 10이다. [§4.1, Appendix B.3](https://arxiv.org/pdf/2610.06833v1#page=25)
 
 그림 4에서는 고정 $R=5$ 학습의 주황 곡선이 테스트 깊이를 벗어나면 불안정해진다. 확률적으로 깊이를 바꾸는 PLN과 학습 분포는 비교적 안정적이고, 학습 분포가 PLN보다 PPL을 낮춘다. 그러나 이것은 모든 문제의 정확도가 반복에 따라 단조롭게 좋아진다는 뜻은 아니다. [Figure 4; Appendix C.5](https://arxiv.org/pdf/2610.06833v1#page=8)
 
@@ -138,7 +138,7 @@ $A_n$는 $\exp(-CE)$, 즉 inverse perplexity 기반 reward를 이동평균과 �
 
 ## OrthoInj: 매 반복에서 입력 방향을 일정하게 유지하기
 
-이전 상태를 감쇠해 넘기는 Parcae 방식은 $\Lambda h_t^r+q_t$ 형태다. $q_t$가 이번 반복에 주입하는 입력, $Λ$가 학습되는 대각 감쇠 행렬이다. 이전 상태에도 $q_t$ 방향 성분이 있으므로 실제 입력 방향의 크기는 달라질 수 있다. OrthoInj는 그 성분을 제거한 뒤 $q_t$를 더한다. [§4.2, 식 7–8](https://arxiv.org/pdf/2610.06833v1#page=8)
+이전 상태를 감쇠해 넘기는 Parcae 방식은 $\Lambda h_t^r+q_t$ 형태다. $q_t$가 이번 반복에 주입하는 입력, $Λ$가 학습되는 대각 감쇠 행렬(diagonal decay matrix)이다. 이전 상태에도 $q_t$ 방향 성분이 있으므로 실제 입력 방향의 크기는 달라질 수 있다. 직교 입력 주입(orthogonal input injection, OrthoInj)은 그 성분을 제거한 뒤 $q_t$를 더한다. [§4.2, 식 7–8](https://arxiv.org/pdf/2610.06833v1#page=8)
 
 $$
 \begin{aligned}
@@ -150,7 +150,7 @@ $$
 
 $\odot$는 원소별 곱이다. $q_t\ne0$, $\epsilon =0$이면 $q_t$ 방향 성분이 정확히 $q_t$로 유지된다. 구현에서는 $\epsilon =10^{-6}$을 사용한다. 투영이 감쇠 부분의 norm을 늘리지 않는다는 성질이 있어도 **Transformer 전체의 수축성 증명**이 되는 것은 아니다. 또한 이 recipe에는 prelude RMSNorm 제거도 포함된다. 부록의 2×2 비교는 정규화 제거와 투영이 각각 validation PPL에 기여함을 보이지만, 각 설정에서 학습률을 따로 골랐다. [§4.2; Appendix B.4, C.2, Table 14](https://arxiv.org/pdf/2610.06833v1#page=32)
 
-Table 16에서 Parcae의 carryover는 관측상 입력을 상쇄하기보다 같은 방향으로 증폭한다. 토큰별 입력 gain 중앙값은 S/M/L에서 약 2.18/2.75/3.43이다. 따라서 여기서 관측한 효과는 ‘입력이 사라지는 것을 복구했다’보다 ‘입력 방향의 크기를 일정하게 만들었다’로 설명하는 것이 정확하다. [Appendix C.2, Table 16](https://arxiv.org/pdf/2610.06833v1#page=33)
+Table 16에서 Parcae의 이전 상태 전달항(carryover)은 관측상 입력을 상쇄하기보다 같은 방향으로 증폭한다. 토큰별 입력 gain 중앙값은 S/M/L에서 약 2.18/2.75/3.43이다. 따라서 여기서 관측한 효과는 ‘입력이 사라지는 것을 복구했다’보다 ‘입력 방향의 크기를 일정하게 만들었다’로 설명하는 것이 정확하다. [Appendix C.2, Table 16](https://arxiv.org/pdf/2610.06833v1#page=33)
 
 ## 실험을 읽기 전에: 크기와 지표의 기준
 
@@ -164,7 +164,7 @@ Table 16에서 Parcae의 carryover는 관측상 입력을 상쇄하기보다 같
 
 세 규모 모두 context 8,192, global batch 512, BF16을 사용한다. 웹·QA·코드·수학 등을 포함한 혼합 데이터에서 학습하며, 설정별 학습률을 탐색한다. 모든 설정은 학습 seed 하나다. 공개 구현 README는 논문 실험의 장비를 NVIDIA H200으로 명시한다. 아래 latency는 특정 batch·prompt 조건의 측정이며 다른 장비의 보편적인 속도가 아니다. [Appendix B.1](https://arxiv.org/pdf/2610.06833v1#page=24), [공식 구현 README](https://github.com/ifm-ai/xllm-loop#installation)
 
-PPL은 토큰 평균 CE의 지수로 낮을수록 좋다. **AVG는 LAMBADA, HellaSwag, PIQA, ARC-Easy, ARC-Challenge, OpenBookQA, SciQ의 정확도를 동일 가중치로 평균**하며, GSM8K·DROP·MBPP+를 포함하지 않는다. Entropy 부록 일부는 SciQ 대신 WinoGrande를 쓰므로 AVG를 그대로 섞어 비교할 수 없다. GSM8K 본 실험은 1,319문항·8-shot greedy accuracy, DROP은 고정 500문항·3-shot F1, MBPP+는 고정 100문항·3-shot·온도 0.8에서 8개 샘플로 추정한 pass@1이다. [Appendix D.2, D.5, Table 27](https://arxiv.org/pdf/2610.06833v1#page=44)
+퍼플렉서티(perplexity, PPL)는 토큰 평균 교차엔트로피(cross-entropy, CE)의 지수로 낮을수록 좋다. **AVG는 LAMBADA, HellaSwag, PIQA, ARC-Easy, ARC-Challenge, OpenBookQA, SciQ의 정확도를 동일 가중치로 평균**하며, GSM8K·DROP·MBPP+를 포함하지 않는다. Entropy 부록 일부는 SciQ 대신 WinoGrande를 쓰므로 AVG를 그대로 섞어 비교할 수 없다. GSM8K 본 실험은 1,319문항·8-shot greedy accuracy, DROP은 고정 500문항·3-shot F1, MBPP+는 고정 100문항·3-shot·온도 0.8에서 8개 샘플로 추정한 pass@1이다. [Appendix D.2, D.5, Table 27](https://arxiv.org/pdf/2610.06833v1#page=44)
 
 더 중요한 함정은 PPL의 채점 범위다. **Table 2·3의 terminal-KV PPL과 Table 8·13의 native PPL은 채점 토큰이 다르다.** 전자는 4,096-token prefix 뒤에서 그 안의 문서를 잇는 토큰을 채점하고, 후자는 전체 시퀀스를 채점한다. 두 표의 PPL을 나누어 공유 손실을 계산하면 틀린다. 공유 효과는 같은 토큰으로 두 캐시를 비교한 Table 20·21이나 CacheEval을 사용해야 한다. [Appendix D.3–4](https://arxiv.org/pdf/2610.06833v1#page=45)
 
@@ -214,11 +214,11 @@ L의 AVG 차이는 0.04pp이며 코드 점수는 낮다. 본문에는 모든 규
 
 MBPP+ 코드 RL에서는 업데이트가 1.03→0.51초로 빨라지지만 전체 시간은 **20.0→21.8분으로 늘어난다**. Rollout과 코드 검증이 지배적이기 때문이다. Pass@1은 40.88→39.38, pass@8은 69→64다. [Table 26](https://arxiv.org/pdf/2610.06833v1#page=43)
 
-GSM8K의 reuse와 full BPTT pass@1 차이는 −1.55pp, 질문 단위 paired bootstrap 95% 구간은 $[-3.13,0.05]$다. 이 구간은 학습 seed 하나에 조건부이므로 동등성이나 seed 간 안정성의 증명이 아니다. 재사용과 재계산의 gradient cosine은 0.997–0.999지만 full BPTT와는 0.76–0.87이다. 끝점의 상대 잔차도 평균 0.034로 0이 아니다. 오래된 상태를 여러 업데이트 뒤까지 재사용하는 실험은 하지 않았다. [Appendix C.8](https://arxiv.org/pdf/2610.06833v1#page=42)
+GSM8K의 reuse와 full BPTT pass@1 차이는 −1.55pp, 질문 단위 대응 부트스트랩(paired bootstrap) 95% 구간은 $[-3.13,0.05]$다. 이 구간은 학습 seed 하나에 조건부이므로 동등성이나 seed 간 안정성의 증명이 아니다. 재사용과 재계산의 gradient cosine은 0.997–0.999지만 full BPTT와는 0.76–0.87이다. 끝점의 상대 잔차도 평균 0.034로 0이 아니다. 오래된 상태를 여러 업데이트 뒤까지 재사용하는 실험은 하지 않았다. [Appendix C.8](https://arxiv.org/pdf/2610.06833v1#page=42)
 
 ## Distilled prefill: 프롬프트의 끝점만 예측하기
 
-비반복 student 두 블록이 teacher의 pre-coda 끝점을 예측한다. Student는 teacher core에서 초기화하고, 정규화한 hidden-state 오차와 teacher 출력 분포에 대한 KL(Kullback–Leibler) divergence로 학습한다. Teacher는 고정하며 student에 teacher 사전학습 토큰의 1/4을 추가로 투입한다. **Student 출력 뒤 teacher core 한 번과 coda가 terminal KV를 만들고, 이후 생성은 teacher가 계속 5번 반복한다.** 전체 언어 모델을 student로 교체한 압축 실험이 아니다. [§3.2, 식 4; §5.5, Appendix C.7](https://arxiv.org/pdf/2610.06833v1#page=38)
+비반복 student 두 블록이 teacher의 pre-coda 끝점을 예측한다. Student는 teacher core에서 초기화하고, 정규화한 hidden-state 오차와 teacher 출력 분포에 대한 쿨백–라이블러 발산(Kullback–Leibler divergence, KL divergence)으로 학습한다. Teacher는 고정하며 student에 teacher 사전학습 토큰의 1/4을 추가로 투입한다. **Student 출력 뒤 teacher core 한 번과 coda가 terminal KV를 만들고, 이후 생성은 teacher가 계속 5번 반복한다.** 전체 언어 모델을 student로 교체한 압축 실험이 아니다. [§3.2, 식 4; §5.5, Appendix C.7](https://arxiv.org/pdf/2610.06833v1#page=38)
 
 | 규모 | Teacher → distilled prefill, ms ↓ | Prefill 가속 | AVG, % ↑ | GSM8K, % ↑ | MBPP+, % ↑ |
 | --- | --- | --- | --- | --- | --- |
@@ -228,7 +228,7 @@ GSM8K의 reuse와 full BPTT pass@1 차이는 −1.55pp, 질문 단위 paired boo
 
 8K prompt, batch 8에서 warmed prefill 여섯 번의 평균이다. Teacher를 두 번만 반복하는 단순한 대조군보다 약 1–4% 빠르고 AVG는 0.5–0.9pp 높다. 하지만 전체 teacher 대비 L AVG는 4.47pp, GSM8K는 15.02pp 낮다. 첫 토큰 지연, 전체 생성 시간, 낮은 batch의 interactive serving 속도로 이 가속을 바꿔 말할 수 없다. [Table 5, Appendix C.7.1](https://arxiv.org/pdf/2610.06833v1#page=13)
 
-추가 실험은 handoff의 중요성을 보여준다. Student 자신의 KV를 teacher에 바로 주면 teacher 한 번의 반복을 거친 경로보다 AVG가 2–7pp 낮다. Student를 단독으로 사용해도 Untied 4보다 좋지 않다. 더 깊은 $R=25$ teacher에서는 prefill 가속이 4.3–5.4배지만 품질 손실이 커지며, 그 student는 $R=5$ student보다 느리고 덜 정확하다. 이 비교는 본문의 hidden+KL recipe와 달리 **hidden loss만 사용**한다. Hidden MSE가 더 낮아도 downstream 품질이 더 나쁠 수 있어 단일 상태 거리만으로 decoder의 민감도를 평가하기 어렵다. [Appendix C.7, Tables 22–23](https://arxiv.org/pdf/2610.06833v1#page=39)
+추가 실험은 상태 인계(handoff)의 중요성을 보여준다. Student 자신의 KV를 teacher에 바로 주면 teacher 한 번의 반복을 거친 경로보다 AVG가 2–7pp 낮다. Student를 단독으로 사용해도 Untied 4보다 좋지 않다. 더 깊은 $R=25$ teacher에서는 prefill 가속이 4.3–5.4배지만 품질 손실이 커지며, 그 student는 $R=5$ student보다 느리고 덜 정확하다. 이 비교는 본문의 hidden+KL recipe와 달리 **hidden loss만 사용**한다. Hidden MSE가 더 낮아도 downstream 품질이 더 나쁠 수 있어 단일 상태 거리만으로 decoder의 민감도를 평가하기 어렵다. [Appendix C.7, Tables 22–23](https://arxiv.org/pdf/2610.06833v1#page=39)
 
 ## 관련 연구 속 위치
 
