@@ -1,9 +1,9 @@
 ---
-title: "[2] Diffusion Forcing: 모든 부분 시퀀스의 우도를 학습한다는 것은 무엇을 뜻할까?"
+title: "[2/2] Diffusion Forcing: 모든 부분 시퀀스의 우도를 학습한다는 것은 무엇을 뜻할까?"
 description: "부록 A의 ELBO·Gaussian 손실·부분 시퀀스 논증을 따라 두 Jensen 단계와 중간 계산을 설명하고, 원문 부호·전이·가중치의 불일치를 구분한다."
 date: "2026-10-14"
 publishedAt: "2026-10-14T13:58:27+09:00"
-updatedAt: "2026-10-14T13:58:27+09:00"
+updatedAt: "2026-10-17T22:20:55+09:00"
 topics: ["diffusion models", "sequence modeling", "world action model", "robot learning", "probabilistic modeling"]
 visibility: "public"
 lang: "ko"
@@ -19,7 +19,7 @@ thumbnailAlt: "Diffusion Forcing 원문 Figure 2: 서로 다른 토큰별 노이
 
 Diffusion Forcing의 이론은 “노이즈를 무작위로 넣으면 모델이 강해진다”보다 구체적이다. 서로 다른 noise pattern의 우도를 하한으로 연결하고, 충분히 표현력 있는 모델이 여러 denoising 문제를 동시에 최적화할 수 있다는 논증이다. **평균 noise pattern의 학습 손실, 특정 pattern의 ELBO, 유한 모델의 실제 정확도는 서로 다르다.** 이 구분을 유지해야 “모든 부분 시퀀스”라는 표현을 정확하게 읽을 수 있다.
 
-먼저 [[1] 방법·실험 편](/reviews/diffusion-forcing-methods/)을 읽는 것을 권한다. 이 글은 v4 **부록 A, pp. 14–19**의 순서인 설정→A.1 주요 결과→A.1.1 Gaussian→A.1.2 부분 시퀀스→A.2 증명을 따른다. A.2의 계산을 자세히 설명하되, 원문에 인쇄된 수식의 부호·방향·가중치 불일치를 그대로 올바른 정리로 인정하지 않는다. 아래의 일관된 형태는 명시한 조건에서의 **리뷰 보충 유도**이며 저자가 발행한 정오표가 아니다.
+먼저 [[1/2] 방법·실험 편](/reviews/diffusion-forcing-methods/)을 읽는 것을 권한다. 이 글은 v4 **부록 A, pp. 14–19**의 순서인 설정→A.1 주요 결과→A.1.1 Gaussian→A.1.2 부분 시퀀스→A.2 증명을 따른다. A.2의 계산을 자세히 설명하되, 원문에 인쇄된 수식의 부호·방향·가중치 불일치를 그대로 올바른 정리로 인정하지 않는다. 아래의 일관된 형태는 명시한 조건에서의 **리뷰 보충 유도**이며 저자가 발행한 정오표가 아니다.
 
 ## A. 이론적 정당화: 먼저 대상과 가정을 정한다 (Theoretical Justification)
 

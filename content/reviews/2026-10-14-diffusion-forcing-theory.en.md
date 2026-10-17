@@ -1,9 +1,9 @@
 ---
-title: "[2] Diffusion Forcing: What Does Learning Every Subsequence Likelihood Mean?"
+title: "[2/2] Diffusion Forcing: What Does Learning Every Subsequence Likelihood Mean?"
 description: "Follow appendix A's ELBO, Gaussian loss, and subsequence argument through two Jensen steps and intermediate calculations, separating printed inconsistencies from supplementary derivations."
 date: "2026-10-14"
 publishedAt: "2026-10-14T13:58:27+09:00"
-updatedAt: "2026-10-14T13:58:27+09:00"
+updatedAt: "2026-10-17T22:20:55+09:00"
 topics: ["diffusion models", "sequence modeling", "world action model", "robot learning", "probabilistic modeling"]
 visibility: "public"
 lang: "en"
@@ -19,7 +19,7 @@ thumbnailAlt: "Original Figure 2: independently noised tokens trained together a
 
 Diffusion Forcing's theory is more specific than “random noise makes a model robust.” It connects noise-pattern likelihoods to a lower bound, then argues that an expressive model can optimize multiple denoising problems simultaneously. **An average training objective, an ELBO for a particular pattern, and a finite model's actual accuracy are different objects.** That distinction is essential to understanding “all subsequences.”
 
-Read [[1] Methods and experiments](/en/reviews/diffusion-forcing-methods/) first. This article follows **appendix A, pp. 14–19**, in its original order: setup, A.1 main results, A.1.1 Gaussian specialization, A.1.2 subsequences, and A.2 proof. The proof is expanded without accepting printed sign, transition-direction, and weighting inconsistencies as correct statements. Consistent formulas below are **supplementary review derivations under stated conditions**, not an author-issued erratum.
+Read [[1/2] Methods and experiments](/en/reviews/diffusion-forcing-methods/) first. This article follows **appendix A, pp. 14–19**, in its original order: setup, A.1 main results, A.1.1 Gaussian specialization, A.1.2 subsequences, and A.2 proof. The proof is expanded without accepting printed sign, transition-direction, and weighting inconsistencies as correct statements. Consistent formulas below are **supplementary review derivations under stated conditions**, not an author-issued erratum.
 
 ## A. Theoretical Justification: Objects and Assumptions
 

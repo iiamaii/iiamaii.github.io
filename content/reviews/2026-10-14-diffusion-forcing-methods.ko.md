@@ -1,9 +1,9 @@
 ---
-title: "[1] Diffusion Forcing: 시간과 노이즈를 따로 조절하면 무엇이 달라질까?"
+title: "[1/2] Diffusion Forcing: 시간과 노이즈를 따로 조절하면 무엇이 달라질까?"
 description: "토큰마다 독립 노이즈를 학습하는 원리부터 장기 영상 생성, Monte Carlo Guidance, 미로 계획과 로봇 기억 실험까지 원문 순서로 읽는다."
 date: "2026-10-14"
 publishedAt: "2026-10-14T13:58:28+09:00"
-updatedAt: "2026-10-14T13:58:28+09:00"
+updatedAt: "2026-10-17T22:20:56+09:00"
 topics: ["diffusion models", "sequence modeling", "world action model", "robot learning", "probabilistic modeling"]
 visibility: "public"
 lang: "ko"
@@ -19,7 +19,7 @@ thumbnailAlt: "Diffusion Forcing 원문 Figure 2. 시퀀스의 시간축과 노�
 
 다음 프레임을 하나씩 예측하는 모델은 원하는 길이만큼 생성하기 쉽다. 하지만 작은 예측 오류가 누적되면 영상이 무너진다. 여러 프레임을 한꺼번에 diffusion으로 생성하면 미래 목표에 맞춰 결과를 유도하기 좋지만, 모든 프레임을 같은 속도로 확정하는 구조는 유연한 길이와 순차 제어에 제약을 준다. **Diffusion Forcing은 토큰마다 서로 다른 노이즈 수준을 학습해 두 방식 사이를 오갈 수 있게 한다.** 이 자유도를 이용해 장기 생성의 안정화와 미래 보상을 고려한 계획을 수행한다. 실험은 가능성을 보여주지만, 모든 환경의 성능 우위나 무한 길이의 정확성을 증명하지는 않는다. [원문 §1, pp. 1–2](https://arxiv.org/pdf/2407.01392v4#page=1)
 
-35쪽의 v4를 두 편으로 나눴다. 이 글은 **본문 §1–5와 실험·구현에 필요한 부록 B–F**를 원문 순서로 설명한다. 이어지는 [[2] 이론과 증명 해설](/reviews/diffusion-forcing-theory/)은 부록 A의 ELBO와 부분 시퀀스 주장을 다룬다. 먼저 이 글을 읽고 이론 편으로 넘어가면 된다. 저자들의 정리에는 표기 불일치가 있어, 이론 편에서 원문 진술과 보충 유도를 구분한다.
+35쪽의 v4를 두 편으로 나눴다. 이 글은 **본문 §1–5와 실험·구현에 필요한 부록 B–F**를 원문 순서로 설명한다. 이어지는 [[2/2] 이론과 증명 해설](/reviews/diffusion-forcing-theory/)은 부록 A의 ELBO와 부분 시퀀스 주장을 다룬다. 먼저 이 글을 읽고 이론 편으로 넘어가면 된다. 저자들의 정리에는 표기 불일치가 있어, 이론 편에서 원문 진술과 보충 유도를 구분한다.
 
 ## 1. 도입: 다음 토큰 예측과 전체 시퀀스 diffusion (Introduction)
 

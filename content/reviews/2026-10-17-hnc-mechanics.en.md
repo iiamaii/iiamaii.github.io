@@ -1,9 +1,9 @@
 ---
-title: "[2] HNC in Depth: Why Function Preservation Works, and Where It Fails"
+title: "[2/2] HNC in Depth: Why Function Preservation Works, and Where It Fails"
 description: "Follow appendices A–J through Gauss–Newton derivations, soft projection, compute costs, ablations, and off-probe validation."
 date: "2026-10-17"
 publishedAt: "2026-10-17T22:11:59+09:00"
-updatedAt: "2026-10-17T22:11:59+09:00"
+updatedAt: "2026-10-17T22:20:57+09:00"
 topics: ["representation learning", "loss landscape", "mechanistic interpretability", "computational neuroscience", "reinforcement learning"]
 visibility: "public"
 lang: "en"
@@ -19,7 +19,7 @@ thumbnailAlt: "Original Figure 1: HNC alternates low-curvature exploration and o
 
 HNC does not mean that any movement inside a Hessian null space preserves function. **It identifies directions with zero first-order output sensitivity at the anchor, then manages finite-step drift using restoration, rejection, and recomputation.** This distinction determines how to read its preservation claims.
 
-Read [[1] Methods and experiments](/en/reviews/hnc-solutions/) first. This article follows **appendices A→B→C→D→E→F→G→H→I→J**. The paper has no numbered theorem establishing global function equivalence or convergence of the entire HNC procedure. Its central mathematical argument is the derivative calculation in B. Expanded calculations and examples below are identified as **review supplements**.
+Read [[1/2] Methods and experiments](/en/reviews/hnc-solutions/) first. This article follows **appendices A→B→C→D→E→F→G→H→I→J**. The paper has no numbered theorem establishing global function equivalence or convergence of the entire HNC procedure. Its central mathematical argument is the derivative calculation in B. Expanded calculations and examples below are identified as **review supplements**.
 
 ## A. Hessian Null-Space Continuation Pseudocode
 

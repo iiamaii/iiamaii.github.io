@@ -1,9 +1,9 @@
 ---
-title: "[2] HNC 심화: 함수 보존은 왜 가능하고 어디서 깨지는가?"
+title: "[2/2] HNC 심화: 함수 보존은 왜 가능하고 어디서 깨지는가?"
 description: "부록 A–J를 따라 Gauss–Newton 유도, soft projection, 계산 비용, ablation과 probe 밖 검증을 해설한다."
 date: "2026-10-17"
 publishedAt: "2026-10-17T22:11:59+09:00"
-updatedAt: "2026-10-17T22:11:59+09:00"
+updatedAt: "2026-10-17T22:20:57+09:00"
 topics: ["representation learning", "loss landscape", "mechanistic interpretability", "computational neuroscience", "reinforcement learning"]
 visibility: "public"
 lang: "ko"
@@ -19,7 +19,7 @@ thumbnailAlt: "HNC 원문 Figure 1. 곡률이 작은 방향의 탐색과 출력 
 
 HNC의 핵심은 “Hessian의 영공간이면 어디로 움직여도 기능이 같다”가 아니다. **anchor에서 출력 변화의 1차 민감도가 0인 방향을 찾고, 유한한 이동에서 생기는 오차를 복원·거절·재계산으로 관리한다.** 이 차이를 이해해야 함수 보존이라는 표현을 정확히 읽을 수 있다.
 
-[[1] 방법·실험 전체 해설](/reviews/hnc-solutions/)을 먼저 읽기를 권한다. 이 글은 **부록 A→B→C→D→E→F→G→H→I→J** 순서를 따른다. 원문에는 HNC 전체의 수렴이나 전역 함수 동등성을 증명하는 번호 붙은 정리가 없다. 중심 수학은 부록 B의 미분 유도이며, 아래 중간 계산·예제는 필요한 곳에 **리뷰 보충**으로 구분한다.
+[[1/2] 방법·실험 전체 해설](/reviews/hnc-solutions/)을 먼저 읽기를 권한다. 이 글은 **부록 A→B→C→D→E→F→G→H→I→J** 순서를 따른다. 원문에는 HNC 전체의 수렴이나 전역 함수 동등성을 증명하는 번호 붙은 정리가 없다. 중심 수학은 부록 B의 미분 유도이며, 아래 중간 계산·예제는 필요한 곳에 **리뷰 보충**으로 구분한다.
 
 ## A. 알고리즘과 계산 비용 (Hessian Null-Space Continuation Pseudocode)
 

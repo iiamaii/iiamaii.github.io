@@ -1,9 +1,9 @@
 ---
-title: "[1] HNC: Do Networks with the Same Outputs Compute the Same Way?"
+title: "[1/2] HNC: Do Networks with the Same Outputs Compute the Same Way?"
 description: "Follow the paper's sections 1–7 to see how HNC changes RNN memory, ViT representations, and RL behavior while preserving a specified observable."
 date: "2026-10-17"
 publishedAt: "2026-10-17T22:12:00+09:00"
-updatedAt: "2026-10-17T22:12:00+09:00"
+updatedAt: "2026-10-17T22:20:58+09:00"
 topics: ["representation learning", "loss landscape", "mechanistic interpretability", "computational neuroscience", "reinforcement learning"]
 visibility: "public"
 lang: "en"
@@ -19,7 +19,7 @@ thumbnailAlt: "Original Figure 1: HNC alternates flat parameter steps and output
 
 If two networks give the same answers, must they compute those answers the same way? **Hessian Null Space Continuation (HNC) starts from one trained network and finds alternatives with substantially different representations and dynamics while approximately retaining observed outputs.** An RNN can replace fixed-point memory with moving internal states; a ViT can reorganize image similarity after a small weight change. Preservation, however, is enforced approximately on a finite set of inputs. It is not equality of functions on every possible input.
 
-This two-part review covers the 55-page [v1](https://arxiv.org/pdf/2609.38081v1). This article follows **main sections 1–7**, explaining the method and four experimental families. [[2] Mathematics, algorithms, and validation](/en/reviews/hnc-mechanics/) follows appendices A–J, including derivations, restoration failures, off-probe behavior, and additional experiments. Read 1→2.
+This two-part review covers the 55-page [v1](https://arxiv.org/pdf/2609.38081v1). This article follows **main sections 1–7**, explaining the method and four experimental families. [[2/2] Mathematics, algorithms, and validation](/en/reviews/hnc-mechanics/) follows appendices A–J, including derivations, restoration failures, off-probe behavior, and additional experiments. Read 1→2.
 
 ## 1. Introduction: What Computations Exist Inside a Connected Solution Region?
 

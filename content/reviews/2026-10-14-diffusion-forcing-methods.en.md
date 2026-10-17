@@ -1,9 +1,9 @@
 ---
-title: "[1] Diffusion Forcing: What Changes When Time and Noise Can Be Controlled Separately?"
+title: "[1/2] Diffusion Forcing: What Changes When Time and Noise Can Be Controlled Separately?"
 description: "Follow independent per-token noise from the training objective to long video rollouts, Monte Carlo Guidance, maze planning, and robotic memory in the authors' section order."
 date: "2026-10-14"
 publishedAt: "2026-10-14T13:58:28+09:00"
-updatedAt: "2026-10-14T13:58:28+09:00"
+updatedAt: "2026-10-17T22:20:56+09:00"
 topics: ["diffusion models", "sequence modeling", "world action model", "robot learning", "probabilistic modeling"]
 visibility: "public"
 lang: "en"
@@ -19,7 +19,7 @@ thumbnailAlt: "Original Figure 2: sequence time and diffusion noise axes, with i
 
 A next-frame model can easily generate sequences of different lengths. Small prediction errors, however, can accumulate until its video collapses. Diffusing several frames together makes it easier to guide a sequence toward a future objective, but resolving every frame at the same noise level restricts flexibility in length and sequential control. **Diffusion Forcing trains on independent noise levels for different tokens, allowing sampling to move between these regimes.** It uses that freedom for rollout stabilization and planning with future rewards. The experiments support these capabilities; they do not establish superiority in every environment or accurate generation at infinite length. [§1, pp. 1–2](https://arxiv.org/pdf/2407.01392v4#page=1)
 
-This review divides the 35-page v4 into two articles. This part follows **main sections 1–5**, incorporating essential experimental and implementation details from appendices B–F. [[2] Theory and proof walkthrough](/en/reviews/diffusion-forcing-theory/) covers appendix A's ELBO and subsequence claims. Read this article first. The theory article distinguishes the printed statements from supplementary derivations because the source contains mathematical inconsistencies.
+This review divides the 35-page v4 into two articles. This part follows **main sections 1–5**, incorporating essential experimental and implementation details from appendices B–F. [[2/2] Theory and proof walkthrough](/en/reviews/diffusion-forcing-theory/) covers appendix A's ELBO and subsequence claims. Read this article first. The theory article distinguishes the printed statements from supplementary derivations because the source contains mathematical inconsistencies.
 
 ## 1. Introduction
 

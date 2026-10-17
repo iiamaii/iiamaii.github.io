@@ -1,9 +1,9 @@
 ---
-title: "[1] HNC: 같은 출력을 내는 신경망은 내부에서도 같은 계산을 할까?"
+title: "[1/2] HNC: 같은 출력을 내는 신경망은 내부에서도 같은 계산을 할까?"
 description: "한 모델 주변의 함수 보존 영역을 따라가며 RNN의 기억, ViT의 표현, 강화학습 정책을 바꾸는 HNC를 원문 §1–7 순서로 읽는다."
 date: "2026-10-17"
 publishedAt: "2026-10-17T22:12:00+09:00"
-updatedAt: "2026-10-17T22:12:00+09:00"
+updatedAt: "2026-10-17T22:20:58+09:00"
 topics: ["representation learning", "loss landscape", "mechanistic interpretability", "computational neuroscience", "reinforcement learning"]
 visibility: "public"
 lang: "ko"
@@ -19,7 +19,7 @@ thumbnailAlt: "HNC 원문 Figure 1. 평평한 가중치 방향으로 이동하�
 
 같은 질문에 같은 답을 내는 두 신경망이 내부에서도 같은 방식으로 계산할까? **Hessian Null Space Continuation(HNC)은 하나의 학습 모델에서 출발해, 관찰한 출력은 거의 유지하면서 내부 표현과 동역학이 크게 다른 대안을 찾는다.** 기억을 고정점에 저장하던 RNN이 내부 상태를 계속 움직이며 기억하도록 바뀌고, ViT는 가중치를 조금 바꾸고도 이미지 간 유사 관계를 크게 재편한다. 다만 출력 보존은 유한한 입력에서 근사적으로 강제한다. 모든 입력에서 같은 함수라는 보장은 아니다.
 
-55쪽의 [v1](https://arxiv.org/pdf/2609.38081v1)을 두 편으로 나눴다. 이 글은 **본문 §1–7의 순서**를 유지하며 핵심 방법과 네 실험군을 설명한다. [[2] 수학·알고리즘·검증 심화](/reviews/hnc-mechanics/)는 부록 A–J를 따라 수학 유도, 복원 실패, probe 밖 평가와 추가 실험을 다룬다. 1→2 순서를 권한다.
+55쪽의 [v1](https://arxiv.org/pdf/2609.38081v1)을 두 편으로 나눴다. 이 글은 **본문 §1–7의 순서**를 유지하며 핵심 방법과 네 실험군을 설명한다. [[2/2] 수학·알고리즘·검증 심화](/reviews/hnc-mechanics/)는 부록 A–J를 따라 수학 유도, 복원 실패, probe 밖 평가와 추가 실험을 다룬다. 1→2 순서를 권한다.
 
 ## 1. 도입: 연결된 해들 안에는 어떤 계산이 있는가? (Introduction)
 
