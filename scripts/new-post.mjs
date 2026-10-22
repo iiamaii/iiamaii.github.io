@@ -27,8 +27,8 @@ for (const file of (await fs.readdir('content/reviews')).filter(name => name.end
 const date = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' });
 const timestamp = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
 const templates = {
-  ko: { title: '논문 리뷰 제목', description: '논문의 핵심 아이디어와 리뷰에서 다루는 질문을 짧게 적어 주세요.', body: '## 어떤 질문에서 출발했는가\n\n논문의 문제와 배경을 정리합니다.\n\n## 핵심 아이디어\n\n방법과 핵심 가정을 나의 언어로 설명합니다.\n\n## 결과와 근거\n\n실험 결과, 비교 기준과 출처를 남깁니다.\n\n## 나의 생각\n\n논문의 강점, 한계와 해석을 적습니다.\n\n## 남은 질문\n\n다음에 읽거나 확인할 것을 적습니다.' },
-  en: { title: 'Paper review title', description: 'A short introduction to the key idea and the question explored in this review.', body: '## The question\n\nDescribe the problem and its background.\n\n## Key idea\n\nExplain the method and assumptions in your own words.\n\n## Results and evidence\n\nRecord results, comparisons, and sources.\n\n## My reflections\n\nDiscuss strengths, limitations, and your interpretation.\n\n## Open questions\n\nList what to read or investigate next.' }
+  ko: { title: '논문 리뷰 제목', description: '논문의 핵심 아이디어와 리뷰에서 다루는 질문을 짧게 적어 주세요.', body: '핵심 기여, 조건을 붙인 대표 수치 1–2개, 리뷰어의 한 줄 판정을 2–3문장으로 적습니다.\n\n## 1. 한국어 절 제목 (Original Section Name)\n\n원문 절 순서대로 방법과 결과를 원문 위치와 함께 적습니다.\n\n## 리뷰 해석과 남은 질문\n\n종합 판정, 강점, 한계와 남은 질문을 적습니다.\n\n## 출처와 읽은 범위\n\n- 원문:\n- 읽은 범위:\n- 대표 썸네일 출처:\n- 확인하지 않은 것:' },
+  en: { title: 'Paper review title', description: 'A short introduction to the key idea and the question explored in this review.', body: 'State the core contribution, one or two representative results with their conditions, and a one-line verdict in two or three sentences.\n\n## 1. Original Section Name\n\nFollow the paper\'s section order and cite locations for methods and results.\n\n## Review interpretation and open questions\n\nGive the overall assessment, strengths, limitations and open questions.\n\n## Sources and reading scope\n\n- Paper:\n- Scope read:\n- Thumbnail source:\n- Not verified:' }
 };
 for (const [lang, template] of Object.entries(templates)) {
   const file = `content/reviews/${date}-${slug}.${lang}.md`;

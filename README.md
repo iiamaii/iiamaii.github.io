@@ -129,9 +129,11 @@ thumbnail: "/assets/논문-썸네일.webp"
 thumbnailAlt: "썸네일 설명"
 ---
 
-## 핵심 아이디어
+핵심 기여, 대표 수치, 리뷰어 판정을 2–3문장으로 적습니다.
 
-리뷰 본문을 작성합니다.
+## 1. 한국어 절 제목 (Original Section Name)
+
+원문 절 순서대로 본문을 작성합니다.
 ```
 
 - `title`, `description`, `date`, 한 개 이상의 `topics`는 공개 시 필수입니다. 기존 단일 `topic`도 지원하며, `visibility`를 정확히 `"public"`으로 지정해야 발행됩니다.
