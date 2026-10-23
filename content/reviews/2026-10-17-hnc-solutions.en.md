@@ -3,7 +3,7 @@ title: "[1/2] HNC: Do Networks with the Same Outputs Compute the Same Way?"
 description: "Follow the paper's sections 1–7 to see how HNC changes RNN memory, ViT representations, and RL behavior while preserving a specified observable."
 date: "2026-10-17"
 publishedAt: "2026-10-17T22:12:00+09:00"
-updatedAt: "2026-10-23T08:56:23+00:00"
+updatedAt: "2026-10-23T15:26:23+00:00"
 topics: ["representation learning", "loss landscape", "mechanistic interpretability", "computational neuroscience", "reinforcement learning"]
 visibility: "public"
 lang: "en"
@@ -17,24 +17,17 @@ thumbnail: "/assets/reviews/hnc/overview.webp"
 thumbnailAlt: "Original Figure 1: HNC alternates flat parameter steps and output restoration to reach networks with different internal representations."
 ---
 
-Hessian Null Space Continuation (HNC) finds alternative internal computations near one network while approximately preserving output agreement. In one ViT experiment, steering retains at least 94% of top-1 decisions while neural-response prediction scores range from 0.618 to 0.719. [Section 4 and appendix H](https://arxiv.org/pdf/2609.38081v1#page=46) **Review interpretation.** Task performance alone can leave internal mechanisms underdetermined; preservation must be assessed on both probes and separate evaluation inputs.
+Hessian Null Space Continuation (HNC) keeps one trained network's outputs (the anchor's) approximately fixed on a finite probe set while taking small steps along flat directions of the loss curvature, searching for alternative networks with different internal computations. On an ImageNet-pretrained vision Transformer (ViT-S/16), moving the weights by only 1.3% in norm, with less than 1% loss of ImageNet top-1 accuracy, drives the maximum cross-layer centered kernel alignment (CKA) below that of seven trained comparison models and even a randomly initialized ViT. [Original §4, pp.6–7](https://arxiv.org/pdf/2609.38081v1#page=6) **Review interpretation.** The abstract's claim of representations that differ more than any independently trained model of other architectures and objectives holds for these seven models under CKA, backed by off-probe evaluation and a random-weight-noise control; but what the ViT experiments show is a change in representational similarity, and mechanism-level evidence that the way memory is implemented has changed comes from the 64-unit recurrent neural network (RNN) experiments.
 
-This two-part review covers the 55-page [v1](https://arxiv.org/pdf/2609.38081v1). This article follows **main sections 1–7**, explaining the method and four experimental families. [\[2/2\] Mathematics, algorithms, and validation](/en/reviews/hnc-mechanics/) follows appendices A–J, including derivations, restoration failures, off-probe behavior, and additional experiments. Read 1→2.
+This part follows main sections 1–7 through the method and four experimental families; [\[2/2\] Mathematics, algorithms, and validation](/en/reviews/hnc-mechanics/) covers the derivations, ablations, and off-probe validation in appendices A–J.
 
 ## 1. Introduction: What Computations Exist Inside a Connected Solution Region?
 
-Overparameterized networks admit many weights with similar training loss. **Mode connectivity** research shows that independently trained solutions can be connected by low-loss paths. **Solution degeneracy** research shows that one task can support different internal structures. Degeneracy here means multiple compatible solutions, not performance deterioration or representation collapse.
+Overparameterized networks have many local minima with similarly low loss, and which one training reaches depends on optimizer, data, architecture, and task. Studies of loss geometry find many nearly flat directions around trained solutions, and **mode connectivity** research shows that independently trained solutions are often joined by nonlinear or even linear low-loss paths. According to the authors, this literature characterizes the connected region mainly through connectivity and loss; Lubana et al. (2023), who did look at internal computation, compared pairs of trained networks. Whether the low-loss region around a single solution contains genuinely different representations and mechanisms remains open.
 
-HNC joins these questions. Instead of first training two models and connecting them, **how different a computation can we find by exploring the connected low-loss region around one model?** The trained reference is the anchor. Four sources help locate the contribution.
+Meanwhile, **solution degeneracy** research shows that one task can admit a family of solutions with different out-of-distribution generalization and different geometry and dynamics of their internal representations. Degeneracy here means multiple compatible solutions to one task. Some work deliberately finds alternatives by retraining with similarity penalties or hard constraints, or by following Hessian eigenvectors from a saddle, but how these solutions relate in weight space is poorly understood. The authors' question sits where the two lines meet: **how much representational diversity exists in the connected, function-preserving region around one trained solution, and how can that region be traversed constructively?**
 
-| Prior work | Relevant contribution | Relationship to HNC |
-| --- | --- | --- |
-| [Garipov et al., 2018](https://arxiv.org/pdf/1802.10026v4), §3–4 | Low-loss paths between trained endpoints, including meaningful representation differences | HNC explores from one anchor without a prespecified destination. Representational diversity itself was not first observed here. |
-| [Kornblith et al., 2019](https://proceedings.mlr.press/v97/kornblith19a/kornblith19a.pdf), §2–3 | Centered kernel alignment (CKA) compares representational similarity structures | CKA evaluates and steers the search. Low CKA alone does not establish every kind of computational difference. |
-| [Ostrow et al., 2023](https://arxiv.org/pdf/2306.10168v2), §2 | Dynamical similarity analysis (DSA) compares temporal computational structure | It separates recurrent dynamics from the spatial appearance of state trajectories. |
-| [Huh et al., 2024](https://proceedings.mlr.press/v235/huh24a.html), §2 | The Platonic Representation Hypothesis (PRH) and observations of alignment with competence and scale | HNC distinguishes diversity permitted by a task from diversity sampled by ordinary optimization. It does not refute every empirical observation in PRH. |
-
-Selected sections of these sources were checked; this is not an exhaustive survey of subsequent work. HNC contributes constructive curvature-based exploration and examines representations, dynamics, behavior, and geometry along the resulting paths. [Original §1, pp.1–3](https://arxiv.org/pdf/2609.38081v1#page=1)
+There are two motivations. Trained solutions are shaped by optimizer biases as well as by the task (for example, SGD's preference for low-rank, low-norm solutions), so characterizing everything a model admits separates task demands from optimizer effects. Practically, representationally distinct solutions reachable through local, function-preserving updates would expose degrees of freedom for fine-tuning, model merging, and post-hoc editing. HNC starts from the anchor, explores function-preserving alternatives using local curvature, and can be steered toward specified properties by any differentiable objective. [Original §1, pp.1–3](https://arxiv.org/pdf/2609.38081v1#page=1)
 
 ## 2. Method
 
@@ -49,9 +42,9 @@ $$
 -f_{\boldsymbol\theta_0}(x)\right\|^2\right].
 $$
 
-$\mathcal D$ is the input distribution. In practice, a fixed sample $\mathbf X$, the **probe set**, estimates this expectation. For classification, the target is the entire anchor logit vector, a stronger constraint than preserving one score.
+$\mathcal D$ is the input distribution. In practice, a fixed sample $\mathbf X$, the **probe set**, estimates this expectation. For classification, the target is the entire anchor logit vector rather than the label.
 
-The anchor matches itself exactly, so this loss and its gradient vanish there. Equation (2) approximates the effect of a small parameter displacement $\boldsymbol\delta$ by curvature:
+The anchor reproduces its own outputs exactly, so it is a global minimizer with zero loss and zero gradient. A small parameter displacement $\boldsymbol\delta$ therefore changes the loss only at second order, as in equation (2):
 
 $$
 \begin{aligned}
@@ -62,14 +55,14 @@ $$
 \end{aligned}
 $$
 
-Large eigenvalues of the Hessian $\mathbf H$ identify **sharp directions** sensitive to parameter changes; small ones identify **flat directions**. With eigenvectors $\mathbf v_i$ and eigenvalues $\lambda_i$, the paper defines an approximate null space:
+Large eigenvalues of the Hessian $\mathbf H$ identify **sharp directions** along which outputs change rapidly; near-zero ones identify **flat directions** with little output drift. With eigenvectors $\mathbf v_i$ and eigenvalues $\lambda_i$, the paper defines an approximate null space:
 
 $$
 \mathcal V_0=\operatorname{span}
 \{\mathbf v_i:\lambda_i\le\epsilon\}.
 $$
 
-This is not restricted to exactly zero eigenvalues. Its size depends on the threshold $\epsilon$, and the approximation is local. A large finite step in a locally flat direction need not preserve outputs. [§2.1, p.3](https://arxiv.org/pdf/2609.38081v1#page=3)
+The authors note that trained networks typically have a few large and many near-zero Hessian eigenvalues, so this approximate null space often spans a substantial fraction of the parameter dimensions. [§2.1, p.3](https://arxiv.org/pdf/2609.38081v1#page=3)
 
 ### 2.2 Hessian Null Space Continuation
 
@@ -77,9 +70,9 @@ This is not restricted to exactly zero eigenvalues. Its size depends on the thre
 
 [Enlarge Figure 1](/assets/reviews/hnc/overview.webp)
 
-**Read Figure 1 as A→D→B.** Height in A is output-matching loss; the horizontal axes are conceptual parameter directions. Purple arrows in D take flat steps; teal arrows restore outputs. Repetition can change the internal geometry illustrated in B. Its PC axes describe activations, not the parameter space of A. C shows the eigenvalue cutoff and E steering toward another objective. The output equality in B is schematic: experimental preservation has a tolerance and a probe scope. [Figure 1, p.2](https://arxiv.org/pdf/2609.38081v1#page=2)
+**Read Figure 1 as A→D→B.** Height in A is function-matching loss; the horizontal axes are conceptual parameter directions. Purple arrows in D take flat steps; teal arrows restore outputs. Repeating them reaches a network like the one in B, with the same input-output mapping but different internal representations of the same inputs. B's PC axes describe activations, not the parameter space of A. C selects flat directions with an eigenvalue cutoff $\epsilon$, and E steers the step toward an objective. [Figure 1, p.2](https://arxiv.org/pdf/2609.38081v1#page=2)
 
-Equation (3) illustrates two steps:
+A single step within the null space explores only the immediate neighborhood of the anchor, so going further takes many steps. The authors identify two problems. The Hessian is a second-order approximation, so even a step along a zero-eigenvalue direction can change the loss through higher-order terms; and away from the anchor its null space may stop aligning with the truly flat directions. HNC handles both by alternating null-space steps with function restoration (equation (3)):
 
 $$
 \begin{aligned}
@@ -91,13 +84,13 @@ $$
 \end{aligned}
 $$
 
-$\eta$ is the exploration step size and $\alpha$ the restoration learning rate. Actual Algorithm 1 normalizes $\mathbf d_t$ and performs $m$ restoration steps. A proposal still exceeding loss ceiling $\tau$ is **rejected**, with a reduced step size. Undirected exploration refreshes flat directions periodically and after rejection. This predict-correct procedure follows a low-loss region; it does not uniformly sample all solutions.
+$\eta$ is the exploration step size and $\alpha$ the restoration learning rate. The equation shows one restoration step; in practice there are $m$, and Algorithm 1 normalizes $\mathbf d_t$. If the loss still exceeds the ceiling $\tau$ after restoration, the authors take this as a sign that the Hessian's linear approximation has broken down: the step is **rejected**, the step size shrinks, and the null space is recomputed at the current weights (relinearization). The authors liken this to the classical predict-correct structure of numerical continuation, which takes a small step along a curve's tangent and then corrects back onto the curve.
 
 #### 2.2.1 Forming the Null Space
 
-With $P$ parameters, the Hessian is $P\times P$. HNC accesses curvature through matrix–vector products. LOBPCG finds some low-eigenvalue directions for undirected exploration; steering instead solves a linear system. **Appendices A–B specify the implemented Gauss–Newton operator $\mathbf G=\mathbf J^\top\mathbf J$.** It equals the Hessian at the anchor but generally differs at points with nonzero output residual. [Part 2](/en/reviews/hnc-mechanics/) develops this distinction and derivation.
+With $P$ parameters, the Hessian is $P\times P$, too large to store or decompose. HNC computes the $k$ smallest eigenpairs with LOBPCG (locally optimal block preconditioned conjugate gradient), which uses only matrix–vector products from automatic differentiation, reducing time and memory from $O(P^3)$ and $O(P^2)$ to $O(kP)$. Because the Hessian is positive semidefinite at the anchor, the null space is spanned by the eigenvectors with the numerically smallest eigenvalues. **Appendices A–B specify the implemented Gauss–Newton operator $\mathbf G=\mathbf J^\top\mathbf J$, with $\mathbf J$ the Jacobian of the probe outputs.** It equals the Hessian at the anchor and stays positive semidefinite along the walk; [\[2/2\] B](/en/reviews/hnc-mechanics/) gives the derivation.
 
-The relative cutoff is $\epsilon=\mu_{\mathrm{rel}}\lambda_1$, with $\lambda_1$ the largest eigenvalue. Main-text settings span $10^{-7}$–$10^{-3}$; appendix sweeps cover a wider range. The $k$ directions returned by LOBPCG are not a count of the full null-space dimension. [§2.2.1, A–B, pp.4,18–20](https://arxiv.org/pdf/2609.38081v1#page=18)
+The relative cutoff is $\epsilon=\mu_{\mathrm{rel}}\lambda_1$, with $\lambda_1$ the largest eigenvalue at the current linearization point. Because the cutoff is relative, the null space is recomputed at every relinearization; $\mu_{\mathrm{rel}}$ is chosen per experiment in $10^{-7}$–$10^{-3}$, and appendix sweeps cover a wider range. [§2.2.1, A–B, pp.4,18–20](https://arxiv.org/pdf/2609.38081v1#page=18)
 
 #### 2.2.2 Steering
 
@@ -114,13 +107,13 @@ $$
 \end{aligned}
 $$
 
-Flat components mostly pass through; sharp components shrink. This **soft projection** is not an exact orthogonal projector with binary spectral weights. Implementation substitutes $\mathbf G$ and solves with conjugate gradients (CG) instead of forming an inverse. Objectives can target CKA distance, dynamics, or weight sparsity. [§2.2.2, A.3](https://arxiv.org/pdf/2609.38081v1#page=4)
+Flat components mostly pass through and sharp components shrink, hence the name **soft projection**. Implementation substitutes $\mathbf G$ and solves with conjugate gradients (CG) instead of forming an inverse. Objectives can target CKA distance, dynamics, or weight sparsity. [§2.2.2, A.3](https://arxiv.org/pdf/2609.38081v1#page=4)
 
 ## 3. HNC drives RNNs to learn drastically different dynamics in a memory task
 
-The **3-bit flip-flop (3BFF)** task retains the latest nonzero input on each of three channels, yielding eight binary memory states. The authors train 64-unit tanh RNNs with BPTT and Adam. Standard solutions store the states at eight stable fixed points arranged approximately as a cube in activation space.
+In the **3-bit flip-flop (3BFF)** task, a network must output the most recent nonzero input on each of three channels, giving $2^3=8$ binary memory states. The authors train 64-unit tanh RNNs with backpropagation through time (BPTT) and Adam. The trained anchor stores the eight states at eight stable fixed points, hidden states that stay unchanged when input is turned off, which form the vertices of a cube in activation space.
 
-**The memory task and fixed point concretely.** Zero input means “no new instruction,” not “set memory to zero.” For one channel, $+1,0,0,-1,0$ requires outputs $+1,+1,+1,-1,-1$, excluding any interval before the first pulse. Three independent remembered signs give eight combinations. This illustrates the task definition, not a new experiment.
+**Review supplement: the memory task and fixed points.** Zero input means “no new instruction,” not “set memory to zero.” For one channel, $+1,0,0,-1,0$ requires outputs $+1,+1,+1,-1,-1$, excluding any interval before the first pulse. Appendix F.1's RNN update and the zero-input fixed-point condition are:
 
 $$
 \begin{aligned}
@@ -132,47 +125,43 @@ $$
 \end{aligned}
 $$
 
-The fixed point is a **hidden state with weights fixed and input zero**. It is stable when nearby state perturbations decay back toward it. HNC changes weights and compares the resulting hidden dynamics and outputs. Constant $\mathbf W_{\mathrm{out}}\mathbf h_t$ can coexist with movement in the readout null space; retained memory outputs do not require every hidden component to stop. [§3, Appendix F.1](https://arxiv.org/pdf/2609.38081v1#page=29)
+A fixed point is stable when nearby state perturbations decay back toward it. Constant output $\mathbf W_{\mathrm{out}}\mathbf h_t$ can coexist with movement in the readout null space, which is exactly what Figure 2D shows. [§3, Appendix F.1](https://arxiv.org/pdf/2609.38081v1#page=29)
 
-HNC compares undirected exploration, steering to increase CKA distance $1-\mathrm{CKA}$, and steering to increase DSA distance. CKA concerns similarities among activation samples; DSA concerns temporal state-transition structure. Movement under one metric need not match movement under the other.
+HNC compares undirected exploration with steering that increases one of two distances. CKA distance $1-\mathrm{CKA}$ measures how much the representational geometry of hidden activations has changed; dynamical similarity analysis (DSA) distance measures how much the recurrent dynamics have changed up to invertible transformations. The walks use an adaptive step size and periodic relinearization.
 
 ![Original Figure 2: Changes in fixed points, output, representation, and dynamics on 3BFF](/assets/reviews/hnc/rnn-dynamics.webp)
 
 [Enlarge Figure 2](/assets/reviews/hnc/rnn-dynamics.webp)
 
-**Reading Figure 2.** A shows the original eight fixed points. B plots task loss and distances against relative weight movement $\|\Delta\boldsymbol\theta\|/\|\boldsymbol\theta_0\|$. Steering produces representation or dynamics distances larger than independently trained seed pairs. C reports 0, 7, and 15 stable fixed points in representative alternatives that still solve the task. These are numerically identified counts, not a mathematical certificate that no other fixed point exists anywhere.
+**Reading Figure 2.** A shows the task and the anchor's eight fixed points. In B, task loss stays below $0.01$ for all HNC walks (left), and the middle and right panels plot representational and dynamical distance against relative weight movement $\|\Delta\boldsymbol\theta\|/\|\boldsymbol\theta_0\|$. Undirected walks reach distances comparable to independently trained seed pairs; steered walks go further with less weight movement. In C, the undirected endpoint loses its eight fixed points, which are replaced by a continuous manifold with one region per memory state, while the CKA- and DSA-steered endpoints change the number of fixed points (0, 7, and 15 stable fixed points as labeled in the figure). All three endpoints solve the task.
 
-D provides the key mechanism. States barely move in the **readout subspace**, but keep moving in the **readout-null subspace** invisible to the output layer. Stable output memory need not require stationary hidden activity. This activation-space null space is different from the parameter-space null space in §2.
+D is the paper's most intuitive scene. During input-free memory periods, the undirected endpoint's hidden states collapse to eight compact points in the **readout subspace** seen by the output layer, but keep moving within eight clusters in the **readout-null subspace** invisible to it (a subspace of activation space, distinct from the parameter-space null space of §2). The authors interpret this network as holding memory in distinct regions of state space rather than at fixed points, keeping outputs stable despite ongoing internal dynamics.
 
-E is an important counter-result: the CKA-steered example is less robust to hidden-state perturbation, and the DSA-steered example drifts during extended input-free memory. F embeds pairwise distances among 131 networks using MDS. Representation and weight distances separate, but a two-dimensional embedding is not a complete topological map of the solution set. [§3, Figure 2, pp.4–6](https://arxiv.org/pdf/2609.38081v1#page=4)
+In E, the CKA-steered endpoint recovers less after hidden-state perturbations, and the DSA-steered endpoint's memory drifts over extended input-free periods. The authors conclude that networks with matching in-distribution input-output mappings can still behave differently under extended or perturbed conditions. F uses multidimensional scaling (MDS) to embed pairwise distances among 131 networks: the anchor, ten independently trained seeds, and every checkpoint of three walks of each type. In representation distance, independent seeds and undirected walks stay near the anchor while steered walks extend far beyond them; in weight distance, steered walks stay closer to the anchor than both undirected walks and independent seeds. The authors read this as a decoupling of representational from weight-space distance. [§3, Figure 2, pp.4–6](https://arxiv.org/pdf/2609.38081v1#page=4)
 
-The main experiment uses five anchors and three replicates per arm and anchor. Representative walks maintain task MSE below $0.01$; the Figure 2F networks exceed $0.999$ accuracy. Trials last 100 steps, pulse probability is 0.3, and the model has 4,611 parameters. F.3 describes acceptance using task MSE on 128 fixed trials, which must be distinguished from the function-matching criterion of general Algorithm 1.
-
-Appendix F tests weak or rare pulses and finds some alternatives deteriorate earlier than the anchor. It also reports one pruning-steered 64→11-unit example and preservation of endpoint characteristics after 8,000 SGD steps. These support additional uses without guaranteeing that compression ratio or stability for every seed and task. [F.1–F.8, pp.29–35](https://arxiv.org/pdf/2609.38081v1#page=29)
+The main experiment uses five anchors and three replicates per arm and anchor, and all 131 networks in Figure 2F exceed $0.999$ accuracy. Trials last 100 steps, pulse probability is 0.3, and the model has 4,611 parameters. Appendix F adds out-of-distribution (OOD) inputs such as weak or rare pulses, on which some alternatives lose accuracy before the anchor; a pruning-steered walk that shrinks the network from 64 to 11 units; and resumed 8,000-step SGD after which the steered properties remain ([\[2/2\] F](/en/reviews/hnc-mechanics/)). [F.1–F.8, pp.29–35](https://arxiv.org/pdf/2609.38081v1#page=29)
 
 ## 4. HNC reveals underexplored degrees of freedom in ViTs
 
-PRH discusses increasing alignment across larger and more capable models. HNC asks a different question: **how much room to change representations remains inside one trained model when its outputs are approximately fixed?**
+The Platonic Representation Hypothesis (PRH) holds that representations become increasingly similar across models as models scale and tasks get harder, and attributes this to convergence toward a shared representation of reality. HNC asks a different question: **how much freedom to change representations remains inside one trained model when its function is held approximately fixed?**
 
-The anchor is an ImageNet-pretrained ViT-S/16 with approximately 22M parameters. Its logits are matched on 512 Places-365 validation images. Steering lowers the **maximum CKA over every pair of anchor and current-model layers**, using CLS/pre-logits features at 13 depths. This discourages changing only the final feature while leaving an original representation available in another layer. A smooth log-sum-exp drives optimization; evaluation reports the hard maximum.
+The anchor is an ImageNet-pretrained ViT-S/16 with approximately 22M parameters. Its logits are matched on 512 Places-365 validation images, the dataset on which PRH was evaluated. Using the CLS feature after every block plus the final pre-logits feature (13 depths), steering lowers the **maximum CKA over every pair of anchor and current-model layers**. Because the hard maximum is not differentiable, a smooth log-sum-exp drives the steering and the hard maximum is reported.
 
 ![Original Figure 3: Separate evaluation of ViT representation similarity and prediction preservation](/assets/reviews/hnc/vit-representations.webp)
 
 [Enlarge Figure 3](/assets/reviews/hnc/vit-representations.webp)
 
-**Read A, B, and C together.** A uses relative weight displacement, not walk step, on its horizontal axis. CKA and the unsteered mutual-kNN alignment decline on probe and held-out images. B distinguishes agreement with anchor predictions from ImageNet accuracy against labels. The paper reports approximately 1.3% relative weight movement, less than 1% top-1 accuracy loss, and nearly unchanged top-5 accuracy. Preservation is approximate and has a small performance cost.
+**Read A, B, and C together.** A uses relative weight displacement, not walk step, on its horizontal axis. CKA declines both on the probe and on held-out images never seen during HNC, and the mutual k-nearest-neighbor (kNN) alignment, which is never steered, falls comparably. The authors take this as evidence that HNC reorganizes representations in general rather than exploiting one metric on one image set. B's left panel shows agreement with the anchor's predictions and its right panel ImageNet accuracy against labels. The walk keeps the anchor's top-1 predictions on the probe throughout; on ImageNet, never used as a constraint, top-1 accuracy drops by less than 1% and top-5 is nearly unchanged.
 
-In C, endpoint CKA is below **the seven trained models in this comparison and a randomly initialized ViT**: ViT-S/in1k, ViT-L/in21k, ViT-B/in21k, DeiT3-S, ViT-S/DINO, ResNet-50, and ConvNeXt-S. This is not a universal ranking against every architecture and training objective. A–C show means and standard deviations across five random probe sets.
+In C, the endpoint's weights have moved only 1.3% in norm, yet its CKA falls below **the seven trained models in this comparison and a randomly initialized ViT**. The comparison models, ViT-S/in1k, ViT-L/in21k, ViT-B/in21k, DeiT3-S, ViT-S/DINO, ResNet-50, and ConvNeXt-S, differ in size, architecture, objective, and data. A–C show means and standard deviations across five random probe sets.
 
-D's cosine-similarity matrices and E's MDS of 20 images show reorganized neighborhoods. F selects the five most similar image pairs per model and compares semantic similarity (DINOv2), color composition, and spatial layout as percentiles among all pairs. The random-pair reference is 50. The endpoint retains substantial semantic and color similarity while becoming less sensitive to layout. This is an observation about five selected pairs, not an exhaustive account of visual perception. [§4, G.1–G.2, pp.6–7,36](https://arxiv.org/pdf/2609.38081v1#page=6)
+D's cosine-similarity matrices show that pairwise similarities among probe images change drastically from anchor to endpoint, and E's MDS of 20 images from four classes shows neighborhoods reorganized within and across classes. F takes the five most similar image pairs per model and scores semantic similarity (DINOv2), color composition, and spatial layout as percentiles among all pairs; 50 is the random-pair reference. The endpoint's closest pairs remain close in semantics and color, but their layout similarity approaches the random baseline. From this the authors argue that cross-model convergence need not reflect a unique representation fully specified by the task; it may come from an optimization bias that samples a narrow subset of solutions. [§4, G.1–G.2, pp.6–7,36](https://arxiv.org/pdf/2609.38081v1#page=6)
 
-**Off-probe evaluation determines the strength of the claim.** G.5's CKA-steered endpoints have small accuracy deficits and imperfect prediction agreement on ImageNet, V2, Rendition, and Sketch. Error consistency is around 0.8; agreement is comparable to, or generally above, repeating the anchor's last fine-tuning stage with another seed. Gaussian weight noise matched to the accuracy deficit leaves CKA above 0.98, so generic damage alone does not explain the representation change.
-
-G.6's mutual-kNN-steered configuration preserves behavior less faithfully: prediction match is approximately 0.85 on clean ImageNet and approximately 0.6 on Sketch. One cannot merge these configurations into a claim of unrestricted representation change with identical function. Probe size, steering, and step size matter. G.3 specifies 256 kNN probe images whereas Table 8 lists 512; that setting remains an internal source inconsistency. [G.3–G.10, pp.36–46](https://arxiv.org/pdf/2609.38081v1#page=39)
+**Off-probe preservation (appendices G.5–G.6).** CKA-steered endpoints have small accuracy deficits on ImageNet, V2, Rendition, and Sketch, with error consistency around 0.8. Their image-level agreement with the anchor is comparable to, and generally higher than, a model that repeats the anchor's last fine-tuning stage with only the seed changed. Gaussian weight noise matched to the accuracy deficit leaves CKA above 0.98, so the authors conclude that generic damage cannot explain the representation change. Mutual-kNN-steered endpoints preserve behavior less well than the different-seed reference, and the authors conclude from the two experiments together that the degree of functional preservation depends on the walk configuration and the steering objective. Detailed values and replicate units are in [\[2/2\] G](/en/reviews/hnc-mechanics/). [G.5–G.6, pp.39–42](https://arxiv.org/pdf/2609.38081v1#page=39)
 
 ## 5. HNC finds behaviorally distinct, high-reward policies in reinforcement learning
 
-**The preserved quantity changes here.** Preserving the same action distribution would prevent substantial behavioral divergence. Given a state-action buffer from reference policy $\pi_{\boldsymbol\theta_0}$ and advantages $A_i^0$, the authors preserve a surrogate return:
+Unlike supervised targets, a scalar reward in reinforcement learning rarely specifies the optimal sequence of actions over an episode. The authors argue that this underspecification admits behaviorally distinct policies at similar reward, including **reward-hacking** strategies that exploit the reward function instead of accomplishing the task, so **the preserved quantity here is return rather than the action distribution.** From a state-action buffer collected by the anchor policy $\pi_{\boldsymbol\theta_0}$, with advantages $A_i^0$, the importance-sampling surrogate return is:
 
 $$
 \phi_R(\boldsymbol\theta)
@@ -181,7 +170,7 @@ $$
 {\pi_{\boldsymbol\theta_0}(a_i\mid s_i)}A_i^0.
 $$
 
-Behavioral divergence is increased with:
+The steering objective is the KL divergence between the two policies' action distributions on buffer states:
 
 $$
 \phi_B(\boldsymbol\theta)
@@ -192,49 +181,51 @@ D_{\mathrm{KL}}\!\left(
 \pi_{\boldsymbol\theta}(\cdot\mid s_i)\right).
 $$
 
-$s_i,a_i$ are observed states and actions, and $N$ is the buffer sample count. This surrogate is not exact future return under every changed state distribution. Buffers are recollected periodically and actual episode return is evaluated separately. Continuous-action experiments steer mean-action MSE with frozen Gaussian covariance. It is an overall constant multiple of KL only when variances agree across action dimensions; otherwise fixed diagonal weights differ. [§5, I.1–I.3, pp.7–8,49–50](https://arxiv.org/pdf/2609.38081v1#page=7)
+$s_i,a_i$ are observed states and actions, and $N$ is the buffer sample count. Because the visited state distribution changes with the policy, the buffer is periodically recollected from the current policy and the surrogate and its null space are recomputed; actual episode return is evaluated separately. Continuous-action experiments steer mean-action MSE under a frozen Gaussian covariance ([\[2/2\] I.2](/en/reviews/hnc-mechanics/)). [§5, I.1–I.3, pp.7–8,49–50](https://arxiv.org/pdf/2609.38081v1#page=7)
 
 ![Original Figure 4: Alternative plume-tracking strategies and boat-race reward hacking](/assets/reviews/hnc/rl-strategies.webp)
 
 [Enlarge Figure 4](/assets/reviews/hnc/rl-strategies.webp)
 
-**Left, A–C: another way to follow odor.** The PPO-trained 64-unit recurrent anchor casts across the wind after losing odor. The alternative follows the plume edge more smoothly. B plots increasing action KL alongside actual return. C pairs cast counts and distance from the centerline over 240 shared initial conditions: points below the diagonal in the cast plot indicate fewer reversals. Success is not inferred from three illustrated trajectories alone.
+**Left, A–C: another way to follow odor.** Like real flies, the 64-unit recurrent anchor trained with proximal policy optimization (PPO) surges upwind on detecting odor and casts across the wind after losing it. The alternative instead slides to the plume's edge and tracks it smoothly. In B, action KL keeps rising while episode return and success rate are maintained, and even increase early in the walk. C pairs cast counts and distance from the centerline over 240 shared initial conditions: the alternative casts less and on average stays farther from the centerline.
 
-The 30-step walk refreshes its buffer every five steps. Standard evaluation uses common random numbers and 60 fixed initial conditions; additional OOD evaluation uses 240 per condition. The selected alternative improves under wind switches, sparse odor, and noisy wind, but I.5 also reports a collapse across conditions at step 20 when the walk leaves the preserved level set. The most distant checkpoint is not necessarily the best policy.
+The 30-step walk refreshes its buffer every five steps; standard evaluation uses common random numbers and 60 fixed initial conditions. In the OOD evaluation of I.5, with 240 initial conditions per condition, the anchor fails every sparse-odor and noisy-wind episode while the analyzed alternative succeeds on some, and under a wind switch the alternative more than doubles the anchor's homing rate. At step 20 all conditions collapse together, which the authors identify as the point where the walk leaves the reward level set.
 
-**Right, D–E: reward can survive while intent fails.** Boat race awards proxy reward +3 for entering arrow tiles clockwise; intended performance measures actual net clockwise progress. HNC finds **reward-hacking** policies that repeatedly enter and leave one tile. E separates proxy return from true return. The three most divergent endpoints lose net progress entirely.
+**Right, D–E: reward can survive while intent fails.** Boat race awards proxy reward +3 each time the agent enters an arrow tile clockwise, while the true return, hidden from the agent, measures net clockwise progress around the track. Stepping on and off one tile therefore collects proxy reward without progress. E plots proxy and true return separately: the endpoints split into two clusters, and the three most divergent adopt this reward hack and lose net progress entirely.
 
-An essential condition is that **all ten anchors were PPO-trained on true return**. Proxy-only training discovers the exploit itself, so the experiment first creates well-behaved policies and then searches while preserving proxy return. It does not show that HNC newly creates every risk in normal proxy-only training. Additional Ant-v3 results preserve mean return while changing leg timing and failure modes. Equal mean reward does not imply equal competence on each initial state. [§5, I.4–I.7, pp.8,51–53](https://arxiv.org/pdf/2609.38081v1#page=51)
+An essential condition is that **all ten anchors were PPO-trained on true return** and all follow the track. An anchor trained on the proxy alone discovers the exploit by itself, leaving nothing for HNC to find, so the experiment first builds well-behaved policies and then searches while preserving proxy return. In MuJoCo Ant-v3 (appendix I.7), HNC likewise preserves mean return while changing leg timing and failure modes ([\[2/2\] I](/en/reviews/hnc-mechanics/)). [§5, I.4–I.7, pp.8,51–53](https://arxiv.org/pdf/2609.38081v1#page=51)
 
 ## 6. HNC measures loss landscape geometry
 
-The final main experiment varies CNN width $w\in\{16,24,32,48,96\}$ and CIFAR-100 class count $C\in\{7,10,20,50,100\}$, with three seeds per combination: **75 anchors**. Each class contributes 300 training images without augmentation; 512 of each anchor's training images constrain its outputs. Class count is the chosen proxy for task complexity.
+The final main experiment uses HNC to measure the local geometry of the solution set. It addresses a question earlier work approached through loss barriers between independently trained networks or stylized theoretical models, namely how model size and task complexity shape the solution set, by measuring directly from single trained networks. It varies CNN width $w\in\{16,24,32,48,96\}$ and CIFAR-100 class count $C\in\{7,10,20,50,100\}$, with three seeds per combination: **75 anchors**. Each class contributes 300 training images without augmentation; 512 of each anchor's training images constrain its outputs. Class count is the chosen proxy for task complexity.
 
 ![Original Figure 5: Effective null fraction and normalized curvature against width and class count](/assets/reviews/hnc/geometry.webp)
 
 [Enlarge Figure 5](/assets/reviews/hnc/geometry.webp)
 
-**A and B measure different things.** A's effective null fraction counts directions whose small step, 1% of weight norm, raises function-matching loss by at most $0.05$. It grows with width and decreases with class count. This is not a condition-independent measurement of exact nullity.
+**A and B measure different things.** A's effective null fraction is the fraction of directions along which a step of 1% of the weight norm raises function-matching loss by at most $\epsilon=0.05$. Tying the cutoff to an output-drift tolerance allows comparison across conditions with different overall Hessian scales. The fraction grows with width and shrinks with class count, yet remains large even for the smallest network on the hardest task.
 
-B uses the common relative threshold $\mu=10^{-6}\lambda_{\max}$ and measures normalized directional curvature. Main-text notation is $\mathbf d^\top\mathbf H\mathbf d/(nC)$; implementation and J.3 use $\mathbf G$. Here $\mathbf d$ has unit norm and $n$ is probe size. Curvature generally rises with class count and falls with width. Bands are standard errors over three seeds; threshold sweeps preserve the trends.
+B measures the cost of moving along these directions. To avoid constraining output sensitivity itself, it replaces the drift cutoff with a common relative threshold $\mu=10^{-6}\lambda_{\max}$ and measures the normalized curvature $\mathbf d^\top\mathbf H\mathbf d/(nC)$ of each step, where $\mathbf d$ has unit norm and $n$ is the probe size; implementation and J.3 use $\mathbf G$ in place of $\mathbf H$. Curvature generally rises with class count and falls with width. Bands are standard errors over three seeds, and threshold sweeps in the appendix preserve the trends.
 
-More classes also impose more output constraints. The results are not a universal law for every notion of task difficulty or a proof of disconnected basins. J.1's statement that 100% training accuracy makes an “exact zero-loss solution” is not generally valid for cross-entropy. The separate function-matching loss is nevertheless zero at its own anchor by definition. [§6, J.1–J.4, pp.8–9,53–55](https://arxiv.org/pdf/2609.38081v1#page=8)
+The authors conclude that flat directions remain abundant, but on harder tasks the directions HNC follows become more sensitive to weight changes. They present this stiffening of the landscape around a local minimum as a potential mechanism for prior findings that the loss landscape fragments into separate basins as tasks get harder. [§6, J.1–J.4, pp.8–9,53–55](https://arxiv.org/pdf/2609.38081v1#page=8)
 
 ## 7. Discussion
 
-The distinction is between **diversity a task permits** and **diversity ordinary optimization actually discovers**. Larger trained models can resemble each other while any one large model still permits many local alternatives. Function alone need not uniquely determine representation.
+The authors read §6 alongside Huang et al. (2025), who found that harder tasks and larger models reduce the variability of dynamics across independently trained RNNs, whereas HNC shows larger null spaces for larger models on the same task. They interpret this as larger models admitting more alternatives within a local region even as training converges to a narrower subset of them, consistent with the stronger simplicity bias that PRH invokes to explain representational convergence. The gap lies between **the diversity a task permits** and **the diversity ordinary optimization actually selects**.
 
-Limitations are part of this conclusion. Preservation is approximate on finite probes and may fail under distribution shift, long memory intervals, or perturbation. Search is local and does not count all basins. Steering metrics and tolerances influence the alternatives found. Matrix-free computation still requires curvature products, restoration, CG, and additional RL rollouts. ViT-S continuation steps are reported at roughly one minute on an H200; for the small RNN, dense computation is faster.
+An expected objection is that parameter symmetries and reparameterizations can also reorganize representations while preserving function (Theiss et al., 2026). The authors answer that HNC's solutions go beyond reparameterization: they change the dynamical regime qualitatively, alter out-of-distribution generalization, and produce qualitatively distinct behavioral strategies. Moreover, the symmetries in that work are discrete operations such as neuron duplication that may change network size, whereas HNC makes small continuous changes to the weights of a trained network.
 
-Appendix H further changes Brain-Score by steering internal features while approximately retaining outputs. It changes a model's predictivity of neural recordings, not the brain itself; its ridge steering surrogate differs from the reported official PLS-based score. Scaling to LLMs and general improvements in merging, editing, and fine-tuning remain prospects in Discussion, not established benchmark improvements here. [§7, A.1, H, pp.9–10,19,46–48](https://arxiv.org/pdf/2609.38081v1#page=9)
+As limitations, the authors note that function preservation is enforced only approximately on a finite probe set, so output agreement on unseen inputs, especially under distribution shift, is not guaranteed, and the reachable diversity depends on probe coverage and allowed drift. HNC is a local search and cannot tell whether several basins exist, but alternating it with global retraining broadens the search (appendix E).
 
-## Review Interpretation and Open Questions
-
-A practical reading is that HNC tests **which observations fail to identify an internal mechanism uniquely**, rather than finding the one true structure behind a function. Further comparisons should match probe size and distribution, allowed drift, and actual compute, then report representation changes alongside accuracy, prediction agreement, OOD behavior, and failures. Moving one optimized metric is insufficient. These are proposed follow-ups, not experiments performed for this review.
+The preserved quantity can be any differentiable function of the network. Preserving task loss instead would explore the broader task-compatible set (appendix D), and the steering objective could encode performance on a second task or alignment with neural data (the Brain-Score steering of appendix H). When the goal is to change the function, sharp directions are the most effective. The authors list as future applications empirical studies of the optimizer's implicit bias, scaling to large language models, model merging, fine-tuning, and editing, and auditing reward specifications by uncovering behaviorally distinct or reward-hacking policies. [§7, pp.9–10](https://arxiv.org/pdf/2609.38081v1#page=9)
 
 ## Review interpretation and open questions
 
-**Review interpretation.** Task performance alone can leave internal mechanisms underdetermined; preservation must be assessed on both probes and separate evaluation inputs.
+**Review interpretation.** The strongest evidence is the 3BFF RNN. While task loss stays below the ceiling, the number of fixed points changes, and the undirected endpoint holds memory through continuing movement in the readout-null subspace. Of the arguments the authors give in §7, the change in out-of-distribution generalization is the most direct answer to the reparameterization objection: a symmetry that preserves function on every input would also behave identically on inputs such as long input-free periods or OOD pulses, yet the 3BFF alternatives fail differently from the anchor on exactly these inputs (Figure 2E, appendix F). The same result also shows that off-probe preservation is only approximate.
+
+In ViTs, the controls are the strength. CKA and kNN alignment fall together on images never used as constraints, and random noise matched for accuracy loss barely moves CKA. However, the kNN-steered endpoint keeps more alignment than a randomly initialized ViT (G.3) and preserves function less well, so the size of the effect is tied to both the steering metric and the preservation level. The trends in §6's effective null fraction point in the same direction as a lower bound on the linear null space set purely by output-constraint and parameter counts ([\[2/2\] J](/en/reviews/hnc-mechanics/)); the effect of task difficulty is supported more directly by the normalized curvature and by the growth in representation dimensionality (J.4).
+
+Three questions remain. Do the mechanism-level differences seen in RNNs also appear in ViT internal circuits? How does the preservation–displacement trade-off of CKA versus kNN steering change once probe size and allowed drift are matched? And do the §6 trends persist when the class count is fixed and only the number of probe output constraints varies?
 
 ## Sources and reading scope
 

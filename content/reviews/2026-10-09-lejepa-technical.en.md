@@ -3,7 +3,7 @@ title: "[3/3] LeJEPA technical review: proof conditions, SIGReg and checked equa
 description: "Detailed theorem and proof commentary following Sections 3–5 and Appendices A–B, with intermediate derivations and unresolved gaps."
 date: "2026-10-09"
 publishedAt: "2026-10-09T23:54:43+09:00"
-updatedAt: "2026-10-23T08:56:15+00:00"
+updatedAt: "2026-10-23T15:26:16+00:00"
 topics: ["self-supervised learning", "representation learning", "joint embedding predictive architectures", "distribution matching", "computer vision"]
 visibility: "public"
 lang: "en"
@@ -17,11 +17,11 @@ thumbnail: "/assets/reviews/lejepa/lejepa-core.svg"
 thumbnailAlt: "LeJEPA combines within-image alignment to the global-view mean with across-image Gaussian matching through random projections in each view."
 ---
 
-LeJEPA links isotropic covariance in linear estimation, Fisher information in local nonlinear estimation, and SIGReg computed through finitely many projections. Gaussian optimality at fixed covariance and finite-sample loss approximation serve different roles in that argument. [Sections 3–5 and appendices A–B](https://arxiv.org/pdf/2511.08544v3#page=5) **Review interpretation.** The target-selection argument is useful, provided equality conditions, normalization, and finite approximations remain distinct.
+LeJEPA’s theory links isotropic covariance in linear estimation, Fisher information in local nonlinear estimation, and Sketched Isotropic Gaussian Regularization (SIGReg) computed through finitely many projections. The central result is a lower bound: for a density $p$ with zero mean and covariance $\Sigma$, the Fisher information $J(p)=\mathbb E\|\nabla\log p\|^2$ satisfies $J(p)\ge\operatorname{tr}(\Sigma^{-1})$, with equality only for a Gaussian, and fixing the total variance leaves the isotropic Gaussian. [Section 3.2 and Appendix B.4](https://arxiv.org/pdf/2511.08544v3#page=28) **Review interpretation.** The bound is correct, but the Gaussian’s “unique optimality” in Theorem 1 concerns the $J(p)$ term rather than exact bias, and on the implementation side the derivations omit the within-global-view variance in Eqs. (5)→(6) and misplace a factor of $N$ in Theorems 4 and 6.
 
-This is **[3/3] the theorem and proof commentary**. Recommended order: [introduction](/en/reviews/lejepa-overview/) → [complete commentary](/en/reviews/lejepa-complete/) → this article. The complete version retains the problem/background in Sections 1–2 and every central experimental theme in Section 6. Here, appendix proofs move beside their main-text statements so their assumptions and calculations can be followed together.
+This **[3/3] theorem and proof commentary** follows the theorems of Sections 3→4→5 and the proofs in Appendices A–B; the problem setting and the Section 6 experiments are in [\[1/3\] introduction](/en/reviews/lejepa-overview/) and [\[2/3\] complete commentary](/en/reviews/lejepa-complete/).
 
-**Notation correspondence.** $\mathbf Z\in\mathbb R^{N\times K}$ is the embedding matrix; $\mathbf z_{n,v}$ indexes image/view embeddings. The linear appendix’s $\mathbf X$, $p$, and $\lambda_{\rm wd}$ correspond to main-text $\mathbf Z$, $K$, and the ridge coefficient. Density $p$ elsewhere has a different role from that dimension symbol. Appendix $d,n$ denote dimension/sample count. $M=|\mathcal A|$, frequency count $T$, and $\widehat D=EP/N$ are explanatory abbreviations.
+**Notation correspondence.** $\mathbf Z\in\mathbb R^{N\times K}$ is the embedding matrix; $\mathbf z_{n,v}$ indexes image/view embeddings. The linear appendix’s $\mathbf X$, $p$, and $\lambda_{\rm wd}$ correspond to main-text $\mathbf Z$, $K$, and the ridge coefficient. Density $p$ elsewhere has a different role from that dimension symbol. Appendix $d,n$ denote dimension/sample count. The direction count $M=|\mathcal A|$ and $\widehat D=EP/N$, the paper’s Epps–Pulley statistic $EP$ divided by $N$, are explanatory abbreviations.
 
 <span id="3-latent-euclidean-theory-behind-the-target-law" aria-hidden="true"></span>
 
@@ -55,7 +55,7 @@ $$
 >\frac{\lambda_{\rm wd}}{\bar\lambda+\lambda_{\rm wd}}.
 $$
 
-This explains the existential quantifier. A task aligned with the largest eigenvalue can have the opposite behavior; the result must not be strengthened to every task. Appendix B.1’s smallest-eigenvalue indexing varies, but its argument uses the minimum direction above. [Lemma 1; Appendix B.1, p. 26](https://arxiv.org/pdf/2511.08544v3#page=26)
+Along the largest-eigenvalue direction the inequality reverses, which is why the lemma is stated existentially. Appendix B.1’s smallest-eigenvalue indexing varies, but its argument uses the minimum direction above. [Lemma 1; Appendix B.1, p. 26](https://arxiv.org/pdf/2511.08544v3#page=26)
 
 **Lemma 2.** With zero ridge, isotropy minimizes the trace of coefficient variance. Since $\hat{\boldsymbol\beta}-\boldsymbol\beta_{\rm true}=\mathbf G^{-1}\mathbf Z^\top\boldsymbol\varepsilon$:
 
@@ -84,7 +84,7 @@ $$
 {\int_{\|\mathbf u\|\le r_0}p(\mathbf q+\mathbf u)\,d\mathbf u}.
 $$
 
-**Review-supplied derivation.** Let $v_K$ be the unit-ball volume. Symmetry eliminates the first integral and yields the second. This spells out the source’s volume shorthand:
+**Review-supplied derivation.** Let $v_K$ be the unit-ball volume. Symmetry eliminates the first integral and yields the second, which corresponds to the source’s volume shorthand:
 
 $$
 \int_{B(0,r_0)}\mathbf u\,d\mathbf u=0,\qquad
@@ -100,7 +100,7 @@ $$
 +\frac12\Delta\eta(\mathbf q)\right)+o(r_0^2).
 $$
 
-This uses the main text’s $K$ and the query location consistently. $C^2$ alone does not justify a bounded third-order Taylor remainder, so the weaker $o(r_0^2)$ statement is retained rather than treating every intermediate $O(\|\mathbf u\|^3)$ claim as established. [Lemma 4; Appendix B.3, p. 27](https://arxiv.org/pdf/2511.08544v3#page=27)
+Because $\eta\in C^2$ alone does not bound a third-order Taylor remainder, the remainder is written as $o(r_0^2)$ instead of the $O(\|\mathbf u\|^3)$ in some of the source’s intermediate lines. [Lemma 4; Appendix B.3, p. 27](https://arxiv.org/pdf/2511.08544v3#page=27)
 
 **Theorem 7 connection.** Appendix B.4 abbreviates $A=\nabla\eta^\top\nabla\log p$ and $C=\Delta\eta/2$. Squaring produces all three terms: $\mathbb E[A^2]+2\mathbb E[AC]+\mathbb E[C^2]$. A mean-zero task-gradient prior with pointwise second moment $\tau_g^2I$ gives:
 
@@ -111,7 +111,7 @@ $$
 =\tau_g^2J(p).
 $$
 
-Eliminating the cross term requires additional lack of correlation between the gradient and Laplacian. Making the curvature term independent of density also requires the relevant pointwise task second moment to be constant. The displayed $\tau_g^2J(p)$ contribution and the $O(r_0^4)$ remainder have the same order. Without controlling the remainder’s dependence on $p$, this formula alone does not establish a unique minimum of exact integrated bias. [Theorem 7; Appendix B.4, pp. 28–29](https://arxiv.org/pdf/2511.08544v3#page=28)
+The cross term vanishes only under the additional condition that $\nabla\eta$ and $\Delta\eta$ are uncorrelated. The authors acknowledge that without it the cross term remains at $O(r_0^4)$, and argue that the leading $p$-dependent term is still $\tau_g^2J(p)$. The curvature term is independent of density when the pointwise task second moment is constant. [Theorem 7; Appendix B.4, pp. 28–29](https://arxiv.org/pdf/2511.08544v3#page=28) **Review interpretation.** The cross term $\mathbb E[AC]$ also contains $\nabla\log p$, so it is a $p$-dependent term of the same order; without the uncorrelatedness condition, this formula does not yield a unique minimum of ISB.
 
 **Lemma 6 and Theorem 9 — A Fisher-information lower bound.** The paper invokes the matrix Cramér–Rao bound for a location family. With the necessary regularity, zero mean, and covariance $\Sigma\succ0$, the score $\mathbf s(\mathbf z)=\nabla\log p(\mathbf z)$ satisfies $J(p)\ge\operatorname{tr}(\Sigma^{-1})$, with Gaussian equality.
 
@@ -133,7 +133,7 @@ J(p)\ge\sum_{k=1}^K\frac1{\lambda_k}
 \Sigma=\frac cK I\ \text{at equality}.
 $$
 
-This is uniqueness for the Fisher functional. Appendix B.4 also analyzes determinant, Frobenius, and spectral-radius constraints. The trace case is expanded here; the other cases follow the same direction of argument and remain linked. Although the source boxes are titled “Recovery of VCReg,” the result used in Lemma 6 and Theorem 9 is this Fisher bound. [Lemma 6, Theorem 9; Appendix B.4, pp. 30–32](https://arxiv.org/pdf/2511.08544v3#page=30)
+This is uniqueness for the Fisher information $J(p)$. Appendix B.4 treats determinant, Frobenius, and spectral-radius constraints with the same argument. Although the source boxes are titled “Recovery of VCReg,” the result used in Lemma 6 and Theorem 9 is this Fisher bound. [Lemma 6, Theorem 9; Appendix B.4, pp. 30–32](https://arxiv.org/pdf/2511.08544v3#page=30)
 
 **Lemma 5 — Kernel bias and variance.** Change kernel variables in the numerator/denominator expectations and expand to second order. Symmetry removes first-order terms; the isotropic kernel moment is $\int\mathbf u\mathbf u^\top K(\mathbf u)d\mathbf u=\mu_2(K)I$. The intermediate ratio identity is:
 
@@ -153,7 +153,7 @@ $$
 \end{aligned}
 $$
 
-Here $d=K$, $n=N$, $R(K)=\int K^2$, and $v(\mathbf q)=\operatorname{Var}(Y\mid\mathbf q)$. At finite sample size, a ratio of expectations is not the expectation of a ratio. Local-sample/asymptotic conditions must control denominator fluctuations. The source’s intermediate equality $\operatorname{Var}(K_hY)=\mathbb E[K_h^2v]$ is also not generally exact. **Review supplement:** a delta-method expansion of the centered ratio residual using $Y-\eta(\mathbf q)$ explains the leading conditional-noise term. This is not a fresh proof of all finite-sample remainders. [Lemma 5; Appendix B.5, pp. 32–33](https://arxiv.org/pdf/2511.08544v3#page=32)
+Here $d=K$, $n=N$, $R(K)=\int K^2$, and $v(\mathbf q)=\operatorname{Var}(Y\mid\mathbf q)$. At finite sample size, a ratio of expectations is not the expectation of a ratio. Local-sample/asymptotic conditions must control denominator fluctuations. The source’s intermediate equality $\operatorname{Var}(K_hY)=\mathbb E[K_h^2v]$ is also not generally exact. **Review supplement.** A delta-method expansion of the ratio residual centered by $Y-\eta(\mathbf q)$ yields the leading conditional-noise term; control of all finite-sample remainders remains an open gap. [Lemma 5; Appendix B.5, pp. 32–33](https://arxiv.org/pdf/2511.08544v3#page=32)
 
 **Theorem 8 — What is minimized?** With $\|\nabla\eta\|\le L$ and $|\Delta\eta|\le B$, apply $(a+b)^2\le2a^2+2b^2$, then Cauchy–Schwarz:
 
@@ -166,13 +166,13 @@ $$
 \end{aligned}
 $$
 
-The Gaussian minimizes this $J(p)$-based upper bound. Minimizing a bound does not automatically establish the minimum of exact bias or sharp minimax equality. In integrated variance, the leading density factor cancels against query weighting, but finiteness of $\int v(\mathbf z)d\mathbf z$, the support, and uniform remainder control still matter. The Appendix A Theorem 8 box omits a square in its notation; main-text Theorem 1 and B.7 derive squared bias. [Theorem 8; Appendix B.7, p. 34](https://arxiv.org/pdf/2511.08544v3#page=34)
+The Gaussian minimizes this $J(p)$-based upper bound. In integrated variance, the leading density factor cancels against query weighting, but finiteness of $\int v(\mathbf z)d\mathbf z$, the support, and uniform remainder control still matter. The Appendix A Theorem 8 box omits a square in its notation; main-text Theorem 1 and B.7 derive squared bias. [Theorem 8; Appendix B.7, p. 34](https://arxiv.org/pdf/2511.08544v3#page=34) **Review interpretation.** The authors’ conclusion summarizes this as minimizing worst-case downstream risk, but no proof shows that the bound is attained by the worst case in the class $\|\nabla\eta\|\le L$, $|\Delta\eta|\le B$, so what is minimized is the bound.
 
 ### 3.3 Geometric and Practical Insights
 
-Figure 3 illustrates isotropy through repeated logistic boundaries. Figure 17 combines resampling for binary, linear, and nonlinear targets; its caption describes lower variance for anisotropy. Lemma 2 concerns lower total coefficient variance for isotropy in unregularized OLS with the same column space and total energy. [Section 3.1, Lemma 2](https://arxiv.org/pdf/2511.08544v3#page=5), [Figure 17](https://arxiv.org/pdf/2511.08544v3#page=48)
+Figure 3 illustrates isotropy through repeated logistic boundaries. Figure 17 plots the distribution of $\beta$ obtained by resampling training data for binary classification, linear regression, and nonlinear regression targets; citing Lemmas 1–2, its caption states that “the anisotropic version (blue) provides much lower variance compared to the isotropic case (red).” Lemma 2 says that isotropy gives lower total coefficient variance in unregularized OLS with the same column space and total energy. [Section 3.1, Lemma 2](https://arxiv.org/pdf/2511.08544v3#page=5), [Figure 17](https://arxiv.org/pdf/2511.08544v3#page=48)
 
-**Review interpretation.** The variance directions are opposite, but identical target and resampling conditions have not been established. Rather than declaring that the caption must be reversed, the linear-target design, noise, and color correspondence remain questions to resolve. Lemma 2’s algebraic proof can be assessed independently of this caption.
+**Review interpretation.** The caption has most likely swapped the two cases or their colors, but the paper does not state whether the figure’s target design and noise match Lemma 2’s assumptions, so confidence is moderate. Either way, Lemma 2’s algebraic proof is unaffected.
 
 <span id="4-sigreg-identification-stability-and-finite-direction-conditions" aria-hidden="true"></span>
 
@@ -187,11 +187,11 @@ $$
 =\mathbb E[e^{ir\mathbf a^\top Y}]=\varphi_Y(\mathbf t).
 $$
 
-At $\mathbf t=0$, both CFs equal 1. Equality at every vector frequency and CF uniqueness imply $X\overset d=Y$. The quantifier cannot be reduced to finitely many directions. The weak-convergence argument connects projection convergence with Lévy’s continuity theorem. [Lemma 3; Appendix B.8, p. 35](https://arxiv.org/pdf/2511.08544v3#page=35)
+At $\mathbf t=0$, both equal 1. Since the characteristic functions (CFs) agree at every vector frequency, CF uniqueness gives $X\overset d=Y$. The weak-convergence argument connects projection convergence with Lévy’s continuity theorem. [Lemma 3; Appendix B.8, p. 35](https://arxiv.org/pdf/2511.08544v3#page=35)
 
 **Theorem 2’s proof path.** The combined test uses a maximum over directional statistics and a threshold for the global null. Reusing each individual significance level does not by itself control the global false-positive rate. For example, Bonferroni assigns $\alpha/|\mathcal A|$ per direction, letting a union bound control the total at $\alpha$. This example is a review supplement.
 
-For power, the argument uses a neighborhood $U$ of a separating direction $\mathbf a^\star$ and a vanishing mesh, ensuring a sampled point eventually lies in $U$. Applying this to moving directions $\mathbf a_n$ needs sufficiently uniform power over $U$. B.9’s $\inf_a\lim_n$ notation alone does not directly imply $\lim_n\inf_a$; rigorous justification of this exchange remains unconfirmed. SIGReg’s training **average** is not the maximum test analyzed here. [Theorem 2; Appendix B.9, p. 36](https://arxiv.org/pdf/2511.08544v3#page=36)
+For power, the argument uses a neighborhood $U$ of a separating direction $\mathbf a^\star$ and a vanishing mesh, ensuring a sampled point eventually lies in $U$. Applying this to moving directions $\mathbf a_n$ needs sufficiently uniform power over $U$. B.9’s $\inf_a\lim_n$ notation alone does not directly imply $\lim_n\inf_a$; rigorous justification of this exchange remains unconfirmed. [Theorem 2; Appendix B.9, p. 36](https://arxiv.org/pdf/2511.08544v3#page=36)
 
 ### 4.2 SIGReg: Sketching the Epps–Pulley Test
 
@@ -203,11 +203,11 @@ For a positive probability vector $\mathbf p$ and sufficiently small $\varepsilo
 
 ![Figure 5: Gaussian marginals can conceal an X-shaped joint law.](/assets/reviews/lejepa/paper-figure-5.webp)
 
-**Reading Figure 5.** Marginal histograms and identity covariance conceal the X structure; oblique projections and directional statistics reveal it. Curves represent different test responses, not comparable accuracy scores. [Enlarge](/assets/reviews/lejepa/paper-figure-5.webp) · [Figure 5, p. 8](https://arxiv.org/pdf/2511.08544v3#page=8). Balestriero and LeCun, [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/); full-panel crop and lossless WebP conversion.
+**Figure 5.** The paper’s example projecting an X-shaped law, with standard Gaussian marginals and identity covariance, onto ten directions. A reading guide is in the [complete version, Section 4.2.1](/en/reviews/lejepa-complete/#421-moments-are-unstable-and-insufficient). [Enlarge](/assets/reviews/lejepa/paper-figure-5.webp) · [Figure 5, p. 8](https://arxiv.org/pdf/2511.08544v3#page=8). Balestriero and LeCun, [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/); full-panel crop and lossless WebP conversion.
 
 #### 4.2.2 CDF — Computational requirements and alternatives
 
-The selection criteria include gradient stability and DDP computation as well as identification. The authors consider sorting/order-statistic and distributed sample-gathering costs. Appendix E’s Shapiro–Wilk and F’s multivariate statistics are condensed as alternative-method background. Independent correctness and implementation of every alternative were not verified. [Section 4.2.2; Appendices E–F](https://arxiv.org/pdf/2511.08544v3#page=44)
+The selection criteria include gradient stability and distributed (DDP) computation as well as identification. The sorting and sample-gathering burden of cumulative distribution function (CDF) tests is discussed in the [complete version, Section 4.2.2](/en/reviews/lejepa-complete/#422-cumulative-density-functions-are-impractical). Appendix E gives the evidence that the Shapiro–Wilk test was unstable in practice, and Appendix F covers multivariate statistics such as multivariate characteristic-function comparison. [Section 4.2.2; Appendices E–F](https://arxiv.org/pdf/2511.08544v3#page=44)
 
 #### 4.2.3 CF — Deriving Theorem 4 and checking normalization
 
@@ -234,11 +234,11 @@ $$
 
 **Review-supplied derivation.** The first bound uses error magnitude at most 2. The second derivative contains $2|\partial\widehat\varphi_N|^2$ and $2\operatorname{Re}[(\widehat\varphi_N-\varphi_G)\overline{\partial^2\widehat\varphi_N}]$. Gaussian-weighted integrals satisfy $\int|t|w_s=1/s^2$ and $\int t^2w_s=\sqrt\pi/(2s^3)$, producing input-independent bounds. These integrals also provide domination for differentiation under the integral.
 
-The main-text bandwidth $\sigma$ maps to $s=1/\sigma$, but the $O(1/N)$ derivation applies to $\widehat D$, despite the theorem labeling its object $EP$. For actual $EP$, multiply by $N$ to obtain $|\partial EP|\le4/s^2$. **Boundedness survives; the object with $1/N$ decay changes.** Parameter gradients also include a Jacobian sum of the form $\sum_i|\partial_{x_i}D|\|\mathbf a^\top\partial_{\boldsymbol\theta}f_{\boldsymbol\theta}\|$. [Theorem 4; Appendix B.12, pp. 37–38](https://arxiv.org/pdf/2511.08544v3#page=37)
+Main-text Theorem 4 is printed as $|\partial EP/\partial z_i|\le4\sigma^2/N$ and $|\partial^2EP/\partial z_i^2|\le C\sqrt\pi\sigma^3/(2N)$, matching the expressions above through $s=1/\sigma$. Parameter gradients multiply these by an encoder Jacobian factor of the form $\|\mathbf a^\top\partial_{\boldsymbol\theta}f_{\boldsymbol\theta}\|$. [Theorem 4; Appendix B.12, pp. 37–38](https://arxiv.org/pdf/2511.08544v3#page=37) **Review interpretation.** The derivation above is for the unscaled $\widehat D$, so the correct bound for $EP=N\widehat D$ is $|\partial EP|\le4/s^2=4\sigma^2$. Boundedness survives and only the $1/N$ decay disappears, so Theorem 4’s stability conclusion is unchanged; confidence is high.
 
-Algorithm 1 uses 17 frequencies on $[-5,5]$, target/window $e^{-t^2/2}$, CF-mean all-reduce, trapezoidal integration, and multiplication by global $N$. With equally sized device batches, averaging local CF means gives the global CF mean. Matrix projection and CF averaging replace all sample pairs; dense cost is $\mathcal O(NKM+NMT)$. Distributed autograd and full-model memory were not execution-tested here. [Algorithm 1; Table 6](https://arxiv.org/pdf/2511.08544v3#page=10)
+Algorithm 1’s CF-mean all-reduce relies on the fact that, with equally sized device batches, the average of local CF means equals the global CF mean (review supplement). The algorithm’s steps and cost are in the [complete version, Section 4.2.3](/en/reviews/lejepa-complete/#423-characteristic-functions-are-stable-scalable-and-identifiable).
 
-**Review example: finite-frequency identification limits.** The 17-point grid has $\Delta t=0.625$. Translate $X\sim\mathcal N(0,1)$ by $c=2\pi/\Delta t$ to obtain $Y=X+c$. At every grid point, $e^{itc}=1$, so both laws have the same CF values, while off-grid frequencies distinguish them. This is a fixed-grid 1D example, not a counterexample to high-dimensional resampled training or all-frequency Cramér–Wold. It distinguishes exact-integral identification from numerical approximation.
+**Review example: finite-frequency identification limits.** The 17-point grid has $\Delta t=0.625$. Translate $X\sim\mathcal N(0,1)$ by $c=2\pi/\Delta t$ to obtain $Y=X+c$. At every grid point, $e^{itc}=1$, so both laws have the same CF values, while off-grid frequencies distinguish them. This 1D example shows that fixed-grid quadrature can miss a difference that the exact integral identifies.
 
 ### 4.3 How SIGReg Beats the Curse of Dimensionality — Theorem 5
 
@@ -253,11 +253,11 @@ $$
 
 The paper assumes $p_{\boldsymbol\theta}\in H^\alpha(\mathbb R^K)$ and equality of the complete projected laws in the selected directions. **Appendix B.10’s route:** spherical-harmonic approximation through degree $L$ has error roughly $L^{-\alpha}$; $M$ quasi-uniform directions correspond to $L\sim M^{1/(K-1)}$. Squaring yields $M^{-2\alpha/(K-1)}$, followed by integration over frequency. Marcinkiewicz–Zygmund conditions support stable recovery of the harmonic space from sampled values.
 
-**Unconfirmed conditions.** This review does not independently verify every transfer from Euclidean density regularity to the angular CF norm/frequency integrability, point placement and interpolant stability, or the cited primary lemmas/theorems. The rate is not applied unconditionally to arbitrary direction placement or merely a random sample count. Dimension dependence in $C(K,\alpha)$ and the norm also prevents a universal claim that $O(K)$ directions suffice for all laws. [Theorem 5; Appendix B.10, pp. 36–37](https://arxiv.org/pdf/2511.08544v3#page=36)
+**Unconfirmed gap.** The paper leaves to cited sources the route from Euclidean Sobolev regularity to finite angular CF norms and frequency integrals, and the stability conditions for point placement and interpolation; whether those conditions hold in this setting is not established within the paper. From this bound the authors conclude that $|\mathcal A|=O(K)$ directions suffice when $\alpha$ is large. [Theorem 5; Appendix B.10, pp. 36–37](https://arxiv.org/pdf/2511.08544v3#page=36) **Review interpretation.** The paper’s $C(K,\alpha)$ contains a factor $\pi^{(K-1)/2}$ that grows quickly with $K$, and with $M=O(K)$ the factor $M^{-2\alpha/(K-1)}$ approaches 1 for large $K$, so that conclusion needs $\alpha$ to grow with $K$ or an additional assumption on the size of the norm.
 
 ![Figure 7: Synthetic discrepancy with fixed versus step-resampled directions.](/assets/reviews/lejepa/paper-figure-7.webp)
 
-**Reading Figure 7.** Horizontal: direction count $M$. Vertical: final expected directional statistic. Green resampling achieves lower discrepancy with fewer directions than blue fixed sampling. This illustrates accumulated coverage in synthetic optimization, not global convergence of neural-network SGD. Figure 6 separately optimizes samples with a two-dimensional X structure directly, without an encoder. [Enlarge](/assets/reviews/lejepa/paper-figure-7.webp) · [Figure 7, p. 10; Figure 6, p. 9](https://arxiv.org/pdf/2511.08544v3#page=10). Balestriero and LeCun, [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/); full-panel crop and lossless WebP conversion.
+**Figure 7.** A synthetic comparison of fixed directions (blue) and directions resampled at every step (green). A reading guide is in the [complete version, Section 4.3](/en/reviews/lejepa-complete/#43-how-sigreg-beats-the-curse-of-dimensionality). [Enlarge](/assets/reviews/lejepa/paper-figure-7.webp) · [Figure 7, p. 10](https://arxiv.org/pdf/2511.08544v3#page=10). Balestriero and LeCun, [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/); full-panel crop and lossless WebP conversion.
 
 <span id="5-lejepa-sampling-and-normalization-in-the-actual-objective" aria-hidden="true"></span>
 
@@ -277,9 +277,9 @@ $$
 \end{aligned}
 $$
 
-After weighted integration, $\mathbb E\widehat D=D+N^{-1}\int w_s(1-|\varphi_P|^2)$. With domination permitting differentiation and expectation to commute, parameter-gradient bias is $-N^{-1}\int w_s\nabla_{\boldsymbol\theta}|\varphi_P|^2$. This $O(1/N)$ is absolute bias for unscaled $\widehat D$ relative to its population counterpart.
+After weighted integration, $\mathbb E\widehat D=D+N^{-1}\int w_s(1-|\varphi_P|^2)$. With domination permitting differentiation and expectation to commute, parameter-gradient bias is $-N^{-1}\int w_s\nabla_{\boldsymbol\theta}|\varphi_P|^2$. This $O(1/N)$ is the absolute bias of the unscaled $\widehat D$ relative to its population value $D$. The authors report that the bias was small and not a concern even for minibatches of 16, and leave unbiased alternatives such as U-statistics or sample splitting unexplored. [Theorem 6; Appendix B.13, pp. 38–39](https://arxiv.org/pdf/2511.08544v3#page=38)
 
-Comparing $EP=N\widehat D$ with $ND$ instead makes the additional absolute term $O(1)$. The baseline loss also scales by $N$, preserving the idea of shrinking normalized bias, but Algorithm 1’s literal loss/gradient should not be labeled as having absolute $O(1/N)$ bias. Deterministic quadrature retains the sampling algebra while introducing a separate integration-approximation error. The paper leaves U-statistic and sample-splitting alternatives unexplored. [Theorem 6; Appendix B.13, pp. 38–39](https://arxiv.org/pdf/2511.08544v3#page=38)
+**Review interpretation.** Theorem 6 states this identity for the expectation of $EP$, but with $EP=N\widehat D$ as in Algorithm 1 the additional term becomes $\int w_s(1-|\varphi_P|^2)$, which is $O(1)$. The baseline loss also scales by $N$, so the relative bias is still $O(1/N)$, but the implemented loss and gradient do not carry an absolute $O(1/N)$ bias. Deterministic quadrature keeps the same sampling algebra and adds a separate integration error.
 
 **Eqs. (5)→(6): expand the omitted term.** The paper replaces a global/all-view pair average by a center average. Let $\boldsymbol\mu_n=V_g^{-1}\sum_{g=1}^{V_g}\mathbf z_{n,g}$ and $\boldsymbol\delta_g=\mathbf z_{n,g}-\boldsymbol\mu_n$, so $\sum_g\boldsymbol\delta_g=0$:
 
@@ -294,9 +294,9 @@ $$
 
 **Review-supplied derivation.** Write each difference as $\boldsymbol\delta_g+(\boldsymbol\mu_n-\mathbf z_{n,v})$ and square it. The cross term vanishes because the deviations sum to zero; both squared terms remain. B.6’s final step equates the mean square with the squared mean and omits this variance. The additional term is zero only when all global embeddings agree. For scalar views $[0,2]$ and $V_g=V=2$, pairwise loss is 2, center loss is 1, and the extra variance is 1. It depends on learned parameters and is not generally a discardable constant. [Eqs. (5)–(7); Appendix B.6, pp. 33–34](https://arxiv.org/pdf/2511.08544v3#page=33)
 
-**Read Algorithm 2 separately.** Its actual center loss is $(NVK)^{-1}\sum_{n,v}\|\mathbf z_{n,v}-\boldsymbol\mu_n\|^2$. The $1/K$ comes from averaging feature coordinates. SIGReg operates across $N$ images in each view, followed by a view average. The pairwise Eq. (5) and implementation should not be called identical objectives; reported experiments are described through the center-based pipeline supplied by the paper. Predictor, EMA teacher, and stop-gradient are absent from the required core; projector, optimizer, and schedule remain. [Section 5.1, Algorithm 2](https://arxiv.org/pdf/2511.08544v3#page=11)
+**Review interpretation.** Algorithm 2 implements the center loss of Eq. (6) (see the [complete version, Section 5.1](/en/reviews/lejepa-complete/#51-lejepa-sigreg-prediction-loss)), so the reported experimental results are unaffected by this error. What needs correcting is the motivation that the pairwise loss of Eq. (5) and the center loss are the same objective; the expansion above is a general identity, so confidence is high.
 
-**Four errors need separate checks:** finite-sample bias in Theorem 6, finite-direction approximation, numerical quadrature on the 17-point grid, and finite-encoder optimization or representation error. Increasing $N$ can reduce the first without resolving directional or frequency identifiability. The alias example isolates this distinction. This review does not derive a combined error bound for the complete neural network. [§4.1–4.3 and 5.1, Algorithms 1–2](https://arxiv.org/pdf/2511.08544v3#page=10)
+**Four sources of error.** Finite-sample bias in Theorem 6, finite-direction approximation, numerical quadrature on the 17-point grid, and finite-encoder optimization or representation error are distinct terms. Increasing $N$ reduces the first while leaving directional and frequency identifiability unresolved, as the alias example shows. [§4.1–4.3 and 5.1, Algorithms 1–2](https://arxiv.org/pdf/2511.08544v3#page=10)
 
 ### 5.2 Relation to Prior Work — Appendix B.14
 
@@ -304,15 +304,11 @@ An exact CF integral connects to kernel discrepancy; quadrature does not constru
 
 Let the mean be $\boldsymbol\mu$. If it were nonzero, selecting $\mathbf a=\boldsymbol\mu/\|\boldsymbol\mu\|$ would contradict the first condition, so $\boldsymbol\mu=0$. The second gives $\mathbf a^\top\Sigma\mathbf a=1$. Taking $\mathbf a=\mathbf e_i$ sets diagonal entries to 1; taking $\mathbf a=(\mathbf e_i+\mathbf e_j)/\sqrt2$ sets off-diagonal entries to 0. Thus $\Sigma=I$.
 
-This recovers moment-level constraints; it does not prove equality of objectives with VICReg’s original standard-deviation hinge and off-diagonal covariance penalty. VICReg centers features when computing covariance but does not require a separate zero-mean matching loss. Method comparisons with sliced score matching, sliced Wasserstein, and MMD, and their reading scopes, are in the [complete version, Section 5.2](/en/reviews/lejepa-complete/#52-relation-to-prior-work). [Section 5.2; Appendix B.14, pp. 39–40](https://arxiv.org/pdf/2511.08544v3#page=39)
-
-## 6–7 Connecting to experiments and conclusions
-
-The [complete commentary](/en/reviews/lejepa-complete/) preserves Sections 6.1–6.5 in order: stability, loss signals, in-domain learning, scale/transfer, and semantic structure. Their roles differ from the proofs. OLS coefficient theory does not prove every classification accuracy; CF stability does not establish global SGD convergence for every architecture. Galaxy10/IN-1K provide conditional practical evidence; PCA/attention provide qualitative evidence.
+The paper states that, with the statistic $T=\operatorname{mean}^2+(\operatorname{std}-1)^2$, LeJEPA recovers VICReg in the limit of many slices. The relation to sliced score matching, sliced Wasserstein, and MMD is in the [complete version, Section 5.2](/en/reviews/lejepa-complete/#52-relation-to-prior-work). [Section 5.2; Appendix B.14, pp. 39–40](https://arxiv.org/pdf/2511.08544v3#page=39) **Review interpretation.** The calculation above recovers moment-level constraints, zero mean and identity covariance. VICReg’s standard-deviation hinge penalizes only standard deviations below its target and has no mean-matching term, so the sets of embeddings on which the two regularizers vanish also differ.
 
 ## Review interpretation and open questions
 
-**Review interpretation.** The target-selection argument is useful, provided equality conditions, normalization, and finite approximations remain distinct.
+**Review interpretation.** The solid parts of the proofs are those that transcribe standard results correctly: the Fisher-information bound (Lemma 6, Theorem 9), Cramér–Wold (Lemma 3), and the moment counterexample (Theorem 3). The weak parts are the links that turn these results into a training objective; the $p$-dependence of the kNN cross term (Section 3.2), the limit exchange in Theorem 2 (Section 4.1), the constant dependence behind the $O(K)$-directions conclusion of Theorem 5 (Section 4.3), and the omitted term in Eqs. (5)→(6) and the normalization in Theorems 4 and 6 (Sections 4.2.3 and 5.1) each need extra assumptions or corrections. Open questions are whether the lower accuracy at batch 128 (72.20) than at 512 (74.72) in Table 1(c) comes from the effective SIGReg weight changing with batch size under the $N$-scaled statistic, and whether resampling frequencies at every step instead of the fixed 17-point grid changes the identification limit in actual training.
 
 ## Sources and reading scope
 

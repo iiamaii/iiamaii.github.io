@@ -1,9 +1,9 @@
 ---
 title: "[2/2] RePR 심화: PMI 유도·구현·스케일링 수치를 따라가기"
-description: "부록 A.1–A.7의 알고리즘·PMI 조건·원시 실험 수치를 보존하고, 확률 유도와 외삽의 범위를 검토한다."
+description: "부록 A.1–A.7의 알고리즘·PMI 조건·원시 실험 수치를 보존하고, 확률 유도와 재구성 주장의 조건을 검토한다."
 date: "2026-10-23"
 publishedAt: "2026-10-23T15:12:15+09:00"
-updatedAt: "2026-10-23T08:56:26+00:00"
+updatedAt: "2026-10-23T15:26:26+00:00"
 topics: ["representation learning", "latent tokenization", "diffusion models", "generative modeling", "scaling laws"]
 visibility: "public"
 lang: "ko"
@@ -17,9 +17,9 @@ thumbnail: "/assets/reviews/repr/figure1.webp"
 thumbnailAlt: "원문 Figure 1: 조건부 예측의 정보 차이를 패치 표현의 내적 변화에 맞추는 RePR 구조."
 ---
 
-RePR의 부록은 상대 예측 표현(Relative Prediction Representations)을 실제 마스크·확산 가중치·반복 학습으로 구현하는 과정을 보여 준다. ImageNet의 173M 모델은 총 600 epoch 배분에서 픽셀 예측만 할 때 프레셰 인셉션 거리(Fréchet Inception Distance, FID)-10K 30.68, 두 번째 반복에서 24.73, 세 번째에서 23.81을 기록한다. [원문 Table 1(e)·A.3](https://arxiv.org/pdf/2610.20533v1#page=9) **리뷰 해석.** 반복 특징 예측의 실측 이득과 이상적인 PMI 보존 성질을 나누면 알고리즘의 근사와 비용을 더 정확히 이해할 수 있다.
+RePR의 부록은 상대 예측 표현(Relative Prediction Representations)의 의사코드·구현 설정·점별 상호정보량(pointwise mutual information, PMI)의 성질과 스케일링 원시 수치를 담는다. A.7 Table 7에서 78M 인코더는 픽셀 예측 410 epoch의 프레셰 인셉션 거리(Fréchet Inception Distance, FID)-10K가 34.31이지만, 픽셀 210 epoch 뒤 특징 예측 210 epoch를 더한 반복 2(합 420 epoch)에서는 27.80이다(생성 모델은 JiT-B 80 epoch). [원문 Table 7](https://arxiv.org/pdf/2610.20533v1#page=22) **리뷰 해석.** 원문의 이론 중 확산 가중치(§4.1)와 연쇄법칙(§4.3)은 정확한 유도지만, 재구성(A.4)과 특징 예측의 PMI 보존(§5.4)은 최적 인수분해를 전제한 논증이라, 학습된 인코더에 대한 근거는 Table 4의 재구성 최대 신호 대 잡음비(peak signal-to-noise ratio, PSNR) 21.72 dB(DINOv2 18.09 dB)와 Table 7·8의 반복 2 이득이다.
 
-이론을 읽을 때는 세 층을 나눠야 한다. 확률의 연쇄법칙은 정확한 항등식이다. 이상적인 점별 상호정보량(pointwise mutual information, PMI) 인수분해의 성질에는 표현 용량·정보 보존 조건이 붙는다. 실제 RePR은 학습한 예측 모델, 시간 가중치, 마스크와 유한 Monte Carlo 표본을 사용한다. 원문에는 번호가 붙은 Theorem/Lemma와 긴 형식 증명은 없으며, A.4의 재구성 논증과 본문 확률 유도를 중심으로 아래의 **리뷰 보충 유도**를 제공한다.
+[\[1/2\] 본문 편](/reviews/repr-latent-tokenization/)은 §1–7을 다룬다. 원문에는 번호 붙은 Theorem/Lemma나 긴 형식 증명이 없고, 이론 부록은 A.4의 짧은 재구성 논증이다. 본문 §3–4 확률식의 중간 계산은 A.4 끝의 **리뷰 보충 유도**에 모았다.
 
 ## A.1 알고리즘 (Algorithm)
 
@@ -33,7 +33,7 @@ Algorithm 1은 이미지 $X$에서 문맥 $A,B$, 합친 문맥 $AB$, 두 문맥�
 | 정보 차이 추정 | 같은 $p_t,t$를 사용해 $p$를 두 문맥에서 복원 | 다른 문맥 $A$가 추가될 때의 가중 예측 이득 |
 | 표현 학습 | $\langle R_\theta(A),R_\theta(Bp)-R_\theta(B)\rangle$ | 정보 차이와 맞아야 할 표현의 변화 |
 
-다음은 원문 Algorithm 1의 핵심 순서를 보여 주는 의사코드다. 외부 코드를 실행한 결과나 바로 실행 가능한 라이브러리 API가 아니다. 원문 의사코드의 $R$은 공유 인코더 출력에 적용되는 branch이며, 본문의 $R_\theta(\mathbf{x})$는 이를 포함한 전체 표현 경로를 뜻한다.
+다음은 원문 Algorithm 1의 핵심 순서를 옮긴 의사코드다. 원문 의사코드의 $R$은 공유 인코더 출력에 적용되는 branch이며, 본문의 $R_\theta(\mathbf{x})$는 이를 포함한 전체 표현 경로를 뜻한다. 효율용 $A_{\mathrm{Repeat}}$·$p_{\mathrm{Repeat}}$는 원문도 생략한다.
 
 ```python
 a, b, ab, bp = E(A), E(B), E(AB), E(B, p)
@@ -50,9 +50,7 @@ repr_loss = mean((pred - pmi)**2)
 loss = mar_loss + loss_weight * repr_loss
 ```
 
-원문처럼 PMI 타깃 계산은 `no_grad()` 안에 있다. 따라서 표현 손실이 예측 숫자를 바꾸는 방향으로 직접 역전파하지 않는다. 반면 표현·생성 경로가 $E_\theta$를 공유하므로 표현 손실이 **모든 공유 매개변수와 무관한 것**도 아니다. MAR 손실은 예측 모델을 계속 개선한다. 표현 손실은 네 번 중 한 번, 나머지는 MAR만 학습한다.
-
-또한 본문 식 (16)과 의사코드는 $M$의 인자를 제시하는 순서가 다르다. 여기서는 패치의 noisy 값, 시간, 문맥이라는 의미를 추적한다. 인자 순서는 공개 구현의 함수 signature와 대응시켜야 한다. `mean`의 축과 벡터 norm의 합·평균 정규화도 손실의 숫자 척도를 바꿀 수 있다. [A.1·Algorithm 1, p.16](https://arxiv.org/pdf/2610.20533v1#page=16)
+원문처럼 PMI 타깃 계산은 `no_grad()` 안에 있어, 표현 손실이 자기 타깃 숫자를 움직여 줄어들 수는 없다. 다만 표현 손실의 기울기는 공유 인코더 $E_\theta$로 흐르고, MAR 손실은 예측 모델을 계속 개선한다. 원문 Table 5에 따르면 MAR+표현 공동 단계와 MAR 단독 단계를 1:3으로 섞는다. 특징 예측 반복에서는 MAR 타깃이 $R_{\theta_{\mathrm{old}}}(E_{\theta_{\mathrm{old}}}(x))$로, $p$가 그 특징의 $p_i$ 위치 값으로 바뀐다. 식 (16)은 $M_\theta(z_p,p_t,t)$, 의사코드는 `M(p_t, t, d)` 순서로 인자를 적는다. [A.1·Algorithm 1, p.16](https://arxiv.org/pdf/2610.20533v1#page=16)
 
 ## A.2 추가 실험 (Additional Experiments)
 
@@ -60,7 +58,7 @@ loss = mar_loss + loss_weight * repr_loss
 
 [![Figure 5. 4096-step PMI 추정값을 기준으로 한 Monte Carlo 표본 수별 오차와 shared/independent noise 비교.](/assets/reviews/repr/figure5.webp)](/assets/reviews/repr/figure5.webp)
 
-*원문 Figure 5, p.16. 가로축은 Monte Carlo 적분 표본 수 $N$, 세로축은 4096표본 추정값과의 평균 제곱 오차(mean squared error, MSE)다. 보라 실선은 공유 노이즈, 주황 점선은 독립 노이즈다. 기준은 참 PMI의 정확한 계산이 아니라 더 많은 표본을 사용한 근사다. 본문 그림은 눌러 확대할 수 있다.*
+*원문 Figure 5, p.16. 가로축은 Monte Carlo 적분 표본 수 $N$, 세로축은 4096표본 추정값과의 평균 제곱 오차(mean squared error, MSE)다. 보라 실선은 공유 노이즈, 주황 점선은 독립 노이즈다. 기준은 참 PMI가 아니라 4096표본 근사다.*
 
 두 예측은 같은 패치와 같은 noisy realization을 놓고 비교하는 것이 유리하다. 리뷰 보충으로 두 오차 추정치를 $U,V$라 쓰면
 
@@ -70,26 +68,26 @@ $$
 -2\operatorname{Cov}(U,V).
 $$
 
-공유한 난수가 두 추정치를 양의 방향으로 함께 흔들면 차이의 분산이 줄어든다. 공유가 언제나 유리하다는 일반 정리는 아니며, Figure 5가 이 구성에서의 효과를 보여 준다. 저자들은 $N=32$를 선택하고 diffusion integration이 전체 학습 FLOPs의 1.3%라고 보고한다. 이는 작은 head를 반복한 **적분 부분**의 비용이다. 여러 encoder/decoder 경로를 포함한 모든 표현 학습 오버헤드가 1.3%라는 뜻으로 확대하지 않는다.
+공유한 난수가 두 추정치를 함께 흔들면(양의 공분산) 차이의 분산이 줄고, 원문 Figure 5 캡션도 노이즈 공유가 분산을 크게 줄인다고 쓴다. 저자들은 $N=32$를 고르며, 이때 diffusion 적분(작은 head를 $N$번 실행하는 부분)이 학습 전체 FLOPs의 1.3%다.
 
-### 재구성과 생성의 지표는 다르다
+### 재구성 지표
 
-원문 Table 4는 RAE 디코더를 사용한 재구성 비교다.
+원문 Table 4는 RAE 디코더 설정으로 잰 재구성 성능이다.
 
 | 인코더 | 재구성 FID(rFID) ↓ | PSNR ↑ |
 | --- | --- | --- |
 | DINOv2-B | 0.49 | 18.09 dB |
 | RePR-B 반복 3, 600ep 표기 | 0.47 | 21.72 dB |
 
-최대 신호 대 잡음비(peak signal-to-noise ratio, PSNR)는 픽셀 오차를 본다. 아래는 지표를 설명하기 위한 표준 정의이며 원문의 새 정리가 아니다. 픽셀 범위의 최대 기준값을 $L$, 비교할 원소 수를 $n$이라 두면
+PSNR은 픽셀 오차를 본다. 픽셀 범위의 최대값을 $L$, 비교할 원소 수를 $n$이라 두면 표준 정의는
 
 $$
 \operatorname{MSE}=\frac{1}{n}\sum_{i=1}^{n}(x_i-\hat{x}_i)^2,
 \qquad
-\operatorname{PSNR}=10\log_{10}\frac{L^2}{\operatorname{MSE}}.
+\operatorname{PSNR}=10\log_{10}\frac{L^2}{\operatorname{MSE}}
 $$
 
-PSNR은 같은 범위·전처리·집계 방식에서 높을수록 좋으며, 완전 일치에서는 무한대다. 지각적으로 자연스러운 생성과는 다른 질문이다. rFID는 재구성된 이미지 집합과 실제 집합의 특징 분포 차이를 본다. 따라서 rFID가 낮아도 입력별 세부가 모두 정확하다는 뜻은 아니며, 이 표의 0.47을 생성 FID-50K 2.18과 비교해서도 안 된다. Table 4의 인코더 이름·600ep와 A.3의 상세 RAE 비교 비용 기록은 별도로 제시되어 있어 같은 체크포인트 예산으로 조용히 합치지 않는다. [A.2·Table 4, pp.16–17](https://arxiv.org/pdf/2610.20533v1#page=17)
+이며, 같은 픽셀 범위·전처리에서 높을수록 좋다. rFID는 재구성 이미지 집합과 실제 집합의 특징 분포 차이를 보는 분포 지표이고, 입력별 복원 정확도는 PSNR이 본다. A.4는 이 표의 PSNR 차이를 재구성 주장의 실측 근거로 든다. [A.2·Table 4, pp.16–17](https://arxiv.org/pdf/2610.20533v1#page=17)
 
 ## A.3 구현 상세 (Implementation Details)
 
@@ -105,18 +103,18 @@ PSNR은 같은 범위·전처리·집계 방식에서 높을수록 좋으며, �
 | MAR 시간 분포 | logit-normal $\mu=1.2,\sigma=1.2$, 10% uniform mixture |
 | RePR 시간 분포 | 픽셀 $\mu=1.2$, 특징 $\mu=1.6$, 공통 $\sigma=1.2$ |
 | 가중치·재사용 | $g(t)=(1-t)/\max(0.33,t)^2$, loss weight 0.005, $A_{\mathrm{Repeat}}=8$, $p_{\mathrm{Repeat}}=16$, $N=32$ |
-| 생성 scaling 평가 | ImageNet JiT-B, GPIC MiniT2I; ImageNet 환산 80 epochs |
+| 생성 스케일링 평가 | ImageNet JiT-B, GPIC MiniT2I; ImageNet 환산 80 epochs |
 | GPIC 조건 | FLAN-T5-large 텍스트 인코더, 최대 128 text tokens |
 
-“epoch”는 모든 곳에서 데이터셋을 한 번 돈다는 뜻이 아니다. 저자들은 처리한 image views를 ImageNet 표본 수로 나누어 보고한다. GPIC 1 epoch은 대략 ImageNet 환산 80 epochs다. 체크포인트를 저장한 후 10 epochs의 learning-rate decay도 추가한다. 그래서 반복 2의 $210+210$은 픽셀 학습 200+10, 특징 학습 200+10의 합이다.
+원문의 epoch은 처리한 이미지 뷰 수를 ImageNet 표본 수로 나눈 값이라 $A_{\mathrm{Repeat}}$와 무관하게 FLOPs에 비례한다. GPIC 1 epoch은 대략 ImageNet 환산 80 epochs다. 저자들은 학습률을 고정한 모델 하나를 100 epoch마다 저장하고, 각 체크포인트에서 10 epoch 동안 학습률을 선형으로 줄인다. 그래서 반복 2의 $210+210$은 픽셀 200+10과 특징 200+10의 합이다. 본문 Table 1의 epoch 표기와의 대응은 [1편 §6.4](/reviews/repr-latent-tokenization/)에 있다.
 
 Figure 4는 반복 2의 총 420 epochs 모델을 쓴다. RePR-44M/78M 학습은 JiT-L 200ep와 비교한 전체 예산의 약 20%/35%다. Table 3의 RePR-78M은 반복 3 총 830 epochs이며 210+210+410이다. 저자는 JiT-L 600ep에 대응하는 전체 예산의 약 25%를 인코더에 썼다고 설명한다. RAE 비교에는 RePR-B 총 1030 epochs와 $2.19\times10^{20}$ FLOPs를 별도로 적고 I-JEPA-H의 $2.45\times10^{20}$와 비교한다.
 
-계산은 self-attention을 제외한 $6ND$ 근사다. 보고된 FLOPs는 wall-clock 측정과 다르다. 저자는 ImageNet 생성 평가 하나에 약 31 GPU-hours, GPIC에는 56 GPU-hours를 적고 Figure 3 재현에 8-GPU B200 노드 250시간을 **추정**한다. [A.3·Tables 5–6, pp.17–19](https://arxiv.org/pdf/2610.20533v1#page=17)
+계산은 self-attention을 제외한 $6ND$ 근사다. 저자는 ImageNet 생성 평가 하나에 약 31 GPU-hours, GPIC에는 56 GPU-hours를 적고 Figure 3 재현에 8-GPU B200 노드 250시간을 **추정**한다. [A.3·Tables 5–6, pp.17–19](https://arxiv.org/pdf/2610.20533v1#page=17)
 
 ### 왜 비대칭 역할 정보가 필요한가?
 
-원문 A.3은 가중 PMI가 비대칭이며 PMI 자체도 PSD가 아니라고 명시한다. 동일 벡터를 양쪽에 넣는 Gram 행렬은 항상 PSD다. 리뷰 보충으로 임의 계수 벡터 $c$에 대해
+원문 A.3은 가중 PMI가 비대칭이고 PMI 자체도 양의 준정부호(positive semidefinite, PSD)가 아니므로, 추가 정보 $\mathbf{z}$에 해당하는 입력을 $\mathbf{x},\mathbf{y}$와 구별해 표시한다고 쓴다. 같은 벡터를 양쪽에 넣는 Gram 행렬은 항상 PSD다. 리뷰 보충으로 임의 계수 벡터 $c$에 대해
 
 $$
 c^\top Kc
@@ -124,30 +122,52 @@ c^\top Kc
 \qquad K_{ij}=\langle R(\mathbf{x}_i),R(\mathbf{x}_j)\rangle.
 $$
 
-그러나 주변 분포가 균등하고 공동확률이 대각 0.45·비대각 0.05인 두 상태 예제에서는 PMI 행렬이
+리뷰 보충 예로, 주변 분포가 균등하고 공동확률이 대각 0.45·비대각 0.05인 두 상태에서는 PMI 행렬이
 
 $$
 \begin{pmatrix}\log1.8&\log0.2\\\log0.2&\log1.8\end{pmatrix}
 $$
 
-가 되고, 고유값 하나는 $\log(0.36)<0$이다. 그러므로 무조건 같은 표현끼리의 내적으로 정확히 맞추는 것은 불가능하다. 이 예제는 리뷰의 설명용 계산이다.
+이고 고유값 하나가 $\log(0.36)<0$이라, 같은 표현끼리의 내적으로는 정확히 맞출 수 없다.
 
-역할에 따라 다른 인코딩이 가능하면 특이값 분해(singular value decomposition, SVD)를 쓸 수 있다. 타깃 행렬을 $M=U\Sigma V^\top$라 놓고
+원문은 역할 표시가 내적을 비대칭으로 만들어 최적점에서 PMI의 완전한 특이값 분해(singular value decomposition, SVD) 재구성을 허용한다고 쓴다. 타깃 행렬을 $\Pi=U\Sigma V^\top$라 놓으면
 
 $$
 F=U\Sigma^{1/2},\qquad G=V\Sigma^{1/2},
-\qquad FG^\top=M
+\qquad FG^\top=\Pi
 $$
 
-로 인수분해하면 된다. 차원이 rank 이상이고 모든 필요한 타깃을 정확히 학습할 수 있다는 조건이 붙는다. 유한 차원·가중 표본 회귀의 모든 해가 자동으로 이런 정확한 해가 되는 것은 아니다. RePR은 추가 정보 $\mathbf{z}$의 위치에 학습 임베딩을 넣어 입력 역할을 구분한다. 이 설계가 본문의 대칭처럼 보이는 $R_\theta$ 표기를 실제 구현에서 보완한다.
+로 인수분해되며, 표현 차원이 rank 이상이어야 한다. RePR은 $\mathbf{z}$ 위치의 패치 특징에 학습 임베딩을 더해 이 역할을 구분한다.
 
 ## A.4 PMI의 성질 (Properties of PMI)
 
-이 절의 원문은 재구성에 대한 짧은 논증이다. 그 논증을 따라가기 위해 필요한 본문 §3–4의 확률 유도도 이곳에 함께 보충한다. 원문에 없는 새 Theorem 번호를 붙이지 않으며, 아래 계산을 원문의 모든 실제 손실에 대한 완성된 보장으로 제시하지 않는다.
+### PMI로 재구성한다는 주장
 
-### 대조 점수가 밀도비가 되는 이유 — 리뷰 보충
+원문은 오염되지 않은 이미지 뷰 $\mathbf{x}$와 복원할 픽셀 $\mathbf{y}$를 두고, 학습 중 $\mathbf{y}$에 아주 작은 분산 $\delta>0$의 Gaussian 노이즈를 더해 모든 픽셀값에 비영 support를 준다. 그러면 모든 후보 픽셀값 $v$ 가운데 $\langle R(\mathbf{x}),R(v)\rangle$, 곧 PMI가 가장 큰 값을 골라 $\mathbf{y}$를 복원할 수 있다고 쓴다. 실제 복원 품질은 학습 때 뽑은 마스크와 수렴에 영향을 받는다고 한정하고, 실측 근거로 Table 4의 PSNR 21.72 dB(RAE ViT-XL 디코더에서 DINOv2보다 3.63 dB 높음)를 든다.
 
-[CPC 식 (5)](https://arxiv.org/pdf/1807.03748v2#page=4)는 후보 중 하나가 $p(\mathbf{y}\mid\mathbf{x})$, 나머지가 $p(\mathbf{y})$에서 왔다고 가정한다. 어느 후보가 양성인지의 Bayes posterior에서는 공통된 주변확률 곱이 약분되어
+**리뷰 보충 유도.** 이 가정에서 참 픽셀값을 $y$, 커널을 $k(d)=e^{-d^2/(2\delta)}$, 픽셀값의 주변 분포를 $\pi$라 두면 후보 $v$의 PMI는 $\log k(v-y)-\log\sum_u\pi(u)k(v-u)$다. $\delta\to0$이면 참값 $y$의 PMI는 $-\log\pi(y)$로 수렴하고 나머지는 $-\infty$로 가므로, 주변 분포를 고정하면 $\delta$가 충분히 작을 때 argmax가 $y$다. 고정된 $\delta$에서는 다를 수 있다. 픽셀이 0, 1, 2만 갖고(간격 1) 참값이 $y=1$이면
+
+$$
+\operatorname{PMI}(\mathbf{x},0)>\operatorname{PMI}(\mathbf{x},1)
+\iff \pi(0)<\pi(2)\,e^{-1/\delta}
+$$
+
+이다. 예를 들어 $\delta=0.5$, $\pi=(0.01,0.49,0.50)$이면 후보 0의 PMI는 약 0.61 nat, 참값 1은 약 0.39 nat라 드문 이웃값 0이 선택된다. **리뷰 해석.** 원문 논증은 주변 분포를 고정하고 $\delta\to0$으로 보내는 극한에서 성립하며, 필요한 $\delta$의 크기는 드문 픽셀값의 빈도에 따라 달라진다(이 예에서는 $\delta\le1/\log(\pi(2)/\pi(0))$).
+
+### 특징 예측과 PMI 보존
+
+본문 §5.4는 이 재구성 성질에서 출발한다. 최적 인수분해가 입력을 재구성하면 결정적 표현 $R$은 단사이고, 단사인 $R$은 확률을 그대로 옮기므로 무가중 PMI에서
+
+$$
+\operatorname{PMI}(\mathbf{x},R(\mathbf{y}))
+=\operatorname{PMI}(\mathbf{x},\mathbf{y})
+$$
+
+이다. **리뷰 해석.** 따라서 이 등식은 앞의 재구성이 성립하는 최적점의 성질이고, 학습된 $R_{\theta_{\mathrm{old}}}$가 서로 다른 입력을 같은 특징으로 보내면 깨진다. 이때 평균 상호정보량은 데이터 처리 부등식(data processing inequality)에 따라 줄어들 수 있다. [§5.4·A.4, pp.7·17–18](https://arxiv.org/pdf/2610.20533v1#page=17)
+
+### 리뷰 보충 유도: 본문 §3–4 확률식의 중간 계산
+
+**대조 점수가 밀도비가 되는 이유(식 (2)).** 대조 예측 부호화(Contrastive Predictive Coding, CPC)의 [식 (5)](https://arxiv.org/pdf/1807.03748v2#page=4)는 후보 중 하나가 $p(\mathbf{y}\mid\mathbf{x})$, 나머지가 $p(\mathbf{y})$에서 왔다고 가정한다. 어느 후보가 양성인지의 Bayes posterior에서는 공통된 주변확률 곱이 약분되어
 
 $$
 p(d=i\mid\mathbf{y}_{1:N},\mathbf{x})
@@ -155,22 +175,20 @@ p(d=i\mid\mathbf{y}_{1:N},\mathbf{x})
 {\sum_j p(\mathbf{y}_j\mid\mathbf{x})/p(\mathbf{y}_j)}.
 $$
 
-가 된다. categorical cross-entropy의 최적 예측은 이 posterior다. 따라서 log score는 PMI에 $\mathbf{x}$만의 상수를 더한 형태가 된다. negative proposal이 다른 분포이면 비의 분모도 달라진다. 임의의 augmentation·negative 구성을 모두 같은 PMI로 취급할 수 없는 이유다.
+가 된다. categorical cross-entropy의 최적 예측은 이 posterior이므로, log score는 PMI에 $\mathbf{x}$만의 상수를 더한 형태, 곧 식 (2)가 된다. negative를 다른 분포에서 뽑으면 비의 분모도 그 분포로 바뀐다.
 
-### 확산 가중치 $(1-t)/t^3$는 어디서 오는가?
-
-원문이 참조한 [VDM 식 (53–54)](https://arxiv.org/pdf/2107.00630v6#page=18)의 diffusion loss는 신호 대 잡음비(signal-to-noise ratio, SNR)의 미분을 포함한다. RePR의 경로에서는
+**확산 가중치 $(1-t)/t^3$(식 (7)).** 원문이 참조한 Variational Diffusion Models(VDM) [식 (53–54)](https://arxiv.org/pdf/2107.00630v6#page=18)의 diffusion loss는 신호 대 잡음비(signal-to-noise ratio, SNR)의 미분을 포함한다. RePR의 경로에서는
 
 $$
 \operatorname{SNR}(t)=\frac{(1-t)^2}{t^2},
 \qquad
 -\frac12\frac{\mathrm{d}}{\mathrm{d}t}\operatorname{SNR}(t)
-=\frac{1-t}{t^3}.
+=\frac{1-t}{t^3}
 $$
 
-따라서 이 가중치는 임의의 경험식이 아니라 해당 노이즈 경로의 변분 목적에서 나온다. 다만 $t\to0$에서 특이해진다. 이상적 이산 데이터·최적 denoiser의 극한 논리와 유한 정밀도 학습에서의 안정성은 별개이므로 Table 1(f)의 실패가 중요하다.
+이므로 이 가중치는 노이즈 경로의 변분 목적에서 나온다. $t\to0$에서는 발산하며, 원문 Table 1(f)에서 이 가중치를 그대로 쓴 설정은 NaN을 냈다.
 
-끝점 prior·reconstruction 항이 소거되고 denoising bound가 tight하면 true log probability와 연결된다. 이 조건이 충족되지 않은 실제 예측에서는 두 lower bound의 오차가 PMI 차이에도 남는다. 같은 생성 모델 $G$의 정확한 log probability와 그 모델의 VLB 사이의 두 비음수 gap을 $\Delta_{\mathrm{cond}},\Delta_{\mathrm{base}}$라는 **리뷰 보조 기호**로 두면
+**VLB 간극.** 원문 §4.1은 끝점 항이 소거되고 denoiser가 최적일 때 VLB가 $\log p$와 같고, 예측이 좋아질수록 근사가 참 PMI에 다가간다고 쓴다. 같은 생성 모델 $G$의 정확한 log probability와 그 VLB 사이의 두 비음수 간극을 리뷰 보조 기호 $\Delta_{\mathrm{cond}},\Delta_{\mathrm{base}}$로 두면
 
 $$
 \log\frac{P_G(\mathbf{y}\mid\mathbf{x})}{P_G(\mathbf{y})}
@@ -178,11 +196,9 @@ $$
 +\Delta_{\mathrm{cond}}-\Delta_{\mathrm{base}}.
 $$
 
-오차 차이의 부호는 정해지지 않는다. 두 gap이 모두 0으로 가면 해당 모델의 우도비에 접근한다. 데이터의 PMI까지 맞추려면 모델이 실제 조건부·주변 분포를 맞춰야 한다. 따라서 “두 하한의 차이도 하한”이라는 결론은 나오지 않는다. 실제 $f,g$가 바뀐 목적은 원래 확률량과 같은 것으로 조용히 놓지 않는다.
+이다. 두 간극의 차이는 부호가 정해지지 않으므로 학습 중의 추정은 PMI의 하한도 상한도 아니며, 두 간극이 0이 되어도 얻는 것은 모델 $G$의 우도비다. 데이터의 PMI가 되려면 $G$가 실제 조건부·주변 분포를 맞춰야 한다.
 
-### bootstrap 연쇄법칙의 중간 계산
-
-본문 식 (13–14)는 다음처럼 펼칠 수 있다.
+**부트스트랩 연쇄법칙(식 (13–14)).** 본문 식은 다음처럼 펼칠 수 있다.
 
 $$
 \begin{aligned}
@@ -192,52 +208,33 @@ $$
 \end{aligned}
 $$
 
-두 식에서 마지막 항을 제외한 공통 항을 빼면 한 토큰의 조건부 PMI만 남는다. 이를 모든 $k$에 대해 합하면 중간 prefix의 PMI가 상쇄된다. 빈 문맥의 PMI는 0이다. 필요한 조건은 사용한 조건부 확률의 분모가 정의되는 support이며, 데이터나 모델의 0확률 처리는 따로 필요하다.
-
-그렇다고 유한 표본으로 일부 문맥만 학습한 신경망이 모든 prefix의 식을 정확히 만족하는 것은 아니다. 시간 가중치를 준 패치별 정보 차이를 다시 원래의 무가중 전체 PMI라고 해석할 때도 추가 정합성 조건이 필요하다. 이 구별이 항등식에서 실용적인 회귀 목표로 넘어가는 지점이다.
-
-### PMI로 재구성한다는 주장의 범위
-
-원문은 오염되지 않은 이미지 $\mathbf{x}$와 복원할 픽셀 $\mathbf{y}$를 놓고, 모든 후보 픽셀값에 비영 support를 둔 PMI 인수분해에서 최대 PMI를 찾으면 재구성할 수 있다고 설명한다. 고정된 픽셀 위치에서 **참 픽셀이 이미지로 완전히 결정되고, 유한 후보 집합·양의 주변확률·정확한 인수분해**라면 논리는 명확하다. 참 값의 조건부확률은 1이고 다른 후보는 0이므로 참 후보만 유한한 log ratio를 가지며 나머지는 $-\infty$다.
-
-반면 비영 노이즈를 넣은 상태의 양의 support만으로 모든 경우의 정확한 argmax 복원이 보장되지는 않는다. 리뷰의 설명용 예시로 $p(y=1)=0.0001$, $p(y=1\mid\mathbf{x})=0.01$이면 후보 1의 비는 100이다. 후보 0의 비는 약 0.9901이므로 PMI argmax는 1을 고르지만 조건부 최빈값은 0이다. 이 조건부와 주변확률을 함께 만족하는 양의 공동분포를 구성할 수 있다. **PMI 최대화는 일반적인 조건부 확률 최대화와 다른 연산**이다.
-
-유한하게 분리된 픽셀값과 고정된 양의 prior에서 노이즈를 0으로 보내는 극한은 따로 논증할 수 있다. 그러나 이를 유한 노이즈·마스킹·유한 차원·가중 회귀의 무조건적 재구성 보장으로 옮기지 않는다. 원문도 실제 복원은 마스킹 분포와 학습 수렴에 영향을 받는다고 한정한다.
-
-이것은 특징 예측의 해석에도 중요하다. 가역적인 결정적 $R$이면 확률비에서 대응이 유지되어
-
-$$
-\operatorname{PMI}(\mathbf{x},R(\mathbf{y}))
-=\operatorname{PMI}(\mathbf{x},\mathbf{y})
-$$
-
-이지만 정보를 합쳐 버리는 비가역적인 표현에는 일반적으로 성립하지 않는다. 평균 상호정보량에는 데이터 처리 부등식(data processing inequality)이 적용되며 정보가 줄 수 있다. RePR의 반복 특징 예측은 실험적으로 유익하다는 근거와 이 이상적 설명을 함께 제시한 것이지, 매 반복에서 모든 정보가 보존된다는 완성된 정리가 아니다. [§5.4·A.4, pp.7·17–18](https://arxiv.org/pdf/2610.20533v1#page=17)
+앞 prefix의 식을 빼면 새 토큰의 조건부 PMI만 남고, 모든 $k$에 대해 합하면 중간 prefix의 PMI가 상쇄된다. 빈 문맥의 PMI는 0이다. 원문의 망원합은 무가중 PMI에 대한 것이며, 시간 가중을 준 증분의 합과 전체 뷰의 가중 PMI($\operatorname{PMI}^*$, 본문 식 (11)) 사이의 관계는 다루지 않는다.
 
 ## A.5 정성 결과 (Qualitative Results)
 
 [![Figure 6. 계산량 비교에 사용한 JiT-L 조합의 비선별 class-conditional ImageNet 생성 예시.](/assets/reviews/repr/figure6.webp)](/assets/reviews/repr/figure6.webp)
 
-*원문 Figure 6, p.20. 저자는 uncurated 예시로 표기한다. 질감·물체·배경의 모습을 확인할 자료이며, 학습 데이터와의 중복·실패 빈도·다양성 전체를 판정하는 표본은 아니다.*
+*원문 Figure 6, p.20. 계산량 비교에 쓴 JiT-L 조합의 class-conditional 생성 예시이며, 저자가 비선별(uncurated)로 표기한다.*
 
-생성 설정은 latent diffusion에 classifier-free guidance(CFG) 3.0을 구간 $[0.06,1.0]$에 적용하고 AutoGuidance 가중치 1.5를 사용한다. A.5는 AutoGuidance 학습 비용이 전체 학습의 1.6%이며 FLOP 계산에 포함된다고 명시한다. 이는 본문의 unguided FID-10K scaling 곡선과 다른 평가 설정이다.
+생성은 Latent Forcing의 CFG-Interval+AutoGuidance 설정을 그대로 따라 latent diffusion에 classifier-free guidance(CFG) 3.0을 구간 $[0.06,1.0]$에 적용하고 AutoGuidance 가중치 1.5를 쓴다. A.5는 AutoGuidance 학습 비용이 전체 학습의 1.6%이며 FLOP 계산에 포함된다고 명시한다. 본문의 unguided FID-10K 스케일링 곡선과는 다른 평가 설정이다.
 
 [![Figure 7. 공간 등변성 제약 유무에 따른 중심 패치와 나머지 패치의 cosine similarity.](/assets/reviews/repr/figure7.webp)](/assets/reviews/repr/figure7.webp)
 
-*원문 Figure 7, p.20. 빨간 중심 패치를 기준으로 다른 위치 특징의 코사인 유사도(cosine similarity)를 시각화한다. 위치 구조가 어떻게 달라지는지 볼 수 있지만, 생성 FID의 개선량이나 모든 이동에 대한 수학적 등변성 보장을 직접 보여 주는 그래프는 아니다.*
+*원문 Figure 7, p.20. 빨간 중심 패치와 다른 위치 특징의 코사인 유사도(cosine similarity)를 공간 등변성 제약 유무로 비교한다.*
 
 ## A.6 워터마킹 (Watermarking)
 
-[![Figure 8. clean 이미지와 각 패치에 식별 단서가 반복된 watermarked 이미지.](/assets/reviews/repr/figure8.webp)](/assets/reviews/repr/figure8.webp)
+[![Figure 8. clean 이미지와 모든 패치에 식별 워터마크를 넣은 watermarked 이미지.](/assets/reviews/repr/figure8.webp)](/assets/reviews/repr/figure8.webp)
 
-*원문 Figure 8, p.21. 위·아래의 clean/watermarked 예시를 비교한다. 원래 워터마킹 설정의 $32\times32$를 $16\times16$로 줄여 개별 패치도 식별 단서를 얻도록 했다. 이것은 평가를 어렵게 만든 구성된 조건이며 자연 이미지 전체에서 같은 실패 비율이 관측됐다는 뜻은 아니다.*
+*원문 Figure 8, p.21. 위·아래의 clean/watermarked 예시를 비교한다. 저자들은 기존 워터마킹 방식을 그대로 따르되 워터마크를 $32\times32$에서 $16\times16$ 픽셀로 줄여, 패치 하나만으로도 특징 억제에 충분한 단서가 되게 했다.*
 
-이 설계에서는 “한 뷰의 ID를 맞추기에 충분한 정보”와 “다른 패치 내용을 더 잘 예측하기 위한 정보”를 분리할 수 있다. RePR은 두 조건부 예측의 차이를 사용하므로 후자의 구조를 학습할 여지가 있다. 다만 워터마크가 생성 목적에도 충분한 shortcut이 되는 새로운 데이터에서는 추가 검증이 필요하다. 본문 Figure 2의 clean 성능과 watermarked 대비 손실도 그대로 남겨야 한다.
+**리뷰 해석.** 대조 목적은 워터마크로 두 뷰를 구별하는 순간 포화되지만, RePR의 회귀 타깃은 워터마크를 포함한 공유 정보 전체의 예측 이득이라 워터마크만 표현해서는 오차가 남는다. 본문 Figure 2의 차이는 이 구조와 맞는다.
 
 ## A.7 스케일링 그래프의 원시 수치 (Raw Numbers for Scaling Plots)
 
-### ImageNet: 무엇을 실제로 측정했는가?
+### ImageNet
 
-Table 7의 핵심 행을 보존하면 다음과 같다. 생성 모델은 JiT-B를 80 epochs 학습하고 FID-10K로 평가했다. epochs 합은 인코더의 이전 반복 학습을 포함한다.
+Table 7은 JiT-B를 80 epochs 학습한 생성 모델의 FID-10K다. 반복 2의 epochs 합은 반복 1 학습 210 epoch(200+10 decay)을 포함한다.
 
 | 인코더 | 픽셀 예측 epochs → FID | 특징 예측 epochs → FID |
 | --- | --- | --- |
@@ -247,11 +244,11 @@ Table 7의 핵심 행을 보존하면 다음과 같다. 생성 모델은 JiT-B�
 | 173M | 110→37.22, 210→33.73, 410→31.27, 610→30.68 | 210+210→25.82, 210+410→24.73 |
 | 306M | 110→36.14, 211→31.23 | 기재 없음 |
 
-20M의 410→610은 약간 악화한다. 306M의 211은 **원문의 표기 그대로**이며 210으로 임의 수정하지 않았다. 빈 칸을 실패나 0으로 채우지 않는다. 폭만 키우면 모든 지점이 단조 개선되는 표는 아니다.
+20M은 410→610 epoch에서 37.01→37.21로 약간 나빠진다. 306M의 두 번째 행은 다른 행의 210과 달리 원문에 211로 인쇄되어 있다. DINOv2 기준은 $1.1685129\times10^{22}$ FLOPs에서 17.95다.
 
-### GPIC: 다른 특징 공간에서의 측정
+### GPIC
 
-Table 8은 FD-DINOv2-10K이며 숫자는 FID와 같은 척도가 아니다. 생성 모델은 MiniT2I를 1 GPIC epoch 학습한다. 아래 epochs는 ImageNet 환산량이다.
+Table 8은 MiniT2I를 1 GPIC epoch 학습한 생성 모델의 FD-DINOv2-10K이며, epochs는 ImageNet 환산량이다.
 
 | 인코더 | 픽셀 예측 epochs → FD | 특징 예측 epochs → FD |
 | --- | --- | --- |
@@ -260,13 +257,9 @@ Table 8은 FD-DINOv2-10K이며 숫자는 FID와 같은 척도가 아니다. 생�
 | 173M | 110→450, 210→423, 410→409 | 210+110→359, 210+210→354 |
 | 306M | 110→451, 210→404, 410→381 | 210+110→347, 210+210→325 |
 
-MiniT2I 기준은 546.3, WebSSL-DINO-1B 기준은 277.1이다. 실측 RePR의 개선과 아직 도달하지 않은 WebSSL 기준을 함께 읽어야 한다.
+MiniT2I 기준은 546.3, WebSSL-DINO-1B 기준은 $9.78\times10^{21}$ FLOPs에서 277.1이다. 두 표에 맞춘 거듭제곱 fit의 7.77·7.96배 예측과 연장 범위는 [본문 편 §6.2](/reviews/repr-latent-tokenization/)에서 다룬다. [원문 A.7](https://arxiv.org/pdf/2610.20533v1#page=22)
 
-### 외삽의 적용 범위
-
-[본문 편 §6.2](/reviews/repr-latent-tokenization/)에 기준 비용·외삽 비용·7.77/7.96배 계산을 모았다. 여기의 Tables 7–8은 실제 측정값을 확인하는 자료다. fit은 관측한 약 두 자릿수 FLOP 범위에서 최대 한 로그 범위만큼 바깥으로 연장하며, 데이터 크기·과적합·생성 모델 예산에 의존한다. [원문 §6.2·A.7](https://arxiv.org/pdf/2610.20533v1#page=22)
-
-### FID와 FD의 수치를 읽는 기준
+### 리뷰 보충: FID와 FD의 정의
 
 리뷰 보조 표기로 특징 추출기를 $h$, 실제·생성 특징의 평균을 $\mu_r,\mu_g$, 공분산을 $C_r,C_g$라 놓으면 Fréchet 거리의 표준 형태는
 
@@ -276,19 +269,22 @@ D_F(h)=\|\mu_r-\mu_g\|_2^2+
 2(C_r^{1/2}C_gC_r^{1/2})^{1/2}\right).
 $$
 
-표준 FID 정의의 근거는 [Heusel et al., 식 (6), p.6](https://arxiv.org/pdf/1706.08500v6#page=6)이다. FID는 Inception 특징, 이 논문의 GPIC FD는 DINOv2 특징을 사용한다. 값은 이상적으로 0 이상이며 낮을수록 좋지만, 0도 해당 특징의 1·2차 모멘트가 같다는 뜻이다. 전체 이미지 분포나 텍스트 조건 충실도의 완전 일치를 의미하지 않는다. 유한 표본의 평균·공분산 추정 편향이 있으므로 10K/50K를 섞지 않고, 재구성 입력으로 만든 rFID와 새로 생성한 이미지의 FID도 구분한다. 원문만으로 확정할 수 없는 특징 추출 세부·reference subset·오차 막대는 미확인으로 남긴다.
+이다([Heusel et al., 식 (6), p.6](https://arxiv.org/pdf/1706.08500v6#page=6)). FID는 Inception 특징, 이 논문의 GPIC FD는 DINOv2 특징을 쓰므로 두 값의 척도가 다르다. 값이 0이면 해당 특징의 평균·공분산이 같다는 뜻이고, 유한 표본 추정 편향 때문에 10K와 50K 값은 따로 읽는다.
 
 <span id="리뷰-해석과-다음-검증" aria-hidden="true"></span>
 
 ## 리뷰 해석과 남은 질문
 
-**리뷰 해석.** 이 연구가 보여 준 강점은 정보량에서 출발한 표현 목적을 실제 패치 학습과 합산 비용 평가까지 연결했다는 것이다. 가장 먼저 독립 검증할 항목으로는 **실측 범위에서 토크나이저 비용을 모두 기록한 작은 예산 재현**을 권한다. 외삽 목표에 바로 도전하기보다 인코더·생성 모델 계산의 경계를 확인할 수 있기 때문이다.
+**리뷰 해석.** 부록의 가장 강한 실측 근거는 Tables 7–8의 반복 2 행이다. 반복 2가 기재된 모든 인코더 크기에서 총 420 epoch의 특징 예측이 픽셀 410 epoch보다 낮은 FID·FD를 낸다(epoch 기준이며, FLOPs 기준 비교는 본문 Figure 3). 구현 쪽에서는 노이즈 공유로 적분 비용을 학습 FLOPs의 1.3%로 줄였고, A.3이 Figure 4·Table 3·Table 2에 쓴 체크포인트와 FLOPs를 따로 적어 합산 비용 비교의 경계가 분명하다.
 
-다른 경로는 PMI/가중 PMI 타깃의 편향·분산을 작은 이산 데이터에서 검증하거나, 기존 LeJEPA 표현의 분포 비퇴화성과 생성 정보 보존을 같은 조건에서 비교하는 것이다. 이 제안들은 수행된 실험 결과가 아니다.
+한계는 이론과 실측 사이의 간격이다. 이론 부록은 최적 인수분해를 전제한 재구성 논증 하나이고, 그 실측 대응인 Table 4의 PSNR은 인코더마다 RAE 디코더를 따로 학습해 얻은 값이라 인코더의 정보량과 디코더 성능이 함께 반영된다. Tables 7–8도 각 설정에 단일 값만 싣는다.
+
+남은 질문은 시간 가중을 준 증분을 회귀하는 실제 목적이 전체 뷰의 $\operatorname{PMI}^*$를 얼마나 근사하는지, 그리고 반복 3 이후에도 이득이 이어지는지다. Table 7에는 반복 3이 없고, 같은 FID-10K 평가의 반복 3 값은 Table 1(e)의 23.81 하나뿐이다.
 
 ## 출처와 읽은 범위
 
 - 원문: *Generative Representation Learning for Scalable Latent Tokenization* · Alan Baade et al. · 최초 공개 2026-10-14 · [검토 버전](https://arxiv.org/abs/2610.20533v1) · 검토일 2026-10-23.
 - 읽은 범위: v1 A.1–A.7 전체, §3–4와 연결되는 확률 유도의 중간 계산. 참고문헌 전체의 원전 전문은 제외한다.
-- 그림 출처: 대표 Figure 1과 해당 편의 Figures 1–4 또는 5–8은 저자 v1 자산(CC BY 4.0). 저자 여백 trim·해상도 조정·WebP 변환을 적용하며 사진 예시는 품질 92로 인코딩한다. 내용·배치·원래 글꼴을 유지한다. [원문](https://arxiv.org/abs/2610.20533v1).
+- 참고한 외부 원전: [CPC 식 (5)](https://arxiv.org/pdf/1807.03748v2#page=4), [VDM 식 (53–54)](https://arxiv.org/pdf/2107.00630v6#page=18), [Heusel et al. 식 (6)](https://arxiv.org/pdf/1706.08500v6#page=6).
+- 그림 출처: 대표 이미지(Figure 1)와 본문 Figures 5–8은 저자 v1 자산(CC BY 4.0)이며, 저자 여백 trim·해상도 조정·WebP 변환을 적용하고 사진 예시는 품질 92로 인코딩했다. 내용·배치·원래 글꼴은 유지한다. [원문](https://arxiv.org/abs/2610.20533v1).
 - 확인하지 않은 것: 연구 코드 실행·모델 학습/재현·원시 데이터 불확실성 추정·전체 형식 인증.

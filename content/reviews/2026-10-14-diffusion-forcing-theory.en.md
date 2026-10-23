@@ -3,7 +3,7 @@ title: "[2/2] Diffusion Forcing: What Does Learning Every Subsequence Likelihood
 description: "Follow appendix A's ELBO, Gaussian loss, and subsequence argument through two Jensen steps and intermediate calculations, separating printed inconsistencies from supplementary derivations."
 date: "2026-10-14"
 publishedAt: "2026-10-14T13:58:27+09:00"
-updatedAt: "2026-10-23T08:56:20+00:00"
+updatedAt: "2026-10-23T15:26:20+00:00"
 topics: ["diffusion models", "sequence modeling", "world action model", "robot learning", "probabilistic modeling"]
 visibility: "public"
 lang: "en"
@@ -17,22 +17,22 @@ thumbnail: "/assets/reviews/diffusion-forcing/overview.webp"
 thumbnailAlt: "Original Figure 2: independently noised tokens trained together and sampled under different conditioning patterns."
 ---
 
-Diffusion Forcing connects expected log likelihood over per-token noise patterns to an evidence lower bound (ELBO). Two Jensen steps, over latent states and reverse diffusion, underpin the argument; equality requires deterministic latents and an exact variational approximation. [Appendix A, Theorem A.1](https://arxiv.org/pdf/2407.01392v4#page=14) **Review interpretation.** The connection between conditioning problems is useful, while printed signs, transition directions, and weights require attention to their downstream consequences.
+Appendix A of Diffusion Forcing (DF) establishes an evidence lower bound (ELBO) on the expected log-likelihood of sequences corrupted with uniformly sampled per-token noise levels (Theorem A.1), and turns it into a weighted denoising MSE for Gaussian diffusion (Corollary A.2). The only inequalities in the proof are two Jensen steps, over latent states and over reverse-diffusion paths, and the authors state that with deterministic latents, equality holds if and only if the variational approximation is exact. [Appendix A, Theorem A.1](https://arxiv.org/pdf/2407.01392v4#page=14) **Review interpretation.** The printed bound has the KL sign and the reverse-transition direction opposite to their definitions, but correcting them yields the same weighted-MSE objective, so the first claim, that training optimizes a reweighted ELBO, stands; the second, that it optimizes the likelihood of every noise pattern simultaneously, rests entirely on the full-expressivity assumption.
 
-Read [\[1/2\] Methods and experiments](/en/reviews/diffusion-forcing-methods/) first. This article follows **appendix A, pp. 14–19**, in its original order: setup, A.1 main results, A.1.1 Gaussian specialization, A.1.2 subsequences, and A.2 proof. The proof is expanded without accepting printed sign, transition-direction, and weighting inconsistencies as correct statements. Consistent formulas below are **supplementary review derivations under stated conditions**, not an author-issued erratum.
+Read [\[1/2\] Methods and experiments](/en/reviews/diffusion-forcing-methods/) first. This article follows **appendix A, pp. 14–19**, in the order setup, A.1 main results, A.1.1 Gaussian specialization, A.1.2 subsequences, and A.2 proof, placing the printed formulas side by side with this review's supplementary derivations.
 
 ## A. Theoretical Justification: Objects and Assumptions
 
-The clean token is $\mathbf x_t^0$, its level-$k$ version is $\mathbf x_t^k$, sequence length is $T$, and maximum noise level is $K$. Sequence time and diffusion level remain separate.
+The clean token is $\mathbf x_t^0$, its level-$k$ version is $\mathbf x_t^k$, sequence length is $T$, and maximum noise level is $K$.
 
-The fixed forward process is Markov, as in equation (A.1):
+The fixed forward process is a Markov chain, as in equation (A.1):
 
 $$
 q(\mathbf x^{1:K}\mid\mathbf x^0)
 =\prod_{k=1}^{K}q(\mathbf x^k\mid\mathbf x^{k-1}).
 $$
 
-The model assumes a Markov property in which $\mathbf z_t$ summarizes the relevant history:
+The model assumes a **Markov property**: the latent $\mathbf z_{t-1}$ is a sufficient statistic for the history.
 
 $$
 \begin{aligned}
@@ -43,34 +43,51 @@ $$
 \end{aligned}
 $$
 
-This is a model factorization, not a claim that the observed world is always Markov. Memory summarizes information unavailable from the current observation alone.
+**Deterministic latents** mean that $p_\theta(\mathbf z_t\mid\mathbf z_{1:t-1},(\mathbf x_s^{k_s})_{s<t},\mathbf x_t^{k_t})$ is a Dirac delta. The RNN implementation in part 1 has latents of this kind.
 
-Deterministic latents mean that input, previous latent, and noise level determine one next latent. They do not eliminate uncertainty in the data; a deterministic representation can support uncertain predictions.
+Remark 1 notes that for $p_\theta$ to be a valid probability model in this case, the latents must be viewed as a collection of variables $\mathbf z_t(k_{1:t})$ indexed by noise history. Using one variable for two conditions with different noise histories would leave that conditional undefined, so $p_\theta$ would not be a joint probability measure. Later notation suppresses this dependence. [Equations (A.1)–(A.3), Remark 1, p. 14](https://arxiv.org/pdf/2407.01392v4#page=14)
 
-Remark 1 identifies a subtle requirement: different noise histories can produce different latents at the same sequence position. Variables should therefore be understood as $\mathbf z_t(k_{1:t})$, indexed by noise history. Treating them as one identical value across incompatible conditioning patterns creates problems in defining a joint probabilistic model. That dependence is suppressed in later notation. [Equations (A.1)–(A.3), Remark 1, p. 14](https://arxiv.org/pdf/2407.01392v4#page=14)
+## A.1 Main Results: Theorem A.1
 
-## A.1 Main Results: Theorem A.1's Intent and Printed Expression
+Theorem A.1 fixes clean data $\mathbf x_{1:T}^0$, samples per-token noise levels uniformly, corrupts the sequence with the forward process, and considers its **expected log-likelihood**. The statement samples $k_t$ from $[K]$, but the proof uses $\{0,\ldots,K\}$, so this article reads it with the latter convention. $\mathbb E_{\mathrm{forward}}$ averages over noise levels and forward corruption, and $\mathbb E_{p,\mathbf z_{1:T}}$ over latents given those. The bound printed on p. 14 is
 
-Theorem A.1 fixes clean data $\mathbf x_{1:T}^0$, samples tokenwise noise uniformly, and considers the resulting sequence's expected log-likelihood. Its intended construction combines reconstruction and reverse-diffusion KL terms into an evidence lower bound.
+$$
+\begin{aligned}
+&\mathbb E_{\mathrm{forward}}\big[\ln p_\theta((\mathbf x_t^{k_t})_{1\le t\le T})\big]
+\ge C(\mathbf x_{1:T}^0)\\
+&\quad+\mathbb E_{\mathrm{forward}}\mathbb E_{p,\mathbf z_{1:T}}\Bigg[\sum_{t=1}^{T}\bigg(\frac{1}{K+1}\ln p_\theta(\mathbf x_t^0\mid\mathbf x_t^1,\mathbf z_{t-1})\\
+&\qquad+\sum_{j=2}^{K}\frac{j}{K+1}\,\mathrm D_{\mathrm{KL}}\big(q(\mathbf x_t^{j-1}\mid\mathbf x_t^{j},\mathbf x_t^0)\,\Vert\,p_\theta(\mathbf x_t^{j}\mid\mathbf x_t^{j-1},\mathbf z_{t-1})\big)\bigg)\Bigg].
+\end{aligned}
+$$
 
-The proof uses $\{0,\ldots,K\}$; that endpoint convention is used here rather than assuming every occurrence of $[K]$ is unambiguous. The source gives deterministic latents and exact variational approximation as equality conditions. Deterministic latents alone do not satisfy both.
+The equality statement says that with deterministic latents, equality holds if and only if $q(\mathbf x_t^{k_t+1:T}\mid\mathbf x_t^{k_t})\equiv p_\theta(\mathbf x_t^{k_t+1:T}\mid\mathbf x_t^{k_t},\mathbf z_{t-1})$, although the source prints "holds with inequality". The superscript bound $T$ also reads as a slip for the noise bound $K$.
 
-### Inconsistencies to check before using the formula
+**Clarification within the source, and correction.** The final display of the proof (p. 19) writes the KL with $p_\theta(\mathbf x_t^{j}\mid\mathbf x_t^{j+1},\mathbf z_{t-1})$, coefficient $\frac{j+1}{K+1}$, and $j=1,\ldots,K-1$, then states that it reindexes $j\gets j+1$. The transition direction $\mathbf x_t^j\mid\mathbf x_t^{j-1}$ in the theorem statement is therefore a reindexing slip, and the coefficient $\frac{j}{K+1}$ agrees with the proof. The sign is not resolved anywhere in the proof: Claim 3 (p. 18) writes the expected log ratio $\mathbb E_q\log(p_\theta/q)$ as $+\mathrm D_{\mathrm{KL}}(q\Vert p_\theta)$, and that sign carries into the theorem. By the definition $\mathbb E_q\log(p_\theta/q)=-\mathrm D_{\mathrm{KL}}(q\Vert p_\theta)$, replacing the KL term as follows gives the form of the standard diffusion ELBO, with $q=q(\mathbf x_t^{j-1}\mid\mathbf x_t^j,\mathbf x_t^0)$:
 
-| Source location | Printed expression | Comparison with the derivation |
-| --- | --- | --- |
-| Theorem A.1, p. 14 | $+\mathrm D_{\mathrm{KL}}(q\Vert p_\theta)$ inside the lower bound | $\mathbb E_q\log(p_\theta/q)=-\mathrm D_{\mathrm{KL}}(q\Vert p_\theta)$ has the opposite sign. |
-| Model distribution in that KL | $p_\theta(\mathbf x_t^j\mid\mathbf x_t^{j-1},\mathbf z_{t-1})$ | A reverse-step comparison requires matching the direction $\mathbf x_t^{j-1}\mid\mathbf x_t^j$. |
-| Corollary A.2, p. 15 | Positive squared error on the lower-bound side | Gaussian KL must be reconciled with the negative-KL ELBO direction. |
-| Theorem A.3, p. 16 | $jP_t(j\mid k_{1:t-1})$ | The proof's indicator average is a cumulative probability under a general distribution. |
+$$
++\mathrm D_{\mathrm{KL}}\big(q\,\Vert\,p_\theta(\mathbf x_t^{j}\mid\mathbf x_t^{j-1},\mathbf z_{t-1})\big)
+\;\longrightarrow\;
+-\mathrm D_{\mathrm{KL}}\big(q\,\Vert\,p_\theta(\mathbf x_t^{j-1}\mid\mathbf x_t^{j},\mathbf z_{t-1})\big)
+$$
 
-These appear in both PDF and author LaTeX, so they are not dismissed as OCR artifacts. Other issues include using $T$ where the diffusion range calls for $K$ and writing “inequality” while discussing equality. Definitions and intermediate calculations need to be checked alongside the statements. [Theorems A.1–A.3](https://arxiv.org/pdf/2407.01392v4#page=14)
+The derivation of this correction is followed in A.2 below. [Theorem A.1 and proof, pp. 14–19](https://arxiv.org/pdf/2407.01392v4#page=14)
 
-These issues do not automatically erase empirical results. Conversely, empirical success does not certify the printed theorems.
+**Consequences and confidence.** The sign and direction are fixed by the definitions of KL and of the reverse transition alone, so confidence is high. Raising the corrected bound means reducing the KL, that is, the weighted denoising error, which matches the main-text objective of minimizing noise-prediction MSE; the conclusion that training optimizes a reweighted ELBO stands. The equality conditions come from the proof's two inequalities regardless of the sign. The same sign error carries into Corollary A.2 and Theorem A.3, and A.3's general-distribution weights contain a separate error (A.1.2).
 
 ## A.1.1 Specializing to Gaussian Diffusion
 
-Corollary A.2's central mechanism is **Gaussian KL becoming weighted MSE**. For $j\ge2$, the standard DDPM forward posterior is
+Corollary A.2 applies DDPM's standard likelihood and KL computations to Theorem A.1, turning **Gaussian KL into weighted MSE**. The source states it in the $\mathbf x$-prediction form used in the implementation and notes that $\boldsymbol\epsilon$- and $\mathbf v$-prediction are affinely related and can be treated the same way. The result printed on p. 15 is
+
+$$
+\begin{aligned}
+&\mathbb E_{\mathrm{forward}}\big[\ln p_\theta((\mathbf x_t^{k_t})_{1\le t\le T})\big]+C(\mathbf x_{1:T}^0)\\
+&\quad\ge\mathbb E_{\mathrm{forward}}\mathbb E_{p,\mathbf z_{1:T}}\Bigg[\sum_{t=1}^{T}\frac{j}{K+1}\sum_{j=1}^{K}c_j\big\|\hat{\mathbf x}^0_\theta(\mathbf x_t^j,\mathbf z_{t-1},j)-\mathbf x_t^0\big\|^2\Bigg],\\
+&\sigma_j^2:=\frac{(1-\alpha_j)(1-\sqrt{\bar\alpha_{j-1}})}{1-\bar\alpha_j},\qquad
+c_j=\frac{(1-\alpha_j)^2\bar\alpha_{j-1}}{2\sigma^2(1-\bar\alpha_j)^2}.
+\end{aligned}
+$$
+
+Here a positive squared error sits on the lower-bound side of the log-likelihood, carrying over Theorem A.1's sign error. In addition, the coefficient $j/(K+1)$ sits outside the sum over $j$; the variance contains $1-\sqrt{\bar\alpha_{j-1}}$ instead of the standard posterior variance's $1-\bar\alpha_{j-1}$; and the denominator of $c_j$ is $\sigma^2$ rather than $\sigma_j^2$. The model transition is defined as $p_\theta(\mathbf x_t^j\mid\mathbf x_t^{j+1},\mathbf z_{t-1})$, while the mean $\boldsymbol\mu_\theta(\mathbf x_t^j,\mathbf z_{t-1},j)$ is written with the coefficients of step $j\to j-1$, so the indices are also off by one. The following **supplementary review derivation** redoes the calculation with the DDPM posterior. For $j\ge2$, the standard forward posterior is
 
 $$
 q(\mathbf x_t^{j-1}\mid\mathbf x_t^j,\mathbf x_t^0)
@@ -91,7 +108,7 @@ B_j&=\frac{(1-\alpha_j)\sqrt{\bar\alpha_{j-1}}}
 \end{aligned}
 $$
 
-$A_j,B_j$ are review-added abbreviations for coefficients in DDPM equations (6)–(7). DF's printed variance contains $1-\sqrt{\bar\alpha_{j-1}}$; it is not treated here as the standard posterior variance. A related variance issue also appears in the cited Chan tutorial v1, so DDPM and an independent Gaussian calculation are used as cross-checks. [DDPM, §2–3.2](https://arxiv.org/pdf/2006.11239v2#page=3)
+$A_j,B_j$ are review-added abbreviations for coefficients in DDPM equations (6)–(7). Because the cited Chan tutorial v1 has a related variance notation issue, this derivation takes DDPM's posterior variance $\tilde\beta_j$ as its reference. [DDPM, §2–3.2](https://arxiv.org/pdf/2006.11239v2#page=3)
 
 Parameterize the model mean as
 
@@ -102,7 +119,7 @@ B_j\hat{\mathbf x}_\theta^0(
 \mathbf x_t^j,\mathbf z_{t-1},j)
 $$
 
-The mean difference is then
+The difference from the known posterior mean is then
 
 $$
 \tilde{\boldsymbol\mu}_j-\boldsymbol\mu_\theta
@@ -127,15 +144,13 @@ c_j=\frac{B_j^2}{2\sigma_j^2}
 {2\sigma_j^2(1-\bar\alpha_j)^2}.
 $$
 
-Different **fixed** covariances add other terms while retaining a weighted mean-squared-error term. Step $j=1$ is handled separately as clean-data reconstruction; the forward posterior's zero endpoint variance is not inserted into a division.
-
-This expands the source's abbreviated calculation as a **supplementary review derivation**. Because KL is subtracted in the ELBO, reducing MSE raises the bound. Increasing a positive MSE does not improve a likelihood lower bound. [Corollary A.2, p. 15](https://arxiv.org/pdf/2407.01392v4#page=15)
+Read with $\sigma_j^2$ in the denominator, this $c_j$ equals the printed coefficient. Different **fixed** covariances add other terms while retaining the same weighted MSE in the model mean. Step $j=1$ is the clean-data reconstruction (decoder) term and is handled separately, and the forward posterior's zero endpoint variance is not inserted into a division. Because KL is subtracted in the ELBO, writing $w_j$ for the weights from averaging over noise levels, the corrected bound has the form $\ln p_\theta\ge C-\sum_j w_jc_j\|\hat{\mathbf x}_\theta^0-\mathbf x_t^0\|^2$, and raising it means lowering the MSE. [Corollary A.2, p. 15](https://arxiv.org/pdf/2407.01392v4#page=15)
 
 ### When may weights be dropped?
 
-The authors argue that sufficiently expressive latents and predictors can implement each conditional denoising optimum simultaneously. Under squared error, the optimal predictor is the conditional mean.
+In the remarks after Corollary A.2, the authors introduce an idealized latent made of all past tokens and their noise levels, and write that taking the infimum over function approximators makes each term's minimum the conditional variance $\mathbf{Var}_q[\mathbf x_t^0\mid(\mathbf x_s^{k_s})_{s\le t},k_{1:t}]$. With enough expressivity each time step's term can be optimized separately, so the weights do not affect the optimum and can be dropped or rescaled. This argument does not depend on the sign of the bound. [Corollary A.2 remarks, p. 15](https://arxiv.org/pdf/2407.01392v4#page=15)
 
-Writing input information as the review-added $\mathcal I$,
+Under squared error, the optimal predictor is the **conditional mean**. Writing input information as the review-added $\mathcal I$,
 
 $$
 \begin{aligned}
@@ -145,7 +160,7 @@ $$
 \end{aligned}
 $$
 
-The cross term vanishes because the residual has zero conditional mean. The first term is irreducible conditional uncertainty; the second is the predictor's excess error. For vectors, the first is the expected trace of the conditional covariance, clarifying the source's abbreviated “conditional variance.”
+The cross term vanishes because the residual has zero conditional mean. The first term is irreducible conditional uncertainty; the second is the predictor's excess error. For vectors, the first is the expected trace of the conditional covariance, which is what the source's “conditional variance” refers to.
 
 If every conditional mean is representable and positive weights depend on the condition, reweighting preserves these conditional optima. **A finite shared network can behave differently.** For illustration, predicting targets 0 and 2 with one shared scalar $u$ gives
 
@@ -155,20 +170,27 @@ $$
 =\frac{2w_2}{w_1+w_2}.
 $$
 
-Weights 1:1 give 1; weights 1:3 give 1.5. Without adequate expressivity, weights change the optimum. This is compatible with fused SNR weighting being practically important in appendix D.1.
+Weights 1:1 give 1; weights 1:3 give 1.5. Without adequate expressivity, weights change the optimum. Appendix D.1's report that fused SNR reweighting greatly accelerated convergence in video prediction is consistent with weights not being neutral for a finite model.
 
 ## A.1.2 Capturing All Subsequences: Reading Theorem A.3
 
-Theorem A.3 allows an arbitrary noise-sequence distribution $\mathcal D$ and defines
+Theorem A.3 allows an arbitrary distribution $\mathcal D$ over sequences of noise levels and defines
 
 $$
 P_t(j\mid k_{1:t-1})
 =\Pr_{\mathcal D}(k_t=j\mid k_{1:t-1})
 $$
 
-The intended extension includes temporally correlated patterns. A fixed pattern is a distribution concentrated on one sequence of levels.
+The extension is meant to cover temporally correlated noise patterns, and a fixed pattern is a distribution concentrated on one sequence of levels. The source says the theorem follows from a straightforward modification of the proof of A.1 and gives no separate proof. The per-time-step term of the bound printed on p. 16 is
 
-Importantly, **the training loss itself need not be the same lower bound for each fixed pattern**. Independent uniform training includes terms from many conditioning patterns; the simultaneous-optimization argument additionally needs sufficient expressivity.
+$$
+\begin{aligned}
+\Xi_t:=\;&P_t(1\mid k_{1:t-1})\ln p_\theta(\mathbf x_t^0\mid\mathbf x_t^1,\mathbf z_{t-1})\\
+&+\sum_{j=2}^{K}jP_t(j\mid k_{1:t-1})\,\mathrm D_{\mathrm{KL}}\big(q(\mathbf x_t^{j-1}\mid\mathbf x_t^j,\mathbf x_t^0)\,\Vert\,p_\theta(\mathbf x_t^{j}\mid\mathbf x_t^{j-1},\mathbf z_{t-1})\big).
+\end{aligned}
+$$
+
+The KL sign and direction share Theorem A.1's problem, and the weight $jP_t(j\mid\cdot)$ has a separate one. Under the uniform distribution $jP_t(j)=j/(K+1)$, matching A.1, but a general distribution needs cumulative probabilities.
 
 ### Why a general distribution requires cumulative probabilities
 
@@ -183,19 +205,19 @@ $$
 \end{aligned}
 $$
 
-This is a **supplementary calculation following the proof's indicator**, not a transcription of the printed A.3 formula.
+This is a **supplementary review calculation** that applies A.2's indicator expansion directly to a general distribution.
 
-For uniform noise, the $j$ included levels $0,\ldots,j-1$ give $j/(K+1)$. Under a general distribution, this is not $jP_t(j\mid k_{1:t-1})$. For example, if $K=3$ and all mass lies at $k_t=1$, the cumulative weight for $j=2$ is 1, whereas $2P_t(2)=0$. Reconstruction similarly corresponds to the probability of level zero, requiring examination of the source's printed $P_t(1)$ and endpoint convention. [Theorem A.3 and A.2, pp. 16–19](https://arxiv.org/pdf/2407.01392v4#page=16)
+For uniform noise, the $j$ included levels $0,\ldots,j-1$ give $j/(K+1)$, agreeing with the printed formula. A general distribution differs. For example, if $K=3$ and all mass lies at $k_t=1$, the cumulative weight for $j=2$ is 1, whereas $2P_t(2)=0$. The reconstruction coefficient should likewise be the probability of level zero, but the printed formula has $P_t(1\mid\cdot)$, so it must be corrected together with the endpoint convention. One counterexample settles this, so confidence is high.
+
+**Consequences.** For the fixed patterns (Dirac distributions) the authors consider most important, $P_t(j\mid\cdot)=\mathbf1\{j=k_t\}$. The printed formula then keeps only the KL term $j=k_t$, while the cumulative correction keeps every term with $j\ge k_t+1$. Either way, the terms of the bound are, up to weighting, a subset of the uniform training objective's terms, so the line of conclusion below is unaffected. [Theorem A.3 and A.2, pp. 16–19](https://arxiv.org/pdf/2407.01392v4#page=16)
 
 ### What counts as a subsequence?
 
-A pattern with $k_t\in\{0,K\}$ keeps some tokens clean and makes others nearly uninformative. In idealized complete masking, marginalizing masked tokens connects the construction to the distribution of retained tokens.
-
-This requires expressivity, appropriate forward/reverse processes, and consistent endpoint and conditioning definitions. Approximate masking at finite $K$, finite data, and a finite RNN do not automatically imply exact conditional generation. Modeling subsets **within training sequences** also does not guarantee accurate arbitrarily longer sequences or safe composition of arbitrary trajectories.
+The source itself states that for a fixed pattern the training objective need not be a lower bound on that pattern's likelihood. Instead, the terms of the bound are, up to reweighting, a subset of the training objective's terms, and by the remark in A.1.1 a sufficiently expressive network can optimize all of them simultaneously; the authors conclude that the training objective is a valid surrogate for maximizing the likelihood of every noise sequence. A pattern with $k_t\in\{0,K\}$ keeps some tokens clean and masks the rest as nearly pure noise, which is the case behind the "all subsequences" claim in main-text §3.2. **Review interpretation.** This conclusion yields exact conditional generation only together with $\mathbf x_t^K$ being approximately pure noise and full expressivity, and the source does not measure how close a finite RNN comes to that idealization.
 
 ## A.2 Proof of Theorem A.1
 
-The source uses three claims: expand latents, apply an ELBO over noise paths, then compute the expected bound. The walkthrough retains this order while checking signs and conditional distributions.
+The source uses three claims: expand latents, apply an ELBO over noise paths, then compute the expected bound. The walkthrough keeps this order while checking signs and conditional distributions.
 
 ### Claim 1: Expand Latents and Apply Jensen
 
@@ -225,7 +247,7 @@ $$
 \log p_\theta(\mathbf x_t^{k_t}\mid\mathbf z_{t-1})\right].
 $$
 
-Deterministic latents leave one path, making this step an equality. More generally, equality can hold if the product is almost surely constant, so determinism is read as a sufficient condition. [Claim 1, equation (A.9), pp. 16–17](https://arxiv.org/pdf/2407.01392v4#page=16)
+As Claim 1 states, deterministic latents leave one path in the latent integral, making this step an equality. With stochastic latents, equality also holds if the product is almost surely constant, so determinism is a sufficient condition for equality in this step. [Claim 1, equation (A.9), pp. 16–17](https://arxiv.org/pdf/2407.01392v4#page=16)
 
 ### Claim 2: Introduce a Noise Path and Apply Jensen Again
 
@@ -247,18 +269,18 @@ $$
 \end{aligned}
 $$
 
-The proposal must have suitable support and the integrals must exist. Equality requires a constant importance ratio, equivalently matching the model's posterior over this path.
+The proposal's support must cover the model paths and the integrals must exist. Equality holds when the importance ratio is constant, that is, when $r_h$ equals the model posterior $p_\theta(\mathbf x_t^{h+1:K}\mid\mathbf x_t^h,\mathbf z_{t-1})$; this is the source's equality condition $q\equiv p_\theta$.
 
-**Review expansion: the gap in this inequality.** Name the right-hand expectation $\mathcal B_h$ within this paragraph. Under normalization, support, and integrability conditions,
+**Review supplement: the gap in this inequality.** Name the right-hand expectation $\mathcal B_h$ within this paragraph. Under normalization, support, and integrability conditions,
 
 $$
 \log p_\theta(\mathbf x_t^h\mid\mathbf z_{t-1})-\mathcal B_h
-=D_{\mathrm{KL}}\!\left(r_h\,\Vert\,p_\theta(\mathbf x_t^{h+1:K}\mid\mathbf x_t^h,\mathbf z_{t-1})\right)\geq0.
+=\mathrm D_{\mathrm{KL}}\!\left(r_h\,\Vert\,p_\theta(\mathbf x_t^{h+1:K}\mid\mathbf x_t^h,\mathbf z_{t-1})\right)\geq0.
 $$
 
-The gap is a KL between path distributions. Deterministic latents can make Claim 1 tight; equality between forward path $r_h$ and the model posterior is an additional condition here. These are distinct equality requirements.
+The gap is a KL between path distributions. Deterministic latents make Claim 1 an equality, and an exact variational approximation decides equality in Claim 2. Theorem A.1's "with deterministic latents, equality iff the variational approximation is exact" combines these two steps.
 
-Averaging over $\mathbf x_t^h$ corrupted from clean data gives the forward expectation. The source moves differences between $r_h$ and forward paths conditioned on $\mathbf x_t^0$ into a parameter-independent constant. Dropping such constants does not remove a parameter-dependent training term. [Claim 2, p. 17](https://arxiv.org/pdf/2407.01392v4#page=17)
+Averaging again over $\mathbf x_t^h$ corrupted from clean data gives the source's forward expectation. The source replaces $r_h$ in the denominator with $q(\mathbf x_t^{h+1:K}\mid\mathbf x_t^0)$ and collects the difference into a constant $C_1$ that depends only on $\mathbf x_t^0$ and $k_t$. [Claim 2, p. 17](https://arxiv.org/pdf/2407.01392v4#page=17)
 
 ### Claim 3, Part 1: Bayes' Identity and Telescoping
 
@@ -281,7 +303,7 @@ $$
 {q(\mathbf x_t^{h+1}\mid\mathbf x_t^0)}.
 $$
 
-This telescoping cancellation replaces the path ratio with boundary terms and reverse-step comparisons. Clean reconstruction at $h=0$ is handled separately from density KL. The supplementary derivation assumes a pure-noise base fixed independently of both parameters and latents, allowing the terminal term to be absorbed into a constant. [Claim 3, pp. 17–18](https://arxiv.org/pdf/2407.01392v4#page=18)
+This telescoping cancellation replaces the path ratio with boundary terms and reverse-step comparisons. Clean reconstruction at $h=0$ is handled separately from density KL. Because the source does not parameterize the pure-noise base distribution $p(\mathbf x_t^K\mid\mathbf z_{t-1})$, it treats this boundary term as a constant; the supplementary derivation below likewise takes the base as fixed, independent of both parameters and latents. [Claim 3, pp. 17–18](https://arxiv.org/pdf/2407.01392v4#page=18)
 
 ### Claim 3, Part 2: The Expected Log Ratio Is Negative KL
 
@@ -293,7 +315,7 @@ $$
 =-\mathrm D_{\mathrm{KL}}(q\Vert p).
 $$
 
-Apply this to reverse conditionals at fixed $\mathbf x_t^j$, then average over $\mathbf x_t^j$. A single sampled log ratio is not itself the KL. Page 18 prints the expectation as positive KL, contrary to its definition.
+Apply this to reverse conditionals at fixed $\mathbf x_t^j$, then average over $\mathbf x_t^j$. A single sampled log ratio is not itself the KL. Page 18 prints this expectation as positive KL, which is where the theorem's sign error seen in A.1 originates.
 
 Define review-added abbreviations:
 
@@ -320,7 +342,7 @@ $$
 \end{aligned}
 $$
 
-$C_h$ collects parameter-independent boundary/entropy terms under the fixed forward process and base distribution. At $h=K$, no reverse steps remain; this is a separate fixed-base case. The expression follows Jensen, Bayes, and the KL definition rather than copying the printed theorem literally.
+$C_h$ collects the parameter-independent boundary and entropy terms from the fixed forward process and base distribution. At $h=K$ no reverse steps remain and only the base distribution is left. This is the printed Claim 3 corrected to agree with Jensen, Bayes, and the KL definition.
 
 ### Finish by Averaging Noise Levels and Combining Time Steps
 
@@ -333,7 +355,7 @@ $$
 \end{aligned}
 $$
 
-Using the source's $\mathbb E_{<t}$ for the expectation over past noisy history and latents, the supplementary form becomes
+Using the source's $\mathbb E_{<t}$ for the expectation over past noisy history and latents, the supplementary form becomes the following; it is A.1's printed bound with the KL term corrected, written with $R_t$ and $D_{t,j}$.
 
 $$
 \begin{aligned}
@@ -348,21 +370,20 @@ $$
 \end{aligned}
 $$
 
-Independent current noise allows these coefficients to be computed while retaining the history expectation. Raise reconstruction likelihood and reduce reverse-step KL to improve the bound. Substituting the Gaussian calculation gives **weighted denoising MSE minimization**.
+Because the current noise level is independent of the past, these coefficients can be computed while keeping the expectation over history. The bound rewards reconstruction likelihood and penalizes reverse-step KL, and substituting the Gaussian calculation turns it into **weighted denoising MSE minimization**.
 
-For general $\mathcal D$, replace coefficients by $P_t(0\mid k_{1:t-1})$ and $\Pr(k_t\le j-1\mid k_{1:t-1})$, the cumulative probability discussed earlier. A fixed pattern involves a subset of the uniform objective's terms; this alone does not show simultaneous maximum likelihood for every pattern in a finite model.
-
-## Review Interpretation and Open Questions
-
-The design argument is clear: train denoising over a broad range of noisy histories, allowing one model to handle multiple conditioning patterns. Assessing it requires separating **the relationship between reweighted objectives**, **the expressivity idealization**, and **the accuracy of the printed expressions**.
+For general $\mathcal D$, the coefficients become $P_t(0\mid k_{1:t-1})$ and $\Pr(k_t\le j-1\mid k_{1:t-1})$, the cumulative probability used in A.1.2.
 
 ## Review interpretation and open questions
 
-**Review interpretation.** The connection between conditioning problems is useful, while printed signs, transition directions, and weights require attention to their downstream consequences.
+**Review interpretation.** The proof's backbone extends the standard diffusion ELBO derivation to a different starting noise level for each token. The two Jensen steps, Bayes' identity with telescoping, and the coefficients from uniform noise averaging hold as followed above. The printed errors are concentrated in the KL sign, the reindexing, the Gaussian variance, and the general-distribution weights, and correcting them leaves the training objective unchanged. The weak link is weight invariance: it holds only for a network that can represent every conditional mean, and, as the scalar example in A.1.1 shows, weights change the solution for a finite shared model.
+
+Two questions remain. In a real RNN, how much does the denoising error on fixed patterns that rarely occur during training (for example, the small-noise history used for stabilization in part 1) differ from that on common patterns? If Theorem A.3's cumulative-probability weights were used in training to match a particular sampling schedule, would performance under that schedule change?
 
 ## Sources and reading scope
 
 - Paper: *Diffusion Forcing: Next-token Prediction Meets Full-Sequence Diffusion* · Boyuan Chen et al. · first public date 2024-07-01 · [reviewed version](https://arxiv.org/abs/2407.01392v4) · reviewed 2026-10-23.
-- Scope read: Version 4, appendix A, pages 14–19, in the order setup, A.1, A.1.1, A.1.2, A.2. Review-proposed corrections and supplementary derivations remain distinct from the printed statements.
-- Figure sources: The Figure-2 thumbnail and body Figures 2–4/Table-1 diagram are author assets from v4 (CC BY 4.0), rasterized and WebP-encoded with content, colors, arrows, and notation retained. [Paper](https://arxiv.org/abs/2407.01392v4).
-- Not verified: research-code execution, model training/reproduction, raw-data uncertainty estimates, and complete formal certification.
+- Scope read: Version 4, appendix A, pages 14–19, in the order setup, A.1, A.1.1, A.1.2, A.2, plus the cited main-text §3.2 and appendix D.1.
+- External sources consulted: [DDPM v2](https://arxiv.org/abs/2006.11239v2) §2–3.2, [Chan tutorial v1](https://arxiv.org/abs/2403.18103v1) §2.6–2.7.
+- Figure sources: The thumbnail is the authors' v4 Figure 2 (CC BY 4.0), rasterized and WebP-encoded with content, colors, arrows, and notation retained. [Paper](https://arxiv.org/abs/2407.01392v4).
+- Not verified: formal verification of the complete theorems, author confirmation, and the proof of Theorem A.3, which the source omits.

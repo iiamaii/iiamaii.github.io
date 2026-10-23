@@ -3,7 +3,7 @@ title: "[1/2] Diffusion Forcing: What Changes When Time and Noise Can Be Control
 description: "Follow independent per-token noise from the training objective to long video rollouts, Monte Carlo Guidance, maze planning, and robotic memory in the authors' section order."
 date: "2026-10-14"
 publishedAt: "2026-10-14T13:58:28+09:00"
-updatedAt: "2026-10-23T08:56:21+00:00"
+updatedAt: "2026-10-23T15:26:21+00:00"
 topics: ["diffusion models", "sequence modeling", "world action model", "robot learning", "probabilistic modeling"]
 visibility: "public"
 lang: "en"
@@ -17,19 +17,19 @@ thumbnail: "/assets/reviews/diffusion-forcing/overview.webp"
 thumbnailAlt: "Original Figure 2: sequence time and diffusion noise axes, with independent per-token training and sampling compared against teacher forcing and full-sequence diffusion."
 ---
 
-Diffusion Forcing learns independent per-token noise levels, allowing one model to vary generation horizon, memory, and future guidance. On single-task 2D Maze Large, its normalized return is 159.0±2.7 versus 142.8±5.6 without Monte Carlo Guidance (MCG). [Table 1](https://arxiv.org/pdf/2407.01392v4#page=8) **Review interpretation.** The contribution is sampling flexibility; normalized scores above 100 are distinct from success percentages.
+Diffusion Forcing (DF) trains on independently sampled per-token noise levels, so generation horizon, memory, and future guidance can be chosen at sampling time without retraining. In Table 1's Maze2D Large (fixed goal), DF's episode reward is 159.0±2.7, versus 142.8±5.6 for the same model without Monte Carlo Guidance (MCG). [Table 1](https://arxiv.org/pdf/2407.01392v4#page=8) **Review interpretation.** The MCG ablation changes only sampling and raises the score in all six maze environments, making it the most direct support for the planning claims; long-horizon video stability is shown only through examples without a quantitative metric, and the robot memory and corrupted-observation results only as success rates without trial counts, so the remaining evidence for "combining the strengths of both paradigms" is demonstration-level.
 
-This review divides the 35-page v4 into two articles. This part follows **main sections 1–5**, incorporating essential experimental and implementation details from appendices B–F. [\[2/2\] Theory and proof walkthrough](/en/reviews/diffusion-forcing-theory/) covers appendix A's ELBO and subsequence claims. Read this article first. The theory article distinguishes the printed statements from supplementary derivations because the source contains mathematical inconsistencies.
+This article covers v4's main sections 1–5 and the experimental and implementation appendices B–F in source order; appendix A's ELBO argument and the printed errors in its KL signs, transition directions, and weights are covered in [\[2/2\] Theory and proof walkthrough](/en/reviews/diffusion-forcing-theory/).
 
 ## 1. Introduction
 
 A **token** can be a video frame, a multivariate observation, or a robot action–observation bundle. It need not be a word.
 
-Teacher forcing predicts the next token from ground-truth history during training. At inference, the model instead consumes its own outputs. On continuous data, this mismatch can cause compounding error.
+**Teacher forcing** trains a model to predict the next token from ground-truth history. The authors name two limitations of next-token models trained this way: there is no mechanism for guiding sampling toward an objective, and on continuous data the model consumes its own outputs at inference, so small errors compound and the model diverges past the training horizon.
 
-Full-sequence diffusion adds and removes noise from a collection of tokens. In the conventional setup considered here, all tokens share the same noise level at a diffusion step. This supports guidance toward desirable future outcomes.
+**Full-sequence diffusion** concatenates a fixed number of tokens and noises and denoises them all at a shared noise level. It supports **guidance** toward desirable outcomes, but its non-causal architecture makes variable-length and subsequence generation difficult. The authors also report that naively training a next-token model with full-sequence diffusion generates poorly.
 
-The authors relax two restrictions: previous tokens need not be completely resolved before predicting future ones, and different tokens need not share the same noise level. The near future can be resolved sooner while the distant future retains alternatives. Independent per-token training makes this a choice of **sampling schedule**, rather than a separate training run for each pattern. [§1, Figures 1–2](https://arxiv.org/pdf/2407.01392v4#page=2)
+DF relaxes two restrictions at once: earlier tokens need not be fully resolved before predicting later ones, and all tokens need not share one noise level. The near future can be resolved sooner while the distant future keeps alternatives. Because per-token noise is sampled independently during training, this becomes a choice of **sampling schedule** rather than a retraining decision. [§1, Figures 1–2](https://arxiv.org/pdf/2407.01392v4#page=2)
 
 ## 2. Related Work and Preliminaries
 
@@ -37,9 +37,9 @@ There are two axes. Subscript $t$ denotes sequence time; superscript $k$ denotes
 
 ### Bayesian filtering meets diffusion
 
-Bayesian filtering updates a belief using a new observation. A learned latent need not estimate a physical coordinate; it can summarize information useful for predicting the future.
+Bayesian filtering updates latent states recursively with a prior model $p(\mathbf z_{t+1}\mid\mathbf z_t)$, an observation model $p(\mathbf x_t\mid\mathbf z_t)$, and a posterior model $p(\mathbf z_{t+1}\mid\mathbf z_t,\mathbf x_{t+1})$ that incorporates a new observation. When trained end to end with neural networks, the latent is not an estimate of a physical quantity but a summary of the past that is useful for predicting future observations.
 
-The forward diffusion process, preserving equation (2.1), is
+The forward diffusion process is equation (2.1):
 
 $$
 q(\mathbf x^k\mid\mathbf x^{k-1})
@@ -58,36 +58,38 @@ $$
 \boldsymbol\epsilon_t\sim\mathcal N(0,\mathbf I).
 $$
 
-The second expression uses normalized noise following [DDPM equation (4)](https://arxiv.org/pdf/2006.11239v2#page=2). Level zero is clean; sufficiently large $K$ makes the token approximately pure noise. At finite $K$, this need not mean exactly zero information. Mixed $t/k$ subscripts in the source's background exposition are normalized to the noise index $k$ here.
+The second expression is the closed form in [DDPM equation (4)](https://arxiv.org/pdf/2006.11239v2#page=2). Level zero is clean, and $\mathbf x_t^K$ is approximately pure noise. The reverse process is a Gaussian Markov chain whose mean is predicted by a network, trained in the standard way with a least-squares noise-prediction objective $\boldsymbol\epsilon_\theta$. For guidance, the source takes classifier guidance as its reference: the gradient of the log of a classifier $c(y\mid\mathbf x^k)$ for a desired attribute $y$ adjusts the sampling direction.
 
-### Nearby approaches
+Section 2 notes that next-token models cannot accept multi-step guidance, because earlier frames must be fully determined before future frames are sampled. Among diffusion sequence models it lists Diffusion-LM for guided text control, video diffusion extended with a sliding window, Diffuser as a planner for offline reinforcement learning, and TimeGrad trained with teacher forcing; the closest work is AR-Diffusion, whose noise level depends linearly on position along the time axis. Appendix C adds that Rolling Diffusion shares the same limitation, since its position-linked noise levels must be reused unchanged at sampling time.
+
+### Review supplement: nearby approaches compared
 
 | Approach | What it learns | Difference from Diffusion Forcing |
 | --- | --- | --- |
 | [DDPM](https://arxiv.org/pdf/2006.11239v2), §2–3 | Forward/reverse diffusion and a denoising objective | DF adds sequential memory and independent per-token noise. |
-| [TimeGrad](https://proceedings.mlr.press/v139/rasul21a/rasul21a.pdf), §3 | Conditional next-vector diffusion with an RNN summarizing clean history | DF trains with noisy history and supports guidance across several future tokens. |
+| [TimeGrad](https://proceedings.mlr.press/v139/rasul21a/rasul21a.pdf), §3 | Next-vector diffusion conditioned on a recurrent neural network (RNN) state summarizing clean history | DF trains with noisy history and supports guidance across several future tokens. |
 | [Diffuser](https://proceedings.mlr.press/v162/janner22a/janner22a.pdf), §2–3.1 | Joint state–action trajectory generation with objective guidance | DF controls horizon and future uncertainty through a causal architecture and token-specific schedules. |
 | [AR-Diffusion](https://arxiv.org/pdf/2305.09515v1), §3.1–3.2 | Token diffusion levels determined by sentence step and position | Different token noise levels precede DF; DF's distinction is independent training rather than a position-linked pattern. |
 
-This is a conceptual comparison. TimeGrad appears in the forecasting table and Diffuser in the maze experiments; AR-Diffusion is not a text-generation performance baseline here. Appendix C also discusses Rolling Diffusion, whose complete paper was not independently reviewed for this article. Diffuser §3.1 also explicitly allows planning horizon changes through its fully convolutional input dimensionality. DF is therefore not presented as the first variable-horizon planner: its distinction concerns flexible noise/conditioning patterns and causal memory within one training framework.
+TimeGrad appears in the forecasting table and Diffuser in the maze experiments.
 
 ## 3. Method
 
 ### 3.1 Noising as partial masking
 
-Partial masking interpolates between preserving and hiding information. A lightly corrupted frame retains substantial structure; stronger corruption makes its original content harder to recover.
+Partial masking interpolates between preserving and hiding information. The authors view teacher forcing as masking along the time axis and forward diffusion as partial masking along the noise axis: zero noise leaves a token unmasked, and level $K$ masks it completely.
 
-DF controls this degree separately from token position. Noise can be interpreted as a handle on how much an observation should be trusted. It is not automatically a calibrated uncertainty estimate. [§3.1, p. 4](https://arxiv.org/pdf/2407.01392v4#page=4)
+DF unifies the two axes. Each token in a sequence can receive its own noise level $k_t$, which is the degree of partial masking applied to that token. [§3.1, p. 4](https://arxiv.org/pdf/2407.01392v4#page=4)
 
 ![Original Figure 2: time/noise axes and the three training and sampling configurations](/assets/reviews/diffusion-forcing/overview.webp)
 
 [Open Figure 2 at full size](/assets/reviews/diffusion-forcing/overview.webp)
 
-**Reading Figure 2.** On the left, time is horizontal and noise is vertical. In DF's training row, differently colored tokens have independently chosen corruption levels. Teacher forcing uses clean history for a next-token prediction; full-sequence diffusion treats tokens at a common noise level. The lower sampling row shows DF maintaining temporal connections while denoising different columns at different rates. The broad horizontal bars represent joint full-sequence processing. Colors indicate noise levels, not success rates or confidence. [Figure 2, p. 3](https://arxiv.org/pdf/2407.01392v4#page=3)
+**Reading Figure 2.** On the left, time is horizontal and noise is vertical. In DF's training row, differently colored tokens have independently chosen corruption levels. Teacher forcing uses clean history for a next-token prediction; full-sequence diffusion treats tokens at a common noise level. The lower sampling row shows DF maintaining temporal connections while denoising different columns at different rates. The broad horizontal bars represent joint full-sequence processing, and colors indicate noise levels. [Figure 2, p. 3](https://arxiv.org/pdf/2407.01392v4#page=3)
 
 ### 3.2 Different noise levels for different tokens
 
-The evaluated implementation uses a causal recurrent neural network. During training, $k_1,\ldots,k_T$ are independently sampled and each token is corrupted accordingly. Latents evolve as
+The evaluated implementation is a causal RNN. During training, $k_1,\ldots,k_T$ are independently sampled and each token is corrupted accordingly. Latents evolve as
 
 $$
 \mathbf z_t\sim p_\theta\!\left(
@@ -95,9 +97,9 @@ $$
 \mathbf x_t^{k_t},k_t\right).
 $$
 
-In the implementation, this update is deterministic; the distributional notation does not imply that a latent sample is drawn at every step. Level zero corresponds to a posterior update using an observation, while level $K$ approximates prior prediction without informative observation content.
+In the implementation this update is deterministic; the authors describe $\mathbf z_t$ as representing a distribution over beliefs rather than a sample from it. Level zero corresponds to the Bayes-filter posterior update with an observation, and level $K$ to prior prediction without observation content.
 
-The essential objective in equation (3.1) is
+The training objective is equation (3.1):
 
 $$
 \mathbb E_{\substack{k_{1:T},\,\mathbf x_{1:T},\,\boldsymbol\epsilon_{1:T}\\
@@ -113,13 +115,19 @@ $$
 \right].
 $$
 
-The consequential change is **noisy conditioning history**, rather than MSE itself. Latents summarize that history, and gradients also flow through their recurrence. Algorithm 1 samples a sequence, samples independent levels, corrupts tokens, computes latent updates and predictions, and backpropagates the sequence loss. The source alternates between $[K]$ and $\{0,\ldots,K\}$. Its normalized-noise division cannot simply be evaluated at a clean endpoint; parameterization and endpoint handling need implementation-specific treatment. [§3.2, Algorithm 1, pp. 4–5](https://arxiv.org/pdf/2407.01392v4#page=4)
+The loss itself is standard diffusion MSE; what changes is that **the conditioning history is noisy too**. Latents summarize that history, and gradients also flow through their recurrence. Algorithm 1 samples a sequence, samples independent noise levels, corrupts tokens, computes latent updates and predictions, and backpropagates the sequence loss. The source alternates between $[K]$ and $\{0,\ldots,K\}$ for the set of noise levels. [§3.2, Algorithm 1, pp. 4–5](https://arxiv.org/pdf/2407.01392v4#page=4)
 
-The experiments do not all use this illustrative $\boldsymbol\epsilon$ parameterization. Appendix D.3 uses $\mathbf v$ prediction for video and forecasting, and $\mathbf x_0$ prediction for planning and imitation. Video also uses fused SNR reweighting that incorporates information from history. These training details should be separated from the contribution of independent noise alone.
+Not every experiment uses this $\boldsymbol\epsilon$ prediction. According to appendix D.3, video and forecasting use $\mathbf v$ prediction, and planning and imitation use $\mathbf x_0$ prediction. Video also uses **fused SNR reweighting**, a signal-to-noise-ratio weighting re-derived to account for the signal carried by the noisy history. The authors report that it greatly accelerated convergence in video prediction, and that they did not use it in non-image domains because they saw no benefit there (D.1).
 
-**Sampling selects a two-dimensional schedule.** Entry $\mathcal K_{m,t}$ specifies the desired noise level for token $t$ at sampling row $m$. Algorithm 2 traverses rows and updates latents from past to future within each row. The final row is clean.
+**Sampling selects a two-dimensional schedule.** Entry $\mathcal K_{m,t}$ is the noise level that token $t$ should reach at sampling row $m$. Algorithm 2 moves down the rows and, within each row, updates latents from past to future while denoising. The final row is clean. Because training covers all combinations of noise levels, the authors' point is that changing $\mathcal K$ alone yields different behaviors without retraining.
 
-For three tokens and even $K$, an illustrative pattern is
+Informal Theorem 3.1 states that training optimizes a reweighted evidence lower bound (ELBO) and, under appropriate conditions, simultaneously maximizes a likelihood lower bound for every sequence of noise levels. The authors add that the special case $k_t\in\{0,K\}$ means DF learns conditionals with arbitrary earlier tokens masked out, that is, the distribution of every subsequence of the training set. The conditions behind this claim and the printed errors in the appendix proof are covered in the [theory article](/en/reviews/diffusion-forcing-theory/).
+
+### 3.3 New Capabilities in Sequence Generation
+
+**Stabilizing autoregressive generation.** For high-dimensional continuous sequences such as video, autoregressive architectures tend to diverge past the training horizon. DF does not treat generated frames as flawless ground-truth history; it continues from the latent associated with a token at a small noise level $0<k_{\mathrm{small}}\ll K$ (appendix B.4). This slightly corrupted history is in distribution for training, so inference errors are absorbed by noise the model has already seen. The recurrent state is never reset, and no sliding window is used.
+
+**Keeping the future uncertain.** The source explains this with three tokens. For even $K$, the noise levels evolve as
 
 $$
 \begin{aligned}
@@ -130,17 +138,9 @@ $$
 \end{aligned}
 $$
 
-These are **lists of noise levels**, not token values. They illustrate resolving the near future before the far future, rather than every intermediate step of an implemented DDIM sampler. Appendix D.7 specifies pyramid scheduling. [§3.2–3.3, D.7](https://arxiv.org/pdf/2407.01392v4#page=5)
+These are **lists of noise levels**, not token values. Interpreting noise level as uncertainty, the authors describe this "zig-zag" sampling as keeping the near future more certain than the far future. Appendix D.7 generalizes the idea into a scheduling matrix for planning, called pyramid scheduling.
 
-Informal Theorem 3.1 connects training to a reweighted evidence lower bound and claims simultaneous modeling of noise patterns under appropriate conditions. The expressivity assumptions and appendix inconsistencies are addressed in the [theory article](/en/reviews/diffusion-forcing-theory/). The claim should not be read as exact subsequence prediction by a finite RNN.
-
-### 3.3 New Capabilities in Sequence Generation
-
-**Rollout stabilization.** Generated frames are not treated as flawless ground-truth history. The next generation uses a latent associated with slightly noisy history. In appendix B.4's RNN construction, a latent at $k_{\mathrm{small}}>0$ is carried forward. This puts imperfect inference history closer to the noisy histories seen during training, without resetting the recurrent state or sliding a fixed window.
-
-**Keeping the future uncertain.** A zig-zag or pyramid schedule resolves nearby tokens earlier and leaves alternatives for distant tokens. It avoids committing the entire future too soon.
-
-**Long-horizon guidance.** Future tokens depend on earlier ones in a causal model. Gradients of future objectives can therefore propagate through those dependencies to guide earlier tokens that are still being resolved. Backpropagation through time is different from supplying future observations as generation inputs. [§3.3, B.3–B.5](https://arxiv.org/pdf/2407.01392v4#page=6)
+**Long-horizon guidance.** In a causal model, future tokens depend on earlier ones, so gradients of future objectives propagate backward along those dependencies. The distinction the authors emphasize is that future tokens can be denoised without fully resolving the past, so those gradients guide the sampling of past tokens that are still being resolved. [§3.3, B.3–B.5, D.7](https://arxiv.org/pdf/2407.01392v4#page=5)
 
 ### 3.4 Flexible Sequential Decision Making
 
@@ -151,11 +151,11 @@ $$
 [\mathbf a_t,\mathbf r_t,\mathbf o_{t+1}]^\top.
 $$
 
-From $\mathbf z_{t-1}$, generate a plan $\hat{\mathbf x}_{t:t+H}$ and execute only $\hat{\mathbf a}_t$. Update the latent using **the reward and observation actually received from the environment**, rather than the predicted ones, then replan as in model predictive control.
+From $\mathbf z_{t-1}$, generate a plan $\hat{\mathbf x}_{t:t+H}$ and execute only $\hat{\mathbf a}_t$. Update the latent using **the reward and observation actually received from the environment**, rather than the predicted ones, then replan as in model predictive control (MPC). The source calls $H$ the look-ahead window and writes the inclusive interval $t:t+H$.
 
-A short look-ahead behaves more like a policy; a longer look-ahead supports planning with future objectives. The source denotes look-ahead by $H$ and writes the inclusive interval $t:t+H$. It does not report a measured latency reduction curve.
+**Flexible planning horizon.** The authors argue that because DF selects actions one at a time, it can serve tasks of variable horizon, and that without retraining $H$ can be shortened for a low-latency policy or lengthened for a long-horizon planner. Their contrast is that Diffuser, which generates at full-trajectory length, cannot do the former, while diffusion policies with short fixed look-aheads cannot do the latter. The guidance reward can likewise be a dense reward over the whole trajectory, a reward within the look-ahead, or a sparse goal reward $-\|\mathbf o_T-\mathbf g\|^2$. [§3.4, p. 6](https://arxiv.org/pdf/2407.01392v4#page=6) **Review interpretation.** Diffuser §3.1 itself states that its fully convolutional architecture can change planning horizon by changing input length, so DF's distinction lies less in horizon control than in selecting actions sequentially and updating memory with real observations. The source does not measure how much latency is reduced.
 
-**Monte Carlo Guidance (MCG)** holds the current token as a shared condition, samples multiple futures, and averages their reward gradients. The following is **supplementary review notation**: $N$ is the future sample count and $\widehat G^{(i)}$ the estimated reward of sample $i$.
+**MCG** holds the current token $\mathbf x_t^k$ fixed, samples multiple futures, and averages their guidance gradients. The authors describe this, in the spirit of shooting methods such as model predictive path integral (MPPI) control, as guiding the current token by the expected reward over the distribution of futures rather than by one particular future. The following is **supplementary review notation**: $N$ is the number of future samples and $\widehat G^{(i)}$ the estimated reward of sample $i$.
 
 $$
 \widehat{\mathbf g}
@@ -163,35 +163,35 @@ $$
 \nabla_{\mathbf x_t^k}\widehat G^{(i)}.
 $$
 
-Estimating expected reward over futures is different from selecting one fortunate future. Keeping distant tokens noisy supports conditional future variation while guiding the immediate choice. Interchanging differentiation and expectation requires regularity; model and sampling error are still present. Appendix B.5 explains why this conditional rollout operation is not straightforward in conventional simultaneous full-sequence denoising. It is not a universal impossibility theorem for every full-sequence architecture. [§3.4, B.3, B.5](https://arxiv.org/pdf/2407.01392v4#page=6)
+The effect is said to grow when MCG is combined with the zig-zag schedule, which keeps distant tokens at higher noise levels. Appendix B.5 explains that full-sequence diffusion denoises all tokens in tandem, leaving no obvious source of randomness for a Monte Carlo estimate at a fixed noise level, and §4.2 says this was "formally derive[d]". [§3.4, B.3, B.5](https://arxiv.org/pdf/2407.01392v4#page=6) **Review interpretation.** B.5 is an argument about architecture rather than a formal derivation, and the authors themselves leave open simulating future rollouts with the replacement trick of B.6.
 
 ## 4. Experiments
 
 ### 4.1 Video Prediction: Consistent, Stable Sequence Generation and Infinite Rollout
 
-The datasets contain first-person Minecraft and DMLab navigation videos. DF, teacher-forced next-frame diffusion, and causal full-sequence diffusion use **the same RNN architecture**. This is not a comparison against every large noncausal video diffusion model.
+A convolutional RNN implementation is trained on first-person Minecraft and DMLab navigation videos and rolled out autoregressively with the stabilization above. The baselines, teacher-forced next-frame diffusion and causal full-sequence diffusion, use **the same RNN architecture**. The authors report that DF rolls out stably far beyond its training horizon (for example, 1000 frames) while both baselines diverge quickly, and that within the training horizon full-sequence diffusion shows abrupt jumps between frames.
 
 ![Original Figure 3: long video rollouts under three training paradigms in DMLab and Minecraft](/assets/reviews/diffusion-forcing/video-rollouts.webp)
 
 [Open Figure 3 at full size](/assets/reviews/diffusion-forcing/video-rollouts.webp)
 
-**Reading Figure 3.** DMLab is on the left and Minecraft on the right. Red borders identify real conditioning inputs; the remaining frames are generated. Labels 496, 500, 996, and 1000 are frame positions. Upper DF rows show examples retaining scene structure through long rollouts. Middle causal full-sequence rows show abrupt scene changes; lower teacher-forcing rows deteriorate into patterns or noise. The two sequence rows are examples, not means or error bars. Static frames cannot establish all aspects of temporal consistency. [Figure 3, §4.1, pp. 7–8](https://arxiv.org/pdf/2407.01392v4#page=7)
+**Reading Figure 3.** DMLab is on the left and Minecraft on the right. Red borders identify real conditioning inputs; the remaining frames are generated. Labels 496, 500, 996, and 1000 are frame positions. Upper DF rows retain scene structure through long rollouts; middle causal full-sequence rows show abrupt scene changes; lower teacher-forcing rows deteriorate into patterns or noise. The two sequence rows are separate examples. [Figure 3, §4.1, pp. 7–8](https://arxiv.org/pdf/2407.01392v4#page=7)
 
-Appendix E.3 presents additional 180-frame examples and reports attempts reaching 2000 frames without blow-up. These are **observed finite rollouts**, not guarantees of infinite-length quality or accurate future states. Appendix F.1 specifies 128×128 Minecraft and 64×64 DMLab frames and approximately 10% of the data for training. Minecraft training clips have 72 frames. DMLab is described as 36 frames in E.3 captions and 48 in F.1, leaving an internal length discrepancy.
+Appendix E.3 presents non-cherry-picked 180-frame examples and reports rolling out to 2000 frames without the model blowing up. The Minecraft agent occasionally gets stuck with the whole screen showing a dirt block, which the authors attribute to the dataset. Appendix F.1 specifies 128×128 Minecraft and 64×64 DMLab frames, with about 10% of the data used for training. Minecraft training clips have 72 frames; for DMLab, E.3 states 36 frames and F.1 states 48.
 
-The Minecraft and DMLab models have 36M and 24M parameters. They use $K=1000$, 100 DDIM sampling steps, and frame stacks of 8 and 4. Video training uses eight A100s, batch 128, and 50K steps, with convergence around 40K steps after roughly 12 hours. A quantitative FVD comparison is not the principal evidence supplied here. [D.2, D.6, D.10, E.3, F.1](https://arxiv.org/pdf/2407.01392v4#page=24)
+The Minecraft and DMLab models have 36M and 24M parameters. They use $K=1000$, 100 sampling steps of DDIM (denoising diffusion implicit models), and frame stacks of 8 and 4. Video training uses eight A100s, batch 128, and 50K steps, converging around 40K steps after roughly 12 hours. The video experiments report no quantitative metric; the evidence is the examples in Figure 3 and E.3. [D.2, D.6, D.10, E.3, F.1](https://arxiv.org/pdf/2407.01392v4#page=24)
 
 ### 4.2 Diffusion Planning: MCG, Causal Uncertainty, Flexible Horizon Control
 
-On D4RL Maze2D U-Maze, Medium, and Large, one model is trained per maze using random-walk logs. Observations contain 2D position and velocity; actions are 2D acceleration. Maze2D uses fixed goals, while Multi2D randomizes goals.
+On Maze2D U-Maze, Medium, and Large from the offline reinforcement learning benchmark D4RL, one model is trained per maze from random-walk data. Observations are 4D vectors of 2D position and velocity, actions are 2D acceleration, and the reward is sparse: 1 within a radius of 0.5 around the goal and 0 otherwise. Maze2D uses fixed goals, while Multi2D randomizes goals as well.
 
 ![Upper diagram of original Table 1: denoising maze plans with DF and Diffuser](/assets/reviews/diffusion-forcing/maze-planning.webp)
 
 [Open the planning diagram at full size](/assets/reviews/diffusion-forcing/maze-planning.webp)
 
-**Reading the planning diagram.** Each maze shows DF above Diffuser. Horizontal progress is **denoising**, not environmental execution time. The start-to-end color scale marks position within a plan. DF resolves nearby portions while retaining distant alternatives. Scattered points are unresolved sampling states, not all the positions visited by an executing robot. Read this visualization with the quantitative table.
+**Reading the planning diagram.** Each maze shows DF above Diffuser. Horizontal progress is **denoising**, not environmental execution time. The start-to-end color scale marks position within a plan. DF resolves nearby portions first and keeps distant portions more uncertain, whereas Diffuser treats every portion at the same noise level (source caption). Scattered points are sampling states that are not yet resolved.
 
-All comparison methods in Table 1 are retained below, split into two tables. These are reported benchmark scores, **not success percentages**, and may exceed 100. The original $\pm$ values are preserved; the table does not clearly specify its run count or the meaning of the error term.
+All comparison methods in Table 1 are reproduced below, split into two tables. The baselines are MPPI, the offline reinforcement learning methods conservative Q-learning (CQL) and implicit Q-learning (IQL), and Diffuser. The values are what the source calls episode reward; the number of runs and the meaning of $\pm$ are not reported.
 
 | Environment | MPPI | CQL | IQL | Diffuser\* | Diffuser generated actions | DF without MCG | DF |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -207,31 +207,31 @@ All comparison methods in Table 1 are retained below, split into two tables. The
 | Large | 8.0 | — | 13.9 | $132.1\pm5.8$ | $6.9\pm1.7$ | $129.8\pm1.5$ | $167.1\pm2.7$ |
 | Reported average | 21.5 | — | 16.9 | 129.4 | 20.6 | 127.7 | 146.2 |
 
-The asterisk matters. <strong>Diffuser*</strong> uses a handcrafted PD controller to turn predicted state paths into actions. Directly executing generated actions performs much worse. DF executes its generated actions. This supports attention to consistency between plans and actions, while retaining the fact that controller conditions differ. [Table 1, §4.2, p. 8](https://arxiv.org/pdf/2407.01392v4#page=8)
-
-**Why a score can exceed 100.** D4RL normalization measures return relative to environment-specific reference values. This review notation shows the 100-point scale:
+**Why a score can exceed 100.** The source calls these values "episode reward" (D.8) and "average reward" (Table 1 caption) without stating whether they are normalized. **Review interpretation.** The scale of the values above 100 matches the normalized score defined by D4RL. The D4RL implementation ([get_normalized_score](https://github.com/Farama-Foundation/D4RL/blob/master/d4rl/offline_env.py)) computes the following from environment-specific reference returns $R_{\min},R_{\max}$; because the reference maximum is not a theoretical ceiling, a return above it scores above 100.
 
 $$
 S(R)=100\,\frac{R-R_{\min}}{R_{\max}-R_{\min}}.
 $$
 
-If $R>R_{\max}$, the score exceeds 100. The reference maximum is not a theoretical ceiling. This definition does not recover the experiment’s raw returns or success counts. [Official D4RL get_normalized_score implementation](https://github.com/Farama-Foundation/D4RL/blob/master/d4rl/offline_env.py)
+The caption's statement that DF achieves the "highest average reward" matches the table: single-task averages are 141.7 for DF and 119.5 for Diffuser\*, and multi-task averages are 146.2 and 129.4. Section 4.2's claim that DF "outperforms Diffuser and all baselines across all 6 environments" does not match it, however: on Multi2D U-Maze, **DF scores 119.1 to Diffuser\*'s 128.9**. Adding MCG raises DF's score in all six environments (for example, Multi2D Large 129.8→167.1), and the authors note that DF remains competitive without it.
 
-MCG improves the **mean score** in all six settings, without establishing statistical significance separately for each. Single-task averages are 141.7 for DF and 119.5 for Diffuser\*; multi-task averages are 146.2 and 129.4. **On Multi2D U-Maze, DF scores 119.1 versus Diffuser\*'s 128.9.** The prose claim of superiority in all six environments therefore does not match the complete table.
+<strong>Diffuser*</strong> discards its generated actions and follows the generated state path with a handcrafted PD (proportional–derivative) controller. Executing the generated actions directly drops the averages to 8.7 and 20.6. The authors take this as evidence that Diffuser's generated states and actions are not causally consistent, and stress that DF, executing its own generated actions, beats even Diffuser\* with its PD controller. The two methods also use different guidance objectives. Both discard the dataset reward and plan toward the goal, but DF guides with the goal distance summed over all time steps so that no arrival time has to be specified. The authors tried this reward with Diffuser, but it did not work even with substantial tuning (D.5). [Table 1, §4.2, p. 8](https://arxiv.org/pdf/2407.01392v4#page=8)
 
-Appendix D.8 warns that reward is an imperfect planning metric: a slow path spending longer near the goal may score highly. First hitting time would be useful alongside reward, but a complete numerical comparison is not supplied.
+Appendix D.8 warns that episode reward is not a good metric. The dataset contains no trajectories that stay at the goal, so agents tend to leave after reaching it (D.5), and Diffuser may have gained an unfair advantage by generating slow plans that linger near the goal. The authors recommend first hitting time as an alternative and write that DF excels at it, but give no numbers.
 
-The maze model has 4.33M parameters, uses a frame stack of 10 and 50 DDIM sampling steps, and can be trained on an 11GB 2080Ti. The MCG future sample count and precise inference-budget matching are insufficiently reported. The scores should not be interpreted as algorithmic gains at demonstrated equal compute cost. [D.2, D.6, D.8, D.10, F.2](https://arxiv.org/pdf/2407.01392v4#page=25)
+**Flexible horizon.** In fixed-horizon tasks the remaining planning horizon must shrink as the task progresses. The authors argue that DF supports this by design, whereas full-sequence models such as Diffuser perform poorly even with tweaks. Appendix B.6 gives the reasons: "conditioning by replacement", which fixes already generated tokens and updates only the rest, still denoises the whole sequence even with one step left, and is mathematically unprincipled, so the generated sequence can become inconsistent. Table 1 has no separate numbers for this claim.
+
+The maze model has 4.33M parameters, a frame stack of 10, and 50 DDIM steps, and can be trained on one 11GB 2080Ti. The number of MCG future samples and the inference cost are not reported. [D.2, D.6, D.8, D.10, F.2](https://arxiv.org/pdf/2407.01392v4#page=25)
 
 ### 4.3 Controllable Sequential Compositional Generation
 
-Two families of diagonal trajectories connect opposite corners of a 2D square. Full memory reproduces the training distribution's X shape. Shorter plans with discarded history can join portions into a V shape.
+The training data are trajectories across a 2D square from one corner to the opposite corner, forming an X. Keeping full memory reproduces the training distribution's X shape; generating short plans with MPC and no memory stitches parts of different trajectories into a V shape.
 
-The experiment illustrates changing **memory and sampling scope** without retraining. It does not establish that arbitrary real-world sub-trajectories can be safely stitched together. Discarding history can remove both restrictions and useful long-context constraints. [§4.3, E.2, Figure 7](https://arxiv.org/pdf/2407.01392v4#page=27)
+The authors' point is that **only the sampling scheme changes**, without retraining, to control how compositional the generation is. The figure in appendix E.2 describes discarding previous states as recovering Markovian dynamics. [§4.3, E.2, Figure 7](https://arxiv.org/pdf/2407.01392v4#page=27) **Review interpretation.** Discarding long context removes the long-range constraints the data obeyed along with enabling new combinations, so this control is useful where such constraints can be dropped.
 
 ### 4.4 Robotics: Long Horizon Imitation Learning and Robust Visuomotor Control
 
-A Franka robot swaps an apple and orange using a third empty slot, with two randomized initial configurations. The same intermediate image can require a different next move depending on the starting arrangement, making memory necessary.
+A Franka robot swaps an apple and an orange using a third empty slot. The initial arrangement is one of two, chosen at random. In an intermediate state with one fruit in the third slot, the next move cannot be determined from the current image alone, so the robot must remember the initial arrangement.
 
 ![Original Figure 4: identical intermediate arrangements with different goals, and generated videos from two cameras](/assets/reviews/diffusion-forcing/robot-memory.webp)
 
@@ -239,32 +239,32 @@ A Franka robot swaps an apple and orange using a third empty slot, with two rand
 
 **Reading Figure 4.** Cases A and B on the left have the same intermediate arrangement but different final goals below. The next arrow cannot be selected from the current image alone. On the right are conditioning images and generated wrist/external-camera frames; 120–480 label frame positions. Plausible generated video and successful executed control are different evidence. [Figure 4, §4.4, p. 9](https://arxiv.org/pdf/2407.01392v4#page=9)
 
-Training uses 150 expert demonstrations, two cameras, and 6-DoF actions. Each demonstration has 500–600 frames/actions, reduced to 40 video tokens with 15 actions bundled per token.
+Training uses 150 expert demonstrations collected by VR teleoperation (half for each initial arrangement), two camera views, and 6-DoF actions. Each demonstration has 500–600 frames and actions, downsampled to 40 video tokens with 15 actions bundled per token.
 
-| Condition or comparison | Reported success | Scope |
+| Condition or comparison | Reported success | Condition |
 | --- | --- | --- |
-| DF, ordinary observations | 80% | One memory-dependent fruit-swap task |
-| DF, corrupted observations | 76% | Distractors/camera occlusion, with corruption designated as noisy input |
+| DF, ordinary observations | 80% | Memory-dependent fruit-swap task |
+| DF, corrupted observations | 76% | Visual distractors and full camera occlusion; the distractor bag was absent from the training data (zero-shot), and corrupted observations are designated with $k>0$ |
 | Next-frame diffusion baseline, corrupted observations | 48% | Treats corrupted observations as ground truth |
-| Memoryless Diffusion Policy, ordinary task | Reported to fail | No exact success percentage in the main text |
+| Memoryless Diffusion Policy, ordinary task | Reported to fail | No success rate given |
 
-The change from 80 to 76 is **four percentage points**. Evaluation counts and confidence intervals are unclear; 150 training demonstrations must not be substituted for test trials. The system allows $k>0$ to designate corruption, rather than demonstrating an automatically calibrated corruption detector. Appendix E.5 describes failure when initial object placement information is missed.
+The change from 80 to 76 is **four percentage points**, and the source reports neither trial counts nor confidence intervals. Corruption is designated by a person with $k>0$, after which DF relies heavily on its prior model to predict actions. According to appendix E.5, the data were collected without the bag, and the corrupted-observation test threw the bag onto the table zero-shot. The typical failure is the robot no longer reacting to visual cues about the randomized object locations; the authors did not observe the robot acting wildly because of the distractor.
 
-Generating video with the same model motivates unlabeled-video pretraining. It is not an experiment showing gains from large-scale unlabeled pretraining. [§4.4, E.5, F.3](https://arxiv.org/pdf/2407.01392v4#page=33)
+The authors write that the same model can also generate a video of the task from the first frame alone, unifying diffusion policy/imitation learning with video generative modeling and paving the way to pre-training on unlabeled video. [§4.4, E.5, F.3](https://arxiv.org/pdf/2407.01392v4#page=33)
 
 ### 4.5 Time Series Forecasting: A General-purpose Sequence Model
 
-Appendices E.1 and F.4 evaluate six GluonTS datasets. Context length equals prediction length: 30 for Exchange and Wikipedia, 24 otherwise. Dimensions are 8, 137, 370, 963, 1214, and 2000.
+Appendices E.1 and F.4 use six GluonTS datasets. Context length equals prediction length: 30 for Exchange and Wikipedia, 24 otherwise. Dimensions are 8, 137, 370, 963, 1214, and 2000, and all splits are normalized by the per-feature mean and standard deviation of the training split. Validation sequences are random subsequences of the training series, and training stops early after six epochs without improvement. Each epoch has 100 batches of 32, and all datasets share one architecture and set of hyperparameters.
 
-The metric is summed continuous ranked probability score, $\operatorname{CRPS}_{\mathrm{sum}}$, with **lower values better**. It compares the predicted distribution of the feature sum with the observed sum, rather than completely evaluating each feature or the full dependency structure. Estimation uses 100 sampled trajectories and 19 quantiles. DF reports means and standard deviations over five seeds.
-
-For predictive CDF $F$ and observation $y$, basic CRPS is
+The metric is the summed continuous ranked probability score, $\operatorname{CRPS}_{\mathrm{sum}}$, with **lower values better**. For a predictive cumulative distribution function (CDF) $F$ and an observation $x$, CRPS is
 
 $$
-\operatorname{CRPS}(F,y)=\int_{\mathbb R}\left(F(s)-\mathbf1\{y\leq s\}\right)^2\,ds.
+\operatorname{CRPS}(F,x)=\int_{\mathbb R}\left(F(z)-\mathbb I\{x\leq z\}\right)^2\,dz.
 $$
 
-Here $F,y,s$ are explanatory metric notation. For $\mathrm{CRPS}_{\mathrm{sum}}$, first sum dimensions within each sampled trajectory and the observations, then score and average over prediction times. This differs from summing per-dimension CRPS: different feature errors can have the same aggregate. Basic CRPS has the observation’s units, so comparisons retain preprocessing and normalization. [TimeGrad §4.1, pp. 4–5](https://proceedings.mlr.press/v139/rasul21a/rasul21a.pdf#page=5)
+For $\operatorname{CRPS}_{\mathrm{sum}}$, the 100 sampled trajectories and the ground truth are each summed over the feature dimension, the CDF of the sum is estimated from 19 quantiles, and the score is averaged over the prediction window. Unlike summing per-dimension CRPS, this cannot distinguish different per-feature errors with the same sum. Scores are computed with the GluonTS implementation, and DF reports means and standard deviations over five seeds.
+
+The table below keeps, from the 12 comparison methods in Table 2, the three flow- and diffusion-based methods and NKF, which is lower than DF on Electricity and Wikipedia. Rankings refer to the full table, including the classical statistical and copula models.
 
 | Method | Exchange | Solar | Electricity | Traffic | Taxi | Wikipedia |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -274,25 +274,22 @@ Here $F,y,s$ are explanatory metric notation. For $\mathrm{CRPS}_{\mathrm{sum}}$
 | NKF | — | $0.320\pm0.020$ | $0.016\pm0.001$ | $0.100\pm0.002$ | — | $0.071\pm0.002$ |
 | DF | $0.003\pm0.001$ | $0.289\pm0.002$ | $0.023\pm0.001$ | $0.040\pm0.004$ | $0.075\pm0.002$ | $0.085\pm0.007$ |
 
-**DF has the lowest mean on Exchange, Traffic, and Taxi, but not Solar, Electricity, or Wikipedia.** On Electricity, NKF's 0.016 is lower even than the source's emphasized ScoreGrad value of 0.019. Four models have lower Wikipedia means than DF, placing it fifth across the full table rather than the fourth claimed in the prose. Overlapping error ranges and different comparison-model conditions prevent mean rankings from replacing significance tests. [Table 2, E.1, p. 27](https://arxiv.org/pdf/2407.01392v4#page=27)
-
-Validation subsequences are drawn randomly from the training series. Early stopping follows six epochs without improvement, with 100 batches per epoch and batch 32. The results support applicability across forecasting domains, rather than superiority over every existing forecasting model.
+Appendix E.1 states that DF outperforms all prior methods except ScoreGrad, with which it is overall tied, and takes fourth place only on Wikipedia. In the table, DF is lowest on Exchange, Traffic, and Taxi. Besides ScoreGrad, TimeGrad (0.287) is below DF (0.289) on Solar, and NKF (0.016), Transformer-MAF, and TimeGrad (0.021) are below DF (0.023) on Electricity. On Wikipedia four methods are below DF, placing it fifth. [Table 2, E.1, p. 27](https://arxiv.org/pdf/2407.01392v4#page=27) **Review interpretation.** The table supports claims at the level of §4.5's "competitive" and E.1's "applicable to diverse domains with no apparent trade-off in performance", but not E.1's sentence that DF outperforms prior methods across the board.
 
 ## 5. Discussion
 
-Independent per-token noise expands the **conditioning, memory, horizon, and guidance choices available at inference**. Video stabilization, MCG planning, and memory-based robot control exploit different aspects of this freedom.
-
-The authors identify the current RNN implementation, higher-resolution and more complex distributions, and untested internet-scale behavior as limitations. Appendix B.1's transformer extension is a discussion, not a replacement for the evaluated RNNs by a demonstrated large-scale system. [§5, p. 10](https://arxiv.org/pdf/2407.01392v4#page=10)
+In the conclusion, the authors summarize that a next-token model trained with DF combines the benefits of next-token models and full-sequence diffusion, and that the new sampling and guidance schemes yield large gains on sequential decision-making tasks. As limitations they list the current RNN-based causal implementation, the likely need for large transformers following appendix B.1 for higher-resolution video or more complex distributions, and the absence of any study of scaling to internet-scale datasets and tasks. [§5, p. 10](https://arxiv.org/pdf/2407.01392v4#page=10)
 
 ## Review interpretation and open questions
 
-**Review interpretation.** The interesting contribution is the freedom to change sampling behavior without building a new model for every objective. Noise-as-uncertainty intuition, confidence calibration, and accurate long-horizon state prediction remain distinct.
+**Review interpretation.** The strongest evidence comes from comparisons within one model: the three video methods share one RNN architecture, and the maze MCG ablation changes only sampling. The paper's substantive contribution is that a single training run yields stabilized rollouts, zig-zag planning, adjustable memory length, and designated observation corruption, all as sampling choices. Comparisons with external baselines rest on differing conditions: Diffuser\* uses a PD controller and a different guidance objective, the authors themselves note that episode reward favors slow plans, and in forecasting DF is lowest on only three of six datasets. The intuition of reading noise level as uncertainty is also never measured as calibrated confidence.
 
-Useful follow-up checks would separate independent noise, stabilization, and fused SNR under matched budgets; measure MCG sample-count versus success/latency; evaluate reward together with first hitting time; and separate explicitly designated observation corruption from automatically detected corruption. These are review proposals, not executed experiments.
+Open questions remain. How large is each effect when independent noise, stabilization, and fused SNR weighting are separated under a matched budget? How do score and latency change with the number of MCG samples? Does the ordering against Diffuser\* hold when the mazes are evaluated by first hitting time? With trial counts reported, and with human-designated corruption separated from automatically detected corruption, does the 76% hold?
 
 ## Sources and reading scope
 
 - Paper: *Diffusion Forcing: Next-token Prediction Meets Full-Sequence Diffusion* · Boyuan Chen et al. · first public date 2024-07-01 · [reviewed version](https://arxiv.org/abs/2407.01392v4) · reviewed 2026-10-23.
 - Scope read: Version 4, sections 1–5 and experimental and implementation appendices B–F. Appendix-A ELBO and subsequence arguments are covered in part 2.
+- External sources consulted: [DDPM v2](https://arxiv.org/abs/2006.11239v2) §2–3, [TimeGrad](https://proceedings.mlr.press/v139/rasul21a/rasul21a.pdf) §2–3.1, [Diffuser](https://proceedings.mlr.press/v162/janner22a/janner22a.pdf) §2–3.1, [AR-Diffusion v1](https://arxiv.org/abs/2305.09515v1) §3.1–3.2, and `get_normalized_score` in the [official D4RL implementation](https://github.com/Farama-Foundation/D4RL/blob/master/d4rl/offline_env.py).
 - Figure sources: The Figure-2 thumbnail and body Figures 2–4/Table-1 diagram are author assets from v4 (CC BY 4.0), rasterized and WebP-encoded with content, colors, arrows, and notation retained. [Paper](https://arxiv.org/abs/2407.01392v4).
-- Not verified: research-code execution, model training/reproduction, raw-data uncertainty estimates, and complete formal certification.
+- Not verified: code execution and experimental reproduction, whether the Table 1 scores are normalized (not stated in the source), and the Rolling Diffusion paper itself.

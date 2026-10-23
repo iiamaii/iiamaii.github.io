@@ -3,7 +3,7 @@ title: "[2/2] Single Global Merging in depth: appendix experiments and proof con
 description: "Follow Appendices A–D through setup, ablations, average dynamics, Taylor expansions, and unresolved proof conditions."
 date: "2026-10-23"
 publishedAt: "2026-10-23T12:14:58+09:00"
-updatedAt: "2026-10-23T08:56:24+00:00"
+updatedAt: "2026-10-23T15:26:24+00:00"
 topics: ["decentralized learning", "model merging", "distributed optimization", "federated learning", "communication efficiency"]
 visibility: "public"
 paperTitle: "On the Surprising Effectiveness of a Single Global Merging in Decentralized Learning"
@@ -17,35 +17,35 @@ translationKey: "single-global-merging-theory"
 thumbnailAlt: "Original Figure 1(b): global test accuracy recovers sharply after the final weight average in sparse decentralized ResNet-18 training."
 ---
 
-The global-merging theory connects communication-controlled model disagreement to curvature corrections in the average update. The main setup uses 300 rounds of 100 local updates each, with neighbor exchanges at probability 0.2 followed by a final average. [Appendices C.1 and D](https://arxiv.org/pdf/2507.06542v4#page=22) **Review interpretation.** Its explanatory scope depends on retaining non-IID residuals and RMS bounds, and on distinguishing observed recovery from a general convergence guarantee.
+The appendices extend the main observations across optimizers, agent counts, topologies, initializations, and data heterogeneity (A–C), and prove that the averaged model of decentralized SGD (DSGD) can match the convergence rate of parallel SGD (D). In Figure C.6, for ResNet-18 on Tiny ImageNet with 32 agents, replacing the final exact average with a single gossip round on an exponential graph still raises average global test accuracy from about 20% to 43% on the plot, close to the roughly 48% of an exact final global merge. [C.3.4 and Figure C.6](https://arxiv.org/pdf/2507.06542v4#page=27) **Review interpretation.** The appendix experiments show that the merging gain recurs across settings, but the proof transfers a cancellation that its source derives for a common distribution to non-IID losses, missing a first-order heterogeneity term (D.3), and substitutes an expected squared bound into a per-run condition (D.9); the current proof therefore confirms rate matching only for homogeneous losses with an additional probabilistic argument.
 
-Read [[1/2] Main paper and core experiments](/en/reviews/single-global-merging/) first. We retain the original **A→B→C→D** appendix order and follow Lemma D.1 through Proposition D.9 within D. Intermediate derivations and counterexamples are labeled **review additions**; they are not presented as replacement theorems proved by the authors.
+Read [[1/2] Main paper and core experiments](/en/reviews/single-global-merging/) first; this part follows the original **A→B→C→D** appendix order and, within D, Lemma D.1 through Proposition D.9. Intermediate derivations and counterexamples are labeled **review additions**.
 
 ## A. Limitations and Potential Questions
 
-The seven questions in Appendix A clarify the intended contribution.
+Appendix A answers seven anticipated questions. [A](https://arxiv.org/pdf/2507.06542v4#page=19)
 
-| Original question | Authors' response | Qualification to retain |
-| --- | --- | --- |
-| Why AdamW when the theory is SGD? | AdamW performs well under non-IID data; the main phenomenon also occurs with SGD. | The same convergence proof is not provided for AdamW. |
-| How does convergence establish mergeability? | The merged model can match parallel-SGD convergence, suggesting an advantage over local models. | A stationarity upper bound does not directly establish terminal test accuracy or dominance over every local model. |
-| How were hyperparameters selected? | Grid search based on global test performance. | This differs from independent validation selection; selection bias was not independently tested. |
-| How is initialization different from Model soups? | Gains occur for distinct random initializations and shared pretrained initialization. | The common-initialization theory does not cover every initialization experiment. |
-| How was the landscape visualized? | Sixteen vertices of a regular polygon with Wachspress interpolation. | The display coordinates do not preserve high-dimensional parameter distances. |
-| Is the evidence vision-only? | Yes; broader tasks remain future work. | No corresponding LLM, speech, or RL result is demonstrated. |
-| Is this ordinary gossip convergence to identical models? | Heterogeneous models can remain different while being mergeable. | A good average and full consensus are distinct properties. |
+| Original question | Authors' response |
+| --- | --- |
+| Why AdamW when the theory is SGD? | AdamW performs better under non-IID data and is used in some experiments; all observations remain consistent with SGD. |
+| How does the theory explain mergeability? | The merged model matches the parallel-SGD rate, and $m$-agent parallel SGD is faster than a single local model, so the merged model's superiority over every individual model is justified transitively. |
+| How were hyperparameters selected? | Grid search based on global test performance. |
+| How do initializations differ from Model soups? | Most experiments use distinct random initializations, and gains also appear from a shared pretrained state. |
+| How was the landscape visualized? | Sixteen models at the vertices of a regular hexadecagon with Wachspress interpolation; the grid is defined by the models themselves rather than random directions. |
+| Is the evidence vision-only? | Yes, as in most decentralized-learning literature; broader tasks are future work. |
+| Is this the known gossip effect of models converging to a similar state? | Under heterogeneous data the models reach no single consensus point and sit on a high-loss ring, yet remain mergeable. |
 
-The central question is **what relationship sparse communication leaves among models**, rather than merely whether an averaging operator is used. Comparing upper bounds does not transitively prove actual model dominance or the loss inequality in Definition 2. [A](https://arxiv.org/pdf/2507.06542v4#page=19)
+**Review interpretation.** Three answers carry conditions. Because hyperparameters were selected on test performance, the reported accuracies may include selection bias. The statement that most experiments use distinct initializations also means that Theorem 1 and D.7, which assume common initialization $\theta_k^{(0)}=\theta^{(0)}$, do not directly cover those experiments (see the initial term in D.2 below); no convergence proof is given for the AdamW experiments either. The “transitive” answer compares upper bounds on average stationarity, so it does not prove terminal test-accuracy dominance or the loss inequality of Definition 2.
 
 ## B. Additional Background and Related Work
 
-B.1 surveys graph design, asynchronous updates, heterogeneity, privacy, and large-model systems. B.2 discusses implicit bias; B.3 connects mode connectivity and model merging. The application lists are compressed here while retaining the argument.
+B.1 surveys graph design, asynchronous updates, heterogeneity, privacy, and large-model systems; B.2 covers implicit bias; B.3 covers mode connectivity and model merging. The parts that connect to the paper's argument follow. [B](https://arxiv.org/pdf/2507.06542v4#page=21)
 
-**B.1:** Local optimization with gossip is an established framework. Changing topologies, local steps, and non-IID objectives already have convergence analyses. The present experiments are not new measurements of throughput on a deployed geographically distributed system.
+**B.1:** Local optimization with gossip is an established framework, and a unified convergence analysis covering changing topologies, local steps, and non-IID objectives already exists (Koloskova et al., 2020).
 
-**B.2:** Earlier work motivates treating disagreement as more than harmful noise. The direct dependency, [Zhu et al. 2023, Theorem 1 and C.2](https://proceedings.mlr.press/v202/zhu23e.html), analyzes curvature corrections when workers sample from a common distribution. D.3 below explains why that common-distribution assumption matters.
+**B.2:** Among studies of how decentralized and centralized SGD differ, the paper's direct dependency, [Zhu et al. 2023](https://proceedings.mlr.press/v202/zhu23e.html), connects decentralized SGD with random sharpness-aware minimization (SAM) and shows a flatness bias. The authors distinguish it as focused on IID data and very large batches, whereas this paper studies non-IID data with standard batch sizes. D.3 below examines the role the common-distribution assumption plays in the proof.
 
-**B.3:** Shared pretrained checkpoints, homogeneous training conditions, or permutation alignment can make averaging easier. The present observation combines different initializations, heterogeneous data, and no post-hoc permutation alignment with **lightweight communication during training**. It does not invalidate successful independent averaging in other regimes. [B](https://arxiv.org/pdf/2507.06542v4#page=21)
+**B.3:** Mode connectivity has been observed when there is a shared initialization, homogeneous data, or neuron permutation alignment. The authors present as their distinction that mergeability emerges with distinct initializations, heterogeneous data, and no permutation alignment.
 
 ## C. Additional Experiments
 
@@ -67,66 +67,64 @@ Open the body images to inspect axes and legends at full resolution.
 | Sparse communication | $R=0.2$: one random peer with probability 0.2; comparisons include $R=1$, ring, and exponential graphs |
 | Compute | 80GB A100 facility; example 16-model simulations: about 15GB/8 hours for ResNet and 30GB/12 hours for CLIP |
 
-Tiny ImageNet inputs are $64\times64$ with patch size 32, giving four image patches plus CLS, or five CLIP tokens. This is not conventional $224\times224$ CLIP evaluation or full ImageNet training. The reported runtimes describe simulations, not measured WAN communication bottlenecks.
+Tiny ImageNet inputs are $64\times64$ with patch size 32, giving four image patches plus CLS, or five CLIP tokens. The authors themselves describe Tiny ImageNet as a mid-scale benchmark lighter than full ImageNet, and the runtimes refer to a centralized simulation of decentralized training on one GPU.
 
-The paper states 4096 samples per agent. Treating these as fixed, disjoint ownership would conflict with total dataset sizes for 32 agents. The current [fixed code snapshot](https://github.com/Raiden-Zhu/ICLR-2026-Grokking-in-Decentralized-Learning/tree/6a5c139c2cdf6d6d7e0b6ba3c00f123e494e6660) documents a paper-facing resample mode: class proportions remain fixed while concrete samples are redrawn as iterators are recreated, using sampling with replacement. This differs from fixed mutually exclusive on-device datasets. Equivalence between the current code and the historical figure-generating revision was not confirmed.
+The paper states 4096 samples per agent. Read as fixed, disjoint ownership, 32 agents would need $32\times4096=131{,}072$ images, more than the 100,000 in Tiny ImageNet. The [fixed code snapshot](https://github.com/Raiden-Zhu/ICLR-2026-Grokking-in-Decentralized-Learning/tree/6a5c139c2cdf6d6d7e0b6ba3c00f123e494e6660) documents a paper-facing resample mode in which per-agent class proportions stay fixed while samples are redrawn whenever an iterator is recreated, with sampling with replacement. This is a different setting from fixed, mutually exclusive on-device datasets.
 
-Appendix A's CLIP AdamW search grid also excludes the $10^{-5}$ stated in C.1. This discrepancy is retained rather than silently corrected. Current code documentation describes averaging learnable parameters and recalibrating BatchNorm statistics afterward. That is a reproduction detail to check, not evidence that the published results were independently reproduced. [C.1](https://arxiv.org/pdf/2507.06542v4#page=24)
+Appendix A's CLIP AdamW search grid $\{10^{-4},5\times10^{-4},10^{-3}\}$ also omits the $10^{-5}$ that C.1 reports as optimal. The code documentation describes averaging the learnable parameters and then re-estimating BatchNorm statistics. [C.1](https://arxiv.org/pdf/2507.06542v4#page=24)
 
 ### C.2 Practical Evaluation Metrics
 
-The three metrics evaluate local models on local distributions, local models on the global distribution, and the averaged model on the global distribution. Under strong label skew, a model specialized in its own classes can look strong on the first metric. Evaluating a final merge requires separating the second and third.
-
-**Weight averaging is also different from output ensembling.** Ensembling retains multiple models at inference; this paper evaluates a single model with averaged parameters. [C.2](https://arxiv.org/pdf/2507.06542v4#page=24)
+C.2 defines the standard metric of parallel and federated learning, the accuracy of a global model, and two metrics used in decentralized learning: average local accuracy on each agent's own distribution and average local accuracy on the global distribution. Because local models drift far apart under non-IID data, the authors adopt the latter as the primary metric. How the three evaluations relate to the jump across merging is discussed in [[1/2] §3.1](/en/reviews/single-global-merging/). Unlike output ensembling, weight averaging leaves a single model at inference. [C.2](https://arxiv.org/pdf/2507.06542v4#page=24)
 
 ### C.3 Additional comparisons and ablations
 
-| Original figure | Varied condition | Evidence and limit |
+| Original figure | Varied condition | Observation |
 | --- | --- | --- |
-| C.1–C.2 | 16/32 agents with AdamW | The merge gap also appears beyond SGD; this is not an all-optimizer theorem. |
-| C.3 | $R=0.2/1$, ring/exponential | Tests whether the observation is restricted to one random-peer setup; topology differences remain. |
-| C.4(a,b) | Batch 64/128; learning rates $5\times10^{-4}/10^{-4}$ | Limited hyperparameter variations, not a map of the entire stability region. |
-| C.4(c) | Shared versus different initializations | Gains occur with distinct initializations in the tested scratch setting; common-initialization theory remains separate. |
-| C.5 | CIFAR-100/Tiny ImageNet, $\alpha=0.1/1$, two graphs | Merge gaps depend on heterogeneity and topology. |
-| C.6 | One/five final exponential-gossip rounds versus a perfect global merge | Constrained gossip can approximate merging, but one gossip operation is not a perfect average. |
+| C.1–C.2 | 16/32 agents with AdamW | The pre/post-merge gap also appears with AdamW. |
+| C.3 | $R=0.2/1$, ring/exponential | The merging gain persists across communication rates and topologies, with setting-dependent size. |
+| C.4(a,b) | Batch 64/128; learning rates $5\times10^{-4}/10^{-4}$ | The gap persists across the two values tried for each. |
+| C.4(c) | Shared versus different initializations | Distinct initializations recover similarly. |
+| C.5 | CIFAR-100/Tiny ImageNet, $\alpha=0.1/1$, two graphs | Weaker heterogeneity leaves a smaller gap between averaged and individual models. |
+| C.6 | One/five final exponential-gossip rounds versus an exact global average | Constrained gossip recovers most of the gain. |
 
 #### C.3.1 Agent count and optimizer
 
-C.1 with 16 agents and C.2 with 32 show pre/post-merge gaps for CLIP and ResNet using AdamW. Importantly, a gap below the federated baseline does not always remain. In C.2, the final orange point is approximately 0.61 versus blue 0.59 for CLIP and 0.49 versus 0.45 for ResNet. These are **approximate readings from PDF p.26**, without verified repeated-run means or significance. This evidence would be lost by summarizing all results as recovery that remains below FL. The AdamW observations are not direct verification of the SGD convergence theorem.
+C.1 (16 agents) and C.2 (32 agents) show pre/post-merge gaps for CLIP and ResNet trained with AdamW. In C.2, the final orange point after the final global merge lies above FL (on the plot, about 0.61 versus 0.59 for CLIP and 0.49 versus 0.45 for ResNet). The authors note that the possible acceleration in Proposition 2 is consistent with the AdamW result in Figure C.1(a) (main §5.2). **Review interpretation.** Proposition 2 concerns SGD, so the AdamW curves do not directly verify it.
 
 #### C.3.2 Peer count and topology
 
-C.3(a) compares $R=0.2$ and $R=1$ with pretrained ResNet weights. More frequent communication gives better pre-merge accuracy, while $R=0.2$ has a larger final merge jump. **A larger merging benefit is different from higher final accuracy after merging.** In C.3(b), exponential graphs generally outperform rings for both individual and averaged models, while both benefit from averaging. Topology therefore still matters. [C.3.1–C.3.2, Figures C.1–C.3, pp.25–26](https://arxiv.org/pdf/2507.06542v4#page=26)
+C.3(a) compares $R=0.2$ and $R=1$ with pretrained ResNet weights. More frequent communication gives better pre-merge accuracy, while $R=0.2$ has a larger jump at the final global merge; a larger merging gain and a higher post-merge accuracy are different comparisons. In C.3(b), exponential graphs are slightly better than rings for both individual and averaged models, and both benefit from averaging. [C.3.1–C.3.2, Figures C.1–C.3, pp.25–26](https://arxiv.org/pdf/2507.06542v4#page=26)
 
 #### C.3.3 Hyperparameters, initialization, and heterogeneity
 
-C.4 asks whether average-versus-individual gaps persist under changed batch sizes and learning rates. Shared and different initialization curves in C.4(c) also recover similarly in the tested setup. This rules against treating distinct initializations as an automatic failure, without guaranteeing arbitrary neuron permutations or initialization combinations. C.5 then examines how datasets and label skew change the gap.
+C.4 asks whether average-versus-individual gaps persist under changed batch sizes and learning rates. Shared and different initialization curves in C.4(c) also recover similarly. C.5 then examines how datasets and label skew change the gap.
 
 [![Figure C.5. Individual and averaged models across datasets, Dirichlet heterogeneity, and ring or exponential graphs.](/assets/reviews/single-global-merging/figure-c5.webp)](/assets/reviews/single-global-merging/figure-c5.webp)
 
-*Original Figure C.5(a–d), p.27. Horizontal axes are rounds; vertical axes are global test accuracy. Within each color, dark denotes local models and light denotes their average. Panels (a,c) use $\alpha=0.1$; (b,d) use $\alpha=1$. Larger gaps occur under stronger heterogeneity, while weaker heterogeneity leaves smaller gaps. Vertical-axis ranges also differ across panels. CC BY 4.0; PDF extraction and lossless WebP conversion.*
+*Original Figure C.5(a–d), p.27. Horizontal axes are rounds; vertical axes are global test accuracy. Blue is the exponential graph and orange the ring; within each color, dark denotes local models and light denotes their average. Panels (a,c) use $\alpha=0.1$; (b,d) use $\alpha=1$. Vertical-axis ranges differ across panels. CC BY 4.0; PDF extraction and lossless WebP conversion.*
 
-This figure limits an interpretation of uniformly large gains. For $\alpha=1$, individual and averaged models can perform similarly. Local specialization and the benefit of averaging must be assessed together.
+On the plot, at $\alpha=0.1$ the averaged model exceeds the individual models by about 4–5 points on the exponential graph and about 9–13 points on the ring, while at $\alpha=1$ the gap shrinks to 2 points or less. The authors summarize C.3.1–C.3.3 as showing a consistent merging gain across hyperparameters, datasets, heterogeneity levels, architectures, optimizers, initializations, and topologies. [C.3.3 and Figure C.5, p.27](https://arxiv.org/pdf/2507.06542v4#page=27)
 
 #### C.3.4 Final topology-constrained merging
 
-This experiment asks whether recovery survives when a perfect final average is unavailable. After training, agents perform one or five mixing rounds on an exponential graph rather than further local optimization. **A communication round means different things under different topologies**; this does not establish equivalence between one neighbor exchange and global AllReduce.
+This experiment asks whether recovery survives when an exact final average is unavailable. After training, agents perform one or five gossip mixing rounds on an exponential graph, compared against an exact global average. The authors summarize that (1) even a single round of topology-constrained gossip substantially improves global test accuracy, and (2) the result is comparable to the baseline of random communication followed by one exact global merge.
 
-[![Figure C.6. One or five final exponential-gossip rounds compared with one perfect global merge.](/assets/reviews/single-global-merging/figure-c6.webp)](/assets/reviews/single-global-merging/figure-c6.webp)
+[![Figure C.6. One or five final exponential-gossip rounds compared with one exact global average.](/assets/reviews/single-global-merging/figure-c6.webp)](/assets/reviews/single-global-merging/figure-c6.webp)
 
-*Original Figure C.6(a–c), p.27. Axes show communication rounds and average global test accuracy. Panels (a,b) constrain final merging to an exponential graph; (c) uses a perfect final average. The orange terminal jumps show recovery with limited gossip, without identical final results. The printed caption says AdamW whereas linked figure-source filenames contain SGD; this review follows the caption without claiming independent confirmation of the exact optimizer used. CC BY 4.0; PDF extraction and lossless WebP conversion.*
+*Original Figure C.6(a–c), p.27. Axes show communication rounds and average global test accuracy. Panels (a,b) constrain final merging to an exponential graph; (c) uses an exact final average. Compare the heights of the final orange jumps across panels. The caption says AdamW, but the figure filenames contain SGD, and (c) is the same curve as main Figure 1(b), which is labeled SGD. CC BY 4.0; PDF extraction and lossless WebP conversion.*
 
-Repetition counts, seeds, and error bars are not sufficiently specified in the paper to treat small curve differences as statistically established advantages. [C.3, pp.25–27](https://arxiv.org/pdf/2507.06542v4#page=25)
+On the plot, the final points are about 0.43 after one gossip round, 0.45 after five, and 0.48 with the exact average. [C.3.4 and Figure C.6, p.27](https://arxiv.org/pdf/2507.06542v4#page=27) **Review interpretation.** The authors' “comparable” refers to a gap of about 4 points between one gossip round and the exact average. Approaching the exact average with more gossip rounds is a consistent direction, but because the paper reports no run counts, seeds, or error bars, there is little basis for distinguishing the roughly 2-point difference between one and five rounds.
 
 ## D. Theory
 
-We follow the original result order. Review abbreviations are $\delta_k^{(t)}=\theta_k^{(t)}-\bar\theta^{(t)}$, $g_t=\nabla\mathcal L(\bar\theta^{(t)})$, $H_t=\nabla^2\mathcal L(\bar\theta^{(t)})$, and $q_t=\nabla\operatorname{Tr}(H_t\Gamma^{(t)})$. Covariance is $d\times d$; $\Theta$ is $d\times m$. Covariance is held fixed when differentiating $q_t$.
+We follow the original result order. Review abbreviations are $\delta_k^{(t)}=\theta_k^{(t)}-\bar\theta^{(t)}$, $g_t=\nabla\mathcal L(\bar\theta^{(t)})$, $H_t=\nabla^2\mathcal L(\bar\theta^{(t)})$, and $q_t=\nabla\operatorname{Tr}(H_t\Gamma^{(t)})$. In the paper's notation, $\Gamma^{(t)}=m^{-1}\sum_k\delta_k^{(t)}\delta_k^{(t)\top}$ is the $d\times d$ model covariance, $\Xi_t^2=\operatorname{Tr}(\Gamma^{(t)})$ the consensus distance, $\Theta$ the $d\times m$ matrix stacking agent models as columns, and $p$ the expected mixing contraction of Assumption 1. Covariance is held fixed when differentiating $q_t$.
 
 ### Review supplement: nontriviality of mergeability
 
 Definition 2 asks for nonnegative weights satisfying a loss inequality, while the experiments evaluate uniform averaging. [Section 3, Definition 2](https://arxiv.org/pdf/2507.06542v4#page=4)
 
-**Review interpretation.** The printed definition omits weights summing to one; even adding that condition allows a single unit weight, which satisfies equality. A nontrivial definition needs a fixed uniform average or a condition requiring multiple positive weights. This affects the definition’s discriminating power, not the observed recovery of the uniform average.
+**Review interpretation.** The printed definition omits weights summing to one; even adding that condition allows a single unit weight, which satisfies equality. A nontrivial definition needs a fixed uniform average or a condition requiring multiple positive weights. This concerns the definition's discriminating power rather than the experimental results.
 
 ### Lemma D.1: the consensus-distance recursion
 
@@ -140,7 +138,7 @@ $$
 \phi_t^2=\frac1m\sum_k\|\nabla\mathcal L_k(\theta_k^{(t)})\|^2.
 $$
 
-The proof separates disagreement introduced by local updates from contraction through mixing. Young's inequality splits the cross term in $\|a+b\|^2$, relaxing contraction from $1-p$ to $1-p/2$. Local gradients and stochastic noise control the second term. Conditional expectations must then be passed to full expectations. [Lemma D.1, p.28](https://arxiv.org/pdf/2507.06542v4#page=28)
+The proof separates disagreement introduced by local updates from contraction through mixing. Young's inequality splits the cross term in $\|a+b\|^2$, relaxing contraction from $1-p$ to $1-p/2$. Local gradients and stochastic noise control the second term. Conditional expectations are then passed to full expectations. [Lemma D.1, p.28](https://arxiv.org/pdf/2507.06542v4#page=28)
 
 **Review derivation of the recursion.** Assume the paper's Assumptions 1–3 and use the appendix's right-multiplication convention. Let $G_t\in\mathbb R^{d\times m}$ stack agents' stochastic gradients as columns. Averaging is the projection
 
@@ -194,15 +192,13 @@ $$
 \end{aligned}
 $$
 
-The last step uses $\sum_{s\geq0}\rho^s=1/(1-\rho)=2/p$. Common initialization sets $\Xi_0=0$; distinct initializations leave the decaying initial term.
+The last step uses $\sum_{s\geq0}\rho^s=1/(1-\rho)=2/p$. The statement of Corollary D.2 imposes no initialization condition, and its proof unrolls the recursion keeping only the second term, without $\rho^t\Xi_0^2$. [Corollary D.2, p.29](https://arxiv.org/pdf/2507.06542v4#page=29) **Review interpretation.** The printed bound $24(1-p)\eta^2(\phi^2+\sigma^2)/p^2$ therefore holds when all agents start from the same point so that $\Xi_0=0$, as in Theorem 1; with distinct initializations $\rho^t\Xi_0^2$ must be added, and it dominates the bound early in training.
 
-The paper also supplies a more local bound involving $\phi_t$ when gradients change sufficiently slowly. That extra condition rules out abrupt gradient decreases and should not be dropped when substituting the local bound for the uniform one. [Corollary D.2, p.29](https://arxiv.org/pdf/2507.06542v4#page=29)
-
-Writing the slow-change condition makes its role explicit. With common initialization, the paper uses
+The paper also gives a local bound in terms of recent gradients when gradients change slowly, again without the $\rho^t\Xi_0^2$ term. The proof uses
 
 $$
 \phi_s^2\leq(1+p/4)\phi_{s+1}^2,\qquad
-(1-p/2)(1+p/4)=1-p/4-p^2/8\leq1-p/4.
+(1-p/2)(1+p/4)=1-p/4-p^2/8\leq1-p/4
 $$
 
 to compare past gradients with a recent value. The product still contracts by at most $1-p/4$, so the geometric-series bound becomes $4/p$ rather than $2/p$, producing the stated local bound
@@ -213,7 +209,7 @@ $$
 (\mathbb E\phi_{t-1}^2+\sigma^2).
 $$
 
-The display uses full-expectation notation, including the recent gradient term. It uses recent $\phi_{t-1}$ rather than a uniform $\phi$, but only within the assumed slow-change regime.
+The paper does not put an expectation on $\phi_{t-1}^2$; it is added here to match full-expectation notation. The bound reflects the training state through the recent $\phi_{t-1}$ rather than a uniform $\phi$.
 
 ### Proposition D.3: average dynamics and Gaussian smoothing
 
@@ -225,7 +221,7 @@ $$
 \sum_k\nabla\mathcal L_k(\theta_k^{(t)})
 $$
 
-The paper invokes [Zhu et al. 2023](https://proceedings.mlr.press/v202/zhu23e.html) to replace this with a globally smoothed gradient under $\epsilon\sim\mathcal N(0,\Gamma^{(t)})$, plus cubic residuals. The Gaussian is an analytical covariance-matching device, not noise explicitly injected by the implementation.
+The paper invokes [Zhu et al. 2023](https://proceedings.mlr.press/v202/zhu23e.html) to replace this with a globally smoothed gradient under $\epsilon\sim\mathcal N(0,\Gamma^{(t)})$, plus cubic residuals. The Gaussian is an analytical covariance-matching device, not noise explicitly injected by the implementation. [D.3, p.30](https://arxiv.org/pdf/2507.06542v4#page=30)
 
 The relation claimed in Proposition D.3 is worth retaining explicitly. Its $\delta^{(t)}$ is an update-unit residual, distinct from individual deviations $\delta_k^{(t)}$.
 
@@ -242,7 +238,7 @@ $$
 \end{aligned}
 $$
 
-We first explain the cancellation intended by this relation, then identify the term that survives under non-IID losses. This does not certify the identity under only the assumptions printed in the paper.
+We first explain the cancellation intended by this relation, then identify the term that survives under non-IID losses.
 
 **Why IID matters — review addition.** If all local objectives equal $\mathcal L$,
 
@@ -282,7 +278,7 @@ $$
 \end{aligned}
 $$
 
-Their difference is $-\tfrac12\cos b\sin a=\mathcal O(a)$. At $b=0.4$ and $a=0.1,0.01,0.001$, the difference divided by $a$ approaches approximately $-0.4605$. It cannot be absorbed into a cubic residual. Gaussian global-gradient smoothing supplies a quadratic correction, not a cancellation of this first-order term. This identifies **an extra term needed for D.3 under non-IID objectives**, not a refutation of the experimental curves. [D.3, p.30](https://arxiv.org/pdf/2507.06542v4#page=30)
+Their difference is $-\tfrac12\cos b\sin a=\mathcal O(a)$. At $b=0.4$ and $a=0.1,0.01,0.001$, the difference divided by $a$ approaches approximately $-0.4605$. It cannot be absorbed into a cubic residual. Gaussian global-gradient smoothing supplies a quadratic correction, not a cancellation of this first-order term. **Review interpretation.** The counterexample shows that applying D.3 to non-IID losses requires separately controlling a first-order heterogeneity term such as $\frac1m\sum_kH_k(\bar\theta)\delta_k$.
 
 ### Corollary D.4: stochastic variance
 
@@ -293,7 +289,7 @@ $$
 \leq\eta^2\|\bar g_t\|^2+\frac{\eta^2\sigma^2}{m}.
 $$
 
-This is separate from replacing $\bar g_t$ by $g_t+q_t/2$. Variance reduction does not remove heterogeneous bias. [Corollary D.4, p.30](https://arxiv.org/pdf/2507.06542v4#page=30)
+This is separate from replacing $\bar g_t$ by $g_t+q_t/2$. [Corollary D.4, p.30](https://arxiv.org/pdf/2507.06542v4#page=30)
 
 **Review derivation: why $1/m$?** Let $\nu_k$ be agent $k$'s centered gradient noise. Then
 
@@ -304,7 +300,7 @@ $$
 \leq\frac{\sigma^2}{m}.
 $$
 
-Conditional independence and zero means remove the $k\ne l$ cross terms; Assumption 3 controls the remaining sum. Standard deviation scales as $1/\sqrt m$ and variance as $1/m$. This also identifies where independence is needed: correlated agent noise does not automatically give the same reduction.
+Conditional independence and zero means remove the $k\ne l$ cross terms; Assumption 3 controls the remaining sum. Standard deviation scales as $1/\sqrt m$ and variance as $1/m$. With correlated agent noise, the cross terms remain.
 
 ### Corollary D.5: checking the Taylor remainder
 
@@ -352,7 +348,7 @@ T=\mathcal O\!\left(
 \cdot\bigl(\mathcal L(\theta^{(0)})-\mathcal L^\star\bigr)
 $$
 
-As in the paper's comparison, smoothness constants and other fixed factors are suppressed here. The point is to expose communication and heterogeneity terms. Koloskova 2020's original Theorem 2 also includes a local-update window and more general assumptions; this simplified form is connected to Kong 2021's restatement. Comparing upper bounds under different assumptions does not establish actual model superiority. [D.6, p.31](https://arxiv.org/pdf/2507.06542v4#page=31)
+As in the paper's comparison, smoothness constants and other fixed factors are suppressed here. The point is to expose communication and heterogeneity terms. Koloskova 2020's original Theorem 2 also includes a local-update window and more general assumptions; this simplified form is connected to Kong 2021's restatement. [D.6, p.31](https://arxiv.org/pdf/2507.06542v4#page=31)
 
 ### Theorem D.7: expanding Steps A→B→C
 
@@ -365,7 +361,7 @@ T=\mathcal O\!\left(
 \cdot\bigl(\mathcal L(\theta^{(0)})-\mathcal L^\star\bigr)
 $$
 
-Table 1 and the proof's final expression instead insert $1/\varepsilon$ before the last sum. The cross-term coefficient in $U$ is also inconsistent across locations. The following calculation separates a directly checkable conditional derivation from those unresolved statements.
+Table 1 and the proof's final expression instead insert $1/\varepsilon$ before the last sum. The cross-term coefficient in $U$ is also inconsistent across locations. The following states the extra premises needed and then shows only the calculation that can be checked directly.
 
 **Step A — decompose descent.** As a review addition, suppose the homogeneous expansion in D.3 is valid, or the extra heterogeneity term has been separately controlled. Define a gradient-unit residual by $\bar g_t=g_t+q_t/2+r_t$. Smoothness and independent noise give
 
@@ -407,7 +403,7 @@ Mapping the five groups in original Equation (D.8) to the gradient-unit $r_t$ ab
 | $T_4$ | $\eta^2L_2(g_t+q_t/2)^\top r_t$ | Third and fifth |
 | $T_5$ | $\eta^2L_2\|r_t\|^2/2$ | Sixth |
 
-This uses the homogeneous-expansion bound $\|r_t\|\leq L_4\sqrt m\,\Xi_t^3/6$. For $0\leq\Xi_t\leq1$, fourth-, fifth-, and sixth-order terms can each be upper-bounded by a constant times a cubic term. This explains why the authors retain the favorable quadratic contribution while collecting the rest into a cubic residual. It does not establish those same orders after including the missing non-IID term.
+This uses the homogeneous-expansion bound $\|r_t\|\leq L_4\sqrt m\,\Xi_t^3/6$. For $0\leq\Xi_t\leq1$, fourth-, fifth-, and sixth-order terms can each be upper-bounded by a constant times a cubic term. This explains why the authors retain the favorable quadratic contribution while collecting the rest into a cubic residual.
 
 **Step C — sum through time.** Collect correctly scaled corrections as $\eta\widetilde U_t$. The tilde distinguishes this review quantity from inconsistent definitions of $U^{(t)}$ in the paper. Set $c=1-\eta L_2/2>0$ and $\Delta=\mathcal L(\bar\theta^{(0)})-\mathcal L^\star$. Telescoping yields
 
@@ -420,7 +416,7 @@ $$
 
 The last term is the constant-step noise floor. Original D.12 includes an extra $1/\eta$ on the correction term, whereas dividing its preceding telescoping inequality gives the coefficient above.
 
-This explains the intended **sign-sensitive descent analysis** without certifying the paper's displayed explicit rate or constants. Average stationarity still does not directly guarantee terminal test accuracy or Definition 2's loss inequality. [D.7, pp.31–34](https://arxiv.org/pdf/2507.06542v4#page=32)
+This shows what the authors' **sign-sensitive descent analysis** aims to do, but it does not confirm the rate and constants printed in the paper. [D.7, pp.31–34](https://arxiv.org/pdf/2507.06542v4#page=32)
 
 ### Proposition D.8: why small disagreement might help
 
@@ -435,9 +431,9 @@ $$
 (\mathcal L(\bar\theta^{(t)})-\mathcal L^\star)}.
 $$
 
-If this condition actually holds, a positive gradient margin follows while the objective remains above optimum. The paper does not prove PL for the experimental networks, and the resulting margin can shrink near an optimum. This is different from a fixed positive lower bound throughout training.
+If PL holds, a positive gradient margin follows while the objective remains above its optimum. The authors likewise treat this margin as a pre-convergence property and write it as a time-dependent $\mu_t$.
 
-Assumption 4 literally requires every PSD $\Sigma$ and every $\theta$ to satisfy
+Assumption 4 (progressive sharpening) literally requires every PSD $\Sigma$ and every $\theta$ to satisfy
 
 $$
 \nabla\mathcal L(\theta)^\top
@@ -462,7 +458,7 @@ $$
 
 A uniform lower margin $\gamma^*>0$ across all times requires a further argument.
 
-For $\eta>1/L_2$, the leading term is negative and quadratic, while a residual upper bound is cubic. The elementary inequality $-a\Xi_t^2+C\Xi_t^3<0$ holds for $0<\Xi_t<a/C$. This is the core dominance argument. It does not say that more disagreement is always better or that acceleration occurs for arbitrarily small learning rates.
+For $\eta>1/L_2$, the leading term is negative and quadratic, while a residual upper bound is cubic. The elementary inequality $-a\Xi_t^2+C\Xi_t^3<0$ holds for $0<\Xi_t<a/C$. This is the core dominance argument of Proposition D.8.
 
 Combining with stability requires $1/L_2<\eta<2/L_2$, and noise remains. Remark D.2 discusses increasing agents with desired accuracy, for example $m>3\sigma^2/((2-\ell)\varepsilon)$. A fixed network, positive noise, and a large constant step do not jointly imply arbitrary-precision convergence. [D.8, Remarks D.1–D.2, pp.34–36](https://arxiv.org/pdf/2507.06542v4#page=35)
 
@@ -487,7 +483,7 @@ $$
 \sqrt{\frac{K}{2\Sigma_{\mathrm{high}}}}\right\}
 $$
 
-These constants inherit the coefficient issues above and are not certified here as corrected sufficient constants.
+Both $C_{\mathrm{lin}}$ and $\Sigma_{\mathrm{high}}$ inherit the $L_4/24$ coefficient problem of D.5.
 
 The paper substitutes the following for the left-hand disagreement:
 
@@ -495,23 +491,25 @@ $$
 \sqrt{\frac{24(1-p)\eta^2}{p^2}(\phi^2+\sigma^2)}
 $$
 
-Corollary D.2, however, bounds **$\mathbb E\Xi_t^2$**. Its square root is an RMS bound, not a bound for every realized $\Xi_t$. For example, let $\Xi_t=0.8$ with probability 0.01 and zero otherwise. Its RMS is 0.08, below 0.1, but the realized value still exceeds 0.1 with positive probability. All realizations even satisfy $\Xi_t\leq1$.
+Corollary D.2, however, bounds **$\mathbb E\Xi_t^2$**. Its square root is a root-mean-square (RMS) bound, not a bound for every realized $\Xi_t$. For example, let $\Xi_t=0.8$ with probability 0.01 and zero otherwise. Its RMS is 0.08, below 0.1, but the realized value still exceeds 0.1 with positive probability. All realizations even satisfy $\Xi_t\leq1$.
 
-A probability guarantee would require an argument such as Markov's inequality, $\Pr(\Xi_t\geq a)\leq\mathbb E\Xi_t^2/a^2$, or stronger concentration. Alternatively, the expected descent proof must consistently control all relevant moments. This connection is not supplied. D.9 also omits sharpening from its listed assumptions while using it in the proof.
+A probability guarantee would require an argument such as Markov's inequality, $\Pr(\Xi_t\geq a)\leq\mathbb E\Xi_t^2/a^2$, or stronger concentration. Alternatively, the expected descent proof must consistently control all relevant moments. This connection is not supplied. D.9 also omits progressive sharpening (Assumption 4) from its listed assumptions while using it in the proof. [D.9, pp.36–37; main Proposition 3](https://arxiv.org/pdf/2507.06542v4#page=36)
 
-Thus the **design intuition that smaller late-stage gradient margins require stronger mixing** should be separated from a rigorous algorithm guaranteeing mergeability in every run. [D.9, pp.36–37; main Proposition 3](https://arxiv.org/pdf/2507.06542v4#page=36)
+**Review interpretation.** Proposition 3 therefore offers the design intuition that smaller late-stage gradient margins $\mu_t$ require stronger mixing, but not a condition that guarantees mergeability in every run.
 
 <span id="review-interpretation-and-next-checks" aria-hidden="true"></span>
 
 ## Review interpretation and open questions
 
-**Review interpretation.** The paper's strength is an empirical question that separates individual models' global performance from the global performance of their weight average. Its theory proposes a higher-order geometric mechanism, but the current statements do not establish a universal non-IID merging guarantee.
+**Review interpretation.** The appendices' strength is that they repeat the main observations along several axes (optimizer, topology, initialization, heterogeneity, final gossip) and that the authors expose conditions by answering anticipated questions directly (A). On the theory side, keeping the sign of the quadratic disagreement term and combining it with progressive sharpening is a new idea, and the descent bound of Steps A–C can be followed as above once the homogeneous expansion is assumed. The limits concentrate in that premise. The first-order term left under non-IID losses (D.3), the constant in the gradient-expansion remainder (D.5), Assumption 4 failing literally at $\Sigma=0$ (D.8), and substituting an expected squared bound into a per-run condition (D.9) each narrow the scope of Theorem 1 and Proposition 3. The inconsistent coefficient of $U^{(t)}$ and placement of $1/\varepsilon$ across the main text, Table 1, and appendix (D.7) also make the explicit rate hard to use as printed.
 
-Three concrete next checks are useful: compare early, late, and terminal merging at matched volume using independent validation and multiple seeds; separate fixed disjoint local data from resampled label-skew streams; and preserve heterogeneous-Hessian terms while proving probabilistic consensus control. These are **proposed follow-ups, not experiments run for this review**.
+Three questions remain. First, does the same ordering hold when early and late synchronization and the final global merge are compared at matched communication volume with independent validation and multiple seeds? Second, is the effect the same for fixed, mutually exclusive local data and for resampled label-skew data? Third, can a sufficient condition for $U^{(t)}<0$ be established while keeping the heterogeneous-Hessian term and controlling the consensus distance probabilistically?
 
 ## Sources and reading scope
 
 - Paper: *On the Surprising Effectiveness of a Single Global Merging in Decentralized Learning* · Tongtian Zhu et al. · first public date 2025-07-09 · [reviewed version](https://arxiv.org/abs/2507.06542v4) · reviewed 2026-10-23.
 - Scope read: Version 4, appendices A–D and results D.1–D.9 in source order. Sections 1–6 are linked to part 1.
-- Figure sources: The Figure-1(b) thumbnail and this part’s Figures 1–2 or C.5–C.6 are author assets from v4 (CC BY 4.0), PDF-extracted/rasterized to lossless WebP with data and labels retained. [Paper](https://arxiv.org/abs/2507.06542v4).
-- Not verified: research-code execution, model training/reproduction, raw-data uncertainty estimates, and complete formal certification.
+- External sources consulted: [Koloskova 2020](https://proceedings.mlr.press/v119/koloskova20a.html) pp.1, 3, 5–6; [Kong 2021](https://proceedings.mlr.press/v139/kong21a.html) pp.1, 3–4; [Zhu 2023](https://proceedings.mlr.press/v202/zhu23e.html) pp.1, 3–4, 16–17, 22–24; [Wortsman 2022](https://proceedings.mlr.press/v162/wortsman22a.html) pp.1–3; [de Vos 2023](https://papers.nips.cc/paper_files/paper/2023/hash/7172e147d916eef4cb1eb30016ce725f-Abstract-Conference.html) pp.1, 5–6.
+- Code consulted: the authors' repository [Raiden-Zhu/ICLR-2026-Grokking-in-Decentralized-Learning @ 6a5c139](https://github.com/Raiden-Zhu/ICLR-2026-Grokking-in-Decentralized-Learning/tree/6a5c139c2cdf6d6d7e0b6ba3c00f123e494e6660), for the data sampler and the description of BatchNorm handling after the final global merge (C.1).
+- Figure sources: The Figure-1(b) thumbnail and Figures C.5–C.6 are author assets from v4 (CC BY 4.0), PDF-extracted/rasterized to lossless WebP with data and labels retained. [Paper](https://arxiv.org/abs/2507.06542v4).
+- Not verified: research-code execution, model training/reproduction, raw-data uncertainty estimates, complete formal certification, and whether the public code matches the revision that produced the paper's figures.

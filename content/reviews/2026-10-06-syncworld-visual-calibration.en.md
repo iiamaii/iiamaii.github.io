@@ -2,7 +2,7 @@
 title: "Can a World Model Read Actions After the Camera Moves? SyncWorld and Visual Calibration"
 description: "How visual calibration and history distillation adapt SyncWorld to new robot setups, with conditioned comparisons of video quality, policy success, and runtime."
 date: "2026-10-06"
-updatedAt: "2026-10-23T08:56:10+00:00"
+updatedAt: "2026-10-23T15:26:11+00:00"
 topics: ["world action model", "robot learning", "world simulation", "in-context learning", "visual calibration"]
 visibility: "public"
 lang: "en"
@@ -16,17 +16,17 @@ thumbnail: "/assets/reviews/syncworld/paper-figure-2.webp"
 thumbnailAlt: "The model architecture from SyncWorld Figure 2"
 ---
 
-SyncWorld uses a short visual-calibration context to infer action–visual mappings for unseen cameras and single-arm robots without fine-tuning. On LIBERO video prediction, adding inference-time calibration lowers LPIPS from 0.049 to 0.035; on Orange Juice, one of three selected policy tasks, successes rise from 28 to 36 out of 50. [Tables 1 and 3](https://arxiv.org/html/2609.09155v1#S4.T1) **Review interpretation.** The within-model calibration comparison is the clearest evidence, while policy gains also depend on the VLM that ranks candidate rollouts.
+SyncWorld is a zero-shot world model that uses a short visual-calibration context to infer action–visual mappings for unseen cameras and single-arm robots. Evaluated without inference-time calibration, a model trained without calibration worsens LIBERO LPIPS (Learned Perceptual Image Patch Similarity) from 0.049 to 0.134 (Table 4), and ranking policy candidates with SyncWorld raises Orange Juice successes, the largest gain of the three tasks, from 28 of 50 under direct π0 execution to 36 (Table 3). [Table 4](https://arxiv.org/html/2609.09155v1#S4.T4), [Table 3](https://arxiv.org/html/2609.09155v1#S4.T3) **Review interpretation.** The same-backbone ablation (§4.5) shows the effect of calibration training most directly, but that evidence is limited to video metrics, and the policy gain added by inference-time calibration, 34→36 of 50 even on Orange Juice, is weak evidence about policy performance.
 
-This article follows original §1–5. The ranking **method** is in §3.3 and success rates are in §4.4. Runtime and failure cases are grouped at the end under Appendix C.2 and E. Additional literature comparisons follow the authors’ conclusion as review interpretation.
+This article follows original §1–5; Appendix C.2's runtime and Appendix E's failure cases come after the conclusion.
 
 ## 1. Introduction
 
-An action-conditioned world model predicts future observations from the current observation and actions to be executed. The same movement command can appear to move in a different direction when the camera changes. Moving the camera to the opposite side is an illustrative example, not a separate experimental result. SyncWorld treats this setup-dependent correspondence as an **action–visual mapping**. [SyncWorld §3.1](https://arxiv.org/html/2609.09155v1#S3.SS1)
+An action-conditioned world model predicts future observations from the current observation and actions to be executed. The same movement command produces different visual motion when camera placement, robot base placement or embodiment changes. SyncWorld treats this setup-dependent relation as an **action–visual mapping**. The authors argue that this dependence creates two problems: mixing setups in training forces one model to fit incompatible mappings for the same action values (conflicting supervision), and in a new setup the mapping shifts, so models break without additional training. [SyncWorld §1](https://arxiv.org/html/2609.09155v1#S1)
 
 <figure class="review-figure" id="figure-syncworld-core">
 <a href="/assets/reviews/syncworld/syncworld-core.svg" target="_blank" rel="noopener noreferrer"><img src="/assets/reviews/syncworld/syncworld-core.svg" width="1200" height="1590" alt="Calibration action-video pairs C_s, interaction history H_t and future actions A_t condition a SyncWorld model whose parameters theta stay fixed at deployment, yielding predicted video for the new setup." loading="lazy" decoding="async"></a>
-<figcaption><span class="figure-label">Core idea · New context, fixed model</span>Calibration supplies setup-specific action–visual correspondence as input context. Parameters θ stay fixed at deployment. C_s contains twelve directional calibration segments, H_t records past observations and actions, and A_t contains future commands to predict. This reviewer schematic explains the conditioning relationship; it is not generated video or an experimental result. The sample strips are AI-generated teaching examples of calibration pairs, an executed approach-grasp-lift history, and planned commands. Blue ghost targets show intent. They are not paper data, calibrated trajectories, or model-predicted video. <span class="figure-links"><a href="/assets/reviews/syncworld/syncworld-core.svg" target="_blank" rel="noopener noreferrer">Open full size</a></span></figcaption>
+<figcaption><span class="figure-label">Core idea · New context, fixed model</span>Calibration supplies setup-specific action–visual correspondence as input context. Parameters θ stay fixed at deployment. C_s contains twelve directional calibration segments, H_t records past observations and actions, and A_t contains future commands to predict. The strips distinguish calibration pairs, an executed approach-grasp-lift history and planned commands, with blue ghost targets showing intent. The samples on the three input cards are AI-generated teaching examples, not paper data. <span class="figure-links"><a href="/assets/reviews/syncworld/syncworld-core.svg" target="_blank" rel="noopener noreferrer">Open full size</a></span></figcaption>
 </figure>
 
 ## 2. Related Work
@@ -55,7 +55,7 @@ The four subsections retain the authors’ formulation, training, decision-makin
 
 ### 3.1 Calibration-based World Modeling
 
-Visual calibration records the robot moving in basic directions under a fixed camera. Positive and negative segments for six motion degrees of freedom—translation and rotation—form 12 segments, placed in a canonical order at the beginning of the context. The control space has three translation dimensions, three rotation dimensions, and one gripper dimension. This does not mean the robot has seven mechanical joints. Gripper control is excluded from directional calibration because its visual meaning is considered directly interpretable. [SyncWorld §3.1, Eq. 4, Appendix B.2.2–B.2.3](https://arxiv.org/html/2609.09155v1#S3.SS1)
+Visual calibration records the robot moving in basic directions under a fixed camera. Positive and negative segments for six motion degrees of freedom—translation and rotation—form 12 segments, placed in a canonical order at the beginning of the context. The control space has three translation dimensions, three rotation dimensions, and one gripper dimension. Gripper control is excluded from directional calibration because its visual meaning is considered directly interpretable. [SyncWorld §3.1, Eq. 4, Appendix B.2.2–B.2.3](https://arxiv.org/html/2609.09155v1#S3.SS1)
 
 The conditional distribution in Eq. 3 uses the following original notation.
 
@@ -63,7 +63,7 @@ $$
 I_{t+1:t+H}\sim W_{\theta}\!\left(\cdot\mid\mathcal{C}^{s},H_t,A_t\right).
 $$
 
-$\mathcal C^s$ is calibration context for setup $s$; $H_t$ is the observation–action history; and $A_t$ contains future actions. $W_\theta$ denotes a conditional distribution over future video, with model parameters $\theta$ fixed at deployment. Zero-shot here means no parameter retraining for the new setup. It does not mean that calibration observations or computation are unnecessary. [SyncWorld §3.1, Eq. 3](https://arxiv.org/html/2609.09155v1#S3.SS1)
+$\mathcal C^s$ is calibration context for setup $s$; $H_t$ is the observation–action history; and $A_t$ contains future actions. $W_\theta$ denotes a conditional distribution over future video, with model parameters $\theta$ fixed at deployment. Zero-shot here means no parameter retraining for the new setup. [SyncWorld §3.1, Eq. 3](https://arxiv.org/html/2609.09155v1#S3.SS1)
 
 <figure class="review-figure" id="figure-syncworld-architecture">
 <a href="/assets/reviews/syncworld/paper-figure-2.webp" target="_blank" rel="noopener noreferrer"><img src="/assets/reviews/syncworld/paper-figure-2.webp" width="1600" height="704" alt="SyncWorld architecture: calibration, interaction history and future actions become pose embeddings and video latents that condition the DiT generating future video." loading="lazy" decoding="async"></a>
@@ -74,7 +74,7 @@ The three inputs have different roles. **Calibration** reveals the action–visu
 
 ### 3.2 Learning World Model with Visual Calibration
 
-The method requires more than appending calibration video to an existing generator. During training, the same coordinate transformation is applied to calibration, history, and future actions, encouraging the model to read their contextual correspondence rather than rely on the numbers alone. **Calibration-to-history distillation** also aligns predictions from inputs with calibration and history-only inputs with calibration removed. Results without explicit calibration at inference still come from a model trained this way; they are distinct from training a model without calibration altogether. [SyncWorld §3.2, Appendix B.1.2–B.1.3](https://arxiv.org/html/2609.09155v1#S3.SS2)
+The authors note that with calibration merely placed in context, a model may take the shortcut of memorizing a fixed coordinate convention instead of reading the calibration, so they add two training designs. First, the same coordinate transformation (sign flips of x, y and z, axis permutation, and translation scaling) is applied to calibration, history, and future actions, encouraging the model to read their contextual correspondence rather than rely on the numbers alone. Second, **calibration-to-history distillation** aligns predictions from inputs with calibration and history-only inputs with calibration removed. "No inference calibration" results therefore still come from a calibration-trained model; a model trained without calibration is compared separately in §4.5. [SyncWorld §3.2, Appendix B.1.2–B.1.3](https://arxiv.org/html/2609.09155v1#S3.SS2)
 
 ### 3.3 Zero-shot Policy Improvement via World-Model Ranking
 
@@ -82,28 +82,30 @@ Policy improvement is a separate question. The system samples eight action candi
 
 <figure class="review-figure" id="figure-syncworld-policy">
 <a href="/assets/reviews/syncworld/paper-figure-4.webp" target="_blank" rel="noopener noreferrer"><img src="/assets/reviews/syncworld/paper-figure-4.webp" width="1800" height="710" alt="Paper Figure 4. A VLA proposes action candidates, SyncWorld predicts two-view outcomes, and a VLM scores them against the instruction before the highest-scored candidate is executed." loading="lazy" decoding="async"></a>
-<figcaption><span class="figure-label">Paper Figure 4 · From imagined outcomes to action selection</span>Read candidate generation, future video and scoring from left to right. Rows with the same color represent the same action candidate. The numbers on the right are ranking scores, not success rates in percent. <span class="figure-links"><a href="/assets/reviews/syncworld/paper-figure-4.webp" target="_blank" rel="noopener noreferrer">Open full size</a> · <a href="https://arxiv.org/html/2609.09155v1#S3.F4">Yuncong Yang et al., 2026, Figure 4</a> · <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> · Content and layout preserved; resized and WebP-compressed, without cropping</span></figcaption>
+<figcaption><span class="figure-label">Paper Figure 4 · From imagined outcomes to action selection</span>Read candidate generation, future video and scoring from left to right. Rows with the same color represent the same action candidate. The numbers on the right are ranking scores. <span class="figure-links"><a href="/assets/reviews/syncworld/paper-figure-4.webp" target="_blank" rel="noopener noreferrer">Open full size</a> · <a href="https://arxiv.org/html/2609.09155v1#S3.F4">Yuncong Yang et al., 2026, Figure 4</a> · <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> · Content and layout preserved; resized and WebP-compressed, without cropping</span></figcaption>
 </figure>
 
-The diagram illustrates three candidate rows, while the evaluation uses eight candidates, sixteen actions per candidate, and two views. GPT-5 receives three representative frames sampled from generated video. SyncWorld predicts outcomes; GPT-5 assigns scores. Errors in both stages contribute to the decision, so better video does not automatically imply better action selection. [Paper Figure 4, §3.3, Appendix C.4.2 and Table 7](https://arxiv.org/html/2609.09155v1#S3.F4)
+The diagram illustrates three candidate rows, while the evaluation uses eight candidates, sixteen actions per candidate, and two views. The base policy is an unofficial LeRobot π0 LIBERO checkpoint used without task-specific fine-tuning, and the selected sixteen actions run open-loop before the next call. GPT-5 receives three representative frames sampled from generated video. The authors themselves note that the outcome depends on two factors, rollout-simulator quality and ranking-procedure quality. [Paper Figure 4, §3.3, Appendix C.4.1–C.4.3 and Table 7](https://arxiv.org/html/2609.09155v1#S3.F4)
 
 ### 3.4 Training Data
 
-Training data come mainly from RLBench, RoboCasa, and RoboMimic simulations, with varied cameras and replayed actions. They include outcomes of actions perturbed away from successful trajectories, alongside real DROID data without calibration. The absence of additional training in a new setup should be read together with this prior training on diverse data. [SyncWorld §3.4, Appendix B.2](https://arxiv.org/html/2609.09155v1#S3.SS4)
+Training data come mainly from RLBench, RoboCasa, and RoboMimic simulations, with varied cameras and replayed actions. They include outcomes of actions perturbed away from successful trajectories, alongside real DROID data without calibration. The corpus totals about 166 hours (about 54 hours real), each trajectory recorded from 3.6 viewpoints on average, and calibration supervision comes mainly from the simulated data. [SyncWorld §3.4, Appendix B.2](https://arxiv.org/html/2609.09155v1#S3.SS4)
 
 ## 4. Experiments
 
-Read quality, cross-view consistency, and policy improvement as distinct evidence.
+The authors run three experiments: future prediction in unseen environments, viewpoints and embodiments; cross-view 3D consistency; and training-free policy improvement.
 
 ### 4.1 Experiment Setups
 
-Video evaluation predicts a future chunk corresponding to 16 actions at 512×512 resolution. It uses 50 trajectories each for LIBERO and ManiSkill, and 25 real trajectories. Two views per trajectory yield 100, 100, and 50 evaluation videos respectively. Table 1 reports broadly better video-quality metrics than IRASim, WorldGym, and Ctrl-World. The baselines are fine-tuned on the same downstream data, but their backbones and training procedures are not identical, so differences between complete models do not isolate calibration alone. [SyncWorld §4.1–4.2, Table 1, Appendix C.1](https://arxiv.org/html/2609.09155v1#S4.SS1)
+All evaluation environments are unseen during training. LIBERO and ManiSkill use the Franka Panda embodiment present in the training data, while the real-world evaluation uses an xArm unseen in training, testing embodiment generalization. LIBERO and ManiSkill use 50 trajectories each and the real setting 25; two views per trajectory yield 100, 100, and 50 evaluation videos respectively. The model predicts a future chunk corresponding to 16 actions (about 1 s) at 512×512 resolution. [SyncWorld §4.1](https://arxiv.org/html/2609.09155v1#S4.SS1)
+
+SyncWorld adds pose-conditioning modules to every block of the Wan2.2-TI2V-5B checkpoint and fine-tunes the whole denoising model. Inference uses a 20-step flow-matching schedule, action classifier-free guidance (CFG) with strength 5.0, and 4-GPU Unified Sequence Parallelism (USP). The baselines IRASim, WorldGym, and Ctrl-World are fine-tuned on the same downstream data and evaluated on the same held-out trajectories. [Appendix B.1.1, C.1–C.2](https://arxiv.org/html/2609.09155v1#A3.SS1)
 
 ### 4.2 World Model Quality Analysis
 
-The video metrics answer different questions. PSNR measures reconstruction through pixel mean-squared error (dB, higher is better); SSIM compares local luminance, contrast, and structure (higher is better). LPIPS measures distance in learned visual features (lower is better). FID compares the means and covariances of real and generated image features (lower is better). The first three compare corresponding frames; FID compares sets. Small evaluation samples and different aggregation procedures can change FID comparisons. None directly measures contact physics or task success. [§4.1–4.2, Table 1](https://arxiv.org/html/2609.09155v1#S4.T1)
+The video metrics answer different questions. PSNR measures reconstruction through pixel mean-squared error (dB, higher is better); SSIM compares local luminance, contrast, and structure (higher is better). LPIPS measures distance in learned visual features (lower is better). FID compares the means and covariances of real and generated image features (lower is better). The first three compare each predicted frame with the real frame at the same time; FID compares sets. [§4.1–4.2, Table 1](https://arxiv.org/html/2609.09155v1#S4.T1)
 
-**LIBERO columns excerpted from Table 1.** The same metrics for the other two domains remain in the original table.
+**LIBERO columns excerpted from Table 1.** The authors report that SyncWorld beats every baseline on all 12 columns across the three domains even without inference calibration, and is best on all 12 with calibration. ManiSkill and real (xArm) LPIPS are 0.071 and 0.042 without calibration and 0.049 and 0.039 with it, against Ctrl-World's 0.178 and 0.142.
 
 | Model | PSNR ↑ (dB) | SSIM ↑ | LPIPS ↓ | FID ↓ |
 | --- | --- | --- | --- | --- |
@@ -113,18 +115,18 @@ The video metrics answer different questions. PSNR measures reconstruction throu
 | SyncWorld, no inference calibration | 27.9 | 0.933 | 0.049 | 8.7 |
 | SyncWorld, with inference calibration | 28.3 | 0.935 | 0.035 | 7.0 |
 
-The two SyncWorld rows compare inference conditions after the same training. The comparison with Ctrl-World concerns entire models and does not isolate a causal effect of calibration.
+The two SyncWorld rows are two inference conditions of the same model. **Review interpretation.** The gap to the baselines may also reflect differences in architecture and pretraining, but because SyncWorld trained without calibration reaches LIBERO LPIPS 0.134 in §4.5, close to Ctrl-World's 0.137, much of the large gap appears together with calibration training.
 
 <figure class="review-figure" id="figure-syncworld-qualitative">
 <a href="/assets/reviews/syncworld/paper-figure-5.webp" target="_blank" rel="noopener noreferrer"><img src="/assets/reviews/syncworld/paper-figure-5.webp" width="2400" height="893" alt="Two camera views show real robot scenes over time, comparing ground-truth observations with Ctrl-World and SyncWorld future predictions in the original paper figure." loading="lazy" decoding="async"></a>
-<figcaption><span class="figure-label">Paper Figure 5 · Real-robot prediction comparison</span>The left and right groups show different camera views; within each group, rows are ground truth, Ctrl-World, and SyncWorld from top to bottom. Read time from left to right and compare arm and gripper positions. These are author-selected qualitative examples, not proof of overall success rates or physical accuracy. <span class="figure-links"><a href="/assets/reviews/syncworld/paper-figure-5.webp" target="_blank" rel="noopener noreferrer">Open full size</a> · <a href="https://arxiv.org/html/2609.09155v1#S4.F5">Yuncong Yang et al., 2026, Figure 5</a> · <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> · Content and layout preserved; resized and WebP-compressed, without cropping</span></figcaption>
+<figcaption><span class="figure-label">Paper Figure 5 · Real-robot prediction comparison</span>The left and right groups show different camera views; within each group, rows are ground truth, Ctrl-World, and SyncWorld from top to bottom. Read time from left to right and compare arm and gripper positions. These are author-selected qualitative examples on the xArm embodiment, unseen in training, and new viewpoints. <span class="figure-links"><a href="/assets/reviews/syncworld/paper-figure-5.webp" target="_blank" rel="noopener noreferrer">Open full size</a> · <a href="https://arxiv.org/html/2609.09155v1#S4.F5">Yuncong Yang et al., 2026, Figure 5</a> · <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> · Content and layout preserved; resized and WebP-compressed, without cropping</span></figcaption>
 </figure>
 
 ### 4.3 Multi-view Spatial Consistency Analysis
 
-Met3R measures cross-view consistency through feature correspondence. Its scores are unitless, and lower is better. The reported average covers LIBERO, ManiSkill, and real data. Read the individual domain columns before the average.
+Cross-view consistency compares a rollout generated from one view with the real video from another view of the same trajectory. Met3R uses DUSt3R to predict 3D pointmaps for both videos, lifts DINO features into 3D, and scores the cosine similarity of features in overlapping regions. Scores are unitless, and lower is better. The oracle is the Met3R between the two real views, which the authors treat as an empirical upper bound on cross-view agreement. The average covers LIBERO, ManiSkill, and real data. [§4.3, Appendix C.3](https://arxiv.org/html/2609.09155v1#A3.SS3)
 
-**Paper Table 2 — Cross-view consistency.** All rows are transcribed below. Lower is better; Oracle is a reference score from actual observations.
+**All rows of Paper Table 2 — cross-view consistency (Met3R, lower is better).**
 
 | Model | LIBERO ↓ | ManiSkill ↓ | Real ↓ | Average ↓ |
 | --- | --- | --- | --- | --- |
@@ -135,7 +137,7 @@ Met3R measures cross-view consistency through feature correspondence. Its scores
 | SyncWorld, with inference calibration | 0.540 | 0.602 | 0.473 | 0.538 |
 | Oracle | 0.515 | 0.594 | 0.459 | 0.523 |
 
-Adding calibration at inference lowers the average from 0.542 to 0.538. Both rows use models trained with calibration and distillation, so this differs from removing calibration during training. SyncWorld has the better average, but IRASim has the lower score in the real-data column. The statement that SyncWorld is most consistent in every domain therefore does not exactly match the table. The statistical significance of this difference has not been verified. The metric evaluates cross-view feature consistency, not the accuracy of forces, contact, or physical laws as a whole. [SyncWorld §4.3, Table 2, Appendix C.3](https://arxiv.org/html/2609.09155v1#S4.SS3)
+Adding calibration at inference lowers the average from 0.542 to 0.538. The authors write that SyncWorld achieves lower Met3R than all baselines in all three domains and approaches the oracle (§4.3, Table 2 caption), yet the same table's real column bolds IRASim's 0.468, against SyncWorld's 0.474 and 0.473. [SyncWorld §4.3, Table 2](https://arxiv.org/html/2609.09155v1#S4.T2) **Review interpretation.** By the printed values IRASim is lowest in the real column, so "all three domains" holds only for LIBERO and ManiSkill, while the conclusion of a better average (0.538 versus 0.560) stands.
 
 ### 4.4 Zero-shot Policy Improvement with SyncWorld
 
@@ -148,9 +150,9 @@ Adding calibration at inference lowers the average from 0.542 to 0.538. Both row
 | SyncWorld, with inference calibration | 58% | 72% | 60% |
 | Ranking with ground-truth simulator | 60% | 80% | 66% |
 
-Success rate is the fraction of successful runs over 50 episodes per task. Reading Orange Juice as 56% direct execution → 68% without calibration → 72% with calibration distinguishes the benefit of the candidate-ranking system from the additional inference-calibration gain. The changes are sixteen percentage points over direct execution and four over the no-calibration model. These three tasks were selected because ranking with the ground-truth simulator improved on the direct policy. They were not selected based on SyncWorld's performance, but they are not a full LIBERO average either. [SyncWorld §4.4, Table 3, Appendix C.4.3, Table 8](https://arxiv.org/html/2609.09155v1#A3.SS4.SSS3)
+Success rate is the fraction of successful runs over 50 episodes per task. In counts, direct execution → no calibration → with calibration is 26→27→29 for BBQ Sauce, 28→34→36 for Orange Juice, and 24→29→30 for Black Bowl. The total ranking gain is largest on Orange Juice (8 successes), and inference calibration adds 2, 2 and 1 successes on the three tasks. The authors conclude that calibration consistently improves policy improvement and that SyncWorld approaches the oracle upper bound. The three tasks were chosen because ranking with the ground-truth simulator improves on the direct policy, and the authors state that the selection is not based on SyncWorld's performance. [SyncWorld §4.4, Table 3, Appendix C.4.3](https://arxiv.org/html/2609.09155v1#A3.SS4.SSS3)
 
-**Paper Table 8 — Additional tasks where gains are not assured.** Fractions are again converted to percentages. Considering only the three tasks above would hide these counterexamples.
+**Paper Table 8 — Additional tasks with little or no oracle headroom.** The authors include these in the appendix for transparency; fractions are again converted to percentages.
 
 | Method | Alphabet Soup | Ketchup | Put Cream Cheese |
 | --- | --- | --- | --- |
@@ -158,11 +160,11 @@ Success rate is the fraction of successful runs over 50 episodes per task. Readi
 | SyncWorld | 58% | 72% | 34% |
 | Ranking with ground-truth simulator | 62% | 74% | 30% |
 
-Even ground-truth simulator ranking trails direct execution by six percentage points on Ketchup and four on Put Cream Cheese. Accurate future observations can still lead the evaluator to choose a worse candidate. The authors interpret the VLM/GPC-Rank signal as the bottleneck on these tasks. The table alone does not separate the contributions of SyncWorld prediction errors and ranking errors. [Paper Appendix C.4.3, Table 8](https://arxiv.org/html/2609.09155v1#A3.T8)
+Even ground-truth simulator ranking trails direct execution by six percentage points on Ketchup and four on Put Cream Cheese. Accurate future observations can still lead the evaluator to choose a worse candidate. The authors interpret the VLM/GPC-Rank ranking signal as the bottleneck on these tasks, making them less informative for comparing simulators. [Paper Appendix C.4.3, Table 8](https://arxiv.org/html/2609.09155v1#A3.T8)
 
 ### 4.5 Analysis: removing training calibration and distillation
 
-Tables 4–5 remove **calibration or distillation during training**, unlike the earlier inference-calibration comparison. The LIBERO columns of Table 4 and the three-domain average of Table 5 help distinguish these roles.
+Tables 4–5 remove **calibration or distillation during training**, unlike the earlier inference-calibration comparison. Table 4 reports video metrics for the three domains and Table 5 Met3R; below are two LIBERO metrics and the three-domain Met3R average.
 
 | Training configuration | LIBERO LPIPS ↓ | LIBERO FID ↓ | Mean Met3R across three domains ↓ |
 | --- | --- | --- | --- |
@@ -170,7 +172,9 @@ Tables 4–5 remove **calibration or distillation during training**, unlike the 
 | Without calibration | 0.134 | 15.6 | 0.566 |
 | Without distillation | 0.148 | 17.8 | 0.574 |
 
-The full-model row matches Table 1’s **no inference calibration** row. Removing calibration removes setup-specific correspondence supervision; removing distillation removes the training route for using that knowledge through history alone. Degradation in both variants supports the designs’ roles, but does not establish independent additive effects. Statistical significance from repeated runs or error bars cannot be verified from this table. Appendix D also matters: augmentation probabilities 0, 0.3, and 0.9 underperform the default 0.6, so stronger augmentation is not uniformly better. [§4.5, Tables 4–5; Appendix D, Table 9](https://arxiv.org/html/2609.09155v1#S4.SS5)
+The full-model row matches Table 1’s **no inference calibration** row. The authors read the results as follows: removing calibration in training causes clear generalization degradation, while removing distillation and keeping calibration "mainly hurts performance when test-time calibration is unavailable." In their summary, calibration improves cross-domain action alignment and distillation carries that ability to calibration-free deployment. [§4.5, Tables 4–5](https://arxiv.org/html/2609.09155v1#S4.SS5)
+
+The authors also report that SyncWorld stays close to the calibrated variant without inference calibration in all three experiments, attributing this to coordinate augmentation and distillation making interaction history act as an implicit calibration signal. Appendix F.5 adds, however, that on embodiments unseen in training, qualitative controllability degrades without inference calibration, as the model maps action dimensions to visual motion directions less consistently. In Appendix D's augmentation-probability comparison (with inference calibration), the default 0.6 beats 0, 0.3 and 0.9 (LIBERO LPIPS 0.035 versus 0.055, 0.041 and 0.053). [Appendix F.5](https://arxiv.org/html/2609.09155v1#A6.SS5), [Appendix D, Table 9](https://arxiv.org/html/2609.09155v1#A4)
 
 ## 5. Conclusion
 
@@ -188,19 +192,19 @@ The authors conclude that conditioning on short visual calibration and history c
 | SyncWorld | One H100 | 20 | 15.6 s |
 | SyncWorld | Four H100s | 20 | 3.2 s |
 
-Runtime also needs its conditions attached. The 3.2 seconds in Table 6 uses four H100 GPUs and 20 denoising steps. One H100 with 20 steps takes 15.6 seconds in the same table. At one H100 and 50 steps, Ctrl-World takes 4.0 seconds versus SyncWorld’s 39.4 seconds. Neither value has been verified as full decision latency including policy inference, evaluation of eight candidates and two views, and the GPT-5 judgment. [SyncWorld Appendix C.2, Table 6](https://arxiv.org/html/2609.09155v1#A3.SS2)
+Table 6 gives the time for one video generation. The inference setting used in all experiments, four H100s with 20 steps, takes 3.2 seconds; one H100 with 20 steps takes 15.6 seconds. At one H100 and 50 steps, Ctrl-World takes 4.0 seconds versus SyncWorld's 39.4 seconds. The policy-improvement experiment generates two-view videos for eight candidates, sixteen videos in all, at every decision step and scores them with GPT-5. [SyncWorld Appendix C.2, Table 6](https://arxiv.org/html/2609.09155v1#A3.SS2)
 
-The authors show unstable motion at an extreme camera angle, blur and position errors for unseen objects, hallucination of some objects in multi-object scenes, and blur during precise rotation with a new xArm. Producing video in which the arm follows the command should be distinguished from accurately predicting object interactions. The latter distinction is my criterion for assessing the model. [SyncWorld Appendix E.1–E.4](https://arxiv.org/html/2609.09155v1#A5)
+The authors show unstable motion at an extreme camera angle, blur and position errors for unseen objects, hallucination of some objects in multi-object scenes, and blur during precise rotation with the xArm unseen in training. [SyncWorld Appendix E.1–E.4](https://arxiv.org/html/2609.09155v1#A5)
 
 ## Review interpretation and open questions
 
-**Review interpretation.** Recent work makes this distinction more concrete. XEWorld evaluates transfer across bimanual embodiments in controlled scenes, separating appearance, kinematics, and object state. The action-format study investigates how equivalent absolute and relative commands can change model outcomes. XEWorld uses different embodiments and action spaces from SyncWorld, while the action-format study uses a fixed camera and offline proxy evaluation. Neither is a matched experiment directly refuting SyncWorld. My proposal from reading them together is to test camera, action-format, and embodiment transfer separately. [XEWorld §3 and §5–6](https://arxiv.org/html/2608.05799v1), [Robot World Models Are Not Invariant to How the Actions Are Written §3–6](https://arxiv.org/html/2609.23252v1)
+**Review interpretation.** The strongest evidence is the §4.5 ablation that removes calibration training and distillation within the same backbone. Without calibration training, all 12 video metrics across the three domains worsen, the Met3R average rises from 0.542 to 0.566, and LIBERO LPIPS climbs to roughly the level of the Ctrl-World baseline. The effect of providing calibration at inference (LIBERO LPIPS 0.049→0.035) is also clear on video metrics, but smaller than the change from removing calibration training (0.049→0.134).
 
-There are also alternative ways to reduce inference cost. Think Like a World Model, Act Like a VLA distills a teacher's representations into a compact policy and removes the teacher at deployment. Its default teacher supplies understanding representations from Cosmos3-Nano rather than acting as a video-rollout simulator. RoboActualizer trains future and action experts on frozen V-JEPA 2.1 representations, then discards future outputs during execution. Both involve platform-specific training, which differs from SyncWorld's contextual adaptation to a new setup. [Representation distillation §III-B–III-C and §IV](https://arxiv.org/html/2609.24682v2), [RoboActualizer §3–4](https://arxiv.org/html/2609.36413v3)
+This evidence has limits. First, the ablations report only video metrics without run-to-run variance, and there is no evaluation of the no-distillation model with inference calibration, so the authors' reading that distillation "mainly" matters when calibration is unavailable is not directly checked by the table. Second, a new embodiment is tested only on 25 real xArm trajectories, where, as Appendix F.5 notes, controllability degrades without inference calibration. Third, the main text reports policy improvement only on three tasks with oracle headroom, and inference calibration adds 1–2 successes per task, which is hard to separate from run-to-run variation as a "consistent" improvement. As Table 8 shows, ground-truth simulator ranking gains nothing where the judge signal is weak, so policy gains also depend on the quality of the VLM that ranks candidates. That two of the four failure types in Appendix E involve object interaction (unseen objects, multiple objects) is another reason to assess arm controllability and object-interaction accuracy separately.
 
-ReWAM studies representation design in relation to action learning. Its feature calibration differs from SyncWorld's action–video calibration episode. I find it useful to organize this literature around three questions: does the video look plausible, does it change according to the action, and does it help select a better action? This is a synthesis of the literature, not the result of a combined experiment. [ReWAM §3.2–3.4 and §4.3](https://arxiv.org/html/2609.38163v1)
+Recent work separates the setup changes SyncWorld treats together. XEWorld evaluates transfer across bimanual embodiments in controlled scenes, separating appearance, kinematics, and object state, and the action-format study investigates how equivalent absolute and relative commands can change model outcomes. Both differ from SyncWorld in embodiment and action space or in evaluation (fixed camera, offline proxy evaluation), so neither is a direct comparison. On compute, Think Like a World Model, Act Like a VLA (distilling Cosmos3-Nano understanding representations into a compact policy) and RoboActualizer (training future and action experts on frozen V-JEPA 2.1 and discarding future outputs during execution) avoid generating video rollouts at deployment, but both require platform-specific training. ReWAM's feature calibration has a similar name but is a different concept from SyncWorld's action–video calibration episode. [XEWorld §3 and §5–6](https://arxiv.org/html/2608.05799v1), [Robot World Models Are Not Invariant to How the Actions Are Written §3–6](https://arxiv.org/html/2609.23252v1), [Representation distillation §III-B–III-C and §IV](https://arxiv.org/html/2609.24682v2), [RoboActualizer §3–4](https://arxiv.org/html/2609.36413v3), [ReWAM §3.2–3.4 and §4.3](https://arxiv.org/html/2609.38163v1)
 
-The following are proposed checks and have not been executed.
+Open questions remain.
 
 1. Does calibration remain effective when changing only the camera, only an information-preserving action format, or only the embodiment?
 2. Can changes to calibration directions or ordering, together with separate object-interaction error measurements, identify which context the model uses?
@@ -209,7 +213,7 @@ The following are proposed checks and have not been executed.
 ## Sources and reading scope
 
 - Paper: *SyncWorld: Visual Calibration Enables World Models as Zero-Shot Simulators* · Yuncong Yang et al. · first public date 2026-09-08 · [reviewed version](https://arxiv.org/abs/2609.09155v1) · reviewed 2026-10-23.
-- Scope read: Sections 1–5 and the methods, settings, tables, and failures in appendices B.1–B.2, C.1–C.4, D–E; supplementary videos are excluded.
+- Scope read: Sections 1–5 and appendices A–F; supplementary videos are excluded.
 
 | Additional source | Scope read |
 | --- | --- |
@@ -225,4 +229,4 @@ The following are proposed checks and have not been executed.
 | [ReWAM v1](https://arxiv.org/html/2609.38163v1) | Relevant passages and tables in §3.2–3.4, §4.2–4.3, §4.5, §5 |
 
 - Figure sources: Figures 2 (thumbnail), 4, and 5 are author assets from v1, CC BY 4.0; resolution reduction and WebP compression preserve content and layout. The self-made concept diagram includes illustrative AI-generated samples and optimized embedded rasters. [Paper](https://arxiv.org/abs/2609.09155v1).
-- Not verified: research-code execution, model training/reproduction, raw-data uncertainty estimates, and complete formal certification.
+- Not verified: research-code execution, model training/reproduction, and supplementary videos.

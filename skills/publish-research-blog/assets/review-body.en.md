@@ -1,4 +1,4 @@
-{{Lead in two or three sentences: the core contribution, one or two representative results with their conditions, and a one-line verdict. Do not fill it with a question, a reading guide, disclaimers, or notation notes alone.}}
+{{Lead in two or three sentences: the core contribution, one or two representative results whose table number, unit, compared rows, and conditions are rechecked against the source table, and a one-line verdict on how far the claim holds on its evidence (not a "one should distinguish…" caveat or a restatement of the authors' conclusion). Do not fill it with a question, a reading guide, disclaimers, or notation notes alone.}}
 
 {{Series or depth versions only: one sentence giving this part's source scope and [n/N] links to adjacent parts. An overview does not replace the detailed account.}}
 
@@ -24,7 +24,7 @@
 
 ## Review interpretation and open questions
 
-{{Overall verdict, strengths, limitations (gather scope caveats here), and open questions. Assess whether the abstract's headline claims are supported. For source errors or inconsistencies: printed equation or sentence with location → explanations elsewhere in the paper → correction → whether the conclusion holds, affected results, confidence. In a series, cover each such point in one part only.}}
+{{Do not repeat the lead's verdict; develop its grounds, strengths, limitations (gather scope caveats here), and open questions. Assess whether the abstract's headline claims are supported. For source errors or inconsistencies: printed equation or sentence with location → explanations elsewhere in the paper → correction → whether the conclusion holds, affected results, confidence. In a series, cover each such point in one part only.}}
 
 ## Sources and reading scope
 
