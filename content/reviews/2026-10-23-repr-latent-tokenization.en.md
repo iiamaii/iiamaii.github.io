@@ -3,7 +3,7 @@ title: "[1/2] RePR: learning representations that make generation easier"
 description: "Follow Sections 1–7 through predictive information differences, patch features, watermark tests, and combined training costs."
 date: "2026-10-23"
 publishedAt: "2026-10-23T15:12:16+09:00"
-updatedAt: "2026-10-23T15:12:16+09:00"
+updatedAt: "2026-10-23T08:56:27+00:00"
 topics: ["representation learning", "latent tokenization", "diffusion models", "generative modeling", "scaling laws"]
 visibility: "public"
 lang: "en"
@@ -17,7 +17,7 @@ thumbnail: "/assets/reviews/repr/figure1.webp"
 thumbnailAlt: "Original Figure 1: RePR matches conditional predictive information differences with increments of patch-representation inner products."
 ---
 
-Does a representation that classifies images well also make them easy to generate? RePR (Relative Prediction Representations) learns from **how much an additional view improves prediction of a new patch**. Its question includes the cost of obtaining that representation: after counting encoder pretraining, is the combined system better than a model trained directly on pixels?
+Relative Prediction Representations (RePR) learns patch features whose inner-product differences match the predictive gain from added context. Including encoder training, its ImageNet FID-50K is 2.18 versus 2.36 for pixel JiT-L, at total training costs of $3.49\times10^{20}$ and $3.57\times10^{20}$ FLOPs, respectively. [Table 3](https://arxiv.org/pdf/2610.20533v1#page=20) **Review interpretation.** Measured results support allocating compute to representation learning; the abstract’s seven- to eight-fold savings are extrapolations beyond the observed range.
 
 This article follows arXiv v1 in **§1→§2→§3→§4→§5→§6→§7** order. [\[2/2\] Appendix, implementation, and theory](/en/reviews/repr-latent-tokenization-technical/) follows A.1–A.7 through pseudocode, probability derivations, reconstruction conditions, and raw scaling results. Here a tokenizer is an encoder producing continuous patch features. The paper does not introduce a new discrete codebook or vector quantization method.
 
@@ -32,6 +32,10 @@ A second concern is accounting. Fast training on an existing DINOv2 encoder does
 ## 2. Related Work: what RePR changes
 
 The original discussion connects representation learning, PMI and representations, and pixel/latent generation. Five central comparisons help distinguish the later experiments.
+
+The authors first connect hard negatives and feature suppression in contrastive learning, augmentation design, and predictive objectives in MAE, BYOL, data2vec, JEPA, and MAGE. They then trace PMI factorization through Word2Vec and CPC, relate it to the Platonic Representation Hypothesis, and cite evidence against automatic emergence of that structure at scale. Finally, JiT’s pixel generation and RAE/REPA’s latent generation motivate accounting for DINOv2 representation pretraining as well as generator training. [Section 2](https://arxiv.org/pdf/2610.20533v1#page=2)
+
+### Review supplement: roles of the compared models
 
 | Approach | Basic design | Connection and difference |
 | --- | --- | --- |
@@ -264,11 +268,13 @@ The useful review-level shift is from selecting an existing classifier-friendly 
 
 Continue to [Part 2](/en/reviews/repr-latent-tokenization-technical/) for A.1–A.7, including the algorithm, accounting details, PMI chain rule, diffusion weighting, asymmetric factorization, and reconstruction conditions.
 
+## Review interpretation and open questions
+
+**Review interpretation.** Measured results support allocating compute to representation learning; the abstract’s seven- to eight-fold savings are extrapolations beyond the observed range.
+
 ## Sources and reading scope
 
-- Original: Alan Baade, Kyle Sargent, Vincent Sitzmann, Eric Ryan Chan, Justin Johnson, Li Fei-Fei, Gordon Wetzstein, [Generative Representation Learning for Scalable Latent Tokenization, arXiv:2610.20533v1](https://arxiv.org/abs/2610.20533v1). First submitted 2026-10-14; 22 pages; preprint. A conference-style filename was not treated as acceptance evidence.
-- First reading: 2026-10-23, official abstract and introduction pp.1–2, active LaTeX section map, figure/table captions, and §7. An independent orientation was saved before detailed reading.
-- Second reading: all active author LaTeX for §1–7 and A.1–A.7, checked against key PDF formulas, tables, and figures. The bibliography's approximately pp.10–15 does not imply full readings of every cited source. This article covers the body; Part 2 completes the appendices.
-- Selected originals: Latent Forcing v1 pp.1–3; JiT v2 pp.1–3; RAE v1 pp.1–4; DINOv2 v2 pp.4–6; CPC v2 pp.2–4; VDM v6 pp.17–18. Existing detailed LeJEPA v3 reading records were reused. Absolute FID rankings across mismatched protocols were not combined.
-- Verification: source numbers, notation, equality conditions, and supplementary mathematical calculations were checked. GPU training reproduction, raw logs, multiple seeds, and independent scaling fits were **not executed**. Equation, link, and rendered-page checks are recorded in the handoff.
-- Figures 1–4: original [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) assets, preserving content and fonts with author whitespace trims, rasterization, and WebP conversion. No additional custom diagram was created.
+- Paper: *Generative Representation Learning for Scalable Latent Tokenization* · Alan Baade et al. · first public date 2026-10-14 · [reviewed version](https://arxiv.org/abs/2610.20533v1) · reviewed 2026-10-23.
+- Scope read: Version 1, sections 1–7. Algorithms, detailed derivations, and raw numbers in A.1–A.7 are covered in part 2.
+- Figure sources: The Figure-1 thumbnail and this part’s Figures 1–4 or 5–8 are author assets from v1 (CC BY 4.0), with author-margin trimming, resolution adjustment, and WebP conversion; photographic examples use quality 92. Content, layout, and original fonts are retained. [Paper](https://arxiv.org/abs/2610.20533v1).
+- Not verified: research-code execution, model training/reproduction, raw-data uncertainty estimates, and complete formal certification.

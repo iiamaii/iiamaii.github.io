@@ -3,7 +3,7 @@ title: "SWAP: Which VLA Should Control the Robot Next?"
 description: "Follow SWAP's policy-routing MDP and IQL critic in the authors' section order, from real-robot success gains to cases where routing loses to the best policy under distribution shift."
 date: "2026-10-12"
 publishedAt: "2026-10-12T13:18:52+09:00"
-updatedAt: "2026-10-22T23:22:50+09:00"
+updatedAt: "2026-10-23T08:56:18+00:00"
 topics: ["robot learning", "vision-language-action", "policy routing", "offline reinforcement learning", "multi-model systems"]
 visibility: "public"
 lang: "en"
@@ -17,7 +17,7 @@ thumbnail: "/assets/reviews/swap-policy-routing/swap-overview.webp"
 thumbnailAlt: "SWAP Figure 2: collect successful and failed candidate-policy rollouts, train an offline routing critic, then compare policy-ID Q-values and execute the selected policy's action chunk."
 ---
 
-Moving quickly toward an object and grasping it precisely require different capabilities. A policy good at the first need not be best at the second. **SWAP keeps several vision-language-action models (VLAs) available and switches policies during execution according to the current scene.** On three real-robot tasks, routing improves success over the best fixed policy. Under distribution shift in simulation, however, it also loses to the strongest fixed candidate. This review reads both outcomes together. [Abstract, §I, Tables I and III](https://arxiv.org/pdf/2610.06926v1#page=1)
+SWAP evaluates policy values from the current observation and switches vision-language-action (VLA) models between action chunks. It succeeds in 29 of 30 real-robot trials across three tasks versus 19 for the best single candidate, but reaches 89.0% against a dominant policy’s 92.0% in one LIBERO-Plus setting. [Tables I and III(b)](https://arxiv.org/pdf/2610.06926v1#page=4) **Review interpretation.** Complementary candidates and reliable value estimates under distribution shift determine the benefit of routing.
 
 The article follows the original sections I–VI through the problem definition, learning objective, algorithm, principal experiments, and failure conditions. SWAP contains no separate theorem or proof section. The expectile explanation and small calculation below supplement the review; they are not an optimality proof for SWAP.
 
@@ -32,6 +32,10 @@ The key premise is **complementarity**. If one candidate dominates every state, 
 ## II. Background and Related Work
 
 The paper connects VLAs, LLM routing, and value functions for robotics, in that order. Two useful comparison questions are **what gets selected** and **whether selection changes future observations**. [§II, p. 2](https://arxiv.org/pdf/2610.06926v1#page=2)
+
+The authors first connect the distinct failures of VLAs trained with different data and architectures under distribution shifts. LLM routing trades cost against capability per request, whereas robot routing is sequential because actions change subsequent observations. The value-function lineage includes policy optimization, SayCan skill selection, failure detection, and deployment-time action steering; SWAP uses it to score fixed VLA candidates. [Section II](https://arxiv.org/pdf/2610.06926v1#page=2)
+
+### Review supplement: roles of five approaches
 
 | Approach | What it selects or learns | Connection to SWAP and distinction |
 | --- | --- | --- |
@@ -277,7 +281,7 @@ The authors attribute this failure to an in-distribution preference for $\pi_0$ 
 | Random | 90% | 79.0% |
 | SWAP | **97.5%** | 89.0% |
 
-On LIBERO, SWAP is 2.5 points above the stronger candidate, including evaluation tasks unseen by the router. On LIBERO-Plus, it exceeds Random by 10 points but trails the stronger candidate by **3.0 points**. The caption's “matches or slightly outperforms” should not be interpreted as outperforming the fixed candidate in both columns. Limiting the damage relative to random switching is different from guaranteeing preservation of the best policy's performance.
+On LIBERO, SWAP is 2.5 points above the stronger candidate, on the two tasks held out from router training (tasks 5 and 9). On LIBERO-Plus, it exceeds Random by 10 points but trails the stronger candidate by **3.0 points**. The caption's “matches or slightly outperforms” should not be interpreted as outperforming the fixed candidate in both columns. Limiting the damage relative to random switching is different from guaranteeing preservation of the best policy's performance.
 
 ## VI. Conclusion and the Authors' Limitations
 
@@ -291,14 +295,13 @@ The central insight is that average model performance can differ from usefulness
 
 Three follow-up checks would be useful. A learned episode-start router could isolate the extra benefit of mid-execution switching. Switching costs or hysteresis could retain the previous policy when Q differences are small, with joint measurement of switching frequency, success, and elapsed time. Finally, critic uncertainty and incorrect preferences could be examined when candidate rankings invert, as in Table III(a). These are review proposals, not executed SWAP experiments.
 
-## Sources and Reading Scope
+## Review interpretation and open questions
 
-- Main source: Mousumi Das, Aditeya Prajapati, Abrar Anwar, Jesse Thomason, *SWAP: Stepwise Action Policy Routing for Vision-Language-Action Models*, [arXiv:2610.06926v1](https://arxiv.org/abs/2610.06926v1). First submission: 2026-10-03; reviewed 2026-10-12.
-- First pass: abstract, introduction, section headings, Figure 1–4 and Table I–II captions, principal result overview, conclusion and limitations; saved a separate orientation before detailed reading.
-- Second pass: all nine PDF pages. Sections I–VI occupy pp. 1–7; references occupy pp. 7–9. Cross-checked the author LaTeX, Algorithm 1, Eq. (1), and Tables I–IV; visually inspected rendered equation/table pages and Figures 2 and 4. No appendix or SWAP-specific formal theorem is present.
-- Related originals: IQL v1 §3–4.3; RouteLLM v4 §1 and §3.1; V-GPS v2 §3 and §5.1–5.2; relevant OpenVLA-OFT v1 §IV–V material; SayCan v2's official abstract. These are scoped readings, not independent verification of the complete related papers' performance.
-- Structure: preserves I–VI and V-A/V-B. Results follow success→steps→Q analysis→occupancy→qualitative example→OOD→dominant-policy setting. Diagram explanation and IQL background supplement IV. Acknowledgments, AI-use disclosure, and the complete bibliography are not republished.
-- Images: representative/body Figure 2 and body Figure 4 come from the [authors' v1 source](https://arxiv.org/src/2610.06926v1), rasterized and encoded as lossless WebP with content, colors, text, and arrows retained. The paper uses the [arXiv nonexclusive distribution license](https://arxiv.org/licenses/nonexclusive-distrib/1.0/), not a claimed Creative Commons reuse permission. Copyright remains with the authors; only the two figures needed for this analysis are used with attribution.
-- Verification: checked table transcription, rankings, units, step reduction, and the illustrative expectile calculation. **Not executed:** robot/GPU training reproduction, public code execution, raw-log confidence intervals, actual inference latency/memory measurement, or formal proof verification. Verification here consists of source cross-checks and local calculations.
+**Review interpretation.** Complementary candidates and reliable value estimates under distribution shift determine the benefit of routing.
 
-- Recheck on October 22, 2026: this revision reuses the recorded two readings and source mapping, adding the metric, assumption, and example definitions above. It is not counted as two new full-paper readings. New model, GPU, robot reproduction, and complete formal verification were not executed.
+## Sources and reading scope
+
+- Paper: *SWAP: Stepwise Action Policy Routing for Vision-Language-Action Models* · Mousumi Das et al. · first public date 2026-10-03 · [reviewed version](https://arxiv.org/abs/2610.06926v1) · reviewed 2026-10-23.
+- Scope read: Version 1, sections I–VI, Algorithm 1, equation (1), Tables I–IV, and Figures 2 and 4. The paper has no original formal theorem or proof section.
+- Figure sources: Figures 2 (thumbnail) and 4 are quoted for commentary from the authors’ v1 PDF, rasterized to lossless WebP with content retained. Author rights remain; arXiv’s nonexclusive distribution license is not a Creative Commons reuse license. [Paper](https://arxiv.org/abs/2610.06926v1).
+- Not verified: research-code execution, model training/reproduction, raw-data uncertainty estimates, and complete formal certification.

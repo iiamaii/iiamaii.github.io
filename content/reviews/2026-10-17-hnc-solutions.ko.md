@@ -3,7 +3,7 @@ title: "[1/2] HNC: 같은 출력을 내는 신경망은 내부에서도 같은 �
 description: "한 모델 주변의 함수 보존 영역을 따라가며 RNN의 기억, ViT의 표현, 강화학습 정책을 바꾸는 HNC를 원문 §1–7 순서로 읽는다."
 date: "2026-10-17"
 publishedAt: "2026-10-17T22:12:00+09:00"
-updatedAt: "2026-10-22T23:22:54+09:00"
+updatedAt: "2026-10-23T08:56:23+00:00"
 topics: ["representation learning", "loss landscape", "mechanistic interpretability", "computational neuroscience", "reinforcement learning"]
 visibility: "public"
 lang: "ko"
@@ -17,7 +17,7 @@ thumbnail: "/assets/reviews/hnc/overview.webp"
 thumbnailAlt: "HNC 원문 Figure 1. 평평한 가중치 방향으로 이동하고 출력을 복원하며, 다른 내부 표현을 가진 대안 모델을 찾는 과정."
 ---
 
-같은 질문에 같은 답을 내는 두 신경망이 내부에서도 같은 방식으로 계산할까? **Hessian Null Space Continuation(HNC)은 하나의 학습 모델에서 출발해, 관찰한 출력은 거의 유지하면서 내부 표현과 동역학이 크게 다른 대안을 찾는다.** 기억을 고정점에 저장하던 RNN이 내부 상태를 계속 움직이며 기억하도록 바뀌고, ViT는 가중치를 조금 바꾸고도 이미지 간 유사 관계를 크게 재편한다. 다만 출력 보존은 유한한 입력에서 근사적으로 강제한다. 모든 입력에서 같은 함수라는 보장은 아니다.
+헤시안 영공간 연속 탐색(Hessian Null Space Continuation, HNC)은 출력 일치를 근사적으로 유지하며 한 신경망 주변의 다른 내부 계산을 찾는다. 비전 트랜스포머(vision Transformer, ViT) 실험에서는 표현을 조향하면서 top-1 결정을 최소 94% 유지하고, 뇌 반응 예측 점수는 한 설정에서 0.618–0.719로 달라진다. [원문 §4·Appendix H](https://arxiv.org/pdf/2609.38081v1#page=46) **리뷰 해석.** 같은 과제 성능만으로 내부 메커니즘을 식별하기 어렵다는 근거이며, 보존 범위는 probe와 별도의 평가 입력으로 확인해야 한다.
 
 55쪽의 [v1](https://arxiv.org/pdf/2609.38081v1)을 두 편으로 나눴다. 이 글은 **본문 §1–7의 순서**를 유지하며 핵심 방법과 네 실험군을 설명한다. [\[2/2\] 수학·알고리즘·검증 심화](/reviews/hnc-mechanics/)는 부록 A–J를 따라 수학 유도, 복원 실패, probe 밖 평가와 추가 실험을 다룬다. 1→2 순서를 권한다.
 
@@ -116,7 +116,9 @@ $$
 
 평평한 성분은 거의 통과하고 가파른 성분은 작아진다. 이것이 **soft projection**이다. 0 아니면 1로 자르는 정확한 직교 투영은 아니다. 구현에서는 $\mathbf H$ 대신 $\mathbf G$를 쓰고, 역행렬을 직접 만들지 않고 conjugate gradient(CG)로 방향을 계산한다. CKA 거리를 키우거나, 동역학을 바꾸거나, 가중치 구조를 희소하게 만드는 목표를 같은 틀에 넣을 수 있다. [§2.2.2·A.3](https://arxiv.org/pdf/2609.38081v1#page=4)
 
-## 3. RNN: 같은 기억을 다른 동역학으로 유지하기
+<span id="3-rnn-같은-기억을-다른-동역학으로-유지하기" aria-hidden="true"></span>
+
+## 3. 기억 과제에서 RNN의 다른 동역학 찾기 (HNC drives RNNs to learn drastically different dynamics in a memory task)
 
 **3-bit flip-flop(3BFF)** 과제는 세 입력 채널의 마지막 0이 아닌 값을 기억한다. 세 이진 기억이므로 상태는 8개다. 저자들은 64개 tanh 유닛의 RNN을 BPTT와 Adam으로 학습한다. 기본 해는 8개 기억 상태를 안정 고정점(stable fixed point)에 저장하고, 활성 공간에서 이 점들이 큐브처럼 배치된다.
 
@@ -150,7 +152,9 @@ E는 중요한 반대 결과다. CKA 조향 해는 숨은 상태 교란에 더 �
 
 부록 F는 약한 pulse·드문 pulse 등의 분포 밖(out-of-distribution, OOD) 조건에서 일부 대안이 더 빨리 무너짐을 보여준다. 동시에 pruning 조향으로 64→11유닛으로 줄인 한 사례, 8,000-step SGD 재학습에도 대안의 특성이 남는 사례를 제시한다. 이들은 유용한 추가 근거이지만 모든 seed·과제의 압축률이나 최적해 안정성을 보장하지 않는다. [F.1–F.8, pp. 29–35](https://arxiv.org/pdf/2609.38081v1#page=29)
 
-## 4. ViT: 표현 정렬은 함수가 강제한 결과일까?
+<span id="4-vit-표현-정렬은-함수가-강제한-결과일까" aria-hidden="true"></span>
+
+## 4. ViT에서 미탐색 자유도 드러내기 (HNC reveals underexplored degrees of freedom in ViTs)
 
 PRH는 더 크고 유능한 모델들이 비슷한 표현으로 수렴하는 경향을 논한다. HNC는 다른 질문을 묻는다. **그렇게 학습된 모델 하나의 출력을 거의 유지한 채 표현을 멀리 옮길 여지는 얼마나 남아 있을까?**
 
@@ -170,7 +174,9 @@ D의 cosine similarity 행렬과 E의 20개 이미지 MDS는 이웃 관계가 �
 
 반면 G.6의 mutual-kNN 조향 설정은 clean ImageNet 예측 일치가 약 0.85, Sketch에서는 약 0.6까지 내려간다. 여기서는 CKA 조향보다 기능 보존이 약하다. 두 설정의 결과를 합쳐 “표현은 언제나 자유롭게 바꾸고 기능은 그대로다”라고 쓰면 안 된다. probe 수, 목적, 보폭의 trade-off가 있다. G.3의 kNN probe는 256개로 기술되지만 Table 8은 512개여서 해당 설정 수는 원문 내부 불일치로 남긴다. [G.3–G.10, pp. 36–46](https://arxiv.org/pdf/2609.38081v1#page=39)
 
-## 5. 강화학습: 같은 행동이 아니라 비슷한 보상
+<span id="5-강화학습-같은-행동이-아니라-비슷한-보상" aria-hidden="true"></span>
+
+## 5. 강화학습에서 행동이 다른 고보상 정책 찾기 (HNC finds behaviorally distinct, high-reward policies in reinforcement learning)
 
 여기서 **보존하는 대상이 바뀐다.** 같은 행동 분포를 유지하면 행동 전략을 크게 바꿀 수 없다. 저자들은 anchor $\pi_{\boldsymbol\theta_0}$에서 얻은 상태·행동 buffer와 advantage $A_i^0$를 이용해 다음 surrogate return을 보존한다.
 
@@ -206,7 +212,9 @@ $s_i,a_i$는 관찰 상태와 행동이고 $N$은 buffer 표본 수다. 이 surr
 
 설정의 중요한 조건이 있다. **10개 anchor는 true return으로 PPO 학습했다.** proxy만으로 학습하면 exploit을 스스로 발견하므로, 먼저 정상 순환 정책을 만들고 HNC가 proxy를 보존하며 해킹을 찾는 실험이다. 정상적인 proxy-only 학습의 모든 결과가 HNC 때문에 위험해진다는 주장은 아니다. 추가 Ant-v3 실험도 평균 return을 유지하며 다리 타이밍과 실패 유형이 달라짐을 보여준다. 평균 보상은 초기 상태별 역량까지 동일하게 만들지 않는다. [§5·I.4–I.7, pp. 8, 51–53](https://arxiv.org/pdf/2609.38081v1#page=51)
 
-## 6. HNC로 손실 지형의 기하를 측정하기
+<span id="6-hnc로-손실-지형의-기하를-측정하기" aria-hidden="true"></span>
+
+## 6. 손실 지형의 기하 측정 (HNC measures loss landscape geometry)
 
 마지막 본문 실험은 “같은 정확도로 학습된 모델도 자유도가 얼마나 남는가?”를 묻는다. CIFAR-100의 클래스 수 $C\in\{7,10,20,50,100\}$와 CNN 폭 $w\in\{16,24,32,48,96\}$를 바꿔 3 seed씩, **75개 anchor**를 만든다. 클래스당 학습 이미지 300개, augmentation 없이 학습하고 각 모델의 학습 이미지 512개로 출력을 제약한다. 클래스 수는 여기서 과제 복잡도의 대리 변수다.
 
@@ -230,16 +238,11 @@ B는 공통 상대 임계값 $\mu=10^{-6}\lambda_{\max}$에서 이동 방향의 
 
 ## 리뷰 해석과 남은 질문
 
-HNC의 실용적인 독해는 “같은 기능을 구현하는 진짜 구조 하나를 찾아낸다”보다, **어떤 관찰만으로는 내부 메커니즘을 식별할 수 없는지 시험한다**에 가깝다. 후속 검증에서는 probe 수와 분포, 허용 drift, 실제 계산 예산을 맞춘 뒤 표현 변화·정확도·일치율·OOD·실패를 함께 비교할 필요가 있다. 조향한 지표 하나만 크게 움직이는 것으로 충분하지 않다. 이는 리뷰의 제안이며 실행한 후속 실험은 아니다.
+**리뷰 해석.** HNC의 실용적인 독해는 “같은 기능을 구현하는 진짜 구조 하나를 찾아낸다”보다, **어떤 관찰만으로는 내부 메커니즘을 식별할 수 없는지 시험한다**에 가깝다. 후속 검증에서는 probe 수와 분포, 허용 drift, 실제 계산 예산을 맞춘 뒤 표현 변화·정확도·일치율·OOD·실패를 함께 비교할 필요가 있다. 조향한 지표 하나만 크게 움직이는 것으로 충분하지 않다. 이는 리뷰의 제안이며 실행한 후속 실험은 아니다.
 
 ## 출처와 읽은 범위
 
-- 원문: Huang, Ostrow, Lu, Redman, Kozachkov, Rajan, [Traversing the solution space of neural networks with Hessian Null Space Continuation, v1](https://arxiv.org/abs/2609.38081v1). 최초 공개 2026-09-29, 검토 2026-10-17. Preprint이며 학회 채택으로 표시하지 않는다.
-- 첫 읽기: 초록·도입 pp.1–3, Figure 1 캡션, Discussion pp.9–10, Appendix outline p.17과 절 지도. 독립 개관을 저장한 뒤 상세 읽기를 진행했다.
-- 두 번째 읽기: 본문 §1–7와 부록 A–J의 텍스트·수식·표·그림 캡션을 PDF와 활성 저자 LaTeX로 대조했다. 핵심 수식·알고리즘·표 페이지 3·4·18–20·24·38·54 및 사용한 원본 그림들을 시각 확인했다. 참고문헌은 비교에 필요한 항목을 확인했으며 모든 인용 논문을 정독한 것은 아니다.
-- 추가 원전: Garipov v4 pp.2–4, CKA 원전 pp.2–3, DSA v2 pp.2–4, PRH 학회본 pp.2–4의 관련 절. 독립 학습 경로·metric 정의와 불변성·표현 수렴의 관찰을 확인했으며 각각의 전체 논문 리뷰는 아니다.
-- 구성: 본문 순서를 유지하고 핵심 실험 설정·반대 결과를 가까이 보충했다. 부록 A–J의 수학과 검증 조건은 [2편](/reviews/hnc-mechanics/)에 원문 순서로 연결한다. 반복 gallery·모든 hyperparameter 행·전체 bibliography 재게시는 축약한다.
-- 그림: Figure 1–5는 [저자 v1 소스](https://arxiv.org/src/2609.38081v1)의 PDF 원본을 래스터화하고 WebP로 인코딩했다. 원저자는 위 여섯 저자이며 [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)에 따라 출처와 변경을 표시한다. 원문 색·레이아웃·글자·화살표·데이터를 유지했으며 해상도·인코딩은 변경했다.
-- 검증: 표의 수치·비교 조건·수학 유도의 국소 계산을 확인했다. **미실행:** 저자 코드 실행, GPU/RNN/ViT/RL 학습·walk 재현, raw data 기반 유의성 검정, 전체 정리 형식 검증, 실제 하드웨어 시간·메모리 재측정, 원문 설정 불일치의 저자 확인.
-
-- 2026-10-22 재점검: 기존 두 읽기와 원문 대응 기록을 재사용해 위에 추가한 지표·가정·예제의 정의를 보완했다. 새 전문 두 읽기로 계산하지 않는다. 새 모델·GPU·로봇 재현과 전체 형식 검증은 미실행이다.
+- 원문: *Traversing the solution space of neural networks with Hessian Null Space Continuation* · Ann Huang et al. · 최초 공개 2026-09-29 · [검토 버전](https://arxiv.org/abs/2609.38081v1) · 검토일 2026-10-23.
+- 읽은 범위: v1 본문 §1–7. 설정·지표·반대 결과에 필요한 부록을 연결하며 A–J의 상세는 [2/2] 심층 편에 둔다.
+- 그림 출처: 대표 Figure 1과 해당 편의 본문 그림은 저자 v1 자산(CC BY 4.0). PDF 래스터화·WebP 인코딩으로 해상도를 바꾸고 내용·배치·글자·화살표를 유지한다. [원문](https://arxiv.org/abs/2609.38081v1).
+- 확인하지 않은 것: 연구 코드 실행·모델 학습/재현·원시 데이터 불확실성 추정·전체 형식 인증.

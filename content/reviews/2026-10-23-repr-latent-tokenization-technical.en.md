@@ -3,7 +3,7 @@ title: "[2/2] RePR in depth: PMI derivations, implementation, and scaling eviden
 description: "Follow Appendices A.1–A.7 through the algorithm, PMI conditions, raw results, and limits of the extrapolations."
 date: "2026-10-23"
 publishedAt: "2026-10-23T15:12:15+09:00"
-updatedAt: "2026-10-23T15:12:15+09:00"
+updatedAt: "2026-10-23T08:56:26+00:00"
 topics: ["representation learning", "latent tokenization", "diffusion models", "generative modeling", "scaling laws"]
 visibility: "public"
 lang: "en"
@@ -17,7 +17,7 @@ thumbnail: "/assets/reviews/repr/figure1.webp"
 thumbnailAlt: "Original Figure 1: RePR matches conditional predictive information differences with increments of patch-representation inner products."
 ---
 
-RePR (Relative Prediction Representations) transfers a generative model's **relative predictive advantage** into an increment of representation inner products. This article follows that explanation into its algorithm, assumptions, and measurements. Read [\[1/2\] Main-paper review](/en/reviews/repr-latent-tokenization/) first; here we retain **A.1→A.2→A.3→A.4→A.5→A.6→A.7**.
+RePR’s appendix turns Relative Prediction Representations into concrete masks, diffusion weights, and iterative training. For a 173M ImageNet model with a total 600-epoch allocation, FID-10K is 30.68 for pixel-only prediction, 24.73 at iteration two, and 23.81 at iteration three. [Table 1(e) and A.3](https://arxiv.org/pdf/2610.20533v1#page=9) **Review interpretation.** Separating measured iterative gains from ideal PMI-preservation properties clarifies the algorithm’s approximations and costs.
 
 Keep three levels separate. The probability chain rule is an exact identity. Ideal pointwise mutual information (PMI) factorization has capacity and information-preservation conditions. Practical RePR uses learned predictors, timestep weights, masks, and finite Monte Carlo estimates. The paper has no numbered Theorem/Lemma sequence or long formal proof; its short Appendix A.4 reconstruction argument and the main probability derivations motivate the **review-added derivations** below.
 
@@ -262,19 +262,9 @@ Table 8 reports FD-DINOv2-10K, not numerically interchangeable FID. MiniT2I trai
 
 The MiniT2I reference is 546.3 and the WebSSL-DINO-1B reference 277.1. Retain both the measured improvement and the fact that the WebSSL target has not yet been reached.
 
-### What produces the 7× and 8× claims?
+### Scope of the extrapolation
 
-Dividing the paper's power-law extrapolations gives the following. This is **arithmetic checking of reported values**, not an independent fit:
-
-$$
-\frac{1.1685129\times10^{22}}{1.504\times10^{21}}
-\approx7.77,
-\qquad
-\frac{9.78\times10^{21}}{1.229\times10^{21}}
-\approx7.96.
-$$
-
-The source fits trends across approximately two orders of magnitude and describes extrapolating at most one measured log-scale range beyond observations. The conclusion depends on fit form, data scale, overfitting, and downstream training budget. Full per-point compute details, regression residuals, and multi-seed uncertainty are not available in the tables; this review did not invent a new fitted curve or confidence interval. [§6.2; A.7; Tables 7–8, pp.8,22](https://arxiv.org/pdf/2610.20533v1#page=22)
+[Main part section 6.2](/en/reviews/repr-latent-tokenization/) contains the reference costs, extrapolated costs, and 7.77/7.96 ratios. Tables 7–8 here preserve the measurements. The fit extends at most one observed logarithmic range beyond roughly two orders of measured FLOPs and depends on data size, overfitting, and generator budget. [Section 6.2 and A.7](https://arxiv.org/pdf/2610.20533v1#page=22)
 
 ### Interpreting FID and FD
 
@@ -288,17 +278,17 @@ $$
 
 The standard FID definition comes from [Heusel et al., Eq. (6), p.6](https://arxiv.org/pdf/1706.08500v6#page=6). FID uses Inception features; GPIC FD here uses DINOv2. Ideally the distance is nonnegative and lower is better, but zero only matches those feature means and covariances. It does not establish equality of full image distributions or text fidelity. Finite-sample estimation bias prevents mixing 10K and 50K protocols, and reconstruction rFID differs from newly generated-image FID. Feature-extraction details, reference subsets, and error bars not established by the source remain unverified.
 
-## Review interpretation and next verification
+<span id="review-interpretation-and-next-verification" aria-hidden="true"></span>
 
-The work's strength is connecting an information-based feature objective to practical patch training and combined-cost evaluation. The first recommended independent check is **a small-budget reproduction with complete tokenizer-cost accounting**. This tests accounting boundaries before attempting the extrapolated reference-quality targets.
+## Review interpretation and open questions
+
+**Review interpretation.** The work's strength is connecting an information-based feature objective to practical patch training and combined-cost evaluation. The first recommended independent check is **a small-budget reproduction with complete tokenizer-cost accounting**. This tests accounting boundaries before attempting the extrapolated reference-quality targets.
 
 Alternatives are testing weighted-PMI bias and variance on a small discrete distribution, or comparing LeJEPA's distributional non-degeneracy and generation-relevant information under matched conditions. The next research decision is which of compute reproduction, estimator validation, or representation comparison to prioritize. These are proposed investigations, not completed results.
 
 ## Sources and reading scope
 
-- Original: [arXiv:2610.20533v1](https://arxiv.org/abs/2610.20533v1), by Alan Baade and all seven authors listed in the expandable metadata. First submitted 2026-10-14; preprint; 22 pages.
-- Two readings: an independent orientation was saved on 2026-10-23 before reading all active author LaTeX for §1–7 and A.1–A.7 and comparing key PDF equations, experiments, and visuals. This article follows A.1–A.7; main-text derivations are relocated into A.4 to explain its prerequisites. Not every cited original was read in full.
-- Selected originals: CPC v2 pp.2–4; VDM v6 pp.17–18; Latent Forcing v1 pp.1–3; JiT v2 pp.1–3; RAE v1 pp.1–4; DINOv2 v2 pp.4–6. Prior detailed LeJEPA v3 records were reused.
-- Verification: review calculations examine the chain rule, SNR derivative, non-PSD PMI and asymmetric SVD, support/argmax distinction, invertible-feature ratios, shared-noise variance, and extrapolation ratios. These are partial mathematical checks, not formal verification of the entire paper.
-- **Not executed:** GPU training; public code execution or complete audit; dataset, raw-log, or multi-seed reproduction; independent extrapolation fitting and validation at future budgets.
-- Figures 5–8 and thumbnail Figure 1 are original [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) assets. Content, layout, and fonts are retained with author whitespace trims, rasterization/resizing, and WebP conversion. Photographic panels use quality 92. No new model outputs were synthesized.
+- Paper: *Generative Representation Learning for Scalable Latent Tokenization* · Alan Baade et al. · first public date 2026-10-14 · [reviewed version](https://arxiv.org/abs/2610.20533v1) · reviewed 2026-10-23.
+- Scope read: Version 1, all of A.1–A.7, plus intermediate probability derivations connected to sections 3–4. Complete original texts of the entire bibliography are outside scope.
+- Figure sources: The Figure-1 thumbnail and this part’s Figures 1–4 or 5–8 are author assets from v1 (CC BY 4.0), with author-margin trimming, resolution adjustment, and WebP conversion; photographic examples use quality 92. Content, layout, and original fonts are retained. [Paper](https://arxiv.org/abs/2610.20533v1).
+- Not verified: research-code execution, model training/reproduction, raw-data uncertainty estimates, and complete formal certification.

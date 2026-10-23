@@ -3,7 +3,7 @@ title: "[2/2] Diffusion Forcing: 모든 부분 시퀀스의 우도를 학습한�
 description: "부록 A의 ELBO·Gaussian 손실·부분 시퀀스 논증을 따라 두 Jensen 단계와 중간 계산을 설명하고, 원문 부호·전이·가중치의 불일치를 구분한다."
 date: "2026-10-14"
 publishedAt: "2026-10-14T13:58:27+09:00"
-updatedAt: "2026-10-22T23:22:51+09:00"
+updatedAt: "2026-10-23T08:56:20+00:00"
 topics: ["diffusion models", "sequence modeling", "world action model", "robot learning", "probabilistic modeling"]
 visibility: "public"
 lang: "ko"
@@ -17,7 +17,7 @@ thumbnail: "/assets/reviews/diffusion-forcing/overview.webp"
 thumbnailAlt: "Diffusion Forcing 원문 Figure 2: 서로 다른 토큰별 노이즈를 학습하고 여러 conditioning pattern으로 샘플링하는 구조."
 ---
 
-Diffusion Forcing의 이론은 “노이즈를 무작위로 넣으면 모델이 강해진다”보다 구체적이다. 서로 다른 noise pattern의 우도를 하한으로 연결하고, 충분히 표현력 있는 모델이 여러 denoising 문제를 동시에 최적화할 수 있다는 논증이다. **평균 noise pattern의 학습 손실, 특정 pattern의 ELBO, 유한 모델의 실제 정확도는 서로 다르다.** 이 구분을 유지해야 “모든 부분 시퀀스”라는 표현을 정확하게 읽을 수 있다.
+Diffusion Forcing의 이론은 토큰별 노이즈 패턴에 대한 평균 로그 우도를 변분 하한(evidence lower bound, ELBO)으로 연결한다. 핵심은 잠재 상태와 역확산의 두 Jensen 단계이며, 하한의 등호에는 결정론적 잠재 상태와 정확한 변분 근사의 조건이 함께 필요하다. [원문 Appendix A, Theorem A.1](https://arxiv.org/pdf/2407.01392v4#page=14) **리뷰 해석.** 여러 조건부 생성 문제를 연결하는 논증은 유용하지만, 인쇄된 부호·전이 방향·가중치의 수정이 어느 결과에 영향을 주는지 확인해야 한다.
 
 먼저 [\[1/2\] 방법·실험 편](/reviews/diffusion-forcing-methods/)을 읽는 것을 권한다. 이 글은 v4 **부록 A, pp. 14–19**의 순서인 설정→A.1 주요 결과→A.1.1 Gaussian→A.1.2 부분 시퀀스→A.2 증명을 따른다. A.2의 계산을 자세히 설명하되, 원문에 인쇄된 수식의 부호·방향·가중치 불일치를 그대로 올바른 정리로 인정하지 않는다. 아래의 일관된 형태는 명시한 조건에서의 **리뷰 보충 유도**이며 저자가 발행한 정오표가 아니다.
 
@@ -354,17 +354,11 @@ $$
 
 ## 리뷰 해석과 남은 질문
 
-부록의 설계 논리는 분명하다. noisy history를 받아 denoise하는 학습 항들을 넓게 만들고, 여러 conditioning pattern을 같은 모델로 처리하려 한다. 다만 이론을 읽을 때는 **재가중 목적의 관계**, **충분한 표현력의 이상화**, **인쇄된 수식의 정확성**을 각각 확인해야 한다.
-
-이 글은 두 Jensen 단계·Bayes 소거·KL 부호·Gaussian mean 계산·noise 가중치를 국소적으로 검토했다. 정리를 형식 검증하거나 저자의 수정·확인을 받은 것은 아니다. 특히 원문 A.3의 인쇄된 일반 분포 식은 그대로 사용하지 않으며, 이 리뷰의 보충 계산을 공식 수정본으로 표시하지 않는다.
+**리뷰 해석.** 부록의 설계 논리는 분명하다. noisy history를 받아 denoise하는 학습 항들을 넓게 만들고, 여러 conditioning pattern을 같은 모델로 처리하려 한다. 다만 이론을 읽을 때는 **재가중 목적의 관계**, **충분한 표현력의 이상화**, **인쇄된 수식의 정확성**을 각각 확인해야 한다.
 
 ## 출처와 읽은 범위
 
-- 원문: Chen 등 여섯 저자, [Diffusion Forcing v4](https://arxiv.org/abs/2407.01392v4), 최초 제출 2024-07-01, 검토 2026-10-14. 첫 읽기와 전문 두 번째 읽기의 공통 기록은 [1편 출처 절](/reviews/diffusion-forcing-methods/#출처와-읽은-범위)에 있다.
-- 이 글의 정독 범위: 부록 A 전체 pp. 14–19, Theorem A.1·Corollary A.2·Theorem A.3·Claim 1–3·식 (A.1)–(A.13). 저자 LaTeX와 렌더링한 PDF를 대조했다. 원문 번호는 출처 식을 찾기 위한 번호이며 리뷰의 새 식에 원문 번호를 붙이지 않았다.
-- 추가 대조: [DDPM v2 §2–3.4](https://arxiv.org/pdf/2006.11239v2), [Chan tutorial v1 §2.6–2.7](https://arxiv.org/pdf/2403.18103v1). 표준 posterior variance는 DDPM 식 (7)과 독립 Gaussian 계산으로 확인했다.
-- 리뷰 보충: $A_j,B_j,h,r_h,R_t,D_{t,j},\mathcal I,u,w_1,w_2$는 설명을 위해 정의한 기호다. Gaussian KL, conditional-mean decomposition, indicator 평균과 유한 공유 모델 예제를 펼쳤다. 원문 인쇄식의 공식 정오표나 전체 정리 인증이 아니다.
-- 검증: 표 기반 주장의 국소 검산과 KL 부호·Gaussian variance·누적 noise 가중치·공유 모델 예제를 계산했다. **미실행:** 전체 정리의 기계/형식 검증, 저자 확인, 모델 학습·sampling·GPU·로봇 재현, raw results 기반 통계 검정.
-- 대표 그림은 [저자 v4 Figure 2](https://arxiv.org/pdf/2407.01392v4#page=3)를 두 편에 공통 사용한다. [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), 원저자 Chen·Marti Monso·Du·Simchowitz·Tedrake·Sitzmann. 원본 PDF를 래스터화·WebP 인코딩했으며 내용·화살표·문자를 유지했다.
-
-- 2026-10-22 재점검: 기존 두 읽기와 원문 대응 기록을 재사용해 위에 추가한 지표·가정·예제의 정의를 보완했다. 새 전문 두 읽기로 계산하지 않는다. 새 모델·GPU·로봇 재현과 전체 형식 검증은 미실행이다.
+- 원문: *Diffusion Forcing: Next-token Prediction Meets Full-Sequence Diffusion* · Boyuan Chen et al. · 최초 공개 2024-07-01 · [검토 버전](https://arxiv.org/abs/2407.01392v4) · 검토일 2026-10-23.
+- 읽은 범위: v4 부록 A, pp.14–19의 설정→A.1→A.1.1→A.1.2→A.2. 리뷰의 수정 후보와 보충 계산을 원문 진술과 구분한다.
+- 그림 출처: 대표 Figure 2와 본문 Figures 2–4·Table 1 상단 도식은 저자 v4 자산(CC BY 4.0). PDF 래스터화·WebP 변환으로 해상도·인코딩을 바꾸고 내용·색·화살표·기호를 유지한다. [원문](https://arxiv.org/abs/2407.01392v4).
+- 확인하지 않은 것: 연구 코드 실행·모델 학습/재현·원시 데이터 불확실성 추정·전체 형식 인증.

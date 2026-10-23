@@ -8,7 +8,7 @@
 - [논문 통계](https://iiamaii.github.io/statistics/): 저장한 분석의 막대그래프·관계 그래프·데이터 표
 - 하단 우측 GitHub 아이콘: 기본적으로 [iiamaii GitHub 프로필](https://github.com/iiamaii)로 연결
 
-기존 예시 글은 게시 목록에서 정리했습니다. 현재 [SyncWorld 리뷰](https://iiamaii.github.io/reviews/syncworld-visual-calibration/), [RealtimeWAM 리뷰](https://iiamaii.github.io/reviews/realtimewam-one-step-asynchronous/), [Looped models 고정점 리뷰](https://iiamaii.github.io/reviews/looped-models-fixed-points/), [Transformer 간결성 리뷰](https://iiamaii.github.io/reviews/transformers-inherently-succinct/) 네 편을 한글·영문으로 게시합니다. 각 글은 다섯 주제로 분류하며, 앞의 두 편은 `world action model`, 뒤의 두 편은 `language models`를 첫 주제로 둡니다. 주제는 공개 포스트에서 자동으로 모읍니다. 프로필과 철학은 내용을 채우기 전까지 준비 안내를 보여줍니다.
+[리뷰 목록](https://iiamaii.github.io/reviews/)에서 공개된 한글·영문 글과 입문·상세·심화 시리즈를 확인할 수 있습니다. 주제는 공개 포스트에서 자동으로 모으며, 한 논문을 여러 편으로 나누면 `[n/N]` 순서와 상호 링크로 연결합니다. 프로필과 철학은 내용을 채우기 전까지 준비 안내를 보여줍니다.
 
 ## 미리보기
 

@@ -3,7 +3,7 @@ title: "[2/3] LeJEPA in full: from target distribution to theory, algorithm and 
 description: "A section-aligned account of the theory, SIGReg design, related work, and central experiments, including conditions and contrary results."
 date: "2026-10-09"
 publishedAt: "2026-10-09T23:54:43+09:00"
-updatedAt: "2026-10-22T23:22:48+09:00"
+updatedAt: "2026-10-23T08:56:16+00:00"
 topics: ["self-supervised learning", "representation learning", "joint embedding predictive architectures", "distribution matching", "computer vision"]
 visibility: "public"
 lang: "en"
@@ -17,21 +17,23 @@ thumbnail: "/assets/reviews/lejepa/lejepa-core.svg"
 thumbnailAlt: "LeJEPA combines within-image alignment to the global-view mean with across-image Gaussian matching through random projections in each view."
 ---
 
-**LeJEPA starts with a question about favorable embeddings for unknown downstream tasks, then connects its distribution target to a practical regularizer and image-training pipeline.** The authors analyze linear and local nonlinear probes, choose an isotropic Gaussian target, and combine SIGReg with image-view agreement. Its conditions and finite approximations matter; the connected argument across distribution choice, computation, and experiments is the central contribution. [Sections 1–7](https://arxiv.org/pdf/2511.08544v3#page=1)
+LeJEPA derives an isotropic-Gaussian target from downstream estimation analysis and implements it with SIGReg and view agreement. In full-label frozen evaluation on Galaxy10, its ResNet-34 reaches 78.17%, compared with 71.38% for DINOv3 ViT-S. [Section 6.3 and Table 3](https://arxiv.org/pdf/2511.08544v3#page=42) **Review interpretation.** Training directly on a small domain demonstrates practical value, while the local and distributional assumptions of the theory remain essential.
 
 This is **[2/3] the complete, section-aligned commentary**. Read [\[1/3\] introduction](/en/reviews/lejepa-overview/) → this article → [\[3/3\] theorem and proof commentary](/en/reviews/lejepa-technical/). Headings and subsection numbers follow the paper. Main statements and assumptions remain where they occur; long intermediate calculations move to the technical version in the same Section 3→4→5 order.
 
-**Notation.** We retain $f_{\boldsymbol\theta}$, $\mathbf z_{n,v}$, $\mathbf Z$, $K$, $V_g$, and $\boldsymbol\mu_n$. $M=|\mathcal A|$ abbreviates the direction count; $T$ is a review shorthand for the frequency-grid size. The ridge coefficient $\lambda$ in Section 3 and loss-mixing coefficient $\lambda$ in Section 5 have different roles. Where the appendix uses $d$ for dimension or $n$ for sample count, the correspondence is stated.
-
 The thumbnail’s objectives gather samples along different axes: within-image agreement on the lower left and across-image regularization within each view on the lower right. The Gaussian constraint acts after the projector. [Enlarge](/assets/reviews/lejepa/lejepa-core.svg)
 
-## 1 Introduction — The problem and the authors’ route
+<span id="1-introduction-the-problem-and-the-authors-route" aria-hidden="true"></span>
+
+## 1. Introduction
 
 Self-supervised learning uses relationships between inputs instead of target labels. For images, this connects crops and augmentations of one source image. Minimizing embedding distances alone also permits constant outputs. Avoiding collapse while supporting different datasets and architectures calls for an explicit objective.
 
 The authors argue that accumulating empirical mechanisms increases configuration costs, while anti-collapse theory alone does not select a favorable feature geometry. Section 2 defines JEPA’s requirements; Section 3 derives a distribution target through downstream prediction. Section 4 makes high-dimensional matching tractable; Section 5 assembles the objective. Section 6 evaluates stability, loss informativeness, domains, scale, and semantic structure. [Section 1, pp. 1–3](https://arxiv.org/pdf/2511.08544v3#page=1)
 
-## 2 Background and Notations — Definitions and design requirements
+<span id="2-background-and-notations-definitions-and-design-requirements" aria-hidden="true"></span>
+
+## 2. Background and Notations
 
 ### 2.1 Notations and Definitions
 
@@ -47,7 +49,7 @@ A useful pretraining method should support small datasets and convolutional or h
 
 Non-collapse is a necessary starting point but does not identify which representation is favorable downstream. The authors seek theory that selects an embedding law before specific labels are known. The following results motivate that choice; they do not directly prove the performance of an entire neural network. [Section 2.3](https://arxiv.org/pdf/2511.08544v3#page=4)
 
-## 3 Latent Euclidean — Embeddings Should Be Isotropic Gaussian
+## 3. Latent Euclidean — Embeddings Should Be Isotropic Gaussian
 
 ### 3.1 Linear Probing
 
@@ -108,9 +110,9 @@ At fixed covariance $\Sigma$, $J(p)\ge\operatorname{tr}(\Sigma^{-1})$, with equa
 
 ### 3.3 Geometric and Practical Insights
 
-The authors illustrate estimated coefficients and decision boundaries under fixed total variance. Figure 3 repeats logistic regression on 100 samples for a two-class task, comparing isotropic and anisotropic decision boundaries. This is an empirical connection to OLS theory, rather than an identical instantiation of its assumptions. Appendix Figure 18 visualizes regularization and bias. Figure 17’s variance-direction caption conflicts with Lemma 2, so it is not used as independent confirmation. [Section 3.3, Figure 3; Figure 17, p. 48](https://arxiv.org/pdf/2511.08544v3#page=6)
+The authors illustrate estimated coefficients and decision boundaries under fixed total variance. Figure 3 repeats logistic regression on 100 samples for a two-class task, comparing isotropic and anisotropic decision boundaries. This is an empirical connection to OLS theory, rather than an identical instantiation of its assumptions. Appendix Figure 18 visualizes regularization and bias. [Section 3.3, Figures 3 and 18](https://arxiv.org/pdf/2511.08544v3#page=6)
 
-## 4 SIGReg — Reliable Isotropic Gaussian Regularization in High-Dimension
+## 4. SIGReg — Reliable Isotropic Gaussian Regularization in High-Dimension
 
 ### 4.1 Hypothesis Testing as a Judge
 
@@ -174,7 +176,7 @@ The paper proceeds through **smoothness**, **SGD resampling**, and **synthetic v
 
 The synthetic experiment then **directly optimizes samples** whose coordinates are mostly Gaussian but whose first two dimensions have an X structure. Section 4.3 mentions a $D=512$, $M=16$ case, whereas Figure 6’s caption specifies $N=100$, $D=1024$, $M=10$. These settings are not equated. Removing encoder constraints isolates the loss; semantic learning from images is assessed separately in Section 6. [Section 4.3, p. 11](https://arxiv.org/pdf/2511.08544v3#page=11) · [Figure 6, p. 9](https://arxiv.org/pdf/2511.08544v3#page=9)
 
-## 5 LeJEPA — Stable and Scalable Implementation
+## 5. LeJEPA — Stable and Scalable Implementation
 
 ### 5.1 LeJEPA: SIGReg + Prediction Loss
 
@@ -192,7 +194,7 @@ $$
 
 $\mathcal L_{\rm pred}^{\rm code}$ and $\mathcal L_{\rm SIGReg}$ are review abbreviations; $1/K$ exposes the code’s feature-coordinate mean. The total loss uses batch notation $B$ in the paper, corresponding to $N$ here. Do not confuse the within-image center axis with the across-image SIGReg axis.
 
-**Two equation checks.** Theorem 6’s $O(1/N)$ sampling and gradient bias applies to the unscaled CF distance $EP/N$. Moving from the global/all-view pair average in Eq. (5) to the center average in Eq. (6) also leaves a within-global-view variance term. That term depends on learned parameters and cannot be dropped as an arbitrary constant. Appendices B.6 and B.13 and the [technical version, Section 5.1](/en/reviews/lejepa-technical/#51-sigreg-prediction-loss-theorem-6-appendices-b6-and-b13) compare the exact identity and sampling expectation. [Section 5.1, Eqs. (5)–(7), Theorem 6, Algorithm 2](https://arxiv.org/pdf/2511.08544v3#page=11)
+Sample expectations, normalization, and the exact relation between the two loss forms are developed in [technical part section 5](/en/reviews/lejepa-technical/).
 
 The core architecture requires no prototypes, stop-gradient, EMA target teacher, or separate predictor. It still uses a projector; evaluation uses backbone features. Removing a predictor for symmetric image agreement does not establish that every JEPA task needs none. Optimizers, loaders, and learning-rate schedules remain ordinary configuration choices.
 
@@ -200,7 +202,7 @@ The core architecture requires no prototypes, stop-gradient, EMA target teacher,
 
 The paper discusses sliced score matching, sliced Wasserstein, exact integration and MMD, then the moment-limited VICReg connection, in that order. Projection and distribution discrepancy already exist in other fields; the contribution locates them within a JEPA objective. Appendix B.14 shows that zero mean and unit variance in every direction force zero vector mean and identity covariance. It does not establish numerical equality with VICReg’s original standard-deviation hinge and covariance penalties. [Section 5.2; Appendix B.14, pp. 39–40](https://arxiv.org/pdf/2511.08544v3#page=12)
 
-The following five primary-method comparisons were directly checked in the earlier analysis. They now appear at the paper’s related-work location. The reading scope is the indicated method sections, not a fresh full-paper rereading.
+### Review supplement: comparing the original methods
 
 | Primary source and reading scope | Central method | Relation to LeJEPA |
 | --- | --- | --- |
@@ -210,7 +212,7 @@ The following five primary-method comparisons were directly checked in the earli
 | [Gaussian Embeddings, pp. 1, 3–4](https://arxiv.org/pdf/2510.05949v1#page=1) | Gaussian density, representation transformations, Jacobian volume | Shared Gaussian terminology differs from the downstream-estimation/sliced-CF argument. |
 | [Gretton et al., MMD, PDF pp. 1, 3–4](https://www.jmlr.org/papers/volume13/gretton12a/gretton12a.pdf) | Kernel mean embeddings for comparing distributions | Background for exact integration. MMD also has linear-time estimators, so LeJEPA is not the first linear-time distribution comparison. |
 
-## 6 LeJEPA: Empirical Validation
+## 6. LeJEPA: Empirical Validation
 
 Follow Sections 6.1→6.5. Numbers are **paper-reported** accuracy percentages, with higher being better. Frozen probing trains a labeled classifier while keeping the encoder fixed; finetuning also updates the backbone. Unlabeled pretraining does not imply label-free evaluation.
 
@@ -294,23 +296,21 @@ Figure 13 thresholds [CLS] attention to reveal foregrounds in video frames. Figu
 
 PCA is computed **independently per image**, so equal colors do not imply a shared semantic direction across images. Temporal consistency is illustrated, without an IoU or video-segmentation benchmark score. The figures should not be generalized to action/future-prediction performance. See the complete panels and videos in [Figures 13–14](https://arxiv.org/pdf/2511.08544v3#page=17) and the [official project page](https://rbalestr-lab.github.io/lejepa/).
 
-## 7 Conclusion — The authors’ conclusion and its scope
+<span id="7-conclusion-the-authors-conclusion-and-its-scope" aria-hidden="true"></span>
+
+## 7. Conclusion
 
 The authors connect an isotropic Gaussian motivation, stable and scalable SIGReg, a simple LeJEPA objective, and experiments across architectures and domains. Selecting a representation distribution first provides an alternative starting point for designing anti-collapse training mechanisms. Their conclusion emphasizes theory guiding a practical design. [Section 7, p. 18](https://arxiv.org/pdf/2511.08544v3#page=18)
 
 ## Review interpretation and open questions
 
-This review locates the contribution in **combining a rationale for distribution choice with a tractable constraint**. Exact total-risk optimality, identification through finite grids, and domain-specific loss/accuracy relationships need further verification. The omitted variance in Eqs. (5)–(6) and normalization differences in Theorems 4 and 6 also deserve explicit treatment before implementation or reproduction.
+**Review interpretation.** This review locates the contribution in **combining a rationale for distribution choice with a tractable constraint**. Exact total-risk optimality, identification through finite grids, and domain-specific loss/accuracy relationships need further verification. The omitted variance in Eqs. (5)–(6) and normalization differences in Theorems 4 and 6 also deserve explicit treatment before implementation or reproduction.
 
 Long proofs are expanded rather than removed in the [technical version: ridge/local bias/Fisher bounds in Section 3, identification/stability/directional approximation in Section 4, and sampling expectations/omitted terms in Section 5](/en/reviews/lejepa-technical/), following the paper’s order.
 
 ## Sources and reading scope
 
-- Primary source: *LeJEPA: Provable and Scalable Self-Supervised Learning Without the Heuristics*, Randall Balestriero and Yann LeCun. First public release: November 11, 2025. Reviewed version: v3, November 14, 2025, 50 pages. [Official metadata and version history](https://arxiv.org/abs/2511.08544). PDF, official HTML, and author LaTeX were obtained and compared.
-- First pass for this revision, October 11, 2026: abstract, introduction, conclusion, section structure, and Figure 1–2 explanations, with a saved map and verification questions. Second pass: Sections 1–7; Appendix A; central statements/proofs in B.1–B.14; additional tables/captions in C; alternatives in D–F. The entire reference list and the underlying spherical-interpolation lemmas/theorems were not independently reverified.
-- The five related-method readings were performed in the October 9 analysis. Their versions/pages remain in the table; this is not a claim of fresh full-paper rereading.
-- Correspondence: all main sections/subsections are retained. Long A–B calculations move to the technical version. C’s Tables 3–7 appear beside the relevant experiments/costs; repetitive graphs are summarized. D–F are condensed to material needed for Section 4’s alternative comparison. Repeated table rows and every cited paper’s full text are excluded.
-- Direct verification: four review-authored algebra/numerical illustrations. **Not run:** official code, GPU pretraining, probe/finetuning/DDP/seed reproduction, whole-model speed/memory measurement, or full formal proof verification. **Unconfirmed:** Figure 11 sign convention, Figure 12 error-bar definition, Figure 17 caption conflict, Table 5 I-JEPA pretraining-data conflict, and Theorem 5’s cited primary details.
-- Thumbnail: review-authored concept diagram, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), Light 300/Semi Bold 600. Paper figures follow their caption locations and [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). All image files are identical existing approved assets.
-
-- Recheck on October 22, 2026: this revision reuses the recorded two readings and source mapping, adding the metric, assumption, and example definitions above. It is not counted as two new full-paper readings. New model, GPU, robot reproduction, and complete formal verification were not executed.
+- Paper: *LeJEPA: Provable and Scalable Self-Supervised Learning Without the Heuristics* · Randall Balestriero et al. · first public date 2025-11-11 · [reviewed version](https://arxiv.org/abs/2511.08544v3) · reviewed 2026-10-23.
+- Scope read: Version 3, sections 1–7 and experiments 6.1–6.5, key appendix-C tables, and alternatives in D–F. Long proofs from A–B are linked to part 3.
+- Figure sources: The concept thumbnail is review-authored (CC BY 4.0). Paper figures are Balestriero and LeCun’s v3 assets (CC BY-SA 4.0), with full-panel cropping and lossless WebP conversion. [Paper](https://arxiv.org/abs/2511.08544v3).
+- Not verified: research-code execution, model training/reproduction, raw-data uncertainty estimates, and complete formal certification.

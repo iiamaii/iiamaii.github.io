@@ -1,8 +1,8 @@
 ---
 title: "끝점으로 반복 경로를 대신할 수 있을까: Looped Models와 고정점의 효율"
-description: "고정점 관점으로 TBPTT·KV 공유·RL 상태 재사용·distilled prefill을 분석한다. 전문과 부록을 읽고, 업데이트 가속과 전체 시간·정확도 손실을 구분한다."
+description: "고정점 관점으로 TBPTT·KV 공유·RL 상태 재사용·distilled prefill을 설명하고, 업데이트 구간 가속과 전체 시간·정확도의 대가를 비교한다."
 date: "2026-10-08"
-updatedAt: "2026-10-22T23:22:44+09:00"
+updatedAt: "2026-10-23T08:56:12+00:00"
 publishedAt: "2026-10-08T16:55:04+09:00"
 topics: ["language models", "looped models", "fixed points", "efficient inference", "reinforcement learning"]
 translationKey: "looped-models-fixed-points"
@@ -17,9 +17,7 @@ thumbnail: "/assets/reviews/looped-models-fixed-points/paper-figure-1.svg"
 thumbnailAlt: "깊이 분포와 직교 입력 주입, 고정점 근처의 반복 궤적, 학습 activation·KV 캐시·prefill·RL 채점과 역전파의 비용 절감을 연결한 논문 Figure 1."
 ---
 
-반복형 언어 모델(looped language model)이 같은 계산을 거듭하다가 거의 변하지 않는 상태에 도달한다면, 그곳까지의 **모든 계산 경로를 계속 보관하고 다시 실행해야 할까?** 이 논문은 고정점(fixed point)을 ‘계산을 멈출 위치’뿐 아니라 ‘계산 경로를 대신할 상태’로 바라본다. 학습의 역전파(backpropagation), 추론의 키·값 캐시(key/value cache, KV cache), 강화학습(reinforcement learning, RL)의 재계산, 긴 프롬프트의 처리에 이 관점을 적용한다. 다만 캐시 절감, 업데이트 가속, 프롬프트 초기 처리(prefill) 가속은 서로 다른 실험이며, 정확도와 전체 실행 시간의 대가는 각각 확인해야 한다. [§1–3, §5, PDF pp. 1–13](https://arxiv.org/pdf/2610.06833v1#page=1)
-
-**표기 안내.** 원문의 $z^r=(\mathbf H^r,C^r)$, $\rho_{r,t}$, $J_\star$, $B_\star$, $D_\star$와 $\mathcal J_{\mathrm{prior}}$를 유지한다. OrthoInj는 토큰 첨자 $q_t,h_t^r,\zeta_t^r$를 복구했고, 유한 깊이 오차는 부록의 $\bar h^R,h^\star$로 쓴다.
+이 논문은 반복형 언어 모델(looped language model)의 고정점(fixed point) 근처 상태를 재사용해 학습·캐시·강화학습의 비용을 줄인다. 강화학습(reinforcement learning, RL) 상태 재사용과 Neumann-4를 결합하면 업데이트 구간은 2.77초에서 1.39초로 줄지만, 전체 구간은 65.45초에서 57.30초로 줄어든다. [원문 §5, Appendix C.8](https://arxiv.org/pdf/2610.06833v1#page=40) **리뷰 해석.** 고정점의 가치는 반복 중단을 넘어 계산 재사용으로 확장되며, 구간별 가속과 품질의 대가를 따로 읽는 것이 핵심이다.
 
 **Figure 1 · 대표 그림을 읽는 법.** 왼쪽은 learned depth prior와 OrthoInj라는 두 학습 개선 방향, 가운데는 반복 경로와 고정점 근처의 끝점, 오른쪽은 그 상태를 활용하는 네 가지 비용 절감을 연결한다. 오른쪽 막대는 서로 다른 실험의 보고값이며, 네 기법을 결합한 누적 가속이 아니다. 특히 RL의 2배는 전체 학습이 아니라 채점·역전파 구간이다. [Benhao Huang et al., 2026, Figure 1](https://arxiv.org/html/2610.06833v1#S0.F1) · [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) · 원본 유지 · [크게 보기](/assets/reviews/looped-models-fixed-points/paper-figure-1.svg).
 
@@ -211,7 +209,7 @@ $A_n$는 $\exp(-CE)$, 즉 역 퍼플렉서티(inverse perplexity) 기반 보상(
 
 ### 4.2 직교 입력 주입 (Orthogonal Input Injection)
 
-이전 상태를 감쇠해 넘기는 Parcae 방식은 $\Lambda h_t^r+q_t$ 형태다. $q_t$가 이번 반복에 주입하는 입력, $\Lambda$가 학습되는 대각 감쇠 행렬(diagonal decay matrix)이다. 이전 상태에도 $q_t$ 방향 성분이 있으므로 실제 입력 방향의 크기는 달라질 수 있다. 직교 입력 주입(orthogonal input injection, OrthoInj)은 그 성분을 제거한 뒤 $q_t$를 더한다. [§4.2, 식 7–8](https://arxiv.org/pdf/2610.06833v1#page=8)
+이전 상태를 감쇠해 넘기는 Parcae 방식은 $\Lambda h_t^r+q_t$ 형태다. $q_t$가 현재 반복에 주입하는 입력, $\Lambda$가 학습되는 대각 감쇠 행렬(diagonal decay matrix)이다. 이전 상태에도 $q_t$ 방향 성분이 있으므로 실제 입력 방향의 크기는 달라질 수 있다. 직교 입력 주입(orthogonal input injection, OrthoInj)은 그 성분을 제거한 뒤 $q_t$를 더한다. [§4.2, 식 7–8](https://arxiv.org/pdf/2610.06833v1#page=8)
 
 $$
 \begin{aligned}
@@ -307,16 +305,11 @@ GSM8K의 reuse와 full BPTT pass@1 차이는 −1.55pp, 질문 단위 대응 부
 
 ## 6. 관련 연구 (Related Work)
 
-이 논문은 고정점이나 반복형 Transformer를 처음 제안한 연구가 아니다. 기존 구성요소를 효율 관점에서 연결하고, 끝점 상태를 재사용하는 두 경로와 학습 recipe를 실험한다. 아래 추가 자료는 공식 초록과 서지 정보를 확인했으며, 세부 비교는 이 논문의 §6·Appendix E에 근거한다. 추가 논문 전체를 재검토한 서베이는 아니다.
+원문은 세 묶음으로 관련 연구를 연결한다. 먼저 반복 모델은 공유 블록으로 테스트 시 계산을 늘리고, DEQ는 극한의 고정점을 직접 푼다. 기존 연구는 고정점 안정화·지도 상태를 attractor로 만들기·수렴 시 중단을 다뤘으며, 이 논문은 학습·추론·후속 학습의 효율을 함께 조사한다. [원문 §6](https://arxiv.org/pdf/2610.06833v1#page=13)
 
-| 배경 연구 | 연결되는 질문 | 이번 논문의 차이 |
-| --- | --- | --- |
-| [Deep Equilibrium Models](https://arxiv.org/abs/1909.01377v2), 2019 | 평형 상태를 직접 풀고 implicit differentiation 사용 | 유한 반복 모델에서 TBPTT·KV 공유·RL 재사용을 연결 |
-| [Huginn](https://arxiv.org/abs/2502.05171v2), 2025 | 공유 블록의 반복으로 latent test-time compute 확대 | 실험 backbone으로 사용하며 끝점의 재사용 조건을 분석 |
-| [Parcae](https://arxiv.org/abs/2604.12946v1), 2026 | 입력 주입의 안정성과 loop scaling | Carryover의 입력 방향 성분을 투영하는 OrthoInj 비교 |
-| [RL-Halting](https://arxiv.org/abs/2606.29983v1), 2026 | 학습한 stochastic stopping으로 길이 외삽 안정화 | 입력 무관의 학습 깊이 분포로 평균 예산·깊은 구간 지도 관리 |
+둘째, 효율 연구에서는 기존 TBPTT·반복 간 KV 공유를 고정점으로 설명하고 새로운 RL 상태 재사용·비반복 student prefill을 연결한다. 기존 반복 student 증류나 반복별 prompt KV 예측과 달리, student는 끝점만 예측하고 teacher 한 번의 반복이 모든 KV bank를 만든다. [원문 §6, Appendix E](https://arxiv.org/pdf/2610.06833v1#page=46)
 
-Appendix E는 Ouro·MELT·continuous depth batching의 KV 공유 결과가 모델과 평가 protocol에 따라 달라진다고 설명한다. 이 결과는 공유 캐시를 어떤 looped model에도 그대로 적용할 수 있다는 근거가 아니다. Looped student를 계속 반복시키는 기존 distillation과 달리, 여기서는 비반복 student를 prefill에만 사용한다. 이 세부 비교의 추가 원문 검증은 남아 있다. [§6, Appendix E.1–5](https://arxiv.org/pdf/2610.06833v1#page=46)
+셋째, 고정점 형성에서는 지도하는 깊이 분포와 입력 주입을 구분한다. Ouro·RL-Halting은 상태 기반의 엔트로피 정규화 분포를 학습하지만 최대 깊이까지 펼친다. 저자들은 입력 무관의 학습 prior를 쓰고, 수축성을 강제하는 Parcae와 대비해 OrthoInj로 carryover의 입력 방향 성분을 제거한다. [원문 §6](https://arxiv.org/pdf/2610.06833v1#page=13)
 
 ## 7. 논의와 결론 (Discussion and Conclusion)
 
@@ -324,9 +317,11 @@ Appendix E는 Ouro·MELT·continuous depth batching의 KV 공유 결과가 모�
 
 해석의 범위도 좁혀야 한다. 설정별 학습 seed가 하나이며, 더 큰 모델·다른 구조·긴 reasoning completion·실서비스 serving은 검증되지 않았다. Pretraining decontamination도 확인하지 않았다. Learned prior와 OrthoInj를 결합한 최종 시스템의 추가 이득, RL에서 terminal sharing까지 결합한 누적 이득은 이 표들로 계산할 수 없다. [§7; Appendix C.8, D, E.3](https://arxiv.org/pdf/2610.06833v1#page=14)
 
-## 리뷰 해석과 후속 검증
+<span id="리뷰-해석과-후속-검증" aria-hidden="true"></span>
 
-이 논문의 강점은 ‘반복을 줄인다’는 하나의 표현 속에 섞이기 쉬운 문제들을 분리한 데 있다. 역전파 경로, 과거 토큰의 문맥, RL의 동일 토큰 재계산, 프롬프트 처리의 끝점 근사를 각각 분석한다. 부록은 정확한 극한과 실제 깊이 5, 상태 유사성과 gradient 유사성, 구간 가속과 전체 가속의 차이를 확인할 대조군을 제공한다. 이는 리뷰 작성자의 해석이다.
+## 리뷰 해석과 남은 질문
+
+**리뷰 해석.** 이 논문의 강점은 ‘반복을 줄인다’는 하나의 표현 속에 섞이기 쉬운 문제들을 분리한 데 있다. 역전파 경로, 과거 토큰의 문맥, RL의 동일 토큰 재계산, 프롬프트 처리의 끝점 근사를 각각 분석한다. 부록은 정확한 극한과 실제 깊이 5, 상태 유사성과 gradient 유사성, 구간 가속과 전체 가속의 차이를 확인할 대조군을 제공한다. 이는 리뷰 작성자의 해석이다.
 
 내가 가장 유용하게 본 설계 원칙은 **생략한 경로가 하던 일을 무엇이 대신하며, 어떤 오차가 남는지 먼저 정의하는 것**이다. Terminal KV는 문맥 오차를, RL reuse는 gradient 근사와 상태 저장 비용을, distilled prefill은 handoff 품질과 추가 학습 비용을 남긴다. 어느 방법도 낮은 PPL 하나로 추론 품질·학습 안정성·실제 서비스 속도를 모두 보장하지 않는다.
 
@@ -351,10 +346,8 @@ Appendix E는 Ouro·MELT·continuous depth batching의 KV 공유 결과가 모�
 
 ## 출처와 읽은 범위
 
-- 원문: Benhao Huang, Chufan Shi, Junlin Chen, Shicheng Wen, Zhengzhong Liu, Eric Xing, Xuezhe Ma, **Towards Looped Models Done Right, Part II: Rethinking at Fixed Points** (2026), [arXiv:2610.06833v1](https://arxiv.org/abs/2610.06833v1). 제출일 2026-10-05. 검토일 2026-10-08.
-- 검토 범위: 47쪽 PDF의 본문 §1–7, Appendix A–E의 전체 설명·수식·알고리즘·실험 protocol과 표를 읽고 저자 제출 TeX와 대조했다. 그림은 본문 핵심 그림과 인용한 표·수식의 PDF 화면을 확인했다. 모든 47쪽의 시각적 검수를 했다는 의미는 아니다. [HTML](https://arxiv.org/html/2610.06833v1)에서 빠진 C.2 이후 부록은 PDF·제출 소스로 보완했다.
-- 추가 출처: 위 네 배경 논문의 공식 초록·서지 정보, [공식 코드 저장소 README](https://github.com/ifm-ai/xllm-loop). 코드 실행과 checkpoint 검증은 하지 않았다. 관련 연구의 세부 비교 중 원문을 직접 읽지 않은 부분은 focal paper의 해석으로 표시했다.
-- 그림 출처: 대표 이미지인 원문 Figure 1과 본문 해설의 Figure 2·3·4. 각 그림의 연결 위치에서 원문과 해설을 안내한다. [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). 표는 원문 수치 중 필요한 비교를 골라 재구성했고, 가속 비율·차이는 그 수치로 계산했다.
-- **미실행 검증:** GPU 학습·추론 재현, 공개 코드와 checkpoint의 실행 검증, gradient 수치 검사, 독립적인 증명 전개·가정 감사, 추가 seed 실험, 데이터 오염 검사. 본문 수치는 저자 보고 결과이며 직접 관측한 재현 결과가 아니다.
-
-- 2026-10-22 재점검: 기존 전문 두 읽기 기록을 재사용하고, 저자 TeX의 §2–3, Algorithms 1 및 Appendix A.1–A.2를 재대조했다. 원문 §1–7 순서를 복원하고 두 lemma의 가정·증명 중간 단계를 보충했다. §5의 모든 핵심 실험군과 부록의 실패·비용을 보존하며, 반복 표와 bibliography는 축약했다. 새 GPU 재현이나 형식 검증은 미실행이다.
+- 원문: *Towards Looped Models Done Right, Part II: Rethinking at Fixed Points* · Benhao Huang et al. · 최초 공개 2026-10-05 · [검토 버전](https://arxiv.org/abs/2610.06833v1) · 검토일 2026-10-23.
+- 읽은 범위: 본문 §1–7, Appendix A–E의 설명·수식·알고리즘·실험. A.1·A.2의 증명은 대응 방법 절에서 설명한다.
+- 추가 출처: 위 네 배경 논문의 공식 초록·서지 정보, [공식 코드 저장소 README](https://github.com/ifm-ai/xllm-loop). 코드 실행과 checkpoint 검증은 하지 않았다. 관련 연구의 세부 비교 중 원문을 직접 읽지 않은 부분은 중심 논문의 해석으로 표시했다.
+- 그림 출처: Figure 1(대표)·2·3·4는 저자 v1 원문 자산으로 CC BY 4.0, 원본을 유지한다. [원문](https://arxiv.org/abs/2610.06833v1).
+- 확인하지 않은 것: 연구 코드 실행·모델 학습/재현·원시 데이터 불확실성 추정·전체 형식 인증.

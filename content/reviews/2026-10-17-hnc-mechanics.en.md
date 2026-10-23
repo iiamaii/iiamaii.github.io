@@ -3,7 +3,7 @@ title: "[2/2] HNC in Depth: Why Function Preservation Works, and Where It Fails"
 description: "Follow appendices A–J through Gauss–Newton derivations, soft projection, compute costs, ablations, and off-probe validation."
 date: "2026-10-17"
 publishedAt: "2026-10-17T22:11:59+09:00"
-updatedAt: "2026-10-22T23:22:53+09:00"
+updatedAt: "2026-10-23T08:56:22+00:00"
 topics: ["representation learning", "loss landscape", "mechanistic interpretability", "computational neuroscience", "reinforcement learning"]
 visibility: "public"
 lang: "en"
@@ -17,7 +17,7 @@ thumbnail: "/assets/reviews/hnc/overview.webp"
 thumbnailAlt: "Original Figure 1: HNC alternates low-curvature exploration and output restoration, with optional steering."
 ---
 
-HNC does not mean that any movement inside a Hessian null space preserves function. **It identifies directions with zero first-order output sensitivity at the anchor, then manages finite-step drift using restoration, rejection, and recomputation.** This distinction determines how to read its preservation claims.
+HNC starts from the anchor’s output Jacobian and Gauss–Newton operator, then combines small steps, restoration, and relinearization. For a 4,611-parameter RNN, the matrix-free route lowers storage from 85 to 1.2 MB but increases computation from 10 to 39 seconds. [Appendix A, Table 1](https://arxiv.org/pdf/2609.38081v1#page=19) **Review interpretation.** Computing local preservation directions at scale is the central benefit, with memory, time, and off-probe drift assessed together.
 
 Read [\[1/2\] Methods and experiments](/en/reviews/hnc-solutions/) first. This article follows **appendices A→B→C→D→E→F→G→H→I→J**. The paper has no numbered theorem establishing global function equivalence or convergence of the entire HNC procedure. Its central mathematical argument is the derivative calculation in B. Expanded calculations and examples below are identified as **review supplements**.
 
@@ -93,7 +93,7 @@ $$
 
 $Q$ is a review-added objective name. Differentiating gives the preceding linear system. It stays close to the desired gradient while penalizing first-order output sensitivity. This does not prove monotonic improvement of the steering objective after direction normalization, finite movement, and restoration. [A.2–A.3, p.19](https://arxiv.org/pdf/2609.38081v1#page=19)
 
-## B. Gauss–Newton Approximation of the Hessian at Loss Minima
+## B. Gauss–Newton approximation of the Hessian at loss minima
 
 The paper stacks probe outputs into a residual vector:
 
@@ -167,7 +167,9 @@ $$
 
 Even an exact Hessian null direction has nonzero loss for finite $t$. Indeed, this example's exact zero-loss set contains only the origin. A large local linear null space alone does not establish an equally dimensional global solution manifold. This motivates small steps, restoration, and acceptance checks. It is a review example, not an experiment in the paper.
 
-## C. Ablation Study on the HNC Algorithm
+<span id="c-ablation-study-on-the-hnc-algorithm" aria-hidden="true"></span>
+
+## C. Ablation study on HNC algorithm
 
 The source tests four components on 3BFF in C.1–C.4:
 
@@ -180,7 +182,7 @@ The source tests four components on 3BFF in C.1–C.4:
 
 Matching step count and step length does not establish universal superiority at equal wall-clock cost including curvature and CG. Restoration limits drift rather than projecting exactly onto a constraint surface. [C, Figures 6–9, pp.20–22](https://arxiv.org/pdf/2609.38081v1#page=20)
 
-## D. Preserving Function Versus Task Loss in HNC
+## D. Preserving function versus task loss in HNC
 
 First, a trained model's task gradient need not be exactly zero. A flat-direction step retains the first-order term $\eta\mathbf g^\top\mathbf v$. In the source's 3BFF comparison, it exceeds the second-order term by two to three orders of magnitude and task loss rises roughly tenfold. Function matching starts with exactly zero residual and gradient because it targets the anchor's own outputs.
 
@@ -202,13 +204,13 @@ Component counts are not claims of independent Jacobian rank. Multiple logit vec
 
 To explore broader task-compatible solutions, one can constrain the squared difference from the anchor's task loss. That gives zero initial gradient without resolving the weaker output-information constraint. Finite-probe function matching needs no labels, but off-probe preservation still requires evaluation.
 
-## E. Combining HNC with Global Search for Alternative Solutions
+## E. Combining HNC with global search for alternative solutions
 
 The authors alternate DSA-steered local walks with fresh training regularized to differ dynamically from earlier solutions. The eight-network chain reports bit accuracy above $0.999$ using fixed-point memories, continuing drift, and extra attractors. Local walks explore the current low-loss region; fresh training can jump far in weight space.
 
 The retraining transitions are not certified as one continuous function-preserving path. The experiment does not find or count every basin. Looser ceilings to cross ridges and random-kick restarts are future proposals in this section. [E, Figures 12–14, pp.26–28](https://arxiv.org/pdf/2609.38081v1#page=26)
 
-## F. Details for the 3BFF RNN Experiments
+## F. Details for the 3BFF RNN experiments
 
 ### F.1–F.3 Settings and the Size of the Flat Subspace
 
@@ -241,7 +243,7 @@ Galleries and ten-anchor MDS show multiple alternative directions rather than on
 
 After 8,000 resumed SGD steps, lower task loss coexists with retained differences in CKA, DSA, or sparsity. Ordinary training does not necessarily pull alternatives back to the anchor. OOD pulse amplitudes and rates, long input-free intervals, and state perturbations expose earlier failure in some endpoints. Diversity is not synonymous with increased robustness. [F.4–F.8, pp.30–35](https://arxiv.org/pdf/2609.38081v1#page=31)
 
-## G. Additional Experiments on ViT
+## G. Additional experiments on ViT
 
 ### G.1–G.4 Steering Objectives and Settings
 
@@ -283,7 +285,7 @@ An early block can be steered, but it costs more function drift per representati
 
 Larger probes can support better preservation and longer accepted walks, allowing more displacement in the tested configuration. Compute grows approximately linearly with probe count. This is not a set-theoretic claim that adding constraints always enlarges the feasible region. The final MDS shows alternatives depend on metric, probe draw, and steering away from previous endpoints. [G.7–G.10, pp.43–46](https://arxiv.org/pdf/2609.38081v1#page=43)
 
-## H. Steering Brain-Score at Fixed Function
+## H. Steering Brain-Score at fixed function
 
 The paper's MajajHong2015 IT benchmark uses 3,200 images and 168 macaque IT recording sites. The reported official score uses ten-fold PLS-25 prediction, median correlation across sites, averaging across folds, and normalization by noise ceiling 0.82.
 
@@ -291,7 +293,7 @@ Steering uses a different differentiable surrogate: ridge regression on a frozen
 
 An 86M relative-position ViT spans 0.618–0.719, approximately 0.10, between down/up endpoints; the range on unseen sites and images is 0.039. Plain ViT-S spans 0.546–0.627, or 0.081, on held-out images. The seven-model comparison spans approximately 0.074–0.075. Top-1 decisions are preserved on at least 94% of images, with logit KL in the $10^{-5}$–$10^{-3}$ range. **Approximate preservation is not exact equality.** Steering IT predictivity leaves V1/V2/V4 scores largely unchanged. Neural predictivity can depend on which solution is selected, not only architecture and original training. [H, pp.46–48](https://arxiv.org/pdf/2609.38081v1#page=46)
 
-## I. Extending HNC to Reinforcement Learning
+## I. Extending HNC to reinforcement learning
 
 ### I.1 Advantages and the Surrogate
 
@@ -334,7 +336,7 @@ State arguments are omitted only in this block to shorten it. Covariance stays f
 
 Ant gait analysis uses walking episodes only: 25/30 for the anchor and 27/30 for the alternative. The latter stalls less but sometimes terminates early when torso height becomes unhealthy. Returns across shared initial states are reported as uncorrelated. Equal average performance is neither episodewise equivalence nor a safety guarantee. Each plume OOD condition uses its own initial-state grid, so paired comparisons within a condition differ from comparisons of absolute rates across conditions. [I, pp.49–53](https://arxiv.org/pdf/2609.38081v1#page=49)
 
-## J. Probing Loss-Landscape Geometry with HNC
+## J. Probing loss-landscape geometry with HNC
 
 Five widths, five class counts, and three seeds make 75 CNN anchors. GroupNorm avoids batch-composition-dependent outputs; 512 training inputs constrain each model. J.2 varies absolute drift tolerance and J.3 relative spectral cutoffs. J.4 finds feature-covariance participation ratio grows about fivefold with class count but changes little with width. **Feature effective dimension and parameter flat fraction are different measurements.**
 
@@ -342,15 +344,13 @@ J.1's identification of 100% training accuracy with zero cross-entropy is not ad
 
 **Review supplement:** with $q$ finite-probe output components, $\operatorname{rank}(\mathbf J)\le q$ and $\dim\ker\mathbf J\ge P-q$. Many parameters and relatively few probe constraints can themselves yield a large linear null space. It does not follow that the true input distribution permits the same freedom. Off-probe evaluation is essential. [J, pp.53–55](https://arxiv.org/pdf/2609.38081v1#page=53)
 
-## Sources and Reading Scope
+## Review interpretation and open questions
 
-- Original: Huang and five coauthors, [HNC v1](https://arxiv.org/abs/2609.38081v1), first submitted September 29, 2026; reviewed October 17, 2026. The independent first reading and detailed full scope are recorded in [part 1](/en/reviews/hnc-solutions/#sources-and-reading-scope).
-- This article preserves the order and roles of A–J. It retains A–B's algorithms and equations (4)–(6), C's four ablations, D's Table 2, F's Table 3, and critical settings and counter-results in G–J. Repeated galleries, every solver setting, and duplicate transcriptions are compressed.
-- Supplements: componentwise differentiation, PSD/positive-definiteness calculations, Rayleigh quotient, quadratic interpretation of soft projection, nonlinear counterexample, finite-probe rank bound, and arithmetic. Added notation such as $q,\mathbf g,a,b,t$ is identified. This is not complete formal verification or a global convergence proof.
-- Source issues: G.3's 256 kNN probes versus Table 8's 512; J.1's accuracy/zero-loss wording; and the loss-control distinction between general Algorithm 1 and F.3. No author confirmation was obtained.
-- Images: shared Figure 1 and Figure 11 in D, by the six original authors under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), from the [v1 author source](https://arxiv.org/src/2609.38081v1). PDF rasterization and WebP encoding changed resolution/encoding, preserving content, layout, arrows, and text.
-- **Not executed:** author code, GPU/training/walk/neural-data/RL reproduction, raw-result statistical tests, hardware replication, global/mechanical formal verification, independent complete proofs of the cited LOBPCG/CG theory, or author confirmation of inconsistent settings. These differ from local calculation checks in this review.
+**Review interpretation.** Computing local preservation directions at scale is the central benefit, with memory, time, and off-probe drift assessed together.
 
-- Recheck on October 22, 2026: this revision reuses the recorded two readings and source mapping, adding the metric, assumption, and example definitions above. It is not counted as two new full-paper readings. New model, GPU, robot reproduction, and complete formal verification were not executed.
+## Sources and reading scope
 
-- Additional metric check: CKA source §3–5, Eq. (14), and focal Appendix F.2 and G.5 metric descriptions. Scores were not recomputed from raw brain or model data.
+- Paper: *Traversing the solution space of neural networks with Hessian Null Space Continuation* · Ann Huang et al. · first public date 2026-09-29 · [reviewed version](https://arxiv.org/abs/2609.38081v1) · reviewed 2026-10-23.
+- Scope read: Version 1, appendices A–J: algorithms, derivative arguments, ablations, and validation conditions. Repeated galleries and exhaustive hyperparameter rows are compressed.
+- Figure sources: The Figure-1 thumbnail and body figures in this part are author assets from v1 (CC BY 4.0), PDF-rasterized and WebP-encoded with content, layout, text, and arrows retained. [Paper](https://arxiv.org/abs/2609.38081v1).
+- Not verified: research-code execution, model training/reproduction, raw-data uncertainty estimates, and complete formal certification.

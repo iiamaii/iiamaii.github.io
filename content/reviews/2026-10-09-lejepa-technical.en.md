@@ -3,7 +3,7 @@ title: "[3/3] LeJEPA technical review: proof conditions, SIGReg and checked equa
 description: "Detailed theorem and proof commentary following Sections 3–5 and Appendices A–B, with intermediate derivations and unresolved gaps."
 date: "2026-10-09"
 publishedAt: "2026-10-09T23:54:43+09:00"
-updatedAt: "2026-10-22T23:22:47+09:00"
+updatedAt: "2026-10-23T08:56:15+00:00"
 topics: ["self-supervised learning", "representation learning", "joint embedding predictive architectures", "distribution matching", "computer vision"]
 visibility: "public"
 lang: "en"
@@ -17,13 +17,15 @@ thumbnail: "/assets/reviews/lejepa/lejepa-core.svg"
 thumbnailAlt: "LeJEPA combines within-image alignment to the global-view mean with across-image Gaussian matching through random projections in each view."
 ---
 
-**Understanding LeJEPA’s theory requires distinguishing the linear argument for isotropic covariance, the Fisher-information argument for Gaussian shape, and the finite-projection implementation used in training.** This article follows Sections 3→4→5 and expands the principal calculations in Appendices A–B. Author statements, review-supplied derivations, and remaining gaps are identified separately. [Sections 3–5; Appendices A–B](https://arxiv.org/pdf/2511.08544v3#page=5)
+LeJEPA links isotropic covariance in linear estimation, Fisher information in local nonlinear estimation, and SIGReg computed through finitely many projections. Gaussian optimality at fixed covariance and finite-sample loss approximation serve different roles in that argument. [Sections 3–5 and appendices A–B](https://arxiv.org/pdf/2511.08544v3#page=5) **Review interpretation.** The target-selection argument is useful, provided equality conditions, normalization, and finite approximations remain distinct.
 
 This is **[3/3] the theorem and proof commentary**. Recommended order: [introduction](/en/reviews/lejepa-overview/) → [complete commentary](/en/reviews/lejepa-complete/) → this article. The complete version retains the problem/background in Sections 1–2 and every central experimental theme in Section 6. Here, appendix proofs move beside their main-text statements so their assumptions and calculations can be followed together.
 
 **Notation correspondence.** $\mathbf Z\in\mathbb R^{N\times K}$ is the embedding matrix; $\mathbf z_{n,v}$ indexes image/view embeddings. The linear appendix’s $\mathbf X$, $p$, and $\lambda_{\rm wd}$ correspond to main-text $\mathbf Z$, $K$, and the ridge coefficient. Density $p$ elsewhere has a different role from that dimension symbol. Appendix $d,n$ denote dimension/sample count. $M=|\mathcal A|$, frequency count $T$, and $\widehat D=EP/N$ are explanatory abbreviations.
 
-## 3 Latent Euclidean — Theory behind the target law
+<span id="3-latent-euclidean-theory-behind-the-target-law" aria-hidden="true"></span>
+
+## 3. Latent Euclidean — Embeddings Should Be Isotropic Gaussian
 
 ### 3.1 Linear Probing — Lemmas 1–2 and Appendices B.1–B.2
 
@@ -168,9 +170,13 @@ The Gaussian minimizes this $J(p)$-based upper bound. Minimizing a bound does no
 
 ### 3.3 Geometric and Practical Insights
 
-Figure 3’s repeated logistic boundaries illustrate isotropy empirically; they are not the OLS coefficient-variance theorem itself. Figure 17’s “anisotropic lower variance” caption conflicts with Lemma 2 and remains unconfirmed. [Section 3.3; Figure 17](https://arxiv.org/pdf/2511.08544v3#page=48)
+Figure 3 illustrates isotropy through repeated logistic boundaries. Figure 17 combines resampling for binary, linear, and nonlinear targets; its caption describes lower variance for anisotropy. Lemma 2 concerns lower total coefficient variance for isotropy in unregularized OLS with the same column space and total energy. [Section 3.1, Lemma 2](https://arxiv.org/pdf/2511.08544v3#page=5), [Figure 17](https://arxiv.org/pdf/2511.08544v3#page=48)
 
-## 4 SIGReg — Identification, stability, and finite-direction conditions
+**Review interpretation.** The variance directions are opposite, but identical target and resampling conditions have not been established. Rather than declaring that the caption must be reversed, the linear-target design, noise, and color correspondence remain questions to resolve. Lemma 2’s algebraic proof can be assessed independently of this caption.
+
+<span id="4-sigreg-identification-stability-and-finite-direction-conditions" aria-hidden="true"></span>
+
+## 4. SIGReg — Reliable Isotropic Gaussian Regularization in High-Dimension
 
 ### 4.1 Hypothesis Testing as a Judge — Lemma 3, Theorem 2
 
@@ -253,7 +259,9 @@ The paper assumes $p_{\boldsymbol\theta}\in H^\alpha(\mathbb R^K)$ and equality 
 
 **Reading Figure 7.** Horizontal: direction count $M$. Vertical: final expected directional statistic. Green resampling achieves lower discrepancy with fewer directions than blue fixed sampling. This illustrates accumulated coverage in synthetic optimization, not global convergence of neural-network SGD. Figure 6 separately optimizes samples with a two-dimensional X structure directly, without an encoder. [Enlarge](/assets/reviews/lejepa/paper-figure-7.webp) · [Figure 7, p. 10; Figure 6, p. 9](https://arxiv.org/pdf/2511.08544v3#page=10). Balestriero and LeCun, [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/); full-panel crop and lossless WebP conversion.
 
-## 5 LeJEPA — Sampling and normalization in the actual objective
+<span id="5-lejepa-sampling-and-normalization-in-the-actual-objective" aria-hidden="true"></span>
+
+## 5. LeJEPA — Stable and Scalable Implementation
 
 ### 5.1 SIGReg + Prediction Loss — Theorem 6, Appendices B.6 and B.13
 
@@ -302,14 +310,13 @@ This recovers moment-level constraints; it does not prove equality of objectives
 
 The [complete commentary](/en/reviews/lejepa-complete/) preserves Sections 6.1–6.5 in order: stability, loss signals, in-domain learning, scale/transfer, and semantic structure. Their roles differ from the proofs. OLS coefficient theory does not prove every classification accuracy; CF stability does not establish global SGD convergence for every architecture. Galaxy10/IN-1K provide conditional practical evidence; PCA/attention provide qualitative evidence.
 
+## Review interpretation and open questions
+
+**Review interpretation.** The target-selection argument is useful, provided equality conditions, normalization, and finite approximations remain distinct.
+
 ## Sources and reading scope
 
-- Primary source: Balestriero and LeCun, *LeJEPA: Provable and Scalable Self-Supervised Learning Without the Heuristics*. First public release: November 11, 2025. Reviewed version: v3, November 14, 2025, 50 pages. [Official metadata and version history](https://arxiv.org/abs/2511.08544).
-- First pass for this revision, October 11, 2026: abstract, introduction, conclusion, section structure, and Figure 1–2 explanations, saved before close reading. Second pass: Sections 1–7, central proofs in Appendices A and B.1–B.14, extra tables/captions in C, and alternatives in D–F, compared against PDF and author LaTeX. Cited spherical-interpolation papers and the entire bibliography were not independently reverified in full.
-- Correspondence/condensation: Sections 3–5 and central theorem/lemma numbers remain in order. B.6 moves to its prediction-loss location in 5.1. The trace constraint is expanded; other covariance constraints remain linked. Full Sections 1–2 and 6 are assigned to the complete version. D–F’s complete alternative-test formulas are condensed because they are peripheral to the central contribution.
-- Review supplements: normal-equation transition, ball-volume expansion, Fisher residual-matrix proof, second-gradient bound, Bonferroni example, fixed 1D grid alias, and the exact center-loss variance term. Extra conditions are not passed off as unconditional proofs of source statements.
-- Executed: center identity (2=1+1), equal-trace OLS example (2 versus 5.5556), fixed-grid CF alias (about $2.24\times10^{-16}$), and ECF sampling-bias Monte Carlo (20,000 repetitions). **Not run:** official code, GPU training, probe/finetuning/DDP/seed/model-runtime/memory reproduction, or full formal proof verification. Small calculations are not paper-model reproduction.
-- Unconfirmed: Theorem 5’s cited sources and norm transfer, Theorem 2’s uniform-power limit, complete kNN-remainder independence, finite-sample kernel remainders; Figure 11 sign, Figure 12 error bars, Figure 17 caption, and Table 5 pretraining conflict. Only identical existing approved images are reused.
-- Review-authored thumbnail: [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), Light 300/Semi Bold 600. Paper-figure attribution, terms, and conversions are recorded in their captions.
-
-- Recheck on October 22, 2026: this revision reuses the recorded two readings and source mapping, adding the metric, assumption, and example definitions above. It is not counted as two new full-paper readings. New model, GPU, robot reproduction, and complete formal verification were not executed.
+- Paper: *LeJEPA: Provable and Scalable Self-Supervised Learning Without the Heuristics* · Randall Balestriero et al. · first public date 2025-11-11 · [reviewed version](https://arxiv.org/abs/2511.08544v3) · reviewed 2026-10-23.
+- Scope read: Version 3, sections 3–5 and the relevant theorems and proofs in appendix A and B.1–B.14. Reconstructed intermediate steps are identified as review supplements.
+- Figure sources: The concept thumbnail is review-authored (CC BY 4.0). Paper figures are Balestriero and LeCun’s v3 assets (CC BY-SA 4.0), with full-panel cropping and lossless WebP conversion. [Paper](https://arxiv.org/abs/2511.08544v3).
+- Not verified: research-code execution, model training/reproduction, raw-data uncertainty estimates, and complete formal certification.

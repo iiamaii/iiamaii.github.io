@@ -3,7 +3,7 @@ title: "[1/2] Diffusion Forcing: 시간과 노이즈를 따로 조절하면 무�
 description: "토큰마다 독립 노이즈를 학습하는 원리부터 장기 영상 생성, Monte Carlo Guidance, 미로 계획과 로봇 기억 실험까지 원문 순서로 읽는다."
 date: "2026-10-14"
 publishedAt: "2026-10-14T13:58:28+09:00"
-updatedAt: "2026-10-22T23:22:52+09:00"
+updatedAt: "2026-10-23T08:56:21+00:00"
 topics: ["diffusion models", "sequence modeling", "world action model", "robot learning", "probabilistic modeling"]
 visibility: "public"
 lang: "ko"
@@ -17,7 +17,7 @@ thumbnail: "/assets/reviews/diffusion-forcing/overview.webp"
 thumbnailAlt: "Diffusion Forcing 원문 Figure 2. 시퀀스의 시간축과 노이즈축, 그리고 토큰별 독립 노이즈 학습·샘플링을 teacher forcing·전체 시퀀스 diffusion과 비교한 그림."
 ---
 
-다음 프레임을 하나씩 예측하는 모델은 원하는 길이만큼 생성하기 쉽다. 하지만 작은 예측 오류가 누적되면 영상이 무너진다. 여러 프레임을 한꺼번에 diffusion으로 생성하면 미래 목표에 맞춰 결과를 유도하기 좋지만, 모든 프레임을 같은 속도로 확정하는 구조는 유연한 길이와 순차 제어에 제약을 준다. **Diffusion Forcing은 토큰마다 서로 다른 노이즈 수준을 학습해 두 방식 사이를 오갈 수 있게 한다.** 이 자유도를 이용해 장기 생성의 안정화와 미래 보상을 고려한 계획을 수행한다. 실험은 가능성을 보여주지만, 모든 환경의 성능 우위나 무한 길이의 정확성을 증명하지는 않는다. [원문 §1, pp. 1–2](https://arxiv.org/pdf/2407.01392v4#page=1)
+Diffusion Forcing은 토큰별 독립 노이즈(independent per-token noise)를 학습해 생성 길이·기억·미래 유도를 같은 모델에서 조절한다. Single-task 2D Maze의 Large에서 정규화 return은 159.0±2.7로, Monte Carlo 유도(Monte Carlo Guidance, MCG)를 뺀 142.8±5.6보다 높다. [원문 Table 1](https://arxiv.org/pdf/2407.01392v4#page=8) **리뷰 해석.** 기여는 샘플링의 유연성에 있으며, 100을 넘는 정규화 점수는 성공률과 구분해서 읽어야 한다.
 
 35쪽의 v4를 두 편으로 나눴다. 이 글은 **본문 §1–5와 실험·구현에 필요한 부록 B–F**를 원문 순서로 설명한다. 이어지는 [\[2/2\] 이론과 증명 해설](/reviews/diffusion-forcing-theory/)은 부록 A의 ELBO와 부분 시퀀스 주장을 다룬다. 먼저 이 글을 읽고 이론 편으로 넘어가면 된다. 저자들의 정리에는 표기 불일치가 있어, 이론 편에서 원문 진술과 보충 유도를 구분한다.
 
@@ -69,7 +69,7 @@ $$
 | [Diffuser](https://proceedings.mlr.press/v162/janner22a/janner22a.pdf), §2–3.1 | 상태·행동 궤적 전체를 공동 생성하고 목표에 맞춰 유도 | DF는 인과적 구조와 토큰별 스케줄로 미래의 불확실성과 계획 길이를 조절한다. |
 | [AR-Diffusion](https://arxiv.org/pdf/2305.09515v1), §3.1–3.2 | 문장 단계와 단어 위치로 토큰별 diffusion 단계를 정함 | 서로 다른 노이즈 수준이라는 선행 아이디어가 있다. DF의 핵심 차이는 위치에 묶이지 않은 독립 noise 학습이다. |
 
-이 표는 개념 비교다. TimeGrad는 시계열 표, Diffuser는 미로 실험의 비교 대상이지만, AR-Diffusion과의 텍스트 성능 비교는 수행하지 않는다. 원문 부록 C는 Rolling Diffusion과도 비교한다. 해당 연구 전체를 이번 글에서 독립 검토한 것은 아니다. 또 Diffuser 원전 §3.1도 fully convolutional architecture의 입력 길이를 바꾸어 계획 horizon을 조절할 수 있다고 명시한다. 따라서 DF를 가변 길이 계획의 최초 방법으로 소개하지 않는다. DF의 차이는 여러 noise·conditioning pattern과 인과적 기억을 같은 학습 틀에서 다룬다는 데 있다.
+이 표는 개념 비교다. TimeGrad는 시계열 표, Diffuser는 미로 실험의 비교 대상이지만, AR-Diffusion과의 텍스트 성능 비교는 수행하지 않는다. 원문 부록 C는 Rolling Diffusion과도 비교한다. 또 Diffuser 원전 §3.1도 fully convolutional architecture의 입력 길이를 바꾸어 계획 horizon을 조절할 수 있다고 명시한다. 따라서 DF를 가변 길이 계획의 최초 방법으로 소개하지 않는다. DF의 차이는 여러 noise·conditioning pattern과 인과적 기억을 같은 학습 틀에서 다룬다는 데 있다.
 
 ## 3. 방법 (Method)
 
@@ -276,7 +276,6 @@ $\mathrm{CRPS}_{\mathrm{sum}}$은 각 표본 궤적과 정답을 차원 방향�
 | NKF | — | $0.320\pm0.020$ | $0.016\pm0.001$ | $0.100\pm0.002$ | — | $0.071\pm0.002$ |
 | DF | $0.003\pm0.001$ | $0.289\pm0.002$ | $0.023\pm0.001$ | $0.040\pm0.004$ | $0.075\pm0.002$ | $0.085\pm0.007$ |
 
-
 원문 표와 대조하면 **DF의 평균값은 Exchange·Traffic·Taxi에서 가장 낮지만 Solar·Electricity·Wikipedia에서는 최저가 아니다.** Electricity에서는 NKF 0.016이 원문에서 강조한 ScoreGrad 0.019보다도 낮다. Wikipedia에서는 네 모델의 평균이 DF보다 낮아 전체 표 기준 다섯 번째다. 부록의 “네 번째”라는 설명과 다르다. 오차 범위의 겹침과 비교 모델별 학습 조건을 고려해야 하며, 평균 순위로 통계적 유의성을 대신하지 않는다. [Table 2·E.1, p. 27](https://arxiv.org/pdf/2407.01392v4#page=27)
 
 검증 집합은 학습 시계열의 무작위 subsequences에서 만들고, 6 epochs 동안 개선이 없으면 조기 종료한다. epoch당 100 batches, batch 32다. “새 목적이 다양한 예측 문제에도 작동한다”는 결론은 타당한 해석이지만, 기존 모든 시계열 모델에 대한 우위는 표가 뒷받침하지 않는다.
@@ -289,20 +288,13 @@ $\mathrm{CRPS}_{\mathrm{sum}}$은 각 표본 궤적과 정답을 차원 방향�
 
 ## 리뷰 해석과 남은 질문
 
-이 연구의 장점은 새로운 목표마다 모델을 다시 만들기보다 sampling 구조를 바꿀 여지를 준다는 데 있다. 하지만 noise 수준을 uncertainty로 사용하는 직관, 실제 confidence의 보정, 장기 상태 예측의 정확성은 별개다.
+**리뷰 해석.** 이 연구의 장점은 새로운 목표마다 모델을 다시 만들기보다 sampling 구조를 바꿀 여지를 준다는 데 있다. 하지만 noise 수준을 uncertainty로 사용하는 직관, 실제 confidence의 보정, 장기 상태 예측의 정확성은 별개다.
 
 후속 검증에서는 독립 noise·stabilization·fused SNR의 효과를 같은 예산에서 분리하고, MCG 샘플 수에 따른 성공·latency 곡선을 비교하면 좋다. 미로에서는 reward와 첫 도달 시간을 함께 측정하고, 로봇에서는 오염 정보를 직접 지정하는 조건과 자동 탐지 조건을 분리할 필요가 있다. 이는 리뷰의 제안이며 수행한 실험이 아니다.
 
 ## 출처와 읽은 범위
 
-- 원문: Chen, Marti Monso, Du, Simchowitz, Tedrake, Sitzmann, *Diffusion Forcing: Next-token Prediction Meets Full-Sequence Diffusion*, [arXiv:2407.01392v4](https://arxiv.org/abs/2407.01392v4). 최초 제출 2024-07-01, v4 수정 2024-12-10, 검토 2026-10-14.
-- 첫 읽기: 초록·도입·Discussion, 본문과 부록의 절 지도, Figure 1–4·Table 1 캡션, 부록 A의 개관과 정리 진술. 개관을 독립 저장한 뒤 두 번째 읽기를 시작했다.
-- 두 번째 읽기: v4 본문 §1–5와 부록 A–F의 텍스트·식·표·알고리즘을 저자 LaTeX와 PDF로 대조했다. 핵심 방법·이론·계획 표의 페이지를 렌더링했다. 참고문헌 목록을 확인하고 관련 원전은 필요한 절만 추가로 읽었다.
-- 원전 추가 읽기: DDPM v2 §2–3.4, TimeGrad §2–3.1, Diffuser §2–3.1, AR-Diffusion v1 §3.1–3.2, Chan tutorial v1 §2.6–2.7. 각 원전 전체 리뷰나 최신 후속 연구 서베이는 수행하지 않았다. B.4가 참조하는 HINT의 정리·적용 조건은 독립 검증하지 않아 안정성 인증의 근거로 사용하지 않았다.
-- 구성: 본문 §1–5·§4.1–4.5 순서를 유지했다. B·D·E·F의 필수 구현·실험 조건을 해당 본문 절에 연결했다. 부록 A의 완결된 해설은 [2편](/reviews/diffusion-forcing-theory/)에 있다. 주변 related work·유사한 추가 영상·전체 참고문헌 재게시를 줄였으며 핵심 비교·반대 결과·비용은 유지했다.
-- 그림: Figure 2·3·4와 Table 1의 위 도식은 [저자 v4 소스](https://arxiv.org/src/2407.01392v4)의 원본 PDF 그림을 래스터화하고 WebP로 인코딩했다. 내용·색·화살표·기호는 유지했고 해상도·인코딩은 변경했다. 논문과 그림의 원저자는 위 저자들이며 [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)에 따라 출처와 변경 사항을 표시한다.
-- 검증: 표의 전사·평균·순위·단위와 ELBO 관련 국소 계산을 확인했다. **미실행:** 모델/GPU/로봇 재현, 공개 코드 실행, 영상 전체 정량 품질 측정, 원시 결과 기반 유의성 검정, 실제 latency·메모리 측정, 전체 정리의 형식 검증.
-
-- 2026-10-22 재점검: 기존 두 읽기와 원문 대응 기록을 재사용해 위에 추가한 지표·가정·예제의 정의를 보완했다. 새 전문 두 읽기로 계산하지 않는다. 새 모델·GPU·로봇 재현과 전체 형식 검증은 미실행이다.
-
-- 이번 추가 원전 범위: D4RL 공식 get_normalized_score 함수의 반환식(코드 읽기만, 실행 미실행), TimeGrad §4.1 pp. 4–5의 CRPS·합산 절차. 표의 raw return·전처리 설정을 새로 확인한 것으로 표시하지 않는다.
+- 원문: *Diffusion Forcing: Next-token Prediction Meets Full-Sequence Diffusion* · Boyuan Chen et al. · 최초 공개 2024-07-01 · [검토 버전](https://arxiv.org/abs/2407.01392v4) · 검토일 2026-10-23.
+- 읽은 범위: v4 본문 §1–5와 실험·구현 부록 B–F. 부록 A의 ELBO·부분 시퀀스 주장은 [2/2] 이론 편에서 다룬다.
+- 그림 출처: 대표 Figure 2와 본문 Figures 2–4·Table 1 상단 도식은 저자 v4 자산(CC BY 4.0). PDF 래스터화·WebP 변환으로 해상도·인코딩을 바꾸고 내용·색·화살표·기호를 유지한다. [원문](https://arxiv.org/abs/2407.01392v4).
+- 확인하지 않은 것: 연구 코드 실행·모델 학습/재현·원시 데이터 불확실성 추정·전체 형식 인증.

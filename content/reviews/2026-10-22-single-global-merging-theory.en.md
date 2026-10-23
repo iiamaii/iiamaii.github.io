@@ -3,7 +3,7 @@ title: "[2/2] Single Global Merging in depth: appendix experiments and proof con
 description: "Follow Appendices A–D through setup, ablations, average dynamics, Taylor expansions, and unresolved proof conditions."
 date: "2026-10-23"
 publishedAt: "2026-10-23T12:14:58+09:00"
-updatedAt: "2026-10-23T12:14:58+09:00"
+updatedAt: "2026-10-23T08:56:24+00:00"
 topics: ["decentralized learning", "model merging", "distributed optimization", "federated learning", "communication efficiency"]
 visibility: "public"
 paperTitle: "On the Surprising Effectiveness of a Single Global Merging in Decentralized Learning"
@@ -17,7 +17,7 @@ translationKey: "single-global-merging-theory"
 thumbnailAlt: "Original Figure 1(b): global test accuracy recovers sharply after the final weight average in sparse decentralized ResNet-18 training."
 ---
 
-Understanding the experimental result and checking its theoretical explanation are different tasks. **The recovery after final averaging is repeatedly observed, but parts of the claimed non-IID convergence explanation need additional assumptions or corrected calculations.** This article examines that distinction directly.
+The global-merging theory connects communication-controlled model disagreement to curvature corrections in the average update. The main setup uses 300 rounds of 100 local updates each, with neighbor exchanges at probability 0.2 followed by a final average. [Appendices C.1 and D](https://arxiv.org/pdf/2507.06542v4#page=22) **Review interpretation.** Its explanatory scope depends on retaining non-IID residuals and RMS bounds, and on distinguishing observed recovery from a general convergence guarantee.
 
 Read [[1/2] Main paper and core experiments](/en/reviews/single-global-merging/) first. We retain the original **A→B→C→D** appendix order and follow Lemma D.1 through Proposition D.9 within D. Intermediate derivations and counterexamples are labeled **review additions**; they are not presented as replacement theorems proved by the authors.
 
@@ -122,6 +122,12 @@ Repetition counts, seeds, and error bars are not sufficiently specified in the p
 
 We follow the original result order. Review abbreviations are $\delta_k^{(t)}=\theta_k^{(t)}-\bar\theta^{(t)}$, $g_t=\nabla\mathcal L(\bar\theta^{(t)})$, $H_t=\nabla^2\mathcal L(\bar\theta^{(t)})$, and $q_t=\nabla\operatorname{Tr}(H_t\Gamma^{(t)})$. Covariance is $d\times d$; $\Theta$ is $d\times m$. Covariance is held fixed when differentiating $q_t$.
 
+### Review supplement: nontriviality of mergeability
+
+Definition 2 asks for nonnegative weights satisfying a loss inequality, while the experiments evaluate uniform averaging. [Section 3, Definition 2](https://arxiv.org/pdf/2507.06542v4#page=4)
+
+**Review interpretation.** The printed definition omits weights summing to one; even adding that condition allows a single unit weight, which satisfies equality. A nontrivial definition needs a fixed uniform average or a condition requiring multiple positive weights. This affects the definition’s discriminating power, not the observed recovery of the uniform average.
+
 ### Lemma D.1: the consensus-distance recursion
 
 Combining mixing contraction with gradient bounds, the paper obtains the following. Here $\mathbb E_t$ conditions on the past state and averages fresh gradient and communication randomness:
@@ -184,7 +190,7 @@ $$
 \frac{12(1-p)\eta^2}{p}(\phi^2+\sigma^2)
 \sum_{s=0}^{t-1}\rho^s\\
 &\leq\rho^t\Xi_0^2+
-\frac{24(1-p)\eta^2}{p^2}(\phi^2+\sigma^2).
+\frac{24(1-p)\eta^2}{p^2}(\phi^2+\sigma^2)
 \end{aligned}
 $$
 
@@ -216,7 +222,7 @@ With doubly stochastic mixing and SGD, the actual conditional mean update is
 $$
 \mathbb E_t\bar\theta^{(t+1)}
 =\bar\theta^{(t)}-\frac\eta m
-\sum_k\nabla\mathcal L_k(\theta_k^{(t)}).
+\sum_k\nabla\mathcal L_k(\theta_k^{(t)})
 $$
 
 The paper invokes [Zhu et al. 2023](https://proceedings.mlr.press/v202/zhu23e.html) to replace this with a globally smoothed gradient under $\epsilon\sim\mathcal N(0,\Gamma^{(t)})$, plus cubic residuals. The Gaussian is an analytical covariance-matching device, not noise explicitly injected by the implementation.
@@ -262,7 +268,7 @@ need not vanish. Appendix C.2 of Zhu 2023 actually uses the common expected Hess
 $$
 \mathcal L_1(x)=1-\cos x,\quad
 \mathcal L_2(x)=2(1-\cos x),\quad
-\theta_1=b+a,\quad\theta_2=b-a.
+\theta_1=b+a,\quad\theta_2=b-a
 $$
 
 The global objective is $\mathcal L(x)=\tfrac32(1-\cos x)$. Derivatives of orders 1–4 and gradient heterogeneity are bounded. Nevertheless,
@@ -343,7 +349,7 @@ T=\mathcal O\!\left(
 \frac{\sigma^2}{m\varepsilon^2}
 +\frac{\sqrt p\,\sigma+\zeta}{p\varepsilon^{3/2}}
 +\frac1{p\varepsilon}\right)
-\cdot\bigl(\mathcal L(\theta^{(0)})-\mathcal L^\star\bigr).
+\cdot\bigl(\mathcal L(\theta^{(0)})-\mathcal L^\star\bigr)
 $$
 
 As in the paper's comparison, smoothness constants and other fixed factors are suppressed here. The point is to expose communication and heterogeneity terms. Koloskova 2020's original Theorem 2 also includes a local-update window and more general assumptions; this simplified form is connected to Kong 2021's restatement. Comparing upper bounds under different assumptions does not establish actual model superiority. [D.6, p.31](https://arxiv.org/pdf/2507.06542v4#page=31)
@@ -356,7 +362,7 @@ $$
 T=\mathcal O\!\left(
 \frac{\sigma^2}{m\varepsilon^2}+\frac1\varepsilon+
 \sum_{t=0}^{T-1}U^{(t)}\right)
-\cdot\bigl(\mathcal L(\theta^{(0)})-\mathcal L^\star\bigr).
+\cdot\bigl(\mathcal L(\theta^{(0)})-\mathcal L^\star\bigr)
 $$
 
 Table 1 and the proof's final expression instead insert $1/\varepsilon$ before the last sum. The cross-term coefficient in $U$ is also inconsistent across locations. The following calculation separates a directly checkable conditional derivation from those unresolved statements.
@@ -386,7 +392,7 @@ The cross-term factor $1/2$ follows from $\|g+q/2\|^2=\|g\|^2+g^\top q+\|q\|^2/4
 
 $$
 \|q_t\|\leq L_3\Xi_t^2,\qquad
-\frac1m\sum_k\|\delta_k^{(t)}\|^3\leq\sqrt m\,\Xi_t^3.
+\frac1m\sum_k\|\delta_k^{(t)}\|^3\leq\sqrt m\,\Xi_t^3
 $$
 
 For the second inequality, set $a_k=\|\delta_k\|$ and use $\sum a_k^3\leq(\sum a_k^2)^{3/2}$. The paper's reference to concavity of $x^{3/2}$ is incorrect, although this norm inequality is valid. With $m,\eta$ fixed, residual terms start at cubic order and $\|q_t\|^2$ at fourth order. The omitted non-IID first-order term does not satisfy that argument.
@@ -409,7 +415,7 @@ $$
 \frac1T\sum_{t=0}^{T-1}\mathbb E\|g_t\|^2
 \leq\frac{\Delta}{\eta cT}
 +\frac1{cT}\sum_{t=0}^{T-1}\mathbb E\widetilde U_t
-+\frac{\eta L_2\sigma^2}{2mc}.
++\frac{\eta L_2\sigma^2}{2mc}
 $$
 
 The last term is the constant-step noise floor. Original D.12 includes an extra $1/\eta$ on the correction term, whereas dividing its preceding telescoping inequality gives the coefficient above.
@@ -435,7 +441,7 @@ Assumption 4 literally requires every PSD $\Sigma$ and every $\theta$ to satisfy
 
 $$
 \nabla\mathcal L(\theta)^\top
-\nabla\operatorname{Tr}(\nabla^2\mathcal L(\theta)\Sigma)<0.
+\nabla\operatorname{Tr}(\nabla^2\mathcal L(\theta)\Sigma)<0
 $$
 
 This fails for $\Sigma=0$ or $\nabla\mathcal L(\theta)=0$. Scaling $\Sigma$ toward zero also precludes an unnormalized uniform positive alignment margin.
@@ -451,7 +457,7 @@ is continuous on the compact unit sphere. If it is strictly negative in every di
 
 $$
 g_t^\top q_t\leq-\gamma_t\|g_t\|\Xi_t^2
-\leq-\gamma_t\mu_t\Xi_t^2.
+\leq-\gamma_t\mu_t\Xi_t^2
 $$
 
 A uniform lower margin $\gamma^*>0$ across all times requires a further argument.
@@ -470,7 +476,7 @@ K&=(\eta L_2-1)\gamma^*\mu_t,\\
 C_{\mathrm{lin}}&=(\eta L_2+L_4/24)\sqrt m L_1,\\
 \Sigma_{\mathrm{high}}&=\frac{\eta L_2L_3^2}{8}
 +\frac{\eta\sqrt mL_2L_3}{2}
-+\frac{\eta mL_2L_4^2}{1152}.
++\frac{\eta mL_2L_4^2}{1152}
 \end{aligned}
 $$
 
@@ -478,7 +484,7 @@ For $\Xi_t\leq1$, a polynomial bound reduces the residual budget to a linear and
 
 $$
 \Xi_t<\min\left\{\frac{K}{2C_{\mathrm{lin}}},
-\sqrt{\frac{K}{2\Sigma_{\mathrm{high}}}}\right\}.
+\sqrt{\frac{K}{2\Sigma_{\mathrm{high}}}}\right\}
 $$
 
 These constants inherit the coefficient issues above and are not certified here as corrected sufficient constants.
@@ -486,7 +492,7 @@ These constants inherit the coefficient issues above and are not certified here 
 The paper substitutes the following for the left-hand disagreement:
 
 $$
-\sqrt{\frac{24(1-p)\eta^2}{p^2}(\phi^2+\sigma^2)}.
+\sqrt{\frac{24(1-p)\eta^2}{p^2}(\phi^2+\sigma^2)}
 $$
 
 Corollary D.2, however, bounds **$\mathbb E\Xi_t^2$**. Its square root is an RMS bound, not a bound for every realized $\Xi_t$. For example, let $\Xi_t=0.8$ with probability 0.01 and zero otherwise. Its RMS is 0.08, below 0.1, but the realized value still exceeds 0.1 with positive probability. All realizations even satisfy $\Xi_t\leq1$.
@@ -495,17 +501,17 @@ A probability guarantee would require an argument such as Markov's inequality, $
 
 Thus the **design intuition that smaller late-stage gradient margins require stronger mixing** should be separated from a rigorous algorithm guaranteeing mergeability in every run. [D.9, pp.36–37; main Proposition 3](https://arxiv.org/pdf/2507.06542v4#page=36)
 
-## Review interpretation and next checks
+<span id="review-interpretation-and-next-checks" aria-hidden="true"></span>
 
-The paper's strength is an empirical question that separates individual models' global performance from the global performance of their weight average. Its theory proposes a higher-order geometric mechanism, but the current statements do not establish a universal non-IID merging guarantee.
+## Review interpretation and open questions
+
+**Review interpretation.** The paper's strength is an empirical question that separates individual models' global performance from the global performance of their weight average. Its theory proposes a higher-order geometric mechanism, but the current statements do not establish a universal non-IID merging guarantee.
 
 Three concrete next checks are useful: compare early, late, and terminal merging at matched volume using independent validation and multiple seeds; separate fixed disjoint local data from resampled label-skew streams; and preserve heterogeneous-Hessian terms while proving probabilistic consensus control. These are **proposed follow-ups, not experiments run for this review**.
 
 ## Sources and reading scope
 
-- Primary source: Tongtian Zhu, Tianyu Zhang, Mingze Wang, Zhanpeng Zhou, Can Wang. [arXiv:2507.06542v4](https://arxiv.org/abs/2507.06542v4), ICLR 2026, 37 pages. First release 2025-07-09; reviewed revision 2026-04-27.
-- Two passes: an independent orientation from the abstract, introduction/contributions, Figure 1 caption, section map, and §6 was saved first. Then active author source for §1–6 and A–D was read closely and cross-checked against key printed PDF equations, experiments, and proofs. [[1/2]](/en/reviews/single-global-merging/) covers the main text; this article covers appendices and expanded calculations. Application lists in B and repetitive curve narration are compressed.
-- Selected originals: [Koloskova 2020](https://proceedings.mlr.press/v119/koloskova20a.html) pp.1,3,5–6; [Kong 2021](https://proceedings.mlr.press/v139/kong21a.html) pp.1,3–4; [Zhu 2023](https://proceedings.mlr.press/v202/zhu23e.html) pp.1,3–4,16–17,22–24; [Wortsman 2022](https://proceedings.mlr.press/v162/wortsman22a.html) pp.1–3; [de Vos 2023](https://papers.nips.cc/paper_files/paper/2023/hash/7172e147d916eef4cb1eb30016ce725f-Abstract-Conference.html) pp.1,5–6. The entire bibliography was not independently read.
-- Author code: selected README, reproducibility/implementation documentation, sampler, and communication functions at [SHA 6a5c139](https://github.com/Raiden-Zhu/ICLR-2026-Grokking-in-Decentralized-Learning/tree/6a5c139c2cdf6d6d7e0b6ba3c00f123e494e6660) were read statically. Whole-repository audit and execution were **not run**; equivalence to the historical figure-generating revision is **unconfirmed**.
-- Review checks: eight checks cover the non-IID missing term, Taylor remainder, cross coefficient, RMS versus pathwise bounds, one-hot weights, zero-covariance assumption, initial term in recursion, and idealized volume. They are partial mathematical checks, not an automated proof of the paper. GPU training, multi-seed reproduction, and real-network measurements were **not run**.
-- Figures: C.5 and C.6, with Figure 1(b) as thumbnail, under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Extracted and rasterized from the paper/author figure PDFs and encoded as lossless WebP; data and labels were not altered.
+- Paper: *On the Surprising Effectiveness of a Single Global Merging in Decentralized Learning* · Tongtian Zhu et al. · first public date 2025-07-09 · [reviewed version](https://arxiv.org/abs/2507.06542v4) · reviewed 2026-10-23.
+- Scope read: Version 4, appendices A–D and results D.1–D.9 in source order. Sections 1–6 are linked to part 1.
+- Figure sources: The Figure-1(b) thumbnail and this part’s Figures 1–2 or C.5–C.6 are author assets from v4 (CC BY 4.0), PDF-extracted/rasterized to lossless WebP with data and labels retained. [Paper](https://arxiv.org/abs/2507.06542v4).
+- Not verified: research-code execution, model training/reproduction, raw-data uncertainty estimates, and complete formal certification.

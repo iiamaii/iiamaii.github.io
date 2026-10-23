@@ -3,7 +3,7 @@ title: "[2/2] HNC 심화: 함수 보존은 왜 가능하고 어디서 깨지는�
 description: "부록 A–J를 따라 Gauss–Newton 유도, soft projection, 계산 비용, ablation과 probe 밖 검증을 해설한다."
 date: "2026-10-17"
 publishedAt: "2026-10-17T22:11:59+09:00"
-updatedAt: "2026-10-22T23:22:53+09:00"
+updatedAt: "2026-10-23T08:56:22+00:00"
 topics: ["representation learning", "loss landscape", "mechanistic interpretability", "computational neuroscience", "reinforcement learning"]
 visibility: "public"
 lang: "ko"
@@ -17,7 +17,7 @@ thumbnail: "/assets/reviews/hnc/overview.webp"
 thumbnailAlt: "HNC 원문 Figure 1. 곡률이 작은 방향의 탐색과 출력 복원을 반복하는 원리 및 조향 구조."
 ---
 
-HNC의 핵심은 “Hessian의 영공간이면 어디로 움직여도 기능이 같다”가 아니다. **anchor에서 출력 변화의 1차 민감도가 0인 방향을 찾고, 유한한 이동에서 생기는 오차를 복원·거절·재계산으로 관리한다.** 이 차이를 이해해야 함수 보존이라는 표현을 정확히 읽을 수 있다.
+HNC의 함수 보존은 anchor의 출력 야코비안(Jacobian)과 가우스–뉴턴(Gauss–Newton) 연산자에서 시작해 작은 이동·복원·재선형화로 이어진다. 4,611개 파라미터 순환 신경망(recurrent neural network, RNN)에서 행렬 없는 방법은 저장량을 85MB에서 1.2MB로 줄이지만, 계산은 10초에서 39초로 늘어난다. [원문 Appendix A, Table 1](https://arxiv.org/pdf/2609.38081v1#page=19) **리뷰 해석.** 국소적인 보존 방향을 큰 모델에서 계산할 수 있다는 것이 핵심이며, 메모리·시간·probe 밖 오차를 함께 살펴야 한다.
 
 [\[1/2\] 방법·실험 전체 해설](/reviews/hnc-solutions/)을 먼저 읽기를 권한다. 이 글은 **부록 A→B→C→D→E→F→G→H→I→J** 순서를 따른다. 원문에는 HNC 전체의 수렴이나 전역 함수 동등성을 증명하는 번호 붙은 정리가 없다. 중심 수학은 부록 B의 미분 유도이며, 아래 중간 계산·예제는 필요한 곳에 **리뷰 보충**으로 구분한다.
 
@@ -60,7 +60,7 @@ $$
 
 대칭 행렬의 정규직교 고유기저에서 $\mathbf v=\sum_i a_i\mathbf v_i$라 쓰면 분자는 $\sum_i\lambda_i a_i^2$, 분모는 $\sum_i a_i^2$다. 즉 고유값의 가중평균이므로 최솟값은 가장 작은 고유값이다. 이 계산은 **리뷰 보충**이며 원문의 최소화 설명을 풀어 쓴 것이다.
 
-LOBPCG는 직교한 여러 방향을 block으로 함께 갱신한다. 현재 방향, residual, 이전 방향의 작은 탐색 공간에서 개선하며, 큰 행렬 대신 곱만 쓴다. $k$개 벡터를 구했다고 전체 평평한 방향이 $k$개라는 결론은 나오지 않는다. LOBPCG 원 논문 전체와 수렴 증명은 이번에 독립 정독하지 않았으며, 여기서는 HNC A.2의 설명과 대칭행렬 항등식을 확인했다.
+LOBPCG는 직교한 여러 방향을 block으로 함께 갱신한다. 현재 방향, residual, 이전 방향의 작은 탐색 공간에서 개선하며, 큰 행렬 대신 곱만 쓴다. $k$개 벡터를 구했다고 전체 평평한 방향이 $k$개라는 결론은 나오지 않는다.
 
 ### A.3 Soft projection과 conjugate gradient
 
@@ -93,7 +93,9 @@ $$
 
 여기서 $Q$는 리뷰가 추가한 목적함수 이름이다. 미분해 0으로 두면 바로 앞 선형식이 나온다. 원하는 gradient에 가깝게 가되 출력 변화의 1차 민감도에는 비용을 매기는 셈이다. 그러나 이후 방향 정규화·유한 이동·복원까지 포함한 전체 HNC가 조향 목적을 매번 증가시킨다는 증명은 아니다. [A.2–A.3, p.19](https://arxiv.org/pdf/2609.38081v1#page=19)
 
-## B. 최소점에서 Gauss–Newton과 Hessian이 같아지는 이유
+<span id="b-최소점에서-gaussnewton과-hessian이-같아지는-이유" aria-hidden="true"></span>
+
+## B. 손실 최소점의 헤시안과 가우스–뉴턴 근사 (Gauss–Newton approximation of the Hessian at loss minima)
 
 원문은 probe 출력을 한 벡터로 묶은 잔차(residual)를 정의한다.
 
@@ -167,7 +169,9 @@ $$
 
 Hessian의 정확한 영방향이어도 유한 $t$에서 손실은 0이 아니다. 실제로 이 예제의 정확한 영손실 해는 원점뿐이다. 국소 영공간이 크다는 것만으로 같은 차원의 전역 해 다양체가 존재한다고 결론내릴 수도 없다. 복원·작은 보폭·수용 검사가 필요한 이유다.
 
-## C. 구성요소 제거 실험 (Ablation Study)
+<span id="c-구성요소-제거-실험-ablation-study" aria-hidden="true"></span>
+
+## C. HNC 알고리즘 절제 실험 (Ablation study on HNC algorithm)
 
 원문 C.1–C.4는 3BFF에서 네 가지 질문을 순서대로 확인한다.
 
@@ -180,7 +184,9 @@ Hessian의 정확한 영방향이어도 유한 $t$에서 손실은 0이 아니�
 
 이 비교는 설정된 step 수·보폭을 맞춘 것이며 Hessian/CG 비용을 포함한 동일 wall-clock 예산의 보편적 우위를 입증하지 않는다. 복원은 정확한 제약면 투영이 아니라 drift를 줄이는 보호 장치다. [C·Figures 6–9, pp.20–22](https://arxiv.org/pdf/2609.38081v1#page=20)
 
-## D. 함수 보존과 과제 손실 보존은 다르다
+<span id="d-함수-보존과-과제-손실-보존은-다르다" aria-hidden="true"></span>
+
+## D. HNC의 함수 보존과 과제 손실 보존 (Preserving function versus task loss in HNC)
 
 첫째, 학습이 끝난 모델도 과제 gradient가 정확히 0일 필요는 없다. 평평한 방향으로 움직여도 1차 항 $\eta\mathbf g^\top\mathbf v$가 남는다. 원문 3BFF 비교에서는 이 항이 2차 항보다 2–3자릿수 커지고 task loss가 약 10배로 늘었다. anchor 함수 일치는 자신의 출력을 대상으로 하므로 출발점에서 잔차·gradient가 정확히 0이라는 장점이 있다.
 
@@ -202,13 +208,17 @@ Hessian의 정확한 영방향이어도 유한 $t$에서 손실은 0이 아니�
 
 과제 수준의 더 넓은 집합을 탐색하고 싶으면 anchor task loss와의 차이를 제곱한 제약을 쓸 수 있다. 그러면 출발 gradient는 0이 되지만 출력 정보가 적다는 두 번째 문제까지 해결되지는 않는다. finite probe의 함수 일치는 labels 없이도 가능하지만 probe 밖 보존은 여전히 별도로 평가해야 한다.
 
-## E. 전역 탐색과 결합하기
+<span id="e-전역-탐색과-결합하기" aria-hidden="true"></span>
+
+## E. 다른 해를 찾는 전역 탐색과 HNC의 결합 (Combining HNC with global search for alternative solutions)
 
 저자들은 DSA 조향 local walk와, 이전 해들과 동역학이 다르도록 regularization한 새 학습을 번갈아 수행한다. 8개 네트워크 체인은 기억을 고정점·지속 drift·더 많은 attractor로 구현하며 bit accuracy $0.999$ 초과를 보고한다. local walk는 현재 해의 낮은 손실 영역을 탐색하고 새 학습은 멀리 떨어진 가중치로 갈 수 있다.
 
 그러나 새 모델을 학습하는 구간까지 하나의 함수 보존 경로로 입증한 것은 아니다. 모든 basin을 발견하거나 그 개수를 알려주는 방법도 아니다. ridge를 넘도록 허용 오차를 높이기·작은 random kick으로 재시작하기 등은 이 절의 향후 제안이다. [E·Figures 12–14, pp.26–28](https://arxiv.org/pdf/2609.38081v1#page=26)
 
-## F. RNN 추가 분석: 차원·압축·재학습·OOD
+<span id="f-rnn-추가-분석-차원압축재학습ood" aria-hidden="true"></span>
+
+## F. 3BFF RNN 실험 상세 (Details for the 3BFF RNN experiments)
 
 ### F.1–F.3 설정과 평평한 공간의 크기
 
@@ -241,7 +251,9 @@ gallery와 10-anchor MDS는 하나의 특이한 도착점만이 아니라 여러
 
 8,000-step SGD 재개 시에는 낮은 task loss로 내려가도 조향한 CKA·DSA·희소성의 차이가 남는다. 이는 일반 학습이 원래 anchor로 반드시 끌어당기지는 않는다는 관찰이다. OOD pulse 크기·빈도, 긴 무입력 구간과 상태 교란에서는 일부 endpoint가 anchor보다 먼저 실패한다. 표현 다양성과 강건성 향상을 동의어로 쓰지 않는다. [F.4–F.8, pp.30–35](https://arxiv.org/pdf/2609.38081v1#page=31)
 
-## G. ViT 검증: 지표 최적화와 함수 보존을 따로 평가하기
+<span id="g-vit-검증-지표-최적화와-함수-보존을-따로-평가하기" aria-hidden="true"></span>
+
+## G. ViT 추가 실험 (Additional experiments on ViT)
 
 ### G.1–G.4 조향 목적과 설정
 
@@ -283,7 +295,9 @@ CKA 조향은 ImageNet/V2/R/Sketch에서 작은 정확도 손실, 오류 일관�
 
 probe를 늘리는 실험은 보존을 강화하면서 허용된 walk를 더 오래 진행해 더 큰 표현 변화를 얻는 경우를 보여준다. 비용은 probe 수에 따라 대략 선형 증가한다. “제약이 많으면 언제나 도달 영역이 커진다”는 집합론적 결론과 다르다. 마지막 MDS는 metric·probe draw·다시 조향한 방향에 따라 서로 다른 대안이 나타남을 확인한다. [G.7–G.10, pp.43–46](https://arxiv.org/pdf/2609.38081v1#page=43)
 
-## H. Brain-Score 조향: 무엇을 실제로 높였는가?
+<span id="h-brain-score-조향-무엇을-실제로-높였는가" aria-hidden="true"></span>
+
+## H. 함수를 유지하며 Brain-Score 조향하기 (Steering Brain-Score at fixed function)
 
 MajajHong2015 IT benchmark는 원문 기준 이미지 3,200개와 macaque IT 168개 recording site를 사용한다. 보고 점수는 10-fold PLS-25로 특징에서 신경 반응을 예측한 상관을 site median·fold 평균으로 모아 noise ceiling 0.82로 정규화한다.
 
@@ -291,7 +305,9 @@ MajajHong2015 IT benchmark는 원문 기준 이미지 3,200개와 macaque IT 168
 
 86M relative-position ViT의 up/down IT 점수 범위는 0.618–0.719(약 0.10), 사용하지 않은 site와 image에서는 범위 0.039로 보고된다. plain ViT-S는 held-out image에서 0.546–0.627(0.081)로 변한다. 비교한 7개 모델의 범위는 약 0.074–0.075다. top-1 결정은 최소 94% 보존이고 logit KL은 $10^{-5}$–$10^{-3}$ 범위다. **근사 보존을 exact equality로 바꾸지 않는다.** IT에 대한 조향이 V1·V2·V4의 예측도까지 같은 폭으로 바꾸지는 않는다고 보고한다. 모델의 신경 예측도는 어느 해를 택했는지에도 의존할 수 있다는 결론이다. [H, pp.46–48](https://arxiv.org/pdf/2609.38081v1#page=46)
 
-## I. 강화학습 확장의 수학과 실패
+<span id="i-강화학습-확장의-수학과-실패" aria-hidden="true"></span>
+
+## I. 강화학습으로 HNC 확장하기 (Extending HNC to reinforcement learning)
 
 ### I.1 Advantage와 surrogate의 의미
 
@@ -334,7 +350,9 @@ $$
 
 Ant의 걸음 분석은 걷는 episode만 사용해 anchor 25/30, 대안 27/30이다. 대안은 멈춰 서는 실패가 줄지만 torso 높이가 범위를 벗어나 조기 종료하는 실패가 생긴다. 두 정책의 초기 상태별 return은 비상관으로 보고된다. 평균 성능의 동등성을 episode별 동일성이나 전반적 안전성으로 바꿔 읽지 않는다. Plume의 서로 다른 OOD 조건은 초기 상태 grid가 달라 조건 안의 paired 비교와 조건 사이 절대 성공률 비교도 구분한다. [I, pp.49–53](https://arxiv.org/pdf/2609.38081v1#page=49)
 
-## J. 손실 지형 측정의 해석 범위
+<span id="j-손실-지형-측정의-해석-범위" aria-hidden="true"></span>
+
+## J. HNC로 손실 지형의 기하 탐사하기 (Probing loss-landscape geometry with HNC)
 
 폭 5개×클래스 수 5개×3 seed의 CNN grid는 75개다. GroupNorm을 사용해 batch 구성에 따른 출력을 피하고, 각 모델의 학습 입력 512개에서 함수 변화량을 측정한다. J.2는 절대 drift 허용값을, J.3은 상대 spectral cutoff를 여러 값으로 바꾸어 경향을 확인한다. J.4의 feature covariance participation ratio는 클래스 수가 늘면 약 5배로 커지지만 폭 변화에는 상대적으로 둔감하다. **특징의 유효 차원과 가중치의 flat fraction은 다른 측정**이다.
 
@@ -342,15 +360,13 @@ J.1의 학습 정확도 100%를 cross-entropy 0과 동일시하는 문장은 채
 
 **리뷰 보충:** finite probe 출력 성분이 $q$개라면 $\operatorname{rank}(\mathbf J)\le q$이고, $\dim\ker\mathbf J\ge P-q$다. 따라서 많은 파라미터와 적은 probe 제약 자체로 큰 선형 영공간이 생길 수 있다. 이것만으로 실제 입력 분포의 모든 동작에 자유가 그만큼 남는다고 결론낼 수 없다. probe 밖 평가가 실험의 필수 부분이라는 뜻이다. [J, pp.53–55](https://arxiv.org/pdf/2609.38081v1#page=53)
 
+## 리뷰 해석과 남은 질문
+
+**리뷰 해석.** 국소적인 보존 방향을 큰 모델에서 계산할 수 있다는 것이 핵심이며, 메모리·시간·probe 밖 오차를 함께 살펴야 한다.
+
 ## 출처와 읽은 범위
 
-- 원문: Huang 등 여섯 저자, [HNC v1](https://arxiv.org/abs/2609.38081v1), 최초 공개 2026-09-29, 검토 2026-10-17. 첫 읽기와 전체 정독 범위는 [1편 출처](/reviews/hnc-solutions/#출처와-읽은-범위)에 기록했다.
-- 이 글은 부록 A–J의 순서·역할을 유지했다. A–B의 알고리즘·식 (4)–(6), C의 네 ablation, D의 Table 2, F의 Table 3, G–J의 검증 조건과 반대 결과를 보존했다. 반복 gallery와 모든 solver hyperparameter 표·그림의 중복 전사는 줄였다.
-- 보충 유도: 성분별 product rule, PSD·양의 정부호, Rayleigh quotient, soft projection의 이차 최소화, 비선형 반례, finite-probe rank bound와 일부 산술. $q,\mathbf g,a,b,t$ 등 설명용 기호는 추가 표기로 밝혔다. 논문 전체의 형식적 정확성이나 전역 수렴을 인증한 것이 아니다.
-- 불일치: G.3의 kNN probe 256 대 Table 8의 512, J.1의 정확도/zero-loss 표현, 일반 Algorithm 1과 F.3의 손실 제어량 차이를 구분했다. 저자에게 확인하지 않았다.
-- 그림: 공통 Figure 1과 D의 Figure 11, 원문 여섯 저자, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), [저자 v1 소스](https://arxiv.org/src/2609.38081v1). PDF rasterization·WebP encoding 외에 내용·배치·화살표·문자를 바꾸지 않았다.
-- **미실행:** 저자 코드·GPU/학습/walk/뇌 데이터/RL 재현, raw result 통계 검정, 하드웨어 비용 재측정, 전역·기계 형식 검증, 참조 LOBPCG/CG 이론 전체의 독립 증명, 설정 불일치의 저자 확인. 이 글의 국소 계산 검토와 구분한다.
-
-- 2026-10-22 재점검: 기존 두 읽기와 원문 대응 기록을 재사용해 위에 추가한 지표·가정·예제의 정의를 보완했다. 새 전문 두 읽기로 계산하지 않는다. 새 모델·GPU·로봇 재현과 전체 형식 검증은 미실행이다.
-
-- 추가 지표 대조: CKA 원전의 §3–5, Eq. (14)와 focal Appendix F.2·G.5의 지표 설명을 재확인했다. 뇌·모델 원시 데이터로 점수를 재계산하지 않았다.
+- 원문: *Traversing the solution space of neural networks with Hessian Null Space Continuation* · Ann Huang et al. · 최초 공개 2026-09-29 · [검토 버전](https://arxiv.org/abs/2609.38081v1) · 검토일 2026-10-23.
+- 읽은 범위: v1 부록 A–J의 알고리즘·미분 유도·절제 실험·검증 조건. 반복 gallery·모든 hyperparameter 행은 축약한다.
+- 그림 출처: 대표 Figure 1과 해당 편의 본문 그림은 저자 v1 자산(CC BY 4.0). PDF 래스터화·WebP 인코딩으로 해상도를 바꾸고 내용·배치·글자·화살표를 유지한다. [원문](https://arxiv.org/abs/2609.38081v1).
+- 확인하지 않은 것: 연구 코드 실행·모델 학습/재현·원시 데이터 불확실성 추정·전체 형식 인증.

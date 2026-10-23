@@ -3,7 +3,7 @@ title: "[1/2] Single Global Merging: 드문 통신 뒤 마지막 평균이 성�
 description: "통신 시점과 세 가지 평가 지표를 구분하며 원문 §1–6의 실험·이론·한계를 읽는다."
 date: "2026-10-23"
 publishedAt: "2026-10-23T12:14:59+09:00"
-updatedAt: "2026-10-23T12:14:59+09:00"
+updatedAt: "2026-10-23T08:56:25+00:00"
 topics: ["decentralized learning", "model merging", "distributed optimization", "federated learning", "communication efficiency"]
 visibility: "public"
 paperTitle: "On the Surprising Effectiveness of a Single Global Merging in Decentralized Learning"
@@ -17,7 +17,7 @@ translationKey: "single-global-merging"
 thumbnailAlt: "원문 Figure 1(b): sparse 분산 학습의 마지막 가중치 평균에서 전역 테스트 성능이 크게 회복되는 ResNet-18 실험."
 ---
 
-서로 다른 데이터로 학습한 모델들이 각각은 전체 문제를 잘 풀지 못하는데, 마지막에 가중치를 평균하면 성능이 크게 좋아질 수 있을까? 이 논문은 **학습 중 드문 통신을 이어 온 모델들에서 그런 현상이 나타난다**고 보고한다. 핵심은 평균 연산 자체의 발명이 아니라, **통신을 언제 쓰고 어떤 모델을 평가해야 분산 학습의 잠재력을 제대로 볼 수 있는가**라는 질문이다.
+이 논문은 이질적인 데이터에서 드문 이웃 통신을 유지한 모델들을 마지막에 전역 병합(global merging)하면 성능이 크게 회복되는 현상을 조사한다. Tiny ImageNet·32명·확률적 경사하강법(stochastic gradient descent, SGD) 설정의 Figure 1(b)에서 균등 평균 후 정확도는 그림상 약 20%에서 48%로 오르고, 참여자당 이웃 교환은 300라운드 동안 기대 약 60회다. [원문 §4·Figure 1](https://arxiv.org/pdf/2507.06542v4#page=2) **리뷰 해석.** 개별 모델과 평균 모델을 함께 평가하게 만드는 결과이며, 회복 크기의 근삿값과 실제 통신 시간은 구분해야 한다.
 
 이 글은 ICLR 2026 논문의 arXiv v4를 기준으로 **§1→§2→§3→§4→§5→§6** 순서로 읽는다. [[2/2] 부록·증명 상세 해설](/reviews/single-global-merging-theory/)은 A–D를 따라 실험 설정과 중간 유도, 확인된 증명 간극을 다룬다. 관측된 성능 회복과 그 현상을 설명하려는 이론의 성립 범위는 구분해서 읽어야 한다.
 
@@ -29,11 +29,11 @@ thumbnailAlt: "원문 Figure 1(b): sparse 분산 학습의 마지막 가중치 �
 
 기존 연구는 통신 그래프, 즉 **누가 누구와 연결되는가**를 많이 다뤘다. 저자들은 같은 통신 예산도 **학습의 어느 시점에 배치하는가**에 따라 효과가 달라질 수 있다고 묻는다. 이를 확인하려고 일부 구간에서만 전체 동기화를 활성화하고 그 구간을 앞에서 뒤로 옮긴다. 이어서 그 구간을 마지막 한 번의 전역 병합(global merging)으로 줄인다. [§1, pp.1–3](https://arxiv.org/pdf/2507.06542v4#page=1)
 
-[![Figure 1. 사전학습 CLIP과 처음부터 학습한 ResNet의 마지막 병합 효과, 보간 손실 지형, 세 학습 방식의 통신 구조.](/assets/reviews/single-global-merging/figure1.webp)](/assets/reviews/single-global-merging/figure1.webp)
+[![Figure 1. 사전학습 CLIP과 처음부터 학습한 ResNet의 최종 전역 병합 효과, 보간 손실 지형, 세 학습 방식의 통신 구조.](/assets/reviews/single-global-merging/figure1.webp)](/assets/reviews/single-global-merging/figure1.webp)
 
 *원문 Figure 1(a–d). (a)는 사전학습한 CLIP ViT-B/32, (b)는 사전학습 없이 학습한 ResNet-18이다. 파랑은 federated training, 주황은 sparse decentralized training, 초록은 무통신 local training이다. (a,b)의 가로축은 통신 라운드, 세로축은 평균 전역 테스트 정확도다. 마지막 주황색 반등이 핵심 관찰이다. (c)의 색은 정확도가 아니라 보간 모델의 cross-entropy loss이며, (d)는 세 방식의 연결 구조다. 원문 CC BY 4.0 그림을 PDF에서 추출해 무손실 WebP로 변환했다.*
 
-Figure 1(b)를 대표 이미지로 선택한 이유도 이 마지막 변화 때문이다. 학습 중에는 주황과 초록이 비슷해 보이지만, 마지막 평균 이후에는 결과가 크게 갈린다. **“single global merging”은 학습 전체에서 통신을 한 번만 했다는 뜻이 아니다.** 주황색 모델들은 학습 중에도 낮은 빈도로 이웃과 통신해 왔다.
+Figure 1(b)를 대표 이미지로 선택한 이유도 이 마지막 변화 때문이다. 학습 중에는 주황과 초록이 비슷해 보이지만, 최종 전역 병합 이후에는 결과가 크게 갈린다. **“single global merging”은 학습 전체에서 통신을 한 번만 했다는 뜻이 아니다.** 주황색 모델들은 학습 중에도 낮은 빈도로 이웃과 통신해 왔다.
 
 ## 2. 관련 연구: 이 논문이 바꾸는 부분 (Related Work)
 
@@ -41,15 +41,19 @@ Figure 1(b)를 대표 이미지로 선택한 이유도 이 마지막 변화 때�
 
 직접 확인한 핵심 원전 다섯 편을 정리하면 다음과 같다. 최신 후속 연구를 망라한 목록은 아니다.
 
-| 원전 | 이미 알려진 내용 | 이번 논문과의 연결·차이 |
+원문 §2는 Local SGD의 로컬 갱신 일정과 암묵적 편향에서 출발해, 전역 모델을 유지하는 연합 학습의 초반 정렬 논의로 이어진다. 완전 분산 학습에서는 각 로컬 모델의 전역 분포 일반화가 평가 대상이고, Kong 등의 IID 결과는 로컬·전역 목적이 같은 경우의 선행 근거로 소개한다. 암묵적 편향과 모델 병합의 계보는 부록 B.2·B.3으로 보낸다. [원문 §2·Appendix B](https://arxiv.org/pdf/2507.06542v4#page=3)
+
+### 리뷰 보충: 관련 원전의 비교 범위
+
+| 원전 | 이미 알려진 내용 | 이 논문과의 연결·차이 |
 | --- | --- | --- |
-| [Koloskova et al., 2020](https://proceedings.mlr.press/v119/koloskova20a.html), §5–6 | 변하는 그래프·local updates·비IID를 포함한 DSGD 수렴 분석 | 이번 연구는 모델 차이를 오차로만 처리하지 않고 고차 기하의 유익한 항으로 해석하려 한다. 이전 연구가 비IID를 다루지 않았던 것은 아니다. |
-| [Kong et al., 2021](https://proceedings.mlr.press/v139/kong21a.html), §3–4 | 임계 합의 거리(critical consensus distance) 아래에서 중앙집중식 수렴률을 회복하는 조건, 학습 단계별 통신 제어 | “완전 합의 없이도 중앙 수렴률 회복” 자체는 선행한다. 이번 논문의 초점은 비IID에서 마지막 병합의 성능과 다른 고차 설명이다. |
-| [Zhu et al., 2023](https://proceedings.mlr.press/v202/zhu23e.html), §3–4·C.2 | DSGD와 평균 방향 SAM(average-direction SAM)의 점근적 연결 | 이번 이론의 직접적인 출발점이다. 다만 원전은 참여자들이 같은 분포에서 샘플링하는 IID 설정이므로 비IID로의 이전에는 검토가 필요하다. |
-| [Wortsman et al., 2022](https://proceedings.mlr.press/v162/wortsman22a.html), §1–2 | 같은 사전학습 체크포인트에서 독립 미세조정한 모델의 가중치 평균(model soups) | 이번 연구는 서로 다른 초기화와 이질적 데이터에서도 소량의 통신이 평균 가능한 상태를 만드는지 묻는다. 무통신 평균이 언제나 실패한다는 주장은 성립하지 않는다. |
+| [Koloskova et al., 2020](https://proceedings.mlr.press/v119/koloskova20a.html), §5–6 | 변하는 그래프·local updates·비IID를 포함한 DSGD 수렴 분석 | 이 연구는 모델 차이를 오차로만 처리하지 않고 고차 기하의 유익한 항으로 해석하려 한다. 이전 연구가 비IID를 다루지 않았던 것은 아니다. |
+| [Kong et al., 2021](https://proceedings.mlr.press/v139/kong21a.html), §3–4 | 임계 합의 거리(critical consensus distance) 아래에서 중앙집중식 수렴률을 회복하는 조건, 학습 단계별 통신 제어 | “완전 합의 없이도 중앙 수렴률 회복” 자체는 선행한다. 이 논문의 초점은 비IID에서 최종 전역 병합의 성능과 다른 고차 설명이다. |
+| [Zhu et al., 2023](https://proceedings.mlr.press/v202/zhu23e.html), §3–4·C.2 | DSGD와 평균 방향 SAM(average-direction SAM)의 점근적 연결 | 이 이론의 직접적인 출발점이다. 다만 원전은 참여자들이 같은 분포에서 샘플링하는 IID 설정이므로 비IID로의 이전에는 검토가 필요하다. |
+| [Wortsman et al., 2022](https://proceedings.mlr.press/v162/wortsman22a.html), §1–2 | 같은 사전학습 체크포인트에서 독립 미세조정한 모델의 가중치 평균(model soups) | 이 연구는 서로 다른 초기화와 이질적 데이터에서도 소량의 통신이 평균 가능한 상태를 만드는지 묻는다. 무통신 평균이 언제나 실패한다는 주장은 성립하지 않는다. |
 | [de Vos et al., 2023](https://papers.nips.cc/paper_files/paper/2023/hash/7172e147d916eef4cb1eb30016ce725f-Abstract-Conference.html), §3 | 무작위 통신의 혼합·수렴 효과 | 무작위 그래프를 쓰는 동기다. 구체적 프로토콜마다 확률적 행렬의 성질이 달라 모든 random-peer 방식이 같은 이론 조건을 만족하지는 않는다. |
 
-또한 원문 §4.2는 최종 평균을 쓰던 D-PSGD, 주기적 전체 평균, gradient sparsification을 사용하는 SCSP와의 차이를 설명한다. 저자들이 강조하는 새 질문은 “최종 평균이라는 연산이 존재하는가”보다 **강한 이질성과 긴 local updates 뒤에도 왜 평균이 효과적인가**다. 이 추가 원전들은 이번에 별도 정독하지 않았으며, 비교는 해당 논문의 자기 설명 범위로 한정한다. [§2·§4.2·B](https://arxiv.org/pdf/2507.06542v4#page=3)
+또한 원문 §4.2는 최종 전역 병합을 쓰던 D-PSGD, 주기적 전체 평균, gradient sparsification을 사용하는 SCSP와의 차이를 설명한다. 저자들이 강조하는 새 질문은 “최종 전역 병합이라는 연산이 존재하는가”보다 **강한 이질성과 긴 local updates 뒤에도 왜 평균이 효과적인가**다. [§2·§4.2·B](https://arxiv.org/pdf/2507.06542v4#page=3)
 
 ## 3. 표기와 준비: 세 가지 성능을 구분해야 한다 (Notations and Preliminaries)
 
@@ -109,9 +113,9 @@ $$
 
 이면 모델 집합이 병합 가능하다고 정의한다. 의도는 비볼록 손실(non-convex loss)에서도 모델 사이의 평균이 나쁜 지점으로 떨어지지 않는 성질을 표현하는 것이다.
 
-**정의 자체에는 주의가 필요하다.** 원문에는 $\sum_k w_k=1$이 쓰여 있지 않으며, 그 조건을 추가해도 하나의 가중치만 1로 두는 선택은 항상 등호를 만족한다. 그러므로 현재의 “어떤 가중치가 존재한다”는 정의만으로는 비자명한 병합성을 구별하기 어렵다. 이후 실험은 더 구체적인 **균등 평균 $w_k=1/m$의 실제 성능**으로 읽겠다. 이는 리뷰의 점검이며 저자가 별도로 제시한 정리는 아니다. [Definition 2, p.4](https://arxiv.org/pdf/2507.06542v4#page=4)
+실험에서는 이 정의의 가중치를 균등 평균 $w_k=1/m$으로 구체화한다. 정의의 비자명성은 [심층 편 D](/reviews/single-global-merging-theory/#d-theory)에서 검토한다.
 
-## 4. 경험적 관찰: 마지막 평균에서 무엇이 드러나는가? (Empirical Observations)
+## 4. 경험적 관찰: 최종 전역 병합에서 무엇이 드러나는가? (Empirical Observations)
 
 ### 4.1 후반부로 옮긴 통신 예산 (Increasing Impact of Communication in the Later Stages of Training)
 
@@ -129,11 +133,11 @@ CIFAR-100, ResNet-18, AdamW, 16명 참여자, Dirichlet $\alpha=0.1$ 조건에�
 
 Figure 1의 주 실험은 Tiny ImageNet, 32명 참여자, $\alpha=0.1$, SGD 조건이다. 학습은 300 통신 라운드이며 라운드마다 100 local mini-batch updates를 수행한다. 이웃 교환은 라운드당 확률 0.2이므로 참여자당 기대 약 60회다. 마지막에만 전체 모델을 균등 평균한다.
 
-Figure 1(b)의 주황선은 병합 전 약 0.2 수준에서 마지막 평균 후 약 0.48로 뛴다. 파란 FL 기준은 약 0.56이다. 이 수치는 **그림을 읽은 근삿값**이며, 원시 로그나 독립 재현으로 얻은 정확한 평균·신뢰구간이 아니다. 저자들이 보여 주는 것은 큰 성능 회복이지 FL와의 수학적 동등성은 아니다.
+Figure 1(b)의 주황선은 병합 전 약 0.2 수준에서 최종 전역 병합 후 약 0.48로 뛴다. 파란 FL 기준은 약 0.56이다. 이 수치는 **그림을 읽은 근삿값**이며, 원시 로그나 독립 재현으로 얻은 정확한 평균·신뢰구간이 아니다. 저자들이 보여 주는 것은 큰 성능 회복이지 FL와의 수학적 동등성은 아니다.
 
-반면 통신을 전혀 하지 않은 scratch 모델의 마지막 평균은 거의 실패한다. 사전학습 CLIP의 (a)에서도 sparse 모델의 병합 효과가 보인다. 하지만 독립 미세조정의 평균이 성공하는 Model soups 같은 별도 조건도 있으므로, 초록선의 실패를 모든 독립 모델 평균의 불가능성으로 일반화해서는 안 된다. [§4.2·Remark 2, pp.5–6·C.1](https://arxiv.org/pdf/2507.06542v4#page=6)
+반면 통신을 전혀 하지 않은 scratch 모델의 최종 전역 병합은 거의 실패한다. 사전학습 CLIP의 (a)에서도 sparse 모델의 병합 효과가 보인다. 하지만 독립 미세조정의 평균이 성공하는 Model soups 같은 별도 조건도 있으므로, 초록선의 실패를 모든 독립 모델 평균의 불가능성으로 일반화해서는 안 된다. [§4.2·Remark 2, pp.5–6·C.1](https://arxiv.org/pdf/2507.06542v4#page=6)
 
-**통신 비용도 마지막 평균을 포함해 계산한다.** 모델 크기 $P$, 참여자 $m$, 라운드 $T$에 대해 저자는
+**통신 비용도 최종 전역 병합을 포함해 계산한다.** 모델 크기 $P$, 참여자 $m$, 라운드 $T$에 대해 저자는
 
 $$
 C_{\mathrm{dense}}=\mathcal O(2mPT),\qquad
@@ -220,26 +224,11 @@ $$
 
 를 쓰자. 여기서 미분할 때 $\Gamma^{(t)}$는 고정한다. 논문의 의도는 평균 업데이트를 대략 $g_t+q_t/2$ 방향으로 보고, $g_t^\top q_t$의 부호가 유리한 경우를 찾는 것이다. $q_t$는 “현재 모델들의 퍼짐 방향으로 손실 곡률이 어떻게 변하는가”를 나타낸다.
 
-**공분산과 곡률이 만나는 이유 — 리뷰 보충 직관.** $\delta_k=\theta_k-\bar\theta$, $H=\nabla^2\mathcal L(\bar\theta)$라 두고, 같은 전역 손실을 서로 다른 모델 위치에서 평가하는 보조 계산을 해 보자. Taylor 전개를 평균하면 $\sum_k\delta_k=0$으로 선형항이 지워져
+곡률과 모델 공분산의 관계를 전개하는 [Taylor 보충 유도](/reviews/single-global-merging-theory/#d-theory)는 심층 편에 둔다.
 
-$$
-\frac1m\sum_k\mathcal L(\bar\theta+\delta_k)
-=\mathcal L(\bar\theta)
-+\frac12\operatorname{Tr}(H\Gamma)
-+\mathcal O\!\left(\frac1m\sum_k\|\delta_k\|^3\right).
-$$
+[![Table 1. 병렬 SGD, 기존 DSGD 분석, 모델 차이의 부호를 남겨 둔 이 분석의 수렴률 비교.](/assets/reviews/single-global-merging/table1.webp)](/assets/reviews/single-global-merging/table1.webp)
 
-가 된다. 이 보조 계산은 실제 비IID 업데이트의 로컬 손실 $\mathcal L_k$들을 이미 같은 것으로 만든 결과가 아니다. 공통 손실 아래에서 왜 이런 곡률 항이 나오는지 설명하기 위한 것이며, 비IID로 옮기는 단계는 2편 D.3에서 검토한다.
-
-$$
-\operatorname{Tr}(H\Gamma)=\frac1m\sum_k\delta_k^\top H\delta_k.
-$$
-
-따라서 trace는 단순히 모델이 얼마나 멀리 퍼졌는지뿐 아니라 **어떤 곡률 방향으로 퍼졌는지**를 반영한다. 평균 곡률 항을 미분하면 $q_t$가 나타난다. 손실이 정확한 이차함수라 Hessian이 일정하면 $q_t=0$이므로, 저자의 설명은 단순한 이차 근사에 없는 고차 효과에 의존한다.
-
-[![Table 1. 병렬 SGD, 기존 DSGD 분석, 모델 차이의 부호를 남겨 둔 이번 분석의 수렴률 비교.](/assets/reviews/single-global-merging/table1.webp)](/assets/reviews/single-global-merging/table1.webp)
-
-*원문 Table 1, p.8. $\varepsilon$은 평균 제곱 기울기 목표, $m$은 참여자 수다. 이전 분석의 통신·이질성 항과 이번 분석의 $U^{(t)}$를 비교한다. 본문 Theorem 1과 표 사이에는 $\varepsilon$ 계수의 불일치가 있어, 표를 검증된 새 명시 수렴률로 그대로 받아들이면 안 된다. CC BY 4.0, 표 전체 추출·무손실 WebP 변환.*
+*원문 Table 1, p.8. $\varepsilon$은 평균 제곱 기울기 목표, $m$은 참여자 수다. 이전 분석의 통신·이질성 항과 이 분석의 $U^{(t)}$를 비교한다. Theorem 1과 표의 계수 대응은 [심층 편 D](/reviews/single-global-merging-theory/#d-theory)에서 비교한다. CC BY 4.0, 표 전체 추출·무손실 WebP 변환.*
 
 **Theorem 1의 대상**은 같은 초기화에서 시작한 DSGD의
 
@@ -266,19 +255,9 @@ $$
 
 가 가능하다고 설명한다. 유리한 항은 $\Xi_t^2$ 차수, 잔차는 $\Xi_t^3$ 차수라 작은 범위에서 전자가 우세하다는 논리다. 안정 조건과 합치면 요구 학습률은 $1/L_2<\eta<2/L_2$다. 모델들이 조금이라도 다르면 언제나 유익하다는 뜻은 아니다.
 
-**이론의 중요한 경계는 숨기지 않아야 한다.** 원문 Assumption 4는 모든 PSD 행렬과 모든 위치에 엄격한 음의 부호를 요구하지만, 영행렬이나 정상점에서는 내적이 0이다. 비IID 기울기를 하나의 전역 손실로 바꾸는 Proposition D.3에도 일반적으로 사라지지 않는 항이 있다. 계수와 Taylor 잔차 상수의 불일치도 확인됐다. 따라서 위 식은 **저자의 설명 틀과 주장**으로 읽고, 지역적 조건부 유도와 실제 반례는 [2편 D 해설](/reviews/single-global-merging-theory/#d-theory)에서 확인하자. [§5.2, pp.7–9·D, pp.30–37](https://arxiv.org/pdf/2507.06542v4#page=8)
+**리뷰 해석.** 위 식은 저자가 제안한 조건부 설명으로 읽어야 한다. 비IID 항·가정·계수의 검토와 수정 후보는 [심층 편 D](/reviews/single-global-merging-theory/#d-theory)에 모았다.
 
-저자의 논증을 원문과 함께 읽는 순서는 다음과 같다. 이 표는 새 가정을 더한 증명이 아니라, 어떤 결과가 다음 결과에 입력되는지 보여 주는 지도다.
-
-| 원문 결과 | 다음 단계에 넘기는 내용 |
-| --- | --- |
-| Lemma D.1·Corollary D.2 | 통신 혼합률 $p$로 모델 차이 $\Xi_t$를 제어한다. |
-| Proposition D.3·Corollaries D.4–D.5 | 평균 업데이트의 곡률 보정과 stochastic noise·잔차를 분리한다. |
-| Theorem D.7 | smoothness로 한 단계의 손실 감소를 만들고 시간에 걸쳐 합한다. |
-| Proposition D.8 | 정렬·학습률·작은 모델 차이 조건 아래 보정항의 부호를 논한다. |
-| Proposition D.9 | 허용 모델 차이를 $p$와 gradient 하한의 조건으로 연결하려 한다. |
-
-한 단계의 간극은 뒤 단계의 적용 범위에도 영향을 준다. 따라서 실험의 성능 반등, 이론의 조건부 감소 설명, 실제 통신 스케줄의 보장을 하나의 결과로 합쳐 읽지 않는다.
+전체 증명의 의존 관계는 [심층 편 D.1–D.9](/reviews/single-global-merging-theory/#d-theory)에 연결한다.
 
 ### 5.3 후반 통신이 더 중요하다는 설명 (A Theoretical Explanation for Communication Allocation)
 
@@ -291,21 +270,23 @@ $$
 
 $p$가 커지면 이 상한은 작아진다. Proposition 3은 이 혼합 효과와 $\mu_t$를 결합해 안전한 모델 차이의 문턱을 제안한다. 다른 상수를 고정하면, $\mu_t$가 작아질수록 허용되는 차이가 줄고 더 강한 혼합이 필요하다는 구조다. 저자는 이를 **큰 gradient의 초반보다 작은 gradient의 후반에 더 많은 통신을 배치하는 근거**로 해석한다.
 
-이것은 측정 가능한 $p$와 $\mu_t$를 추정해 실행하는 완성된 적응형 알고리즘이 아니다. 실제로 gradient가 단조롭게 감소한다는 보장도 없고, 기대 제곱 거리의 상한만으로 매 실행의 거리가 문턱 아래라는 보장이 나오지도 않는다. 또한 $p=0$에서 이 상한을 쓸 수 없다는 사실이 모든 무통신 모델의 병합 실패를 증명하지는 않는다. [§5.3·Proposition 3, p.10·D.9](https://arxiv.org/pdf/2507.06542v4#page=10)
+**리뷰 해석.** 이 설명을 실제 적응형 스케줄로 만들려면 혼합률과 gradient 하한을 추정하는 절차가 더 필요하다. RMS 경계와 실행별 조건의 차이는 심층 편 D.9에서 다룬다.
 
 ## 6. 함의와 토론: 지금 가져갈 수 있는 설계 원칙 (Implications and Discussions)
 
 저자들의 첫 함의는 모델 병합(model merging)이다. 약한 동기화가 서로 다른 데이터에서 학습한 모델들을 나중에 합칠 수 있는 관계로 유도할 수 있다면, 공통 사전학습 체크포인트나 사후 뉴런 순열 정렬(permutation alignment)에만 의존하지 않는 병합 설계가 가능해진다. 두 번째는 학습 상태에 반응해 통신량을 조절하는 분산 알고리즘이다. [§6, p.10](https://arxiv.org/pdf/2507.06542v4#page=10)
 
-리뷰 관점에서 가장 실용적인 메시지는 **통신이 적은 학습을 평가할 때 개별 모델의 정확도뿐 아니라 마지막 평균 모델도 함께 측정하자**는 것이다. 동시에 평균에 필요한 통신, 데이터 접근과 BatchNorm 처리, 같은 초기화 여부, 테스트셋을 이용한 튜닝 여부를 밝혀야 한다. 이번 논문은 시각 분류 실험에서 흥미로운 현상을 보여 주지만 LLM 학습이나 실제 광역 네트워크의 시간·비용 절감까지 검증한 것은 아니다.
-
 부록에서는 데이터 이질성, optimizer, topology, 초기화, 마지막 부분 gossip을 바꾼 실험을 더 제공한다. 이를 생략하지 않고 [[2/2] 부록·증명 상세 해설](/reviews/single-global-merging-theory/)의 A–C에 이어 정리했다.
+
+## 리뷰 해석과 남은 질문
+
+**리뷰 해석.** 리뷰 관점에서 가장 실용적인 메시지는 **통신이 적은 학습을 평가할 때 개별 모델의 정확도뿐 아니라 최종 전역 병합 모델도 함께 측정하자**는 것이다. 동시에 평균에 필요한 통신, 데이터 접근과 BatchNorm 처리, 같은 초기화 여부, 테스트셋을 이용한 튜닝 여부를 밝혀야 한다. 이 논문은 시각 분류 실험에서 흥미로운 현상을 보여 주지만 LLM 학습이나 실제 광역 네트워크의 시간·비용 절감까지 검증한 것은 아니다.
+
+**리뷰 해석.** 개별 모델과 평균 모델을 함께 평가하게 만드는 결과이며, 회복 크기의 근삿값과 실제 통신 시간은 구분해야 한다.
 
 ## 출처와 읽은 범위
 
-- 원문: Tongtian Zhu, Tianyu Zhang, Mingze Wang, Zhanpeng Zhou, Can Wang, *On the Surprising Effectiveness of a Single Global Merging in Decentralized Learning*. [arXiv:2507.06542v4](https://arxiv.org/abs/2507.06542v4), ICLR 2026. 최초 공개 2025-07-09, 검토판 수정 2026-04-27, PDF 37쪽.
-- 첫 번째 읽기: 2026-10-22, 초록·도입/기여 pp.1–3·Figure 1 캡션·절 지도·§6. 독립 개관을 저장한 뒤 정독했다.
-- 두 번째 읽기: 본문 §1–6·부록 A–D 전체의 활성 저자 LaTeX, 인쇄 PDF의 주요 본문·실험·증명과 대조. 참고문헌 목록 전체의 인용 원전을 정독한 것은 아니다. 원문 §1–6은 1편, A–D와 증명 보충은 2편에 대응한다.
-- 관련 원전 선택 읽기: Koloskova 2020 PDF pp.1·3·5–6, Kong 2021 pp.1·3–4, Zhu 2023 pp.1·3–4·16–17·22–24, Wortsman 2022 pp.1–3, de Vos 2023 pp.1·5–6. 사용한 주장에 해당하는 범위이며 각 논문 전체 리뷰는 아니다.
-- 검증: 정의·차원·계수 대조 및 8개 리뷰 수학 검사 수행. 논문 훈련 코드 실행, GPU 실험 재현, 다중 seed 검증, 실제 네트워크 측정은 **미실행**이다. 원시 학습 로그는 확인하지 않았다.
-- 그림: 원문 Figure 1, Figure 2, Table 1과 Figure 1(b) 대표 이미지. [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)에 따라 출처를 표시하고 PDF·저자 figure PDF를 rasterize해 무손실 WebP로 변환했다. 데이터·선·문구는 재작성하지 않았다.
+- 원문: *On the Surprising Effectiveness of a Single Global Merging in Decentralized Learning* · Tongtian Zhu et al. · 최초 공개 2025-07-09 · [검토 버전](https://arxiv.org/abs/2507.06542v4) · 검토일 2026-10-23.
+- 읽은 범위: v4 본문 §1–6. 부록 A–D의 실험 조건·추가 결과·증명 상세는 [2/2] 이론 편에 대응한다.
+- 그림 출처: 대표 Figure 1(b)와 해당 편의 Figures 1·2 또는 C.5·C.6은 저자 v4 자산(CC BY 4.0). PDF 추출·래스터화·무손실 WebP 변환을 적용하며 데이터·라벨을 유지한다. [원문](https://arxiv.org/abs/2507.06542v4).
+- 확인하지 않은 것: 연구 코드 실행·모델 학습/재현·원시 데이터 불확실성 추정·전체 형식 인증.

@@ -2,7 +2,7 @@
 title: "Fewer Steps, Less Waiting: Understanding RealtimeWAM"
 description: "How teacher endpoints compress action generation into one step, and KV-ready events reduce expert waiting. Read aggregate accuracy, perturbation losses, device-specific speedups and training cost together."
 date: "2026-10-06"
-updatedAt: "2026-10-22T23:22:43+09:00"
+updatedAt: "2026-10-23T08:56:11+00:00"
 topics: ["world action model", "robot learning", "policy distillation", "real-time inference", "gpu optimization"]
 visibility: "public"
 lang: "en"
@@ -16,9 +16,7 @@ thumbnail: "/assets/reviews/realtimewam/paper-figure-2.png"
 thumbnailAlt: "Original Figure 2 showing the TACD teacher, EMA target, student and shared video KV"
 ---
 
-A world action model can predict useful actions and still deliver them too late for control. RealtimeWAM separately reduces **repeated action denoising** and **waiting between video and action experts**. It reports large H100 speedups, but these combine several execution optimizations and do not establish real-time control on every device or under every perturbation. [§4–5, Figure 5, Table 2](https://arxiv.org/html/2610.06617v1#S4)
-
-**Notation.** The equations use the paper’s $f_{\theta_{\mathrm S}}$, $v_{\theta_{\mathrm S}}$, $a_0^{\mathrm T}$, $u_{\theta_{\mathrm T}}$ and $\mathcal L_{\mathrm{TA}}$. $\operatorname{sg}$ denotes stop-gradient. The exact ODE endpoint $a_0^\star$ is distinct from the numerical teacher endpoint $a_0^{\mathrm T}$.
+RealtimeWAM reduces action generation to one step with Teacher-Anchored Consistency Distillation (TACD) and overlaps computation across video and action experts. With all reported optimizations, its Fast-WAM-based H100 latency falls from 299.7 to 12.2 ms, while RoboTwin success changes from 91.51% to 90.84%. [Table 1 and Figure 5](https://arxiv.org/html/2610.06617v1#S5.T1) **Review interpretation.** Its contribution is execution efficiency with limited quality loss; ablations are needed to separate step reduction from pipelining.
 
 This article follows original §1–6. Appendix C’s error derivation is expanded immediately after §4.1; training cost and real-robot demonstrations are grouped under their appendices after the conclusion.
 
@@ -37,11 +35,21 @@ The preceding [SyncWorld review](https://iiamaii.github.io/en/reviews/syncworld-
 
 ## 2. Related Work
 
-Section 2 separates WAMs, few-step distillation, and asynchronous robot-policy inference. The first two concern generation models and training; the third concerns timing between generation and execution. CEWP specifically reduces waiting between experts inside one forward pass. [Original §2](https://arxiv.org/html/2610.06617v1#S2)
+### 2.1 World Action Models
 
-The five core papers are the direct **Fast-WAM and Faster-WAM** backbones, **Consistency Models and MeanFlow** for one-step learning, and **RTC** for execution continuity. First distinguish future information use in the two backbones, then interval-average velocity from endpoint supervision, and chunk execution from waiting inside a forward pass. Their sources and reading scope appear below.
+The authors distinguish shared-backbone WAMs such as DreamZero and Cosmos from Mixture-of-Transformers (MoT) designs such as Motus, whose video and action experts interact through attention. Fast-WAM computes reusable video features once; Light-WAM and Faster-WAM further address efficiency and out-of-distribution robustness. This is RealtimeWAM’s immediate model lineage. [Section 2.1](https://arxiv.org/html/2610.06617v1#S2.SS1)
 
-The five recent representative papers address other cost axes. **DIDO** compresses interaction-focused video tokens and video denoising: its one-step title does not imply one action evaluation. **AnyStep-WAM** selects observation-dependent budgets instead of fixing one step, but its risk proxy is not calibrated physical failure probability. **OpenWAM** studies world/action noise-state synchronization, a different layer from CEWP's CUDA scheduling; bidirectional architectures require rechecking independent KV precomputation. **ReWAM** changes the action-relevant representation, while **WAM-OPD** supervises histories visited by the student. Different hardware and task subsets were not combined into a common ranking. [DIDO §3](https://arxiv.org/html/2609.15570v2#S3), [AnyStep §4](https://arxiv.org/html/2609.33748v2#S4), [OpenWAM §3–4](https://arxiv.org/pdf/2609.07398v1), [ReWAM §3](https://arxiv.org/html/2609.38163v1#S3), [WAM-OPD §3–4](https://arxiv.org/html/2608.22364v2#S3)
+### 2.2 Few-Step Distillation
+
+Progressive distillation, consistency models, distribution matching, MeanFlow, and adversarial distillation reduce iterative sampling. The closest WAM comparison, Flash-WAM, addresses modality-dependent noise regimes while retaining future-video denoising; its one-step setting still loses performance. This motivates the authors’ focus on one-step action distillation for MoT-based WAMs. [Section 2.2](https://arxiv.org/html/2610.06617v1#S2.SS2)
+
+### 2.3 Asynchronous Inference for Robot Policies
+
+The paper distinguishes execution-level overlap of next-chunk prediction with current-chunk execution, module-level separation of slow world/semantic modules from fast action modules, and sampling-level scheduling across positions, chunks, or modalities. CEWP overlaps computation more finely within one forward pass, using block-level KV readiness. [Section 2.3](https://arxiv.org/html/2610.06617v1#S2.SS3)
+
+### Review supplement: other efficiency axes
+
+DIDO compresses video tokens and denoising, AnyStep-WAM varies observation-dependent budgets, OpenWAM coordinates world/action noise states, ReWAM changes action-useful representations, and WAM-OPD supervises student-visited histories. [DIDO section 3](https://arxiv.org/html/2609.15570v2#S3), [AnyStep section 4](https://arxiv.org/html/2609.33748v2#S4), [OpenWAM sections 3–4](https://arxiv.org/pdf/2609.07398v1), [ReWAM section 3](https://arxiv.org/html/2609.38163v1#S3), [WAM-OPD sections 3–4](https://arxiv.org/html/2608.22364v2#S3)
 
 ## 3. Preliminaries
 
@@ -103,6 +111,8 @@ The target is a teacher action, rather than a verified optimal action in the env
 #### Appendix C.1–C.3 beside the method: what the endpoint bound guarantees
 
 This explanation relocates Appendix C next to its method. Fix shared conditioning $z(o,l)$ and the training sampling distribution; assume a unique teacher ODE solution and finite second moments of errors and velocity residuals. Adding and subtracting the EMA prediction gives Eq. (6). Expanding the square retains a cross term, so independence must not be assumed.
+
+The total error $\mathbf e_{\mathrm{total}}$ is the student prediction minus the exact teacher ODE endpoint $a_0^\star$. Local error compares the student with the EMA prediction; global error compares that EMA prediction with $a_0^\star$. The operator $\operatorname{sg}$ denotes stop-gradient.
 
 $$
 \begin{aligned}
@@ -180,6 +190,14 @@ The three evaluation axes are clean/random manipulation in RoboTwin, four LIBERO
 
 | Model | Video NFE | Action NFE | RoboTwin Clean ↑ | Random ↑ | Overall ↑ | LIBERO ↑ |
 | --- | --- | --- | --- | --- | --- | --- |
+| $\pi_0$ | — | — | 65.92 | 58.40 | 62.16 | 94.1 |
+| $\pi_{0.5}$ | — | — | 82.74 | 76.76 | 79.75 | 96.9 |
+| X-VLA | — | — | 72.90 | 72.80 | 72.85 | 98.1 |
+| Motus | 10 | 10 | 88.66 | 87.02 | 87.84 | 97.7 |
+| LingBot-VA | 25 | 50 | 92.90 | 91.50 | 92.20 | 98.5 |
+| Flash-WAM | 1 | 2 | 88.42 | 82.66 | 85.54 | 96.1 |
+| Flash-WAM | 1 | 1 | 82.56 | 80.26 | 81.41 | 95.1 |
+| Light-WAM | 1 | 1 | 76.40 | 76.30 | 76.40 | 97.2 |
 | Fast-WAM | 1 | 10 | 91.82 | 91.19 | 91.51 | 97.0 |
 | Fast-WAM, naive one-step | 1 | 1 | 70.42 | 68.12 | 69.27 | 95.0 |
 | CD* | 1 | 1 | 89.88 | 89.38 | 89.63 | 96.9 |
@@ -204,13 +222,11 @@ RealtimeWAM* loses **0.67 percentage points(pp)** of RoboTwin overall relative t
 | Layout | 79.1 | 79.3 | +0.2 |
 | Overall | 73.6 | 73.0 | −0.6 |
 
-The overall loss is 0.6 pp, but the robot category loses 2.6 pp and language loses 2.2 pp. A below-one-percent aggregate summary therefore cannot be applied to every perturbation. The exact focal evaluation rollout counts, repeated seeds and confidence intervals could not be established from the checked material. The predecessor papers' trial counts were not automatically assigned to RealtimeWAM's own evaluations.
+The aggregate loss is 0.6 percentage points; the robot category loses 2.6 points and language loses 2.2 points. Table 2’s aggregate and category differences should be read together. [Table 2](https://arxiv.org/html/2610.06617v1#S5.T2)
 
 ### 5.4 Ablation Study and latency analysis
 
 The trained experts must also match when isolating the anchor's effect. Unlike CD* in Table 1, Table 3 compares **frozen-video, action-only training**: CD 89.85%→TACD 90.84%, an increase of 0.99 pp. Its random subset nevertheless falls from 89.94 to 89.72%. This is not improvement under every condition. [Table 3](https://arxiv.org/html/2610.06617v1#S5.T4)
-
-
 
 <figure class="review-figure" id="figure-realtimewam-speed">
 <a href="/assets/reviews/realtimewam/paper-figure-5.svg" target="_blank" rel="noopener noreferrer"><img src="/assets/reviews/realtimewam/paper-figure-5.svg" width="1152" height="263" alt="H100 latency bars for Fast-WAM and Faster-WAM after adding TACD, CUDA Graph, CEWP and efficient kernels, with cumulative and incremental speedups." loading="lazy" decoding="async"></a>
@@ -246,16 +262,13 @@ Action-only CD and TACD have the same reported peak memory, but training time ri
 
 ## Review interpretation and open questions
 
-The useful perspective is to separate iteration count from execution dependencies instead of explaining efficiency solely through model size. Figure 5's staged speedups and Table 3's controlled training comparison help guide implementation. However, approaching a teacher endpoint does not establish that the teacher is right in an unfamiliar state. Questions about student visitation and difficult contacts from WAM-OPD and AnyStep remain relevant. This is review interpretation, not a tested result for their combination.
+**Review interpretation.** The useful perspective is to separate iteration count from execution dependencies instead of explaining efficiency solely through model size. Figure 5's staged speedups and Table 3's controlled training comparison help guide implementation. However, approaching a teacher endpoint does not establish that the teacher is right in an unfamiliar state. Questions about student visitation and difficult contacts from WAM-OPD and AnyStep remain relevant. This is review interpretation, not a tested result for their combination.
 
 I recommend first measuring sequential/CEWP output differences, event traces and p 95/p 99 latency on the same GPU. Subsequent work could compare fixed-one and adaptive budgets at matched average compute, and test whether combining RTC improves observation freshness. These validations, code/GPU/real-robot reproduction, statistical significance checks and supplementary-video review are **not run**.
 
 ## Sources and reading scope
 
-- Focal: Chengtao Lv et al., *RealtimeWAM: One-Step Asynchronous World Action Models*,2026. [arXiv:2610.06617 v1](https://arxiv.org/abs/2610.06617v1), first submitted 2026-10-05, checked 2026-10-06. Main §1–6 and selected Appendices A, C.1–C.3, D.1–D.2, E, F.1/F.3/F.6. The 20-page PDF was accessed and text-extracted; Figures 2, 4, 5 and PDF pp.5, 6, 9 were visually inspected. This does not mean every appendix or proof was independently audited.
-- Core: [Fast-WAM v2](https://arxiv.org/html/2603.16666v2), §3.1–3.3, §4.1–4.2 setup, §5; [Faster-WAM v1](https://arxiv.org/html/2608.04404v1), relevant Method and Experiment Setup/Main Results passages; [Consistency Models v2](https://arxiv.org/html/2303.01469v2), §3–4; [Mean Flows v1](https://arxiv.org/html/2505.13447v1), §3, §4.1, initial §5 setup; [RTC v2](https://arxiv.org/html/2506.07339v2), relevant §3 method, §4 setup, §6 limitations.
-- Recent representatives: [DIDO v2](https://arxiv.org/html/2609.15570v2), §3.1–3.4 and initial §4 setup/Table 1 discussion; [AnyStep-WAM v2](https://arxiv.org/html/2609.33748v2), §4.1–4.3 and §5.1/Table 1; [OpenWAM v1](https://arxiv.org/pdf/2609.07398v1), selected passages on PDF pp.1, 5, 8,13–16,33; [ReWAM v1](https://arxiv.org/html/2609.38163v1), abstract and §3.2–3.4; [WAM-OPD v2](https://arxiv.org/html/2608.22364v2), §3.1–3.3, §4.1–4.2/Table 2, §5. The recent window is first submission 2026-08-01 through 10-06. These are five relevant representatives, not the five latest papers overall.
-- Original Figures 2, 4,5: Chengtao Lv et al.,2026, [same-version source](https://arxiv.org/html/2610.06617v1), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Original bytes were retained with no editing or cropping. Only the opening concept diagram was made for this review.
-- Numerical results are author-reported; independent reproduction and separate native-English proofreading were not run.
-
-- Recheck on October 22, 2026: this revision reuses the recorded two readings and rechecks v1 §3–6 and Appendix C.1–C.3. It adds the background in Eqs. (1)–(5), the derivation of (C.2)–(C.4), and intermediate summation of Euler error. Original §1–6 order is restored; training cost moves to Appendix A. Repetitive per-task tables and kernel implementation details are condensed while core success rates, adverse perturbation results, latency ablations, and training cost remain. GPU execution, formal proof verification, and reproduction were not executed. Although v2 is available, the review retains the originally requested v1.
+- Paper: *RealtimeWAM: One-Step Asynchronous World Action Models* · Chengtao Lv et al. · first public date 2026-10-05 · [reviewed version](https://arxiv.org/abs/2610.06617v1) · reviewed 2026-10-23.
+- Scope read: Version 1, sections 1–6, appendix A, C.1–C.3, D, and the relevant experiments and physical-robot demonstrations in F.
+- Figure sources: Figures 2, 4, and 5 are unchanged author assets from v1, CC BY 4.0. The thumbnail concept diagram is review-authored. [Paper](https://arxiv.org/abs/2610.06617v1).
+- Not verified: research-code execution, model training/reproduction, raw-data uncertainty estimates, and complete formal certification.

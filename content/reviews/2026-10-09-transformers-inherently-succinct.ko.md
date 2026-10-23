@@ -2,7 +2,7 @@
 title: "Transformer는 같은 규칙을 왜 더 작게 표현할 수 있을까"
 description: "Transformers are Inherently Succinct를 계산 이력과 작은 검증기의 관점에서 읽는다. 지수·이중 지수 크기 차이의 증명, UHAT의 가정, 검증 난이도와 부록 식의 문제를 정리한다."
 date: "2026-10-09"
-updatedAt: "2026-10-22T23:22:45+09:00"
+updatedAt: "2026-10-23T08:56:13+00:00"
 publishedAt: "2026-10-09T00:06:00+09:00"
 topics: ["language models", "transformer theory", "formal languages", "computational complexity", "formal verification"]
 translationKey: "transformers-inherently-succinct"
@@ -17,9 +17,7 @@ thumbnail: "/assets/reviews/transformers-inherently-succinct/transformers-core.s
 thumbnailAlt: "주소가 붙은 긴 계산 이력에서 수평 이웃과 같은 주소의 이전 행을 attention으로 찾아 작은 UHAT 검증기로 검사하는 구조와 비교 표현의 최악 경우 크기 차이."
 ---
 
-어떤 규칙을 알아보는 능력과, **그 규칙을 얼마나 짧게 적을 수 있는가**는 다른 문제다. 이 논문은 특정 Transformer가 같은 언어를 인식하는 논리식·RNN보다 지수적으로, 유한 오토마타(finite automata)보다 이중 지수적으로 작은 표현을 가질 수 있다고 보인다. 핵심은 긴 계산 이력을 입력에 펼쳐 놓고 attention으로 필요한 위치를 찾아 검사하는 것이다. 실제 LLM의 속도나 정확도 비교가 아니라, 엄격히 정의한 모델의 **최소 기술 길이**(description length)에 관한 이론이다. [§1–4, Theorem 15·17, Corollary 18](https://arxiv.org/pdf/2510.19315v3#page=9)
-
-**표기 안내.** 지수 $2^n$, $2^{2^n}$와 다항 크기 $\operatorname{poly}(n)$는 LaTeX로 표기한다. 타일 행의 문자열 블록은 설명용 입력 예제이므로 코드 형식을 유지한다.
+이 논문은 단일 위치 선택형 어텐션 Transformer(unique-hard attention transformer, UHAT)가 같은 언어를 인식하는 선형 시제 논리(linear temporal logic, LTL)·고정 정밀도 순환 신경망(recurrent neural network, RNN)보다 지수적으로, 유한 오토마타보다 이중 지수적으로 작은 표현을 가질 수 있음을 보인다. 긴 계산 이력을 입력에 두고 작은 attention 검증기로 관계를 검사하는 구성이 하한을 만든다. [원문 Theorems 15·17, Corollary 18](https://arxiv.org/pdf/2510.19315v3#page=9) **리뷰 해석.** 표현력과 기술 길이를 분리한 결과이며, 실용 LLM의 추론 속도를 비교할 때는 모델 가정을 다시 맞춰야 한다.
 
 **대표 그림을 읽는 법.** 왼쪽의 긴 입력에서 필요한 위치를 찾고, 오른쪽의 작은 검증기가 그 관계를 확인하는 구조다. 위 그림은 논문의 증명을 설명하기 위해 직접 제작한 도식이다. [§3–4](https://arxiv.org/pdf/2510.19315v3#page=6) · [크게 보기](/assets/reviews/transformers-inherently-succinct/transformers-core.svg).
 
@@ -79,7 +77,7 @@ B-RASP는 각 위치의 Boolean 값과 다른 위치를 찾는 attention 선택�
 
 ## 3. 비공집합성으로 가장 작은 증거의 크기 이해하기 (The size of smallest witness via non-emptiness problem)
 
-Theorem 4의 질문은 모델이 받아들이는 문자열이 **하나라도 있는가**다. §3의 하한은 $2^N$ 너비 타일링의 EXPSPACE-완전성(Proposition 7)을 Lemma 8의 B-RASP 검증기로, 다시 Lemma 9의 다항 크기 UHAT으로 옮긴다. 유효한 타일링과 수용 문자열의 양방향 대응이 필요하므로 주소·경계·인접 검사 중 하나라도 빠지면 환원이 완성되지 않는다. 참조 타일링 정리의 원전 전체 증명은 이번 수정에서 독립 검증하지 않았다.
+Theorem 4의 질문은 모델이 받아들이는 문자열이 **하나라도 있는가**다. §3의 하한은 $2^N$ 너비 타일링의 EXPSPACE-완전성(Proposition 7)을 Lemma 8의 B-RASP 검증기로, 다시 Lemma 9의 다항 크기 UHAT으로 옮긴다. 유효한 타일링과 수용 문자열의 양방향 대응이 필요하므로 주소·경계·인접 검사 중 하나라도 빠지면 환원이 완성되지 않는다.
 
 상한은 다른 방향이다. Proposition 12가 UHAT 계산값의 비트 길이를 모델 기술 크기의 다항식으로 제한한다. 이때 가능한 값의 종류는 지수적으로 많지만 유한해 열거할 수 있다. Proposition 13은 이를 사용해 동작을 지수 크기의 LTL 식으로 옮긴다. LTL 비공집합성을 식 크기의 다항 공간으로 검사하므로, 원래 UHAT 크기에서는 지수 공간이다. 하한과 이 상한을 합해 EXPSPACE-완전성이 된다. [§3, Theorem 4, Propositions 7·10·12–13; Appendix A.1](https://arxiv.org/pdf/2510.19315v3#page=6)
 
@@ -184,7 +182,7 @@ LTL에서 UHAT으로는 다항 크기 변환이 가능하다. 이는 앞 절의 
 
 ## 부록 A.2에 대한 리뷰 점검: 식 (14e)의 AND
 
-앞의 결과들은 **논문이 제시한 정리와 증명 구조**다. 이번 리뷰에서는 그 증명의 한 부분인 주소 카운터 구성에 국소적인 문제를 확인했다. 부록 A.2의 식 (14e)는 과거에 오류가 없을 때, 현재 주소가 정상 증가했는지와 0으로 순환했는지를 **동시에** 요구한다. PDF와 TeX에 같은 연결자가 있다.
+저자들은 아래 구성에 대해 주소가 올바르게 증가할 때 $B(L)=1$이라고 주장한다. 부록 A.2의 식 (14e)는 과거에 오류가 없을 때, 현재 주소가 정상 증가했는지와 0으로 순환했는지를 **동시에** 요구한다. PDF와 TeX에 같은 연결자가 있다.
 
 <figure class="review-figure" id="paper-equation-14e">
 <a href="/assets/reviews/transformers-inherently-succinct/paper-equation-14e.png" target="_blank" rel="noopener noreferrer"><img src="/assets/reviews/transformers-inherently-succinct/paper-equation-14e.png" width="2400" height="108" alt="원문 부록 A.2 식 (14e). 기본값 부분에서 순환 조건 B₁→₀(i)와 증가 조건 B₊₁(i)를 논리곱으로 연결한다." loading="lazy" decoding="async"></a>
@@ -206,13 +204,15 @@ LTL에서 UHAT으로는 다항 크기 변환이 가능하다. 이는 앞 절의 
 
 이 두 조건은 N≥1에서 동시에 참일 수 없다. 전체 검증 결과에 B가 필수이므로, 인쇄된 구성은 이 정상 타일링을 받아들이지 못한다. [Appendix A.2, 식 (14c–e)](https://arxiv.org/pdf/2510.19315v3#page=15)
 
-리뷰 과정에서 **카운터 식 (14a–e)만** Python으로 옮겨 검사했다. N=1…5의 1행·2행 정상 사례 10개에서 원문 연결자는 모두 거부하고, 기본값의 AND만 OR로 바꾼 후보는 모두 통과했다. 정상 사례의 주소 비트 하나를 바꾼 변형 774개는 수정 후보가 모두 거부했다. 독립적인 주소 순서 검사와 불일치는 0건이었다. 이는 전수 증명이나 학습 정확도 측정이 아니라, 정해진 유한 사례의 국소 검사다. [검사 코드](https://github.com/iiamaii/iiamaii.github.io/blob/main/research/checks/transformers-inherently-succinct/appendix-counter-check.py) · [실행 결과](https://github.com/iiamaii/iiamaii.github.io/blob/main/research/checks/transformers-inherently-succinct/counter-check-results.json).
+주소 순서만을 다루는 [검사 코드](https://github.com/iiamaii/iiamaii.github.io/blob/main/research/checks/transformers-inherently-succinct/appendix-counter-check.py)는 이 국소 논증의 보조 자료다.
 
-**해석의 경계도 남긴다.** 단순 표기 오류일 가능성은 있지만 저자의 확인을 받지는 않았다. A–E 전체, B-RASP→UHAT 변환, 정밀도 구현을 검증하지 않았으므로 OR가 전체 증명을 복구한다고 단정할 수 없다. 이 문제는 해당 구성에 의존하는 하한의 확인 과제이며, 정리 자체의 반증과 구분해야 한다.
+**리뷰 해석.** 단순 표기 오류일 가능성은 있지만 저자의 확인을 받지는 않았다. A–E 전체, B-RASP→UHAT 변환, 정밀도 구현을 검증하지 않았으므로 OR가 전체 증명을 복구한다고 단정할 수 없다. 의존 경로는 Lemma 8의 타일링 검증→Lemma 9의 UHAT 변환→Theorem 4의 하한이며, 같은 구성을 사용하는 간결성 하한과 Theorem 19의 하한도 재확인이 필요하다. Proposition 13의 LTL 변환에 기반한 상한은 이 카운터에 의존하지 않는다. 기본값 AND를 OR로 바꾸는 수정의 국소적 필요성은 높게 확신하지만, 전체 구성의 복구와 정리의 진위는 별도 문제다.
 
-## 리뷰 해석과 후속 검증
+<span id="리뷰-해석과-후속-검증" aria-hidden="true"></span>
 
-이 논문의 가장 유용한 관점은 attention을 **위치 검색을 공유하는 작은 규칙**으로 보는 것이다. 긴 표 전체를 하나의 순환 은닉 상태에 기억하는 대신, 입력의 위치별 표현에서 현재 검사에 필요한 이전 위치를 찾아 관계를 확인한다. 그 결과 표현력 계층만으로는 보이지 않던 표현 비용의 차이를 드러낸다. 이는 증명 구성을 바탕으로 한 리뷰의 해석이다.
+## 리뷰 해석과 남은 질문
+
+**리뷰 해석.** 이 논문의 가장 유용한 관점은 attention을 **위치 검색을 공유하는 작은 규칙**으로 보는 것이다. 긴 표 전체를 하나의 순환 은닉 상태에 기억하는 대신, 입력의 위치별 표현에서 현재 검사에 필요한 이전 위치를 찾아 관계를 확인한다. 그 결과 표현력 계층만으로는 보이지 않던 표현 비용의 차이를 드러낸다. 이는 증명 구성을 바탕으로 한 리뷰의 해석이다.
 
 동시에 세 가지를 분리해야 한다. 작은 가중치가 **존재한다**는 것, 학습이 그 가중치를 **찾는다**는 것, 실제 기기에서 **빠르게 실행된다**는 것은 별도 주장이다. 이 논문은 첫 번째를 다룬다. 고정 정밀도 softmax와 average-hard attention의 간결성도 §6에서 후속 과제로 남긴다. 따라서 이 결과를 곧바로 “실제 LLM이 RNN보다 항상 효율적”이라는 설명으로 사용하기는 어렵다. [§6](https://arxiv.org/pdf/2510.19315v3#page=10)
 
@@ -220,7 +220,7 @@ LTL에서 UHAT으로는 다항 크기 변환이 가능하다. 이는 앞 절의 
 
 배경과 경계를 보려면 다음 세 자료가 도움이 된다. 전수 문헌 조사나 최신성 순위는 아니다.
 
-| 자료 | 연결되는 질문 | 이번 리뷰에서 읽은 범위 |
+| 자료 | 연결되는 질문 | 읽은 범위 |
 | --- | --- | --- |
 | [Yang et al., NeurIPS 2024](https://papers.nips.cc/paper_files/paper/2024/hash/13d7f172259b11b230cc5da8768abc5f-Abstract-Conference.html) | UHAT·star-free·LTL의 표현력 관계는 무엇인가? | 초록, PDF §5.1–5.2, Theorem 5·6 |
 | [Jerad et al., ACL 2025, Unique Hard Attention: A Tale of Two Sides](https://aclanthology.org/2025.acl-short.76/) | 왼쪽/오른쪽 동점 처리가 왜 중요한가? | 초록, §2–3, Table 1 |
@@ -230,11 +230,7 @@ LTL에서 UHAT으로는 다항 크기 변환이 가능하다. 이는 앞 절의 
 
 ## 출처와 읽은 범위
 
-- 원문: Pascal Bergsträßer, Ryan Cotterell, Anthony W. Lin, **Transformers are Inherently Succinct**, ICLR 2026. [arXiv:2510.19315v3](https://arxiv.org/abs/2510.19315v3), 2026-05-15 버전, PDF 21쪽. 최초 arXiv 등록은 2025-10-22다.
-- 검토 범위: 2026-10-08에 본문 §1–6 및 Appendix A.1–A.7을 TeX·PDF 추출 텍스트로 읽었다. 핵심 정리와 식이 있는 PDF pp.8–10·15를 렌더링으로 대조했다. 모든 페이지의 시각적 검수를 수행한 것은 아니다.
-- 버전 제한: 요청받은 [OpenReview PDF](https://openreview.net/pdf?id=Yxz92UuPLQ)는 직접 확보하지 못했다. 공식 arXiv판으로 분석했으며 두 PDF의 정확한 동일성, OpenReview 리뷰·정오표는 **미확인**이다.
-- 대표 그림: §3–4를 바탕으로 직접 제작한 설명용 SVG 한 장. 기본 Light 300, 강조 Semi Bold 600. Space Grotesk는 SIL OFL 1.1. 화살표와 표의 크기는 측정값을 뜻하지 않는다.
-- 원문 발췌: arXiv v3 p.15 식 (14e), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). 주변 여백을 잘랐으며 식과 폰트는 변경하지 않았다.
-- 자체 실행: (14a–e)의 유한 카운터 검사 10개 정상 사례·774개 단일 비트 변형. 전체 A–E 검사, UHAT compiler 실행, 전체 정리의 기계 증명, 학습·GPU 벤치마크는 **미실행**이다.
-
-- 2026-10-22 재점검: 기존 개관·세부 분석 기록을 사용해 v3 TeX의 §3–6와 Appendix A.7을 다시 대조했다. 원문 순서를 복원하고 Theorem 4·15·17·19와 Corollary 18의 환원·크기 계산을 보충했다. §2의 기술 정의는 요약하고 A.2의 기존 국소 반례는 보존했다. 참조 타일링 원전 전체 증명, 전체 compiler 및 전체 정리의 형식 검증은 미실행이다.
+- 원문: *Transformers are Inherently Succinct* · Pascal Bergsträßer et al. · 최초 공개 2025-10-22 · [검토 버전](https://arxiv.org/abs/2510.19315v3) · 검토일 2026-10-23.
+- 읽은 범위: v3 본문 §1–6·Appendix A의 관련 구성과 증명. 참조 타일링 정리 전체와 전체 compiler의 형식 인증은 제외한다.
+- 그림 출처: 대표 개념도는 리뷰 자체 제작물이며 논문 실험 결과를 그린 그래프가 아니다. [원문](https://arxiv.org/abs/2510.19315v3).
+- 확인하지 않은 것: 연구 코드 실행·모델 학습/재현·원시 데이터 불확실성 추정·전체 형식 인증.

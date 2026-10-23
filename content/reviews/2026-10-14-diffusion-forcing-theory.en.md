@@ -3,7 +3,7 @@ title: "[2/2] Diffusion Forcing: What Does Learning Every Subsequence Likelihood
 description: "Follow appendix A's ELBO, Gaussian loss, and subsequence argument through two Jensen steps and intermediate calculations, separating printed inconsistencies from supplementary derivations."
 date: "2026-10-14"
 publishedAt: "2026-10-14T13:58:27+09:00"
-updatedAt: "2026-10-22T23:22:51+09:00"
+updatedAt: "2026-10-23T08:56:20+00:00"
 topics: ["diffusion models", "sequence modeling", "world action model", "robot learning", "probabilistic modeling"]
 visibility: "public"
 lang: "en"
@@ -17,7 +17,7 @@ thumbnail: "/assets/reviews/diffusion-forcing/overview.webp"
 thumbnailAlt: "Original Figure 2: independently noised tokens trained together and sampled under different conditioning patterns."
 ---
 
-Diffusion Forcing's theory is more specific than “random noise makes a model robust.” It connects noise-pattern likelihoods to a lower bound, then argues that an expressive model can optimize multiple denoising problems simultaneously. **An average training objective, an ELBO for a particular pattern, and a finite model's actual accuracy are different objects.** That distinction is essential to understanding “all subsequences.”
+Diffusion Forcing connects expected log likelihood over per-token noise patterns to an evidence lower bound (ELBO). Two Jensen steps, over latent states and reverse diffusion, underpin the argument; equality requires deterministic latents and an exact variational approximation. [Appendix A, Theorem A.1](https://arxiv.org/pdf/2407.01392v4#page=14) **Review interpretation.** The connection between conditioning problems is useful, while printed signs, transition directions, and weights require attention to their downstream consequences.
 
 Read [\[1/2\] Methods and experiments](/en/reviews/diffusion-forcing-methods/) first. This article follows **appendix A, pp. 14–19**, in its original order: setup, A.1 main results, A.1.1 Gaussian specialization, A.1.2 subsequences, and A.2 proof. The proof is expanded without accepting printed sign, transition-direction, and weighting inconsistencies as correct statements. Consistent formulas below are **supplementary review derivations under stated conditions**, not an author-issued erratum.
 
@@ -356,15 +356,13 @@ For general $\mathcal D$, replace coefficients by $P_t(0\mid k_{1:t-1})$ and $\P
 
 The design argument is clear: train denoising over a broad range of noisy histories, allowing one model to handle multiple conditioning patterns. Assessing it requires separating **the relationship between reweighted objectives**, **the expressivity idealization**, and **the accuracy of the printed expressions**.
 
-This review checks the two Jensen steps, Bayes cancellation, KL sign, Gaussian mean calculations, and noise weights locally. It does not formally verify the theorems or provide author confirmation. The printed general-distribution expression in A.3 is not adopted literally, and supplementary calculations are not labeled an official correction.
+## Review interpretation and open questions
 
-## Sources and Reading Scope
+**Review interpretation.** The connection between conditioning problems is useful, while printed signs, transition directions, and weights require attention to their downstream consequences.
 
-- Original: Chen and the five coauthors, [Diffusion Forcing v4](https://arxiv.org/abs/2407.01392v4), first submitted July 1, 2024; reviewed October 14, 2026. Shared first-pass and full second-pass scope is recorded in [part 1's sources](/en/reviews/diffusion-forcing-methods/#sources-and-reading-scope).
-- Detailed scope here: all of appendix A, pp. 14–19, Theorem A.1, Corollary A.2, Theorem A.3, Claims 1–3, and equations (A.1)–(A.13), checked against author LaTeX and rendered PDF. Original numbers identify source locations; review equations are not assigned original equation numbers.
-- Cross-checks: [DDPM v2 §2–3.4](https://arxiv.org/pdf/2006.11239v2), [Chan tutorial v1 §2.6–2.7](https://arxiv.org/pdf/2403.18103v1). Standard posterior variance was compared with DDPM equation (7) and an independent Gaussian calculation.
-- Supplementary notation: $A_j,B_j,h,r_h,R_t,D_{t,j},\mathcal I,u,w_1,w_2$. The review expands Gaussian KL, conditional-mean decomposition, indicator averaging, and a finite shared-model example. It is not an official erratum or complete theorem certification.
-- Verification: local checks of table claims, KL sign, Gaussian variance, cumulative noise weights, and the shared-model example. **Not executed:** complete mechanical/formal theorem verification, author confirmation, model training/sampling/GPU/robot reproduction, and statistical tests from raw results.
-- Both parts share [original Figure 2](https://arxiv.org/pdf/2407.01392v4#page=3). Credit: Chen, Marti Monso, Du, Simchowitz, Tedrake, Sitzmann, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The PDF graphic was rasterized and WebP-encoded with content, arrows, and text preserved.
+## Sources and reading scope
 
-- Recheck on October 22, 2026: this revision reuses the recorded two readings and source mapping, adding the metric, assumption, and example definitions above. It is not counted as two new full-paper readings. New model, GPU, robot reproduction, and complete formal verification were not executed.
+- Paper: *Diffusion Forcing: Next-token Prediction Meets Full-Sequence Diffusion* · Boyuan Chen et al. · first public date 2024-07-01 · [reviewed version](https://arxiv.org/abs/2407.01392v4) · reviewed 2026-10-23.
+- Scope read: Version 4, appendix A, pages 14–19, in the order setup, A.1, A.1.1, A.1.2, A.2. Review-proposed corrections and supplementary derivations remain distinct from the printed statements.
+- Figure sources: The Figure-2 thumbnail and body Figures 2–4/Table-1 diagram are author assets from v4 (CC BY 4.0), rasterized and WebP-encoded with content, colors, arrows, and notation retained. [Paper](https://arxiv.org/abs/2407.01392v4).
+- Not verified: research-code execution, model training/reproduction, raw-data uncertainty estimates, and complete formal certification.

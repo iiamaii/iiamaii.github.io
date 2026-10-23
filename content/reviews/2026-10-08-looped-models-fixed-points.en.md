@@ -1,8 +1,8 @@
 ---
 title: "Can an endpoint replace the recurrent path? Efficiency at fixed points in looped models"
-description: "A full-paper review of TBPTT, terminal KV sharing, RL state reuse, and distilled prefill, including the assumptions, appendix controls, quality losses, and end-to-end costs."
+description: "Explain TBPTT, KV sharing, RL state reuse, and distilled prefill through fixed points, separating update-segment speedups from total time and accuracy tradeoffs."
 date: "2026-10-08"
-updatedAt: "2026-10-22T23:22:44+09:00"
+updatedAt: "2026-10-23T08:56:12+00:00"
 publishedAt: "2026-10-08T16:55:04+09:00"
 topics: ["language models", "looped models", "fixed points", "efficient inference", "reinforcement learning"]
 translationKey: "looped-models-fixed-points"
@@ -17,9 +17,7 @@ thumbnail: "/assets/reviews/looped-models-fixed-points/paper-figure-1.svg"
 thumbnailAlt: "Paper Figure 1 connecting the depth prior and orthogonal input injection to fixed-point endpoints and savings in training activations, KV cache, prefill, and RL scoring plus backward."
 ---
 
-If a looped language model repeatedly applies the same computation until its state barely changes, must it keep and replay **the entire path to that endpoint**? This paper treats fixed points as states that can replace parts of a computational trajectory. It connects this view to backpropagation, inference KV caches, reinforcement-learning replay, and prompt processing. Cache savings, faster updates, and faster prefill are separate experiments, with separate costs in quality and total runtime. [§1–3, §5, PDF pp. 1–13](https://arxiv.org/pdf/2610.06833v1#page=1)
-
-**Notation.** The equations retain $z^r=(\mathbf H^r,C^r)$, $\rho_{r,t}$, $J_\star$, $B_\star$, $D_\star$ and $\mathcal J_{\mathrm{prior}}$. OrthoInj restores token-indexed $q_t,h_t^r,\zeta_t^r$, while the finite-depth bound uses $\bar h^R,h^\star$ from the appendix.
+This paper reuses near-fixed-point states in looped language models to reduce training, cache, and reinforcement-learning costs. Combining rollout-state reuse with Neumann-4 cuts the RL update segment from 2.77 to 1.39 seconds, while the complete segment falls from 65.45 to 57.30 seconds. [Section 5 and appendix C.8](https://arxiv.org/pdf/2610.06833v1#page=40) **Review interpretation.** Fixed points enable reuse as well as early stopping, with different quality and timing tradeoffs for each shortcut.
 
 **Figure 1 · How to read the representative figure.** The left panel presents two training improvements, the learned depth prior and OrthoInj. The center contrasts the recurrent path with an endpoint near a fixed point. The right panel summarizes four computational shortcuts. Its bars report separate experiments, not cumulative speedups from one combined system. In particular, the RL 2× refers to scoring and backward, not total training time. [Benhao Huang et al., 2026, Figure 1](https://arxiv.org/html/2610.06833v1#S0.F1) · [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) · Original retained · [View full size](/assets/reviews/looped-models-fixed-points/paper-figure-1.svg).
 
@@ -307,16 +305,11 @@ Further controls expose handoff sensitivity. Feeding the student's own KV direct
 
 ## 6. Related Work
 
-The paper does not introduce fixed points or looped Transformers. It connects existing components through an efficiency argument and evaluates two endpoint-reuse paths and training recipes. Official abstracts and bibliographic metadata were checked for the following background papers; detailed comparisons rely on the focal paper's §6 and Appendix E. This is not a full rereading of all related papers.
+The original section has three strands. Looped models increase test-time computation through shared blocks, while DEQs solve directly for limiting fixed points. Earlier work stabilizes those points, trains supervised states as attractors, or halts at convergence; this paper examines efficiency across training, inference, and post-training. [Section 6](https://arxiv.org/pdf/2610.06833v1#page=13)
 
-| Background work | Relevant question | This paper's distinction |
-| --- | --- | --- |
-| [Deep Equilibrium Models](https://arxiv.org/abs/1909.01377v2), 2019 | Solve equilibria directly and differentiate implicitly | Connects TBPTT, KV sharing, and RL reuse in finite-loop models |
-| [Huginn](https://arxiv.org/abs/2502.05171v2), 2025 | Scale latent test-time compute with a shared recurrent block | Uses it as the backbone and analyzes endpoint reuse |
-| [Parcae](https://arxiv.org/abs/2604.12946v1), 2026 | Stable input injection and loop scaling | Evaluates OrthoInj's projection of the carryover's input-direction component |
-| [RL-Halting](https://arxiv.org/abs/2606.29983v1), 2026 | Learned stochastic stopping for stable length extrapolation | Learns an input-independent training-depth prior with a mean budget and deep supervision |
+Second, the efficiency strand explains existing TBPTT and recurrence-level KV sharing through fixed points, then connects new RL state reuse and non-recurrent student prefill. Unlike recurrent-student distillation or predictors of each recurrence’s prompt KV, the student predicts only the endpoint and one teacher recurrence builds all KV banks. [Section 6 and appendix E](https://arxiv.org/pdf/2610.06833v1#page=46)
 
-Appendix E discusses how KV-sharing results for Ouro, MELT, and continuous depth batching depend on the model and evaluation protocol. These results do not justify applying one shared cache to every looped model. Unlike earlier distillation that retains a recurrent student, this work uses a non-recurrent student only for prefill. Additional primary-source verification of those detailed comparisons remains open. [§6, Appendix E.1–5](https://arxiv.org/pdf/2610.06833v1#page=46)
+Third, fixed-point shaping concerns supervised depth distributions and input injection. Ouro and RL-Halting learn state-dependent entropy-regularized depth distributions while unrolling to maximum depth. This paper learns an input-independent prior; in contrast to Parcae’s contractive injection, OrthoInj removes the carryover component along the input direction. [Section 6](https://arxiv.org/pdf/2610.06833v1#page=13)
 
 ## 7. Discussion and Conclusion
 
@@ -324,9 +317,11 @@ The authors conclude that endpoints near fixed points can replace increasingly r
 
 The evidence remains limited. Each configuration has one training seed. Larger scales, other architectures, long reasoning completions, and production serving are untested; pretraining decontamination is unverified. These tables cannot establish additional gains from combining the learned prior with OrthoInj, or cumulative gains from adding terminal sharing to the RL experiments. [§7; Appendix C.8, D, E.3](https://arxiv.org/pdf/2610.06833v1#page=14)
 
-## Review interpretation and follow-up checks
+<span id="review-interpretation-and-follow-up-checks" aria-hidden="true"></span>
 
-The paper's strength is distinguishing problems easily hidden inside the phrase “reduce recurrence”: the backward path, previous-token context, RL recomputation on identical tokens, and approximation of a prompt endpoint. Its appendix provides controls separating exact limits from depth five, similar states from similar gradients, and component speedups from total runtime. This is my interpretation of its contribution.
+## Review interpretation and open questions
+
+**Review interpretation.** The paper's strength is distinguishing problems easily hidden inside the phrase “reduce recurrence”: the backward path, previous-token context, RL recomputation on identical tokens, and approximation of a prompt endpoint. Its appendix provides controls separating exact limits from depth five, similar states from similar gradients, and component speedups from total runtime. This is my interpretation of its contribution.
 
 The most useful design principle is to **define what replaces the omitted path and which error remains**. Terminal KV leaves context error; RL reuse leaves gradient approximation and state-storage cost; distilled prefill leaves handoff error and extra training cost. Lower PPL alone does not guarantee generation quality, optimization stability, or serving speed.
 
@@ -351,10 +346,8 @@ A useful next experiment would vary $R$, the TBPTT window, and prefix residual o
 
 ## Sources and reading scope
 
-- Focal paper: Benhao Huang, Chufan Shi, Junlin Chen, Shicheng Wen, Zhengzhong Liu, Eric Xing, and Xuezhe Ma, **Towards Looped Models Done Right, Part II: Rethinking at Fixed Points** (2026), [arXiv:2610.06833v1](https://arxiv.org/abs/2610.06833v1), submitted October 5, 2026; reviewed October 8, 2026.
-- Reading scope: all explanatory text, equations, algorithms, experimental protocols, and tables in main §1–7 and Appendices A–E of the 47-page PDF, cross-checked with the authors' submitted TeX. Core figures and cited table/equation pages were visually inspected; this does not claim visual QA of every page. Appendices missing after C.1 in the [HTML](https://arxiv.org/html/2610.06833v1) were recovered from the PDF and submitted source.
-- Additional sources: official abstracts/metadata of the four background papers above and the [official implementation README](https://github.com/ifm-ai/xllm-loop). Code and checkpoints were not executed. Detailed related-work claims without a primary-paper rereading are attributed to the focal paper.
-- Figure sources: original Figures 1, 2, 3, and 4, with source links and explanations at their respective locations; [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Tables select and reorganize reported values; speedup ratios and differences were calculated from those values.
-- **Not executed:** GPU training/inference reproduction, code/checkpoint execution checks, numerical gradient checks, independent reconstruction and assumption audit of the proofs, additional-seed experiments, and contamination checks. Numerical results are the authors' reports, not independently reproduced observations.
-
-- Recheck on October 22, 2026: this revision reuses the recorded two full-paper readings and rechecks author TeX §2–3, Algorithm 1, and Appendix A.1–A.2. It restores §1–7 order and expands the assumptions and intermediate proof steps of both lemmas. All core §5 experimental groups and consequential appendix failures and costs remain; repetitive tables and bibliography are condensed. New GPU reproduction and formal verification were not executed.
+- Paper: *Towards Looped Models Done Right, Part II: Rethinking at Fixed Points* · Benhao Huang et al. · first public date 2026-10-05 · [reviewed version](https://arxiv.org/abs/2610.06833v1) · reviewed 2026-10-23.
+- Scope read: Sections 1–7 and appendices A–E, including equations, algorithms, and experiments; proofs from A.1–A.2 accompany the corresponding methods.
+- Additional sources: official abstracts/metadata of the four background papers above and the [official implementation README](https://github.com/ifm-ai/xllm-loop). Code and checkpoints were not executed. Detailed related-work claims without a primary-paper rereading are attributed to the the reviewed paper.
+- Figure sources: Figures 1 (thumbnail), 2, 3, and 4 are unchanged author assets from v1, CC BY 4.0. [Paper](https://arxiv.org/abs/2610.06833v1).
+- Not verified: research-code execution, model training/reproduction, raw-data uncertainty estimates, and complete formal certification.

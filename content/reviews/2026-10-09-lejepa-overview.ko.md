@@ -3,7 +3,7 @@ title: "[1/3] LeJEPA 입문: 같은 이미지는 가깝게, 표현 분포는 Gau
 description: "저자의 §§1–7 순서로 문제, Gaussian 목표, SIGReg, 학습과 다섯 실험 축을 짧게 따라가는 입문 지도."
 date: "2026-10-09"
 publishedAt: "2026-10-09T23:54:43+09:00"
-updatedAt: "2026-10-22T23:22:49+09:00"
+updatedAt: "2026-10-23T08:56:17+00:00"
 topics: ["self-supervised learning", "representation learning", "joint embedding predictive architectures", "distribution matching", "computer vision"]
 visibility: "public"
 lang: "ko"
@@ -17,47 +17,55 @@ thumbnail: "/assets/reviews/lejepa/lejepa-core.svg"
 thumbnailAlt: "LeJEPA의 두 제약 설명도: 한 이미지의 뷰들은 전역 뷰 평균에 정렬하고, 각 뷰에서 여러 이미지의 표현은 임의 방향으로 투영해 표준 Gaussian과 맞춘다."
 ---
 
-**LeJEPA는 후속 과제(downstream task)를 아직 모를 때 유리한 표현 분포를 먼저 분석하고, 그 목표를 실제 학습 손실로 연결하는 자기지도학습(self-supervised learning) 방법이다.** 같은 이미지에서 만든 여러 뷰(view)는 공통 내용을 공유하게 하고, 서로 다른 이미지의 표현 분포는 등방성 가우시안(isotropic Gaussian)에 맞춘다. 이론의 적용에는 조건이 있으며 실제 학습은 유한한 투영과 수치 적분을 사용한다. [원문 §§1–5](https://arxiv.org/pdf/2511.08544v3#page=1)
+LeJEPA는 같은 이미지의 뷰(view)를 정렬하고 표현 분포를 등방성 가우시안(isotropic Gaussian)에 맞추는 자기지도학습(self-supervised learning) 방법이다. ImageNet-1K에서 100 epoch 학습한 비전 트랜스포머(vision Transformer, ViT)-L의 8개 전이 과제 전체 라벨 평균 정확도는 79.48%로, 비교한 I-JEPA의 78.50%보다 높고 +STOP의 80.70%보다 낮다. [원문 Table 2](https://arxiv.org/pdf/2511.08544v3#page=16) **리뷰 해석.** 분포 목표와 간결한 손실을 연결한 설계가 강점이며, 비교 모델의 크기·학습량은 함께 확인해야 한다.
 
 이 글은 **[1/3] 입문 지도**다. 원문의 §§1–7 순서를 유지하며, 증명과 상세 비교는 [\[2/3\] 전체 해설](/reviews/lejepa-complete/) → [\[3/3\] 정리·증명 심층](/reviews/lejepa-technical/) 순서로 읽을 수 있다. 전체 해설에는 §6.1–6.5의 핵심 실험이, 심층 편에는 Appendix A·B의 주요 계산이 있다.
 
 대표 그림에서 왼쪽 아래 손실은 **한 이미지의 여러 뷰**를 모으고, 오른쪽 아래 손실은 **각 뷰에서 여러 이미지**의 표현 분포를 맞춘다. Gaussian 목표는 투영 헤드(projector) 뒤의 공간에 적용한다. 점과 곡선은 설명용이다. [대표 그림 확대](/assets/reviews/lejepa/lejepa-core.svg)
 
-## 1 Introduction — 분포 목표부터 학습 방법까지
+<span id="1-introduction-분포-목표부터-학습-방법까지" aria-hidden="true"></span>
+
+## 1. 도입 (Introduction)
 
 라벨 없이 사진의 특징을 배우려면 같은 사진의 다른 크롭(crop)을 연결해야 한다. 그러나 모든 입력에 같은 벡터를 출력해도 뷰 사이 거리는 작아진다. 이를 **표현 붕괴**(representation collapse)라고 한다. 일부 차원만 사용하는 차원 붕괴(dimensional collapse)도 있다.
 
 저자들은 붕괴를 피하는 장치를 나열하기 전에 질문을 바꾼다. **나중에 어떤 과제를 풀지 모른다면, 학습한 표현은 어떤 분포를 이루는 것이 좋은가?** 답을 통계적 예측기의 분석에서 찾고, SIGReg(Sketched Isotropic Gaussian Regularization)라는 분포 정규화(distribution regularization)와 뷰 합의(view agreement)를 결합한다. [§1, pp. 1–3](https://arxiv.org/pdf/2511.08544v3#page=1)
 
-## 2 Background and Notations — JEPA가 요구하는 두 조건
+<span id="2-background-and-notations-jepa가-요구하는-두-조건" aria-hidden="true"></span>
+
+## 2. 배경과 표기 (Background and Notations)
 
 ### 2.1 Notations and Definitions
 
 인코더(encoder) $f_{\boldsymbol\theta}:\mathbb R^D\to\mathbb R^K$는 입력을 $K$차원 표현으로 바꾼다. 이미지 $n$의 뷰 $v$에서 나온 표현은 $\mathbf z_{n,v}$다. 한 배치(batch)에는 독립 이미지 $N$개, 이미지마다 뷰 $V$개가 있다.
 
-원문의 JEPA 정의는 관련 입력 사이의 **예측 가능성**(predictability)과 표현의 **비퇴화성**(non-degeneracy)을 함께 요구한다. 이번 이미지 구현은 대칭적 뷰 합의에 집중한다. 행동 정보가 있는 미래 예측처럼 입력 정보가 비대칭인 문제에는 예측기(predictor)가 필요할 수 있다. [§2.1, p. 4](https://arxiv.org/pdf/2511.08544v3#page=4)
+원문의 JEPA 정의는 관련 입력 사이의 **예측 가능성**(predictability)과 표현의 **비퇴화성**(non-degeneracy)을 함께 요구한다. 이 이미지 구현은 대칭적 뷰 합의에 집중한다. 행동 정보가 있는 미래 예측처럼 입력 정보가 비대칭인 문제에는 예측기(predictor)가 필요할 수 있다. [§2.1, p. 4](https://arxiv.org/pdf/2511.08544v3#page=4)
 
 ### 2.2–2.3 Reliable Pretraining과 Actionable Theory
 
 좋은 표현은 여러 구조와 데이터에서 학습할 수 있어야 한다. 이론도 ‘왜 붕괴하지 않는가’뿐 아니라 실제로 **어떤 분포와 손실을 선택할 것인가**에 답해야 한다. 이 두 요구가 §3의 목표 분포와 §4의 계산 방법으로 이어진다. [§§2.2–2.3](https://arxiv.org/pdf/2511.08544v3#page=4)
 
-## 3 Latent Euclidean — 왜 등방성 Gaussian인가
+<span id="3-latent-euclidean-왜-등방성-gaussian인가" aria-hidden="true"></span>
+
+## 3. 잠재 유클리드 공간: 표현은 등방성 가우시안이어야 한다 (Latent Euclidean — Embeddings Should Be Isotropic Gaussian)
 
 ### 3.1 Linear Probing
 
-**선형 프로브**(linear probe)는 encoder를 고정하고 그 특징 위에 작은 선형 예측기를 학습하는 평가다. 같은 총 에너지 아래 특정 방향의 변화가 너무 작으면, 그 방향을 필요로 하는 과제의 계수 추정이 불리해진다. Lemma 1은 리지 정규화(ridge regularization)에서 더 큰 편향(bias)을 겪는 과제가 **존재함**을 보이고, Lemma 2는 최소제곱법(ordinary least squares, OLS)의 계수 분산(variance) 합이 등방성에서 최소임을 보인다. 모든 과제의 분류 정확도가 무조건 높아진다는 뜻은 아니다. [§3.1; Appendix B.1–B.2](https://arxiv.org/pdf/2511.08544v3#page=5)
+**선형 프로브**(linear probe)는 encoder를 고정하고 그 특징 위에 작은 선형 예측기를 학습하는 평가다. 같은 총 에너지 아래 특정 방향의 변화가 너무 작으면, 그 방향을 필요로 하는 과제의 계수 추정이 불리해진다. Lemma 1은 리지 정규화(ridge regularization)에서 더 큰 편향(bias)을 겪는 과제가 **존재함**을 보이고, Lemma 2는 최소제곱법(ordinary least squares, OLS)의 계수 분산(variance) 합이 등방성에서 최소임을 보인다. [§3.1; Appendix B.1–B.2](https://arxiv.org/pdf/2511.08544v3#page=5)
 
 ### 3.2 Nonlinear Probing
 
 등방성(isotropy)은 모든 방향의 분산이 같다는 뜻이다. 이 조건만으로 분포가 Gaussian이 되지는 않는다. 저자들은 가까운 이웃의 정답을 평균하는 반경 기반 최근접 이웃(k-nearest neighbors, kNN)과 커널(kernel) 예측기도 분석한다.
 
-작은 이웃·대역폭(bandwidth)에서의 편향(bias)에는 밀도 스코어(density score), 즉 로그 밀도의 변화율인 $\nabla\log p$가 들어간다. 그 크기의 제곱 평균인 **피셔 정보**(Fisher information) $J(p)$는 적절한 조건과 고정 공분산(covariance) 아래 Gaussian에서 최소다. 공분산의 총량까지 고정하면 등방성 Gaussian이 선택된다. Theorem 1의 Gaussian 목표는 이런 국소 추정과 과제 가정에서 나온다. 전체 위험의 보편적 최적성을 인증한 것으로 읽으면 안 된다. [§3.2; Appendix A, B.3–B.7](https://arxiv.org/pdf/2511.08544v3#page=5)
+작은 이웃·대역폭(bandwidth)에서의 편향(bias)에는 밀도 스코어(density score), 즉 로그 밀도의 변화율인 $\nabla\log p$가 들어간다. 그 크기의 제곱 평균인 **피셔 정보**(Fisher information) $J(p)$는 적절한 조건과 고정 공분산(covariance) 아래 Gaussian에서 최소다. 공분산의 총량까지 고정하면 등방성 Gaussian이 선택된다. Theorem 1의 Gaussian 목표는 이런 국소 추정과 과제 가정에서 나온다. [§3.2; Appendix A, B.3–B.7](https://arxiv.org/pdf/2511.08544v3#page=5)
 
 ### 3.3 Geometric and Practical Insights
 
 §3.3의 설명용 실험은 같은 총 분산의 등방성(isotropy)·비등방성(anisotropy) 표현에서 추정 계수와 결정 경계가 어떻게 달라지는지 보여준다. 실제 이미지 backbone의 성능은 뒤의 §6에서 별도로 검증한다. [§3.3, Figure 3](https://arxiv.org/pdf/2511.08544v3#page=6)
 
-## 4 SIGReg — 고차원 분포를 여러 방향에서 확인하기
+<span id="4-sigreg-고차원-분포를-여러-방향에서-확인하기" aria-hidden="true"></span>
+
+## 4. SIGReg: 고차원의 신뢰할 수 있는 등방성 가우시안 정규화 (SIGReg — Reliable Isotropic Gaussian Regularization in High-Dimension)
 
 ### 4.1 Hypothesis Testing as a Judge
 
@@ -79,7 +87,9 @@ Epps–Pulley 통계는 표본의 지문과 Gaussian 지문의 차이를 가중 
 
 저자들의 논리는 두 가지다. 부드러운 밀도에서는 관측한 방향의 영향이 주변 방향으로 퍼질 수 있고, SGD 반복마다 새 방향을 뽑으면 누적 관측 범위가 넓어진다. Theorem 5의 감소율에는 매끄러움(smoothness)과 방향 배치 조건이 있다. 합성 실험의 성공도 전체 학습의 보편적 수렴 증명을 대신하지 않는다. [§4.3; Appendix B.10, Figures 6–7](https://arxiv.org/pdf/2511.08544v3#page=10)
 
-## 5 LeJEPA — SIGReg와 Prediction Loss의 결합
+<span id="5-lejepa-sigreg와-prediction-loss의-결합" aria-hidden="true"></span>
+
+## 5. LeJEPA: 안정적이고 확장 가능한 구현 (LeJEPA — Stable and Scalable Implementation)
 
 ### 5.1 SIGReg + Prediction Loss
 
@@ -90,13 +100,15 @@ $$
 \mathcal L_{\mathrm{LeJEPA}}=(1-\lambda)\mathcal L_{\mathrm{pred}}+\lambda\mathcal L_{\mathrm{SIGReg}}.
 $$
 
-뒤의 두 손실 기호는 설명용 평균 손실 약칭이다. Algorithm 2의 중심 손실은 feature 좌표까지 평균한다. 별도 예측기(predictor), 기울기 차단(stop-gradient), 지수이동평균 교사(exponential moving average teacher, EMA teacher)가 핵심 구조의 필수 요소는 아니다. optimizer·학습률·crop 등은 여전히 설정한다. 원문 Eq. (5)→(6)의 등식에는 전역 뷰 내부 분산 항이 빠져 있어, [심층 편](/reviews/lejepa-technical/)에서 계산을 보충했다. [§5.1, Algorithms 1–2; Appendix B.6, B.13](https://arxiv.org/pdf/2511.08544v3#page=11)
+뒤의 두 손실 기호는 설명용 평균 손실 약칭이다. Algorithm 2의 중심 손실은 feature 좌표까지 평균한다. 별도 예측기(predictor), 기울기 차단(stop-gradient), 지수이동평균 교사(exponential moving average teacher, EMA teacher)가 핵심 구조의 필수 요소는 아니다. optimizer·학습률·crop 등은 여전히 설정한다. [손실의 상세 유도](/reviews/lejepa-technical/)는 심층 편에서 다룬다. [§5.1, Algorithms 1–2; Appendix B.6, B.13](https://arxiv.org/pdf/2511.08544v3#page=11)
 
 ### 5.2 Relation to Prior Work
 
 투영은 sliced score matching·sliced Wasserstein과 연결되고, 정확히 적분한 CF 거리는 kernel MMD와 연결된다. VICReg와는 뷰 합의와 분산·공분산 제어라는 공통점이 있다. LeJEPA는 투영의 분포 전체를 목표로 한다. 모든 재료가 이 논문에서 처음 제안된 것은 아니다. [§5.2; Appendix B.14](https://arxiv.org/pdf/2511.08544v3#page=12)
 
-## 6 Empirical Validation — 다섯 실험 축을 순서대로
+<span id="6-empirical-validation-다섯-실험-축을-순서대로" aria-hidden="true"></span>
+
+## 6. LeJEPA의 실험 검증 (LeJEPA: Empirical Validation)
 
 아래는 **원문 보고 결과**다. 이 리뷰에서 모델을 재학습하지 않았다. 정확도는 %이며 높을수록 좋다.
 
@@ -112,16 +124,19 @@ $$
 
 **Figure 12 읽기.** 가로축은 사전학습 이미지 수가 아니라 후속 분류에 쓰는 **클래스당 라벨 수**, 세로축은 정확도다. 왼쪽은 특징 추출기(backbone)도 수정하는 미세조정(finetuning), 오른쪽은 표현 고정 평가(frozen evaluation)다. LeJEPA는 약 11,000장의 Galaxy10으로 400 epoch 학습한 작은 모델들이다. 1-shot frozen에서는 LeViT 25.85가 DINOv3 30.17보다 낮다. 원문은 3개 seed를 보고하지만 오차막대 정의는 미확인이다. [확대](/assets/reviews/lejepa/paper-figure-12.webp) · [Figure 12; Table 3](https://arxiv.org/pdf/2511.08544v3#page=16). Balestriero·LeCun, [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), 전체 패널 crop·무손실 WebP 변환.
 
-## 7 Conclusion — 저자가 연결한 설계 논리
+<span id="7-conclusion-저자가-연결한-설계-논리" aria-hidden="true"></span>
 
-저자의 결론은 **후속 예측 분석 → 등방성 Gaussian 목표 → 계산 가능한 SIGReg → 간결한 학습 구조**가 하나로 이어진다는 것이다. 여러 이미지 구조와 데이터에서 이를 평가한 점도 중요하다. 이론의 조건, 유한 방향·주파수 근사, 비교 예산을 함께 읽어야 한다. 이 논문의 주 실험은 이미지 표현 학습이며 행동 조건부 미래 예측까지 검증하지 않는다. [§7, p. 18; §2.1](https://arxiv.org/pdf/2511.08544v3#page=18)
+## 7. 결론 (Conclusion)
+
+저자의 결론은 **후속 예측 분석 → 등방성 Gaussian 목표 → 계산 가능한 SIGReg → 간결한 학습 구조**가 하나로 이어진다는 것이다. 여러 이미지 구조와 데이터에서 이를 평가한 점도 중요하다. 이론의 조건, 유한 방향·주파수 근사, 비교 예산을 함께 읽어야 한다. [§7, p. 18; §2.1](https://arxiv.org/pdf/2511.08544v3#page=18)
+
+## 리뷰 해석과 남은 질문
+
+**리뷰 해석.** 분포 목표와 간결한 손실을 연결한 설계가 강점이며, 비교 모델의 크기·학습량은 함께 확인해야 한다.
 
 ## 출처와 읽은 범위
 
-- 원문: *LeJEPA: Provable and Scalable Self-Supervised Learning Without the Heuristics*, Randall Balestriero·Yann LeCun. 최초 공개 2025-11-11, 검토본 v3(2025-11-14), 50쪽. [공식 서지·버전 이력](https://arxiv.org/abs/2511.08544).
-- 이번 1차 읽기(2026-10-11): 초록·서론·결론, 전체 절 구성, Figure 1–2의 설명을 확인해 논증 지도를 저장했다. 2차 읽기: 본문 §§1–7, Appendix A·B의 주요 정리와 증명, C의 추가 표·캡션, D–F의 대안 설명을 PDF·저자 LaTeX로 대조했다. 모든 참고 원전을 다시 읽은 것은 아니다.
-- 이 글은 §§1–7의 짧은 지도다. 2.2–2.3만 함께 요약했다. 상세 관련 연구·모든 핵심 실험은 [전체 해설](/reviews/lejepa-complete/), 주요 증명·보충 유도·간극은 [심층 편](/reviews/lejepa-technical/)에 있다.
-- 직접 검증: 리뷰의 중심 손실 항등식, OLS 분산 예제, 1D 고정 주파수 grid의 alias, ECF 표본 bias 수치 예제. **미실행:** 공식 코드 실행, GPU 학습, probe·finetuning·DDP 재현, 속도·메모리 재측정, 전체 증명의 형식 검증. 그림은 기존 승인 자산을 재사용했다.
-- 대표 그림은 §§4–5·Algorithms 1–2에 근거한 자체 개념도, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). 기본 Light(300), 강조 Semi Bold(600).
-
-- 2026-10-22 재점검: 기존 두 읽기와 원문 대응 기록을 재사용해 위에 추가한 지표·가정·예제의 정의를 보완했다. 새 전문 두 읽기로 계산하지 않는다. 새 모델·GPU·로봇 재현과 전체 형식 검증은 미실행이다.
+- 원문: *LeJEPA: Provable and Scalable Self-Supervised Learning Without the Heuristics* · Randall Balestriero et al. · 최초 공개 2025-11-11 · [검토 버전](https://arxiv.org/abs/2511.08544v3) · 검토일 2026-10-23.
+- 읽은 범위: v3 본문 §1–7의 입문 지도. 상세 실험은 [2/3] 전체 해설, Appendix A·B의 증명은 [3/3] 심층 편에 대응한다.
+- 그림 출처: 대표 개념도는 자체 제작물(CC BY 4.0). 원문 그림은 Balestriero·LeCun의 v3 자산(CC BY-SA 4.0)으로 전체 패널 crop·무손실 WebP 변환을 적용한다. [원문](https://arxiv.org/abs/2511.08544v3).
+- 확인하지 않은 것: 연구 코드 실행·모델 학습/재현·원시 데이터 불확실성 추정·전체 형식 인증.

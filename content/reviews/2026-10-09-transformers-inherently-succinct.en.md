@@ -2,7 +2,7 @@
 title: "Why can a Transformer describe the same rules more compactly?"
 description: "A guide to Transformers are Inherently Succinct through long computation histories and small verifiers: size separations, UHAT assumptions, verification complexity, and an appendix connective issue."
 date: "2026-10-09"
-updatedAt: "2026-10-22T23:22:45+09:00"
+updatedAt: "2026-10-23T08:56:13+00:00"
 publishedAt: "2026-10-09T00:06:00+09:00"
 topics: ["language models", "transformer theory", "formal languages", "computational complexity", "formal verification"]
 translationKey: "transformers-inherently-succinct"
@@ -17,9 +17,7 @@ thumbnail: "/assets/reviews/transformers-inherently-succinct/transformers-core.s
 thumbnailAlt: "Attention retrieves horizontal neighbors and the previous row at the same address from a long computation history for a small UHAT verifier; comparison labels show worst-case description-size gaps."
 ---
 
-Recognizing a rule and **describing that rule compactly** are different abilities. This paper shows that certain Transformers can describe the same language exponentially more compactly than temporal logic or fixed-precision RNNs, and doubly exponentially more compactly than finite automata. Its central construction places a long computation history in the input and uses attention to retrieve the positions needed for verification. The comparison concerns **minimum binary description length** under precise model assumptions, rather than measured LLM speed or accuracy. [§§1–4, Theorems 15 and 17, Corollary 18](https://arxiv.org/pdf/2510.19315v3#page=9)
-
-**Notation.** Exponents $2^n$, $2^{2^n}$ and polynomial size $\operatorname{poly}(n)$ use LaTeX. The tile-row block is an illustrative input string and retains its code formatting.
+This paper shows that unique-hard attention transformers (UHATs) can represent the same language exponentially more compactly than LTL or fixed-precision RNNs, and doubly exponentially more compactly than finite automata. Small attention verifiers check relations in a long computation history supplied as input. [Theorems 15 and 17; Corollary 18](https://arxiv.org/pdf/2510.19315v3#page=9) **Review interpretation.** The result separates expressivity from description length; practical inference comparisons require different model assumptions.
 
 **Reading the cover diagram.** The verifier on the right retrieves positions from the long input on the left and checks their relationships. This is an original illustration of the proof construction, based on [§§3–4](https://arxiv.org/pdf/2510.19315v3#page=6). [Open full size](/assets/reviews/transformers-inherently-succinct/transformers-core.svg).
 
@@ -184,7 +182,7 @@ This need not end practical verification. Bounded lengths and simpler model subc
 
 ## Review inspection of Appendix A.2: the AND in Eq. (14e)
 
-The preceding results are the **paper's stated theorems and proof structure**. During this review, I found a local issue in the address-counter construction used by the proof. In Appendix A.2, Eq. (14e) requires both a normal increment and a rollover at the current position when there is no earlier error. The same connective appears in the PDF and TeX.
+The authors state that the construction below has $B(L)=1$ exactly when addresses count correctly. Appendix A.2, Eq. (14e), requires both a normal increment and rollover at the current position when there is no earlier error; the PDF and TeX use the same connective.
 
 <figure class="review-figure" id="paper-equation-14e">
 <a href="/assets/reviews/transformers-inherently-succinct/paper-equation-14e.png" target="_blank" rel="noopener noreferrer"><img src="/assets/reviews/transformers-inherently-succinct/paper-equation-14e.png" width="2400" height="108" alt="Original Appendix A.2 Eq. (14e), whose default branch conjoins the rollover condition B₁→₀(i) and increment condition B₊₁(i)." loading="lazy" decoding="async"></a>
@@ -206,13 +204,15 @@ The smallest example uses N=1 and a tile t with all four boundary colors zero: `
 
 The two conditions cannot both hold for N≥1. Since the full verifier requires B, the printed construction rejects this valid tiling. [Appendix A.2, Eqs. (14c–e)](https://arxiv.org/pdf/2510.19315v3#page=15)
 
-I implemented **only counter Eqs. (14a–e)** in Python. Across ten valid cases with N=1…5 and one or two rows, the printed connective rejected every case; replacing only the default AND with OR accepted all ten. The candidate also rejected all 774 variants obtained by flipping one address bit, with zero disagreements against an independent address-order oracle. This is a finite local check, not an exhaustive proof or a measurement of learning accuracy. [Check script](https://github.com/iiamaii/iiamaii.github.io/blob/main/research/checks/transformers-inherently-succinct/appendix-counter-check.py) · [Recorded output](https://github.com/iiamaii/iiamaii.github.io/blob/main/research/checks/transformers-inherently-succinct/counter-check-results.json).
+The [counter-only checking code](https://github.com/iiamaii/iiamaii.github.io/blob/main/research/checks/transformers-inherently-succinct/appendix-counter-check.py) provides supplementary evidence for this local logical argument.
 
-**The limit of this observation matters.** A typographical error is plausible, but the authors have not confirmed it. I did not validate all five gadgets, B-RASP→UHAT compilation, or precision semantics, so the OR candidate does not certify the complete proof. The issue creates a verification task for the lower bounds relying on this construction; it is not itself a disproof of the theorems.
+**Review interpretation.** A typographical error is plausible but unconfirmed by the authors. The dependency runs from the tiling verifier in Lemma 8 through Lemma 9 to the lower bound in Theorem 4; the succinctness and equivalence lower bounds using this construction also need confirmation. The Proposition-13-based upper bounds do not depend on this counter. The local necessity of replacing the default AND by OR is clear; restoring all gadgets, compilation, and precision semantics remains a separate question.
 
-## Review interpretation and follow-up checks
+<span id="review-interpretation-and-follow-up-checks" aria-hidden="true"></span>
 
-The useful perspective is to view attention as a **shared rule for retrieving positions**. Instead of retaining the entire table in one recurrent hidden state, the verifier retrieves the earlier per-position representations needed for a local relation. This exposes representation costs invisible in a hierarchy based only on expressivity. That is my interpretation of the proof construction.
+## Review interpretation and open questions
+
+**Review interpretation.** The useful perspective is to view attention as a **shared rule for retrieving positions**. Instead of retaining the entire table in one recurrent hidden state, the verifier retrieves the earlier per-position representations needed for a local relation. This exposes representation costs invisible in a hierarchy based only on expressivity. That is my interpretation of the proof construction.
 
 Three claims remain separate: suitable small weights **exist**, learning can **find** them, and hardware can **execute** them efficiently. This paper concerns the first. Section 6 also leaves succinctness for fixed-precision softmax and average-hard attention to future work. The results therefore do not establish that practical LLMs are always more efficient than RNNs. [§6](https://arxiv.org/pdf/2510.19315v3#page=10)
 
@@ -230,11 +230,7 @@ The last source depends on assumptions including attention-internal precision an
 
 ## Sources and reading scope
 
-- Main paper: Pascal Bergsträßer, Ryan Cotterell, Anthony W. Lin, **Transformers are Inherently Succinct**, ICLR 2026. [arXiv:2510.19315v3](https://arxiv.org/abs/2510.19315v3), version dated 2026-05-15, 21 PDF pages. First submitted to arXiv on 2025-10-22.
-- Reading: on 2026-10-08, I read §§1–6 and Appendices A.1–A.7 through TeX and extracted PDF text, and compared rendered PDF pp.8–10 and 15 for central statements and equations. I did not visually inspect every page.
-- Version limitation: I could not directly obtain the requested [OpenReview PDF](https://openreview.net/pdf?id=Yxz92UuPLQ). This review uses the official arXiv version. Exact PDF identity, OpenReview reviews, and errata remain **unverified**.
-- Cover: one original explanatory SVG based on §§3–4, using Light 300 with Semi Bold 600 emphasis. Space Grotesk is under SIL OFL 1.1. Arrow lengths and table dimensions do not encode measured quantities.
-- Paper excerpt: arXiv v3, p.15, Eq. (14e), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Surrounding whitespace was cropped; notation and fonts were not modified.
-- Executed check: finite counter tests with ten valid cases and 774 single-bit variants. Full A–E validation, UHAT compiler execution, machine-checked proofs of the complete theorems, training, and GPU benchmarks were **not executed**.
-
-- Recheck on October 22, 2026: reusing existing orientation and detailed-analysis records, this revision rechecks v3 TeX §3–6 and Appendix A.7. It restores source order and expands reductions and size calculations for Theorems 4, 15, 17, 19 and Corollary 18. Technical definitions in §2 are condensed; the existing local A.2 counterexample is preserved. Complete proof checking of the cited tiling source, the full compiler, and formal verification of all theorems were not executed.
+- Paper: *Transformers are Inherently Succinct* · Pascal Bergsträßer et al. · first public date 2025-10-22 · [reviewed version](https://arxiv.org/abs/2510.19315v3) · reviewed 2026-10-23.
+- Scope read: Version 3, sections 1–6 and the relevant constructions and proofs in appendix A; the complete cited tiling proof and formal certification of the compiler are outside scope.
+- Figure sources: The thumbnail is a review-authored explanatory diagram. [Paper](https://arxiv.org/abs/2510.19315v3).
+- Not verified: research-code execution, model training/reproduction, raw-data uncertainty estimates, and complete formal certification.

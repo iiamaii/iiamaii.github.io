@@ -3,7 +3,7 @@ title: "[1/2] Single Global Merging: why a final average recovers performance af
 description: "Read the experiments, theory, and limits in original section order, separating communication timing and three evaluation targets."
 date: "2026-10-23"
 publishedAt: "2026-10-23T12:14:59+09:00"
-updatedAt: "2026-10-23T12:14:59+09:00"
+updatedAt: "2026-10-23T08:56:25+00:00"
 topics: ["decentralized learning", "model merging", "distributed optimization", "federated learning", "communication efficiency"]
 visibility: "public"
 paperTitle: "On the Surprising Effectiveness of a Single Global Merging in Decentralized Learning"
@@ -17,7 +17,7 @@ translationKey: "single-global-merging"
 thumbnailAlt: "Original Figure 1(b): global test accuracy recovers sharply after the final weight average in sparse decentralized ResNet-18 training."
 ---
 
-Can models that individually struggle on the global task become much better simply by averaging their weights at the end? This paper reports that they can, **when sparse communication has continued during training**. The contribution is not the invention of averaging. It is a question about **when to spend communication and which model to evaluate** in decentralized learning.
+This paper studies the large recovery obtained by globally merging models trained on heterogeneous data with sparse neighbor communication. In Tiny ImageNet with 32 agents and SGD, Figure 1(b) shows accuracy rising from approximately 20% to 48% after uniform averaging, with about 60 expected neighbor exchanges per agent over 300 rounds. [Section 4 and Figure 1](https://arxiv.org/pdf/2507.06542v4#page=2) **Review interpretation.** It motivates evaluating both individual and averaged models, while graph-read gains and actual communication time remain different quantities.
 
 This review follows **§1→§2→§3→§4→§5→§6** of arXiv v4, the ICLR 2026 version. [[2/2] Appendices and proofs](/en/reviews/single-global-merging-theory/) follows A–D, retaining experimental details and expanding intermediate calculations. The observed recovery in accuracy and the scope of its theoretical explanation need separate assessment.
 
@@ -40,6 +40,10 @@ Figure 1(b) is the thumbnail because it isolates the important change. Orange an
 The authors compare temporal communication allocation in parallel, federated, and decentralized learning. Federated learning usually maintains a global model at a server. The decentralized setting studied here has no model shared by all agents throughout training. Conclusions about early alignment therefore need to be transferred with care, after matching data distributions and evaluation targets.
 
 The following five primary studies were read in selected sections to check the paper's positioning and theoretical dependencies. This is not an exhaustive survey of recent follow-up work.
+
+Section 2 begins with local-update scheduling and implicit bias in Local SGD, then discusses early alignment in federated learning, which retains a global model. Fully decentralized learning instead evaluates local models on a global distribution. The authors present Kong et al.’s IID evidence in the regime where local and global objectives coincide, and defer implicit-bias and model-merging background to B.2–B.3. [Section 2 and appendix B](https://arxiv.org/pdf/2507.06542v4#page=3)
+
+### Review supplement: scope of the source comparisons
 
 | Primary study | Existing result | Connection and distinction |
 | --- | --- | --- |
@@ -81,7 +85,7 @@ The first line learns from local data; the second mixes neighbor information. We
 The global average is
 
 $$
-\bar\theta^{(t)}=\frac1m\sum_{k=1}^m\theta_k^{(t)}.
+\bar\theta^{(t)}=\frac1m\sum_{k=1}^m\theta_k^{(t)}
 $$
 
 Defining it for analysis does not mean it is materialized and broadcast every round. The final global merge turns this average into the actual output model.
@@ -104,12 +108,12 @@ Definition 2 calls models mergeable if there exist $w_k\in[0,1]$ such that
 
 $$
 \mathcal L\!\left(\sum_k w_k\theta_k\right)
-\leq\sum_k w_k\mathcal L(\theta_k).
+\leq\sum_k w_k\mathcal L(\theta_k)
 $$
 
 The intention is that interpolation need not enter a bad region of a nonconvex loss.
 
-**The definition needs qualification.** The paper does not state $\sum_k w_k=1$. Even adding that constraint still permits one-hot weights, which always satisfy the inequality with equality. An existential choice of these weights therefore cannot distinguish nontrivial mergeability. The experiments are more concretely read as evaluations of **uniform averaging, $w_k=1/m$**. This is a review observation, not an additional theorem in the paper. [Definition 2, p.4](https://arxiv.org/pdf/2507.06542v4#page=4)
+The experiments instantiate the weights as the uniform average $w_k=1/m$. The definition’s nontriviality is examined in [technical part D](/en/reviews/single-global-merging-theory/#d-theory).
 
 ## 4. Empirical Observations
 
@@ -137,7 +141,7 @@ The final average of communication-free scratch models almost fails in this setu
 
 $$
 C_{\mathrm{dense}}=\mathcal O(2mPT),\qquad
-C_{\mathrm{sparse+merge}}=\mathcal O(mRPT+2mP).
+C_{\mathrm{sparse+merge}}=\mathcal O(mRPT+2mP)
 $$
 
 Using the displayed volume terms on the same accounting basis gives $R/2+1/T$, about 10.3% for $R=0.2,T=300$. This is idealized transfer volume, not a measured 9.7-fold WAN speedup. One AllReduce itself contains multiple transfers. Implementing it with Ring-AllReduce removes the need for a central parameter server, not the cost of global aggregation.
@@ -215,38 +219,23 @@ Instead of controlling all disagreement as detrimental error, the authors try to
 $$
 g_t=\nabla\mathcal L(\bar\theta^{(t)}),\qquad
 q_t=\nabla\operatorname{Tr}
-\bigl(\nabla^2\mathcal L(\bar\theta^{(t)})\Gamma^{(t)}\bigr),
+\bigl(\nabla^2\mathcal L(\bar\theta^{(t)})\Gamma^{(t)}\bigr)
 $$
 
 with covariance held fixed under differentiation. The intended approximation is an average update direction $g_t+q_t/2$. The sign of $g_t^\top q_t$ can then be useful. The vector $q_t$ describes how curvature changes in the directions in which models are dispersed.
 
-**Why covariance meets curvature — review intuition.** Let $\delta_k=\theta_k-\bar\theta$ and $H=\nabla^2\mathcal L(\bar\theta)$. As an auxiliary calculation, evaluate the same global loss at the different model locations. Averaging its Taylor expansion cancels the linear term because $\sum_k\delta_k=0$:
-
-$$
-\frac1m\sum_k\mathcal L(\bar\theta+\delta_k)
-=\mathcal L(\bar\theta)
-+\frac12\operatorname{Tr}(H\Gamma)
-+\mathcal O\!\left(\frac1m\sum_k\|\delta_k\|^3\right).
-$$
-
-This does not establish that the actual heterogeneous local objectives $\mathcal L_k$ are identical. It explains where the curvature term comes from under a common loss; transferring it to non-IID updates is examined in article 2, D.3.
-
-$$
-\operatorname{Tr}(H\Gamma)=\frac1m\sum_k\delta_k^\top H\delta_k.
-$$
-
-The trace reflects both the amount of dispersion and **the curvature directions in which models are dispersed**. Differentiating this average-curvature term produces $q_t$. For an exactly quadratic loss the Hessian is constant and $q_t=0$, so the proposed mechanism relies on higher-order geometry absent from a purely quadratic approximation.
+The [supplementary Taylor derivation](/en/reviews/single-global-merging-theory/#d-theory) is developed in the technical part.
 
 [![Table 1. Convergence-rate comparison between parallel SGD, earlier DSGD analysis, and the present disagreement-dependent analysis.](/assets/reviews/single-global-merging/table1.webp)](/assets/reviews/single-global-merging/table1.webp)
 
-*Original Table 1, p.8. The target $\varepsilon$ is an average squared-gradient tolerance and $m$ the number of agents. Earlier communication/heterogeneity terms are compared with the present $U^{(t)}$. The theorem and table disagree on an $\varepsilon$ factor, so this table should not be read as an independently verified explicit new rate. CC BY 4.0; complete table extraction and lossless WebP conversion.*
+*Original Table 1, p.8. The target $\varepsilon$ is an average squared-gradient tolerance and $m$ the number of agents. Earlier communication/heterogeneity terms are compared with the present $U^{(t)}$. The theorem/table coefficient correspondence is compared in [technical part D](/en/reviews/single-global-merging-theory/#d-theory). CC BY 4.0; complete table extraction and lossless WebP conversion.*
 
 **Theorem 1 concerns** equally initialized DSGD and average stationarity:
 
 $$
 \frac1T\sum_{t=0}^{T-1}
 \mathbb E\|\nabla\mathcal L(\bar\theta^{(t)})\|^2
-\leq\varepsilon.
+\leq\varepsilon
 $$
 
 The paper claims an implicit bound combining the parallel-SGD terms $\mathcal O(\sigma^2/(m\varepsilon^2)+1/\varepsilon)$ with a disagreement correction $U^{(t)}$. Since that correction depends on the trajectory and on $T$, it is not a plug-in stopping-time formula.
@@ -254,7 +243,7 @@ The paper claims an implicit bound combining the parallel-SGD terms $\mathcal O(
 Assumption 4 motivates a progressive-sharpening alignment
 
 $$
-g_t^\top q_t<0.
+g_t^\top q_t<0
 $$
 
 Moving along loss descent, $-g_t$, then increases the corresponding average curvature. Proposition 2 argues that, for $\eta>1/L_2$, $\|g_t\|\geq\mu_t>0$, and sufficiently small positive disagreement,
@@ -266,19 +255,9 @@ $$
 
 is possible. The favorable term is quadratic in $\Xi_t$ while the residual is cubic, allowing the former to dominate locally. Combined with stability, this requires $1/L_2<\eta<2/L_2$. Nonzero disagreement is not always beneficial.
 
-**Important limits remain.** Assumption 4 literally quantifies over every PSD covariance and every point, although zero covariance or a stationary point makes the inner product zero. Proposition D.3 also suppresses a term that generally survives under non-IID losses. Coefficients and a Taylor remainder constant are inconsistent. The display above describes **the authors' proposed explanation and claim**; conditional derivations and explicit counterexamples are provided in [the second article's theory section](/en/reviews/single-global-merging-theory/#d-theory). [§5.2, pp.7–9; D, pp.30–37](https://arxiv.org/pdf/2507.06542v4#page=8)
+**Review interpretation.** These formulas describe the authors’ proposed conditional explanation. Non-IID terms, assumptions, coefficients, and possible corrections are examined in [technical part D](/en/reviews/single-global-merging-theory/#d-theory).
 
-The proof dependency is useful when reading beside the original. This is a map of inputs to subsequent results, not a new proof with added assumptions.
-
-| Original result | What it supplies next |
-| --- | --- |
-| Lemma D.1 and Corollary D.2 | Control disagreement $\Xi_t$ through the mixing parameter $p$. |
-| Proposition D.3 and Corollaries D.4–D.5 | Separate curvature corrections, stochastic noise, and residuals in average dynamics. |
-| Theorem D.7 | Turn smoothness into a one-step decrease and sum through time. |
-| Proposition D.8 | Examine the correction's sign under alignment, step-size, and small-disagreement conditions. |
-| Proposition D.9 | Attempt to translate admissible disagreement into a condition on $p$ and the gradient margin. |
-
-A gap in one step limits downstream applications too. Experimental recovery, conditional descent analysis, and guarantees for an implemented communication schedule are distinct conclusions.
+The proof-dependency map is in [technical part D.1–D.9](/en/reviews/single-global-merging-theory/#d-theory).
 
 ### 5.3 A Theoretical Explanation for Communication Allocation
 
@@ -301,11 +280,13 @@ The most actionable evaluation lesson is to measure **both individual models' gl
 
 The appendices vary heterogeneity, optimizer, topology, initialization, and final topology-constrained gossip. Those comparisons are retained in A–C of [[2/2] Appendices and proofs](/en/reviews/single-global-merging-theory/).
 
+## Review interpretation and open questions
+
+**Review interpretation.** It motivates evaluating both individual and averaged models, while graph-read gains and actual communication time remain different quantities.
+
 ## Sources and reading scope
 
-- Primary source: Tongtian Zhu, Tianyu Zhang, Mingze Wang, Zhanpeng Zhou, Can Wang, *On the Surprising Effectiveness of a Single Global Merging in Decentralized Learning*, [arXiv:2507.06542v4](https://arxiv.org/abs/2507.06542v4), ICLR 2026. First public release 2025-07-09; reviewed revision 2026-04-27; 37 PDF pages.
-- First pass: on 2026-10-22, abstract, introduction/contributions pp.1–3, Figure 1 caption, section map, and §6. An independent orientation was saved before the detailed pass.
-- Second pass: active author LaTeX for §1–6 and A–D, cross-checked against key printed PDF text, experiments, and proofs. All cited originals were not read in full. Article 1 covers §1–6; article 2 covers A–D and expanded calculations.
-- Selected primary reading: Koloskova 2020 PDF pp.1,3,5–6; Kong 2021 pp.1,3–4; Zhu 2023 pp.1,3–4,16–17,22–24; Wortsman 2022 pp.1–3; de Vos 2023 pp.1,5–6. These scopes support the comparisons rather than full reviews of those papers.
-- Validation: definitions, dimensions, and coefficients checked; eight review-side mathematical checks executed. Author training code, GPU reproduction, multi-seed validation, and real-network measurements were **not run**. Raw training logs were not checked.
-- Figures: original Figure 1, Figure 2, Table 1, and thumbnail panel Figure 1(b), under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). PDF and author figure PDF rasterization followed by lossless WebP encoding; data, lines, and labels were not redrawn.
+- Paper: *On the Surprising Effectiveness of a Single Global Merging in Decentralized Learning* · Tongtian Zhu et al. · first public date 2025-07-09 · [reviewed version](https://arxiv.org/abs/2507.06542v4) · reviewed 2026-10-23.
+- Scope read: Version 4, sections 1–6. Appendix A–D experimental conditions, additional results, and proof details are covered in part 2.
+- Figure sources: The Figure-1(b) thumbnail and this part’s Figures 1–2 or C.5–C.6 are author assets from v4 (CC BY 4.0), PDF-extracted/rasterized to lossless WebP with data and labels retained. [Paper](https://arxiv.org/abs/2507.06542v4).
+- Not verified: research-code execution, model training/reproduction, raw-data uncertainty estimates, and complete formal certification.

@@ -3,7 +3,7 @@ title: "Deep Equilibrium Models: 층을 쌓는 대신 평형 상태를 학습하
 description: "DEQ의 고정점, Broyden 탐색과 암시적 미분을 예제로 설명하고, 주요 증명과 언어 모델 실험을 통해 메모리 이득·속도 비용·수렴 조건을 살펴본다."
 date: "2026-10-09"
 publishedAt: "2026-10-09T20:40:07+09:00"
-updatedAt: "2026-10-22T23:22:46+09:00"
+updatedAt: "2026-10-23T08:56:14+00:00"
 topics: ["language models", "fixed points", "implicit learning", "memory efficiency", "numerical optimization"]
 visibility: "public"
 lang: "ko"
@@ -17,9 +17,7 @@ thumbnail: "/assets/reviews/deep-equilibrium-models/deq-core.svg"
 thumbnailAlt: "공유 블록을 펼친 깊은 네트워크와 DEQ를 비교한 설명 그림. DEQ는 평형 상태를 수치적으로 찾은 뒤 그 상태에서 선형 방정식을 풀어 파라미터 gradient를 계산한다."
 ---
 
-깊은 신경망은 여러 층을 거치며 표현을 바꾼다. 학습할 때는 나중에 미분하기 위해 그 중간 상태들을 저장해야 한다. 그렇다면 <strong>같은 블록을 반복한 끝에 거의 변하지 않는 상태에 도달한다면, 그 상태 자체를 모델의 출력으로 정의할 수 있을까?</strong> 2019년의 *Deep Equilibrium Models*(DEQ)는 이 질문을 모델 설계와 학습 알고리즘으로 연결한다. 순전파(forward pass)에서는 평형 상태(equilibrium state)를 찾고, 역전파(backward pass)에서는 그 상태가 파라미터에 얼마나 민감한지를 계산한다. 깊이 방향의 활성값(activation) 저장을 줄이는 대신 수치 해법의 비용과 안정성이 중요해진다. [§1–3, pp. 1–5](https://arxiv.org/pdf/1909.01377v2#page=1)
-
-**표기 안내.** 시퀀스 식은 원문의 $z^{[i]}_{1:T}$, $x_{1:T}$, $z^\star_{1:T}$를 유지한다. 스칼라 예제에서는 첨자를 생략한다. 아래 암시적 미분(implicit differentiation) 유도는 $J_{f_\theta}$를 쓰고, 수반 변수(adjoint)를 설명하는 $q,v$는 리뷰의 보조 기호다. Broyden의 $B^{[i]}_{g_\theta}$와 파라미터 미분을 구분한다.
+심층 평형 모델(Deep Equilibrium Model, DEQ)은 공유 블록의 평형 상태를 직접 풀고 암시적 미분(implicit differentiation)으로 학습해 깊이에 따른 활성값 저장을 줄인다. WikiText-103의 medium attention 비교에서 퍼플렉서티(perplexity, PPL)는 23.6에서 23.2로, 메모리는 9.0GB에서 3.7GB로 바뀌지만 학습 시간은 약 2.82배다. [원문 Table 1·§5](https://arxiv.org/pdf/1909.01377v2#page=6) **리뷰 해석.** 메모리 절감은 분명하며, 실제 선택은 solver의 시간·수렴 정밀도와 함께 판단해야 한다.
 
 <strong>대표 그림을 읽는 법.</strong> 위 줄은 같은 블록을 여러 층으로 펼치는 방식이다. 가운데 줄은 $f_\theta(z^\star_{1:T};x_{1:T})=z^\star_{1:T}$를 만족하는 끝점을 수치적으로 찾는다. 아래 줄은 끝점에서 선형 방정식을 풀어 gradient를 계산한다. 화살표는 각 줄의 계산 순서를 뜻한다. 반복 계산이 사라지는 것은 아니며, 순전파 탐색 경로 전체를 역전파하지 않는 것이 핵심이다. 이 글에서 직접 제작한 설명 그림이다. [크게 보기](/assets/reviews/deep-equilibrium-models/deq-core.svg)
 
@@ -34,6 +32,8 @@ thumbnailAlt: "공유 블록을 펼친 깊은 네트워크와 DEQ를 비교한 �
 원문 §2는 인과적 시퀀스 모델, 메모리 효율적 네트워크, 연속적 관점의 세 흐름을 설명한다. 인과성(causality)은 시점 $t$의 출력이 $x_{1:t}$에만 의존한다는 조건이다. 체크포인팅은 원래 경로를 재계산하고, 가역 네트워크(reversible network)는 이전 활성값을 복원한다. Neural ODE는 유한 시간의 궤적을 풀며, DEQ는 평형 방정식을 출력으로 정의한다. 아래 표는 이 배경을 원전과 연결한 리뷰의 비교다. [§2, pp. 2–3](https://arxiv.org/pdf/1909.01377v2#page=2)
 
 핵심을 이해하는 데 필요한 선행연구 다섯 편을 서로 다른 역할로 읽었다. 아래 표의 비교는 각 원문의 해당 절과 DEQ의 §2–3을 기준으로 한다.
+
+### 리뷰 보충: 배경 원전 비교
 
 | 연구 | 함께 읽을 이유 | DEQ와의 차이 |
 | --- | --- | --- |
@@ -138,7 +138,7 @@ $$
 
 이것이 증명의 핵심이다. 끝점과 그 주변의 미분만으로 파라미터 민감도(sensitivity)를 구한다. 계산에서는 <strong>벡터–야코비안 곱</strong>(vector–Jacobian product, VJP), 즉 Jacobian 전체를 만들지 않고 벡터에 대한 역방향 미분을 계산하는 연산을 사용한다. 순전파 solver의 모든 갱신을 자동미분 그래프로 보관할 필요가 없다. 출력 head나 손실이 파라미터에 직접 의존하는 경로는 그 미분을 따로 더해야 한다. [§3.1.2, 식 11, p. 5](https://arxiv.org/pdf/1909.01377v2#page=5)
 
-앞의 스칼라 예제에서 목표값을 $1$, 손실을 $\frac12(z^\star-1)^2$로 두면 $q=2$, $J_{f_\theta}=0.5$, $v=4$다. $f(z;x)=az+bx$의 $a=0.5$, $b=0.75$에 대해 $\partial\ell/\partial a=12$, $\partial\ell/\partial b=8$이 된다. 이 글의 계산을 중앙 차분으로 확인했으며, 최대 절대 오차는 약 $3.3\times 10^{-10}$이었다. 이는 수식 설명을 위한 작은 검사이며 논문 모델의 학습 재현은 아니다.
+앞의 스칼라 예제에서 목표값을 $1$, 손실을 $\frac12(z^\star-1)^2$로 두면 $q=2$, $J_{f_\theta}=0.5$, $v=4$다. $f(z;x)=az+bx$의 $a=0.5$, $b=0.75$에 대해 $\partial\ell/\partial a=12$, $\partial\ell/\partial b=8$이 된다.
 
 이 식에는 조건이 있다. 함수가 해당 해 주변에서 미분 가능하고 <strong>$I-J_{f_\theta}$가 가역</strong>이어야 한다. 논문의 역행렬 표기도 이 조건을 전제한다. 거의 특이한 행렬(nearly singular matrix)이라면 작은 잔차에도 상태나 gradient 오차가 크게 증폭될 수 있다. 또한 식은 정확한 평형 상태에 대한 식이고, 실제 구현은 근사 상태와 근사 선형 해를 사용한다. 잔차가 작다는 사실만으로 gradient가 언제나 정확하다고 말할 수는 없다. [Appendix A; RBP §3.2](https://proceedings.mlr.press/v80/liao18c/liao18c.pdf#page=3)
 
@@ -278,20 +278,17 @@ PTB에서는 PPL이 거의 같은 수준이고 메모리는 크게 줄어든다.
 - <strong>매우 긴 시퀀스는 더 어려울 수 있다.</strong> 부록은 길이 1,000을 넘는 경우 초기 탐색의 어려움과 구간 분할을 논의한다. 깊이 저장을 줄였다고 문맥 길이의 비용까지 사라지지는 않는다.
 - <strong>중간 층의 보조 손실을 그대로 옮기기 어렵다.</strong> DEQ는 끝점에 손실을 연결하므로, 유한층 모델의 심층 감독(deep supervision)과 정확히 같은 학습 설정이 아니다.
 
-이번 검토에서 확인한 것은 논문이 보고한 수치, 수식과 구성 증명의 논리, 그리고 설명용 스칼라 계산이다. 대규모 모델 재학습, GPU peak memory·실행 시간 재측정, 여러 seed의 불확실성 평가, 전체 구현의 형식 검증은 <strong>미실행</strong>이다. 표에 없는 오차 범위나 모든 입력에 대한 수렴률도 추정하지 않았다.
+<span id="리뷰-해석과-후속-질문" aria-hidden="true"></span>
 
-## 리뷰 해석과 후속 질문
+## 리뷰 해석과 남은 질문
 
-DEQ는 깊이를 ‘저장해야 하는 층의 목록’에서 ‘풀어야 하는 상태 방정식’으로 바꾼다. 출력은 평형 상태, 학습은 그 상태의 민감도다. 이 전환 덕분에 깊이 방향의 activation 저장을 크게 줄일 수 있지만, solver가 얼마나 잘 수렴하는지와 gradient의 수치 안정성(numerical stability)이 새로운 중심 문제가 된다.
+**리뷰 해석.** DEQ는 깊이를 ‘저장해야 하는 층의 목록’에서 ‘풀어야 하는 상태 방정식’으로 바꾼다. 출력은 평형 상태, 학습은 그 상태의 민감도다. 이 전환 덕분에 깊이 방향의 activation 저장을 크게 줄일 수 있지만, solver가 얼마나 잘 수렴하는지와 gradient의 수치 안정성(numerical stability)이 새로운 중심 문제가 된다.
 
-이 글의 판단으로는 가장 중요한 독해 질문은 ‘무한 깊이를 구현했는가?’보다 <strong>어떤 함수에 어떤 조건으로 평형 상태가 생기며, 어느 정밀도로 풀었을 때 품질·메모리·시간의 교환이 유리한가?</strong>다. 후속 연구인 [Multiscale Deep Equilibrium Models](https://arxiv.org/abs/2006.08656)는 다중 해상도 비전으로 적용을 넓히고, [Stabilizing Equilibrium Models by Jacobian Regularization](https://arxiv.org/abs/2106.14342)는 안정성과 계산 효율을 직접 다룬다. 두 후속 논문은 이번에는 공식 초록·서지 범위만 확인했으므로 상세 결과의 비교는 다음 읽기 과제로 남긴다.
+이 글의 판단으로는 가장 중요한 독해 질문은 ‘무한 깊이를 구현했는가?’보다 <strong>어떤 함수에 어떤 조건으로 평형 상태가 생기며, 어느 정밀도로 풀었을 때 품질·메모리·시간의 교환이 유리한가?</strong>다. 후속 연구인 [Multiscale Deep Equilibrium Models](https://arxiv.org/abs/2006.08656)는 다중 해상도 비전으로 적용을 넓히고, [Stabilizing Equilibrium Models by Jacobian Regularization](https://arxiv.org/abs/2106.14342)는 안정성과 계산 효율을 직접 다룬다. 두 후속 논문의 인용 범위는 공식 초록·서지다.
 
 ## 출처와 읽은 범위
 
-- 중심 논문: [*Deep Equilibrium Models*, arXiv:1909.01377v2](https://arxiv.org/abs/1909.01377v2), Shaojie Bai, J. Zico Kolter, Vladlen Koltun. 최초 공개 2019-09-03, 검토한 v2는 2019-10-28 수정본. [NeurIPS 2019 공식 페이지](https://proceedings.neurips.cc/paper/2019/hash/01386bd6d8e091c2ab4c7c7de644d37b-Abstract.html).
-- 2026-10-09에 1차로 전체 흐름·문제·개념을 개관하고, 2차로 본문 §1–6, 표·그림, 참고문헌, Appendix A–F를 검토했다. 총 16쪽이며 주요 식·표·증명 페이지는 렌더링된 PDF와도 대조했다.
-- 관련 연구의 실제 읽은 범위: TrellisNet pp. 2–4; Universal Transformers v3 pp. 2–4; Neural ODE v4 pp. 1–3; sublinear memory v2 pp. 1, 3–4; RBP의 ICML 2018 원문 pp. 2–4. Transformer-XL의 구현상 역할은 DEQ §4와 공식 서지를 기준으로 설명했다. 후속 두 편은 초록·서지만 확인했다.
-- [저자 코드](https://github.com/locuslab/deq)는 확인했지만 실행하지 않았다. 현재 저장소에는 후속 연구와 변경된 구현도 있으므로 2019년 실험 그대로의 실행 환경으로 간주하지 않았다.
-- 대표 그림은 이 리뷰의 자체 제작물([CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)). 본문 Figure 2·3은 원문 일부를 비평·해설 목적으로 인용했으며 원저자 권리를 유지한다. 원문의 [arXiv 배포 라이선스](https://arxiv.org/licenses/nonexclusive-distrib/1.0/license.html)를 일반 재사용 허가로 설명하지 않았다.
-
-- 2026-10-22 재점검: 기존 두 읽기 기록을 사용해 원문 §1–6 순서를 복원했다. v2 pp. 2, 4–5, 9, 13–14를 재대조하고 Broyden 식 (10)의 secant 확인, Theorem 3의 구획별 귀납을 보충했다. Appendix A–C는 대응 정리 옆으로 이동했으며 D–F의 중요 구현 조건은 결론 뒤에 보존했다. 반복 서지·표의 주변 행은 축약했다. 대규모 재현·전체 수치 안정성 검증·형식 검증은 미실행이다.
+- 원문: *Deep Equilibrium Models* · Shaojie Bai et al. · 최초 공개 2019-09-03 · [검토 버전](https://arxiv.org/abs/1909.01377v2) · 검토일 2026-10-23.
+- 읽은 범위: v2 본문 §1–6·Appendix A–F. A–C의 정리·증명은 §3의 해당 설명에 연결한다.
+- 그림 출처: 대표 그림은 자체 제작물(CC BY 4.0). Figures 2·3은 해설을 위해 원문 일부를 인용하며 원저자 권리를 유지한다. arXiv 비독점 배포 라이선스는 일반 재사용 허가가 아니다. [원문](https://arxiv.org/abs/1909.01377v2).
+- 확인하지 않은 것: 연구 코드 실행·모델 학습/재현·원시 데이터 불확실성 추정·전체 형식 인증.

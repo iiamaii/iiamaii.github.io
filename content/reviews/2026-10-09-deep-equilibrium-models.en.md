@@ -3,7 +3,7 @@ title: "Deep Equilibrium Models: learning an endpoint instead of stacking layers
 description: "An accessible guide to fixed points, Broyden solves and implicit differentiation, with the main proofs and language-model experiments explaining memory savings, runtime costs and convergence conditions."
 date: "2026-10-09"
 publishedAt: "2026-10-09T20:40:07+09:00"
-updatedAt: "2026-10-22T23:22:46+09:00"
+updatedAt: "2026-10-23T08:56:14+00:00"
 topics: ["language models", "fixed points", "implicit learning", "memory efficiency", "numerical optimization"]
 visibility: "public"
 lang: "en"
@@ -17,9 +17,7 @@ thumbnail: "/assets/reviews/deep-equilibrium-models/deq-core.svg"
 thumbnailAlt: "A comparison between unrolled shared layers and a DEQ: solve numerically for an equilibrium, then solve a linear system at that endpoint to obtain parameter gradients."
 ---
 
-A deep neural network changes its representation through successive layers. Training usually requires retaining intermediate states for differentiation. <strong>If repeated application of the same block reaches a nearly unchanged state, could that state itself define the model's output?</strong> The 2019 paper *Deep Equilibrium Models* turns this question into an architecture and training algorithm. The forward pass finds an equilibrium; the backward pass computes how that equilibrium responds to parameters. Activation storage across depth shrinks, while numerical cost and stability become central concerns. [§1–3, pp. 1–5](https://arxiv.org/pdf/1909.01377v2#page=1)
-
-**Notation.** Sequence equations retain $z^{[i]}_{1:T}$, $x_{1:T}$ and $z^\star_{1:T}$ from the paper; scalar examples omit sequence subscripts. The implicit derivation uses $J_{f_\theta}$; $q,v$ are auxiliary review symbols for the adjoint. The inverse approximation $B^{[i]}_{g_\theta}$ is distinct from the parameter derivative.
+Deep Equilibrium Models (DEQs) solve directly for the equilibrium of a shared block and train it through implicit differentiation, reducing activation storage along depth. In the medium attention comparison on WikiText-103, PPL changes from 23.6 to 23.2 and memory from 9.0 to 3.7 GB, with about 2.82 times the training time. [Table 1 and section 5](https://arxiv.org/pdf/1909.01377v2#page=6) **Review interpretation.** The memory benefit is clear; solver time and convergence tolerance determine the practical tradeoff.
 
 <strong>Reading the overview figure.</strong> The top row unrolls a shared block into successive layers. The middle row numerically solves $f_\theta(z^\star_{1:T};x_{1:T})=z^\star_{1:T}$. The bottom row solves a linear system at that endpoint for gradients. Arrows indicate computation order within each row. Iterative work remains; the key is avoiding backpropagation through the entire forward solver trajectory. This is an original illustration made for this review. [Enlarge](/assets/reviews/deep-equilibrium-models/deq-core.svg)
 
@@ -34,6 +32,8 @@ The authors propose directly computing and differentiating a sequence-level equi
 Original §2 connects causal sequence models, memory-efficient networks, and continuous views. Causality requires output at time $t$ to depend only on $x_{1:t}$. Checkpointing recomputes the original path; reversible networks reconstruct earlier activations. Neural ODEs solve a finite-time trajectory, while DEQ defines output through an equilibrium equation. The table below is a review comparison connecting this background to primary sources. [§2, pp. 2–3](https://arxiv.org/pdf/1909.01377v2#page=2)
 
 I read five primary antecedents for their distinct roles. The comparison below uses the indicated sections and DEQ §2–3.
+
+### Review supplement: comparing background sources
 
 | Research | Why read it alongside DEQ? | Difference from DEQ |
 | --- | --- | --- |
@@ -138,7 +138,7 @@ $$
 
 This is the core proof: local derivatives at the endpoint determine its parameter sensitivity. Computation uses <strong>vector–Jacobian products (VJPs)</strong>, which differentiate against a vector without building the full Jacobian. The entire series of forward solver updates need not remain in an automatic-differentiation graph. Direct parameter dependencies through the output head or loss must be differentiated separately and added. [§3.1.2, Equation 11, p. 5](https://arxiv.org/pdf/1909.01377v2#page=5)
 
-For the scalar example, choose target $1$ and loss $\frac12(z^\star-1)^2$. Then $q=2$, $J_{f_\theta}=0.5$, and $v=4$. Writing $f(z;x)=az+bx$ with $a=0.5$, $b=0.75$ gives $\partial\ell/\partial a=12$ and $\partial\ell/\partial b=8$. I checked this example against central finite differences; the maximum absolute error was approximately $3.3\times 10^{-10}$. This validates a small explanatory calculation, not training of the paper's models.
+For the scalar example, choose target $1$ and loss $\frac12(z^\star-1)^2$. Then $q=2$, $J_{f_\theta}=0.5$, and $v=4$. Writing $f(z;x)=az+bx$ with $a=0.5$, $b=0.75$ gives $\partial\ell/\partial a=12$ and $\partial\ell/\partial b=8$.
 
 The derivation has conditions. The function must be differentiable around the selected solution, and <strong>$I-J_{f_\theta}$ must be invertible</strong>. The paper's inverse notation presupposes this requirement. A nearly singular system can amplify state or gradient errors despite a small residual. Moreover, the formula describes an exact equilibrium, while implementation uses an approximate state and approximate linear solve. A small residual alone does not guarantee an accurate gradient. [Appendix A; RBP §3.2](https://proceedings.mlr.press/v80/liao18c/liao18c.pdf#page=3)
 
@@ -280,18 +280,17 @@ The appendices explain implementation details that are easy to miss in the mathe
 
 This review checked reported numbers, the logic of the equations and constructive proofs, and a scalar explanatory calculation. Large-model retraining, GPU peak-memory and runtime measurement, multi-seed uncertainty evaluation, and formal verification of the complete implementation were <strong>not run</strong>. I did not infer unreported error bars or convergence rates for every input.
 
-## Review interpretation and follow-up questions
+<span id="review-interpretation-and-follow-up-questions" aria-hidden="true"></span>
 
-DEQ changes depth from a list of layers to retain into a state equation to solve. Its output is an equilibrium; its learning signal is that equilibrium's sensitivity. This can substantially reduce activation storage across depth, while solver convergence and numerical gradient stability become central problems.
+## Review interpretation and open questions
+
+**Review interpretation.** DEQ changes depth from a list of layers to retain into a state equation to solve. Its output is an equilibrium; its learning signal is that equilibrium's sensitivity. This can substantially reduce activation storage across depth, while solver convergence and numerical gradient stability become central problems.
 
 My main reading question is therefore <strong>which mappings admit usable equilibria, and at what solve precision does the quality–memory–time tradeoff become favorable?</strong> Subsequent work includes [Multiscale Deep Equilibrium Models](https://arxiv.org/abs/2006.08656), which extends the approach to multiresolution vision, and [Stabilizing Equilibrium Models by Jacobian Regularization](https://arxiv.org/abs/2106.14342), which addresses stability and efficiency. I checked only official abstracts and metadata for these two follow-ups, leaving detailed result comparisons for a later reading.
 
 ## Sources and reading scope
 
-- Main paper: [*Deep Equilibrium Models*, arXiv:1909.01377v2](https://arxiv.org/abs/1909.01377v2), Shaojie Bai, J. Zico Kolter, Vladlen Koltun. First public submission: 2019-09-03; reviewed v2 revision: 2019-10-28. [Official NeurIPS 2019 page](https://proceedings.neurips.cc/paper/2019/hash/01386bd6d8e091c2ab4c7c7de644d37b-Abstract.html).
-- On 2026-10-09, the first pass mapped the overall argument, problem and concept; the second examined §1–6, tables, figures, references and Appendices A–F across the 16-page paper. Key equation, table and proof pages were also checked against rendered PDF pages.
-- Related-paper reading scope: TrellisNet pp. 2–4; Universal Transformers v3 pp. 2–4; Neural ODE v4 pp. 1–3; sublinear-memory v2 pp. 1 and 3–4; ICML 2018 RBP pp. 2–4. Transformer-XL's implementation role was described from DEQ §4 and official metadata. The two later papers were read at abstract/metadata scope only.
-- The [authors' code repository](https://github.com/locuslab/deq) was inspected but not executed. Its current contents include later work and implementation changes; I did not treat it as an unchanged environment for reproducing the 2019 experiments.
-- The overview diagram is original to this review ([CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)). Figures 2 and 3 are limited quotations from the paper for criticism and explanation, with authors' rights retained. The paper's [arXiv distribution license](https://arxiv.org/licenses/nonexclusive-distrib/1.0/license.html) is not described as a general reuse license.
-
-- Recheck on October 22, 2026: reusing the recorded two readings, this revision restores original §1–6 order. It rechecks v2 pp. 2, 4–5, 9, 13–14 and adds the secant check for Broyden Eq. (10) and blockwise induction for Theorem 3. Appendix A–C explanations move next to their theorems; consequential D–F implementation conditions remain after the conclusion. Repetitive bibliography and peripheral table rows are condensed. Large-scale reproduction, complete numerical-stability verification, and formal verification were not executed.
+- Paper: *Deep Equilibrium Models* · Shaojie Bai et al. · first public date 2019-09-03 · [reviewed version](https://arxiv.org/abs/1909.01377v2) · reviewed 2026-10-23.
+- Scope read: Version 2, sections 1–6 and appendices A–F; theorems and proofs from A–C accompany their corresponding explanations in section 3.
+- Figure sources: The thumbnail is review-authored (CC BY 4.0). Excerpts of Figures 2 and 3 are quoted for commentary with author rights retained; arXiv’s nonexclusive distribution license is not a general reuse license. [Paper](https://arxiv.org/abs/1909.01377v2).
+- Not verified: research-code execution, model training/reproduction, raw-data uncertainty estimates, and complete formal certification.

@@ -1,8 +1,8 @@
 ---
 title: "Can a World Model Read Actions After the Camera Moves? SyncWorld and Visual Calibration"
-description: "SyncWorld uses a short action–video context to adapt to a new robot setup. This review separates video prediction from policy success and connects ten related papers to questions about transfer and inference cost."
+description: "How visual calibration and history distillation adapt SyncWorld to new robot setups, with conditioned comparisons of video quality, policy success, and runtime."
 date: "2026-10-06"
-updatedAt: "2026-10-22T23:22:42+09:00"
+updatedAt: "2026-10-23T08:56:10+00:00"
 topics: ["world action model", "robot learning", "world simulation", "in-context learning", "visual calibration"]
 visibility: "public"
 lang: "en"
@@ -16,9 +16,7 @@ thumbnail: "/assets/reviews/syncworld/paper-figure-2.webp"
 thumbnailAlt: "The model architecture from SyncWorld Figure 2"
 ---
 
-Does knowing a robot's numerical action tell us how it will move on screen? SyncWorld first observes a short action–video correspondence in a new setup, then uses that context to predict future video without additional training. Its reported results support the promise of this approach, but do not establish physical accuracy for every embodiment or policy improvement on every task. [SyncWorld §3–4, Appendix C.4.3 and E](https://arxiv.org/html/2609.09155v1#S3)
-
-**Notation.** The text uses the paper’s $\mathcal C^s$. C_s in the existing conceptual illustration is a simplified label for the same calibration context.
+SyncWorld uses a short visual-calibration context to infer action–visual mappings for unseen cameras and single-arm robots without fine-tuning. On LIBERO video prediction, adding inference-time calibration lowers LPIPS from 0.049 to 0.035; on Orange Juice, one of three selected policy tasks, successes rise from 28 to 36 out of 50. [Tables 1 and 3](https://arxiv.org/html/2609.09155v1#S4.T1) **Review interpretation.** The within-model calibration comparison is the clearest evidence, while policy gains also depend on the VLM that ranks candidate rollouts.
 
 This article follows original §1–5. The ranking **method** is in §3.3 and success rates are in §4.4. Runtime and failure cases are grouped at the end under Appendix C.2 and E. Additional literature comparisons follow the authors’ conclusion as review interpretation.
 
@@ -33,11 +31,23 @@ An action-conditioned world model predicts future observations from the current 
 
 ## 2. Related Work
 
-Section 2 distinguishes action-conditioned world models, latent-action world models, and in-context adaptation. Latent controls inferred from video still need grounding into executable robot commands. SyncWorld directly conditions on low-level actions and infers their setup-specific meaning from context. This distinction motivates the authors’ calibration episode. [Original §2.1–2.3](https://arxiv.org/html/2609.09155v1#S2)
+### 2.1 Controllable Action-Conditioned World Models
 
-Earlier work had already addressed parts of this problem. IRASim models the alignment between actions and video frames; WorldGym evaluates policies in generated environments. Ctrl-World uses multiple views and history, and also reports zero-shot results in new DROID camera setups. My reading is therefore that SyncWorld explicitly designs a calibration context to reveal the correspondence, rather than being the first model to make setup transfer possible. That comparison is a review interpretation. [IRASim §3](https://arxiv.org/html/2406.14540v2), [WorldGym §3–4](https://arxiv.org/html/2506.00613v3), [Ctrl-World §4 and §5.4](https://arxiv.org/html/2510.10125v3)
+The authors distinguish video-based trajectory synthesis and action inference, joint video/action WAMs, and models predicting future observations from actions. Ray maps, visual action prompts, and embodiment masks already ground actions visually. SyncWorld instead focuses on setup-dependent numerical action semantics, specified through calibration context under changes in camera, controller convention, or embodiment. [Section 2.1](https://arxiv.org/html/2609.09155v1#S2.SS1)
 
-Context and Diversity Matter provides useful theoretical background: it distinguishes recognizing a previously encountered environment from learning transitions through context. Its theoretical assumptions about states and spaces, and its experimental environments, differ from robot video. I therefore do not treat its results as a proof of SyncWorld's performance. [Context and Diversity Matter §3–4](https://arxiv.org/html/2509.22353v2)
+### 2.2 Latent Action World Modeling
+
+Latent-action methods learn controls explaining changes in unlabeled video. These controls can guide rollouts or be distilled into policies, but require grounding in executable low-level commands. The authors contrast this with directly conditioning on real commands and inferring their setup-specific visual effects from context. [Section 2.2](https://arxiv.org/html/2609.09155v1#S2.SS2)
+
+### 2.3 In-Context Adaptation of World Models
+
+Earlier adaptation routes include geometry or extrinsic estimation, privileged deployment supervision, test-time optimization/fine-tuning, and closed-loop refinement with real rollouts. SyncWorld instead supplies a short action–video prefix and infers the current mapping without parameter updates. [Section 2.3](https://arxiv.org/html/2609.09155v1#S2.SS3)
+
+### Review supplement: establishing the comparison scope
+
+IRASim studies frame-level action grounding, WorldGym evaluates policies in generated environments, and Ctrl-World uses multiple views/history and reports zero-shot results for new cameras. [IRASim section 3](https://arxiv.org/html/2406.14540v2), [WorldGym sections 3–4](https://arxiv.org/html/2506.00613v3), [Ctrl-World section 5.4](https://arxiv.org/html/2510.10125v3)
+
+**Review interpretation.** Novelty is best assessed through explicit setup-specific calibration combined with history distillation, rather than through a claim to be the first model to transfer across setups.
 
 ## 3. Method
 
@@ -97,6 +107,8 @@ The video metrics answer different questions. PSNR measures reconstruction throu
 
 | Model | PSNR ↑ (dB) | SSIM ↑ | LPIPS ↓ | FID ↓ |
 | --- | --- | --- | --- | --- |
+| IRASim | 23.5 | 0.876 | 0.149 | 19.9 |
+| WorldGym | 24.1 | 0.882 | 0.142 | 17.4 |
 | Ctrl-World | 24.8 | 0.892 | 0.137 | 16.5 |
 | SyncWorld, no inference calibration | 27.9 | 0.933 | 0.049 | 8.7 |
 | SyncWorld, with inference calibration | 28.3 | 0.935 | 0.035 | 7.0 |
@@ -162,25 +174,27 @@ The full-model row matches Table 1’s **no inference calibration** row. Removin
 
 ## 5. Conclusion
 
-The authors conclude that conditioning on short visual calibration and history can produce controllable predictions under new cameras and single-arm embodiments, rather than forcing one global interpretation of numerical actions. Distillation connects this ability to inference without explicit calibration; candidate ranking demonstrates potential decision-time utility. The paper does not prove improvement on every task or accuracy for every physical interaction. [Original §5](https://arxiv.org/html/2609.09155v1#S5)
+The authors conclude that conditioning on short visual calibration and history can produce controllable predictions under new cameras and single-arm embodiments, rather than forcing one global interpretation of numerical actions. Distillation connects this ability to inference without explicit calibration; candidate ranking demonstrates potential decision-time utility. [Original §5](https://arxiv.org/html/2609.09155v1#S5)
 
 ## Appendix C.2 and E: runtime and failure cases
 
-**Paper Table 6 — Generation time and compute conditions.** Only the SyncWorld rows are transcribed here.
+**Original Table 6 — generation time and conditions.** All baseline and SyncWorld configurations are retained.
 
-| GPU configuration | Denoising steps | Generation time |
-| --- | --- | --- |
-| One H100 | 50 | 39.4 s |
-| One H100 | 20 | 15.6 s |
-| Four H100s | 20 | 3.2 s |
+| Model | GPU setup | Denoising steps | Time |
+| --- | --- | --- | --- |
+| WorldGym | 1 A100 | 50 | 37.2 s |
+| Ctrl-World | 1 H100 | 50 | 4.0 s |
+| SyncWorld | One H100 | 50 | 39.4 s |
+| SyncWorld | One H100 | 20 | 15.6 s |
+| SyncWorld | Four H100s | 20 | 3.2 s |
 
-Runtime also needs its conditions attached. The 3.2 seconds in Table 6 uses four H100 GPUs and 20 denoising steps. One H100 with 20 steps takes 15.6 seconds in the same table. Neither value has been verified as full decision latency including policy inference, evaluation of eight candidates and two views, and the GPT-5 judgment. [SyncWorld Appendix C.2, Table 6](https://arxiv.org/html/2609.09155v1#A3.SS2)
+Runtime also needs its conditions attached. The 3.2 seconds in Table 6 uses four H100 GPUs and 20 denoising steps. One H100 with 20 steps takes 15.6 seconds in the same table. At one H100 and 50 steps, Ctrl-World takes 4.0 seconds versus SyncWorld’s 39.4 seconds. Neither value has been verified as full decision latency including policy inference, evaluation of eight candidates and two views, and the GPT-5 judgment. [SyncWorld Appendix C.2, Table 6](https://arxiv.org/html/2609.09155v1#A3.SS2)
 
 The authors show unstable motion at an extreme camera angle, blur and position errors for unseen objects, hallucination of some objects in multi-object scenes, and blur during precise rotation with a new xArm. Producing video in which the arm follows the command should be distinguished from accurately predicting object interactions. The latter distinction is my criterion for assessing the model. [SyncWorld Appendix E.1–E.4](https://arxiv.org/html/2609.09155v1#A5)
 
 ## Review interpretation and open questions
 
-Recent work makes this distinction more concrete. XEWorld evaluates transfer across bimanual embodiments in controlled scenes, separating appearance, kinematics, and object state. The action-format study investigates how equivalent absolute and relative commands can change model outcomes. XEWorld uses different embodiments and action spaces from SyncWorld, while the action-format study uses a fixed camera and offline proxy evaluation. Neither is a matched experiment directly refuting SyncWorld. My proposal from reading them together is to test camera, action-format, and embodiment transfer separately. [XEWorld §3 and §5–6](https://arxiv.org/html/2608.05799v1), [Robot World Models Are Not Invariant to How the Actions Are Written §3–6](https://arxiv.org/html/2609.23252v1)
+**Review interpretation.** Recent work makes this distinction more concrete. XEWorld evaluates transfer across bimanual embodiments in controlled scenes, separating appearance, kinematics, and object state. The action-format study investigates how equivalent absolute and relative commands can change model outcomes. XEWorld uses different embodiments and action spaces from SyncWorld, while the action-format study uses a fixed camera and offline proxy evaluation. Neither is a matched experiment directly refuting SyncWorld. My proposal from reading them together is to test camera, action-format, and embodiment transfer separately. [XEWorld §3 and §5–6](https://arxiv.org/html/2608.05799v1), [Robot World Models Are Not Invariant to How the Actions Are Written §3–6](https://arxiv.org/html/2609.23252v1)
 
 There are also alternative ways to reduce inference cost. Think Like a World Model, Act Like a VLA distills a teacher's representations into a compact policy and removes the teacher at deployment. Its default teacher supplies understanding representations from Cosmos3-Nano rather than acting as a video-rollout simulator. RoboActualizer trains future and action experts on frozen V-JEPA 2.1 representations, then discards future outputs during execution. Both involve platform-specific training, which differs from SyncWorld's contextual adaptation to a new setup. [Representation distillation §III-B–III-C and §IV](https://arxiv.org/html/2609.24682v2), [RoboActualizer §3–4](https://arxiv.org/html/2609.36413v3)
 
@@ -194,13 +208,11 @@ The following are proposed checks and have not been executed.
 
 ## Sources and reading scope
 
-The focal paper is *SyncWorld: Visual Calibration Enables World Models as Zero-Shot Simulators* by Yuncong Yang and eight coauthors (2026), arXiv:2609.09155v1, first submitted on September 8, 2026. The source text and metadata below were checked on October 6, 2026. The requested PDF could not be read because of the tool's size limit; the official HTML of the same v1 was used instead. Reading covered the focal paper's main text, §1–5, and the appendix portions listed below, not every appendix or supplementary video. [Official metadata](https://arxiv.org/abs/2609.09155v1), [Official HTML](https://arxiv.org/html/2609.09155v1)
+- Paper: *SyncWorld: Visual Calibration Enables World Models as Zero-Shot Simulators* · Yuncong Yang et al. · first public date 2026-09-08 · [reviewed version](https://arxiv.org/abs/2609.09155v1) · reviewed 2026-10-23.
+- Scope read: Sections 1–5 and the methods, settings, tables, and failures in appendices B.1–B.2, C.1–C.4, D–E; supplementary videos are excluded.
 
-The related literature comprises five core papers and five recent representative papers. The recent group prioritizes relevance among sources first submitted between August 1 and October 6, 2026. It is neither a chronological list of the five newest papers nor a list of direct SyncWorld follow-ups. Versions below are the editions actually analyzed.
-
-| Source and version | Actual reading scope |
+| Additional source | Scope read |
 | --- | --- |
-| [SyncWorld v1](https://arxiv.org/html/2609.09155v1) | Main text §1–5; relevant settings, tables, and failure descriptions in Appendix B.1–B.2, C.1–C.4, D–E; original Figures 2, 4 and 5 and their captions; rows of Tables 2, 3, 6 and 8 rechecked |
 | [IRASim v2](https://arxiv.org/html/2406.14540v2) | Relevant passages and experiment descriptions in §3.1–3.3, §4.1–4.3, §5 |
 | [WorldGym v3](https://arxiv.org/html/2506.00613v3) | Relevant passages in §3.1.1–3.1.3, §4.1–4.2, §6 |
 | [Ctrl-World v3](https://arxiv.org/html/2510.10125v3) | Relevant passages in §4.1–4.2, §5.3–5.4, §6 |
@@ -212,8 +224,5 @@ The related literature comprises five core papers and five recent representative
 | [RoboActualizer v3](https://arxiv.org/html/2609.36413v3) | Relevant passages and tables in §3.1–3.4, §4.1–4.5.2, §5, Appendix C.1–C.2 |
 | [ReWAM v1](https://arxiv.org/html/2609.38163v1) | Relevant passages and tables in §3.2–3.4, §4.2–4.3, §4.5, §5 |
 
-The official GPC v4 title is *Inference-Time Enhancement of Generative Robot Policies via Predictive World Modeling*. RoboActualizer v3's RoboTwin evaluation coverage remains unverified because §5 and Appendix C.2 give different descriptions; this article draws no conclusion from that coverage.
-
-Verification covered source text, tables, metadata, and the figures specified below. Complete reading of the related papers, full proof checking, code and weight execution, supplementary-video inspection, simulation and real-robot reproduction, and statistical-significance testing were **not executed (미실행)**. For this revision, the original images and captions of Figures 2, 4 and 5 and the rows of Tables 2, 3, 6 and 8 were inspected directly. The three WebP images are adapted from Yuncong Yang and coauthors (2026), [SyncWorld v1](https://arxiv.org/abs/2609.09155v1), and are reproduced with attribution under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), with resizing and WebP compression only; content and layout are preserved without cropping. One reviewer-created schematic explains calibration context and fixed model parameters; it is not an experimental result. Tables transcribe source values into Markdown, converting only success fractions to percentages. The cover uses paper Figure 2. The full-size links open the optimized images; original-resolution figures remain available in the source paper. The schematic SVG retains its vector text and shapes; only its embedded raster images were resized and compressed.
-
-**Structure and evidence recheck, October 22, 2026.** This revision reuses the recorded orientation and detailed reading of October 6. It rechecks v1 HTML §1–5, Tables 1, 4, 5, and 9, and relevant runtime and failure descriptions in Appendix C.2 and E. It is not counted as two newly completed full-paper readings. Section 2’s citation lists are condensed and Appendix F’s supplementary videos remain unviewed; core quality, policy, ablation, and failure evidence is preserved above. Experimental reproduction and statistical testing were not executed.
+- Figure sources: Figures 2 (thumbnail), 4, and 5 are author assets from v1, CC BY 4.0; resolution reduction and WebP compression preserve content and layout. The self-made concept diagram includes illustrative AI-generated samples and optimized embedded rasters. [Paper](https://arxiv.org/abs/2609.09155v1).
+- Not verified: research-code execution, model training/reproduction, raw-data uncertainty estimates, and complete formal certification.

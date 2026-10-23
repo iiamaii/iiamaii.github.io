@@ -3,7 +3,7 @@ title: "[2/2] Single Global Merging 심화: 부록 실험과 증명의 조건을
 description: "부록 A–D를 따라 실험 설정과 추가 비교를 보존하고, 평균 업데이트·Taylor 전개·수렴 증명의 간극을 검토한다."
 date: "2026-10-23"
 publishedAt: "2026-10-23T12:14:58+09:00"
-updatedAt: "2026-10-23T12:14:58+09:00"
+updatedAt: "2026-10-23T08:56:24+00:00"
 topics: ["decentralized learning", "model merging", "distributed optimization", "federated learning", "communication efficiency"]
 visibility: "public"
 paperTitle: "On the Surprising Effectiveness of a Single Global Merging in Decentralized Learning"
@@ -17,7 +17,7 @@ translationKey: "single-global-merging-theory"
 thumbnailAlt: "원문 Figure 1(b): sparse 분산 학습의 마지막 가중치 평균에서 전역 테스트 성능이 크게 회복되는 ResNet-18 실험."
 ---
 
-이 논문의 실험을 이해하는 것과 이론이 어디까지 증명하는지 확인하는 것은 다른 작업이다. **마지막 평균의 성능 회복은 반복해서 관찰되지만, 비IID(non-IID) 환경의 일반적인 수렴 보장으로 연결하는 과정에는 추가 조건과 수정이 필요한 부분이 있다.** 이 글은 그 차이를 계산으로 확인한다.
+전역 병합(global merging)의 이론은 통신으로 제어되는 모델 차이와 평균 업데이트의 곡률 보정을 연결한다. 기본 설정은 300라운드·라운드당 100회 로컬 갱신이며, 확률 0.2의 이웃 교환과 최종 전역 병합을 함께 평가한다. [원문 Appendix C.1·D](https://arxiv.org/pdf/2507.06542v4#page=22) **리뷰 해석.** 이론의 설명력을 판단하려면 비IID(non-IID) 잔차와 제곱평균제곱근(root mean square, RMS) 경계를 보존해야 하며, 실험의 성능 회복과 일반 수렴 보장을 나누어 검토할 필요가 있다.
 
 [[1/2] 본문·핵심 실험 해설](/reviews/single-global-merging/) 뒤에 읽기를 권한다. 원문 **부록 A→B→C→D** 순서를 유지한다. D 안에서는 원문의 Lemma D.1부터 Proposition D.9까지 순서를 따른다. 아래 중간 계산과 반례는 **리뷰 보충**이며, 저자의 정리를 고친 새 정리를 발표하는 글은 아니다.
 
@@ -45,7 +45,7 @@ B.1은 그래프·비동기 업데이트·데이터 이질성·프라이버시·
 
 **B.2의 역할:** 모델 차이를 순수한 방해로만 보지 않는 근거를 마련한다. 직접 의존하는 [Zhu et al. 2023, Theorem 1·C.2](https://proceedings.mlr.press/v202/zhu23e.html)는 공통 분포에서 샘플링한 업데이트를 평균하면 곡률 관련 보정이 남는다고 분석한다. 공통 분포라는 조건이 왜 중요한지는 아래 D.3에서 확인한다.
 
-**B.3의 역할:** 같은 사전학습 체크포인트, 동질적 학습 조건, 뉴런 순열 정렬(permutation alignment)이 병합을 쉽게 만드는 기존 상황과 비교한다. 이번 관측은 서로 다른 초기화·이질적 데이터·사후 순열 정렬 없음이라는 조합에서 **학습 중의 약한 통신**이 도움이 될 수 있다는 것이다. 독립 모델 평균의 성공 사례를 부정하는 주장은 아니다. [B](https://arxiv.org/pdf/2507.06542v4#page=21)
+**B.3의 역할:** 같은 사전학습 체크포인트, 동질적 학습 조건, 뉴런 순열 정렬(permutation alignment)이 병합을 쉽게 만드는 기존 상황과 비교한다. 이 관측은 서로 다른 초기화·이질적 데이터·사후 순열 정렬 없음이라는 조합에서 **학습 중의 약한 통신**이 도움이 될 수 있다는 것이다. 독립 모델 평균의 성공 사례를 부정하는 주장은 아니다. [B](https://arxiv.org/pdf/2507.06542v4#page=21)
 
 ## C. 추가 실험 (Additional Experiments)
 
@@ -75,7 +75,7 @@ Tiny ImageNet의 $64\times64$ 입력을 patch size 32로 처리하므로 CLIP에
 
 ### C.2 평가 지표 (Practical Evaluation Metrics)
 
-원문의 세 지표는 자기 분포에서의 로컬 성능, 전역 분포에서의 로컬 모델 평균 성능, 전역 분포에서의 평균 모델 성능이다. 이질성이 강하면 자기 클래스에만 강한 모델도 첫 지표에서는 좋아 보인다. 마지막 평균의 효과를 보려면 두 번째와 세 번째를 구분해야 한다. **가중치 평균은 출력 앙상블(output ensemble)과도 다르다.** 후자는 추론 시 여러 모델을 유지하지만 이 논문은 하나의 평균 매개변수 모델을 평가한다. [C.2](https://arxiv.org/pdf/2507.06542v4#page=24)
+원문의 세 지표는 자기 분포에서의 로컬 성능, 전역 분포에서의 로컬 모델 평균 성능, 전역 분포에서의 평균 모델 성능이다. 이질성이 강하면 자기 클래스에만 강한 모델도 첫 지표에서는 좋아 보인다. 최종 전역 병합의 효과를 보려면 두 번째와 세 번째를 구분해야 한다. **가중치 평균은 출력 앙상블(output ensemble)과도 다르다.** 후자는 추론 시 여러 모델을 유지하지만 이 논문은 하나의 평균 매개변수 모델을 평가한다. [C.2](https://arxiv.org/pdf/2507.06542v4#page=24)
 
 ### C.3 추가 비교와 ablation
 
@@ -94,7 +94,7 @@ C.1의 16명, C.2의 32명 설정은 CLIP과 ResNet 각각에서 AdamW의 병합
 
 #### C.3.2 이웃 수와 topology
 
-C.3(a)는 사전학습 가중치를 쓴 ResNet에서 $R=0.2$와 $R=1$을 비교한다. 더 자주 통신하는 $R=1$은 병합 전 성능이 높고, $R=0.2$는 마지막 병합 때의 증가 폭이 더 크다. **병합이 더 많이 도와준다는 것과 병합 후 최종 정확도가 더 높다는 것은 다르다.** C.3(b)에서는 exponential graph가 ring보다 개별·평균 모델 모두 대체로 높지만, 두 graph 모두 평균의 이득을 보인다. 이는 topology가 중요하지 않다는 결론과 구분해야 한다. [C.3.1–C.3.2·Figures C.1–C.3, pp.25–26](https://arxiv.org/pdf/2507.06542v4#page=26)
+C.3(a)는 사전학습 가중치를 쓴 ResNet에서 $R=0.2$와 $R=1$을 비교한다. 더 자주 통신하는 $R=1$은 병합 전 성능이 높고, $R=0.2$는 최종 전역 병합 때의 증가 폭이 더 크다. **병합이 더 많이 도와준다는 것과 병합 후 최종 정확도가 더 높다는 것은 다르다.** C.3(b)에서는 exponential graph가 ring보다 개별·평균 모델 모두 대체로 높지만, 두 graph 모두 평균의 이득을 보인다. 이는 topology가 중요하지 않다는 결론과 구분해야 한다. [C.3.1–C.3.2·Figures C.1–C.3, pp.25–26](https://arxiv.org/pdf/2507.06542v4#page=26)
 
 #### C.3.3 하이퍼파라미터·초기화·이질성
 
@@ -119,6 +119,12 @@ C.4는 batch size나 learning rate를 바꿔도 평균과 개별 모델 사이�
 ## D. Theory
 
 아래는 원문 부록의 정리 순서다. $\delta_k^{(t)}=\theta_k^{(t)}-\bar\theta^{(t)}$, $g_t=\nabla\mathcal L(\bar\theta^{(t)})$, $H_t=\nabla^2\mathcal L(\bar\theta^{(t)})$, $q_t=\nabla\operatorname{Tr}(H_t\Gamma^{(t)})$는 계산을 줄이기 위한 리뷰 보조 표기다. $\Gamma^{(t)}$는 $d\times d$이며 $\Theta$는 $d\times m$이다. $q_t$의 미분에서는 공분산을 고정한다.
+
+### 리뷰 보충: 병합 가능성 정의의 비자명성
+
+원문 Definition 2는 비음수 가중치가 존재해 평균 손실 부등식을 만족하는지를 묻고, 실험은 균등 평균을 평가한다. [원문 §3, Definition 2](https://arxiv.org/pdf/2507.06542v4#page=4)
+
+**리뷰 해석.** 인쇄된 정의에는 가중치 합 1이 없고, 그 조건을 추가해도 한 가중치만 1인 선택은 등호를 만족한다. 비자명한 병합성을 정의하려면 균등 평균을 고정하거나 여러 양의 가중치를 요구하는 조건이 더 필요하다. 이는 정의의 구별 능력에 관한 문제이며, 실제 균등 평균의 성능 회복을 취소하지 않는다.
 
 ### Lemma D.1: 합의 거리의 재귀식
 
@@ -493,17 +499,18 @@ $$
 
 따라서 **후반에 gradient 하한 $\mu_t$가 작아지면 더 강한 혼합이 필요하다는 설계 직관**과 **모든 실행에서 병합성을 보장하는 엄밀한 알고리즘**을 구분해야 한다. [D.9, pp.36–37·본문 Proposition 3](https://arxiv.org/pdf/2507.06542v4#page=36)
 
-## 리뷰 해석과 다음 검증
+<span id="리뷰-해석과-다음-검증" aria-hidden="true"></span>
 
-이 논문의 강점은 모델별 전역 성능과 평균 모델의 전역 성능을 분리해 흥미로운 실험 질문을 만든 데 있다. 이론은 모델 차이를 고차 기하와 연결하는 설명을 제안하지만, 현재 서술만으로 비IID 전체의 보편적 병합 보장을 확인했다고 하기는 어렵다.
+## 리뷰 해석과 남은 질문
 
-다음 검증은 세 가지가 구체적이다. 첫째, 별도 validation과 여러 seed에서 같은 통신량으로 early/late/terminal merge를 비교한다. 둘째, 고정된 상호 배타적 로컬 데이터와 resampled label-skew stream을 나눠 효과를 측정한다. 셋째, 비IID Hessian 차이 항을 보존한 평균 업데이트와 확률적 consensus 제어를 사용해 이론의 조건을 다시 세운다. 이들은 **후속 제안이며 이번에 실행한 실험이 아니다.**
+**리뷰 해석.** 이 논문의 강점은 모델별 전역 성능과 평균 모델의 전역 성능을 분리해 흥미로운 실험 질문을 만든 데 있다. 이론은 모델 차이를 고차 기하와 연결하는 설명을 제안하지만, 현재 서술만으로 비IID 전체의 보편적 병합 보장을 확인했다고 하기는 어렵다.
+
+다음 검증은 세 가지가 구체적이다. 첫째, 별도 validation과 여러 seed에서 같은 통신량으로 early/late/terminal merge를 비교한다. 둘째, 고정된 상호 배타적 로컬 데이터와 resampled label-skew stream을 나눠 효과를 측정한다. 셋째, 비IID Hessian 차이 항을 보존한 평균 업데이트와 확률적 consensus 제어를 사용해 이론의 조건을 다시 세운다.
 
 ## 출처와 읽은 범위
 
-- 원문: Tongtian Zhu, Tianyu Zhang, Mingze Wang, Zhanpeng Zhou, Can Wang. [arXiv:2507.06542v4](https://arxiv.org/abs/2507.06542v4), ICLR 2026, 37쪽. 최초 공개 2025-07-09, 검토판 2026-04-27.
-- 두 차례 읽기: 먼저 초록·도입/기여·Figure 1 캡션·절 지도·§6의 독립 개관을 저장했다. 이후 본문 §1–6, 부록 A–D의 활성 저자 소스를 정독하고 핵심 PDF 수식·실험·증명과 대조했다. 본문은 [[1/2]](/reviews/single-global-merging/), 부록과 보충 계산은 이 글에 대응한다. B의 응용 사례 열거와 반복 실험 곡선의 세부 묘사는 축약했다.
-- 참고 원전: [Koloskova 2020](https://proceedings.mlr.press/v119/koloskova20a.html) pp.1·3·5–6, [Kong 2021](https://proceedings.mlr.press/v139/kong21a.html) pp.1·3–4, [Zhu 2023](https://proceedings.mlr.press/v202/zhu23e.html) pp.1·3–4·16–17·22–24, [Wortsman 2022](https://proceedings.mlr.press/v162/wortsman22a.html) pp.1–3, [de Vos 2023](https://papers.nips.cc/paper_files/paper/2023/hash/7172e147d916eef4cb1eb30016ce725f-Abstract-Conference.html) pp.1·5–6를 선택 읽기했다. 모든 참고문헌 전문을 읽은 것은 아니다.
-- 저자 코드: [고정 SHA 6a5c139](https://github.com/Raiden-Zhu/ICLR-2026-Grokking-in-Decentralized-Learning/tree/6a5c139c2cdf6d6d7e0b6ba3c00f123e494e6660)의 README·재현/구현 문서·샘플러·통신 함수 관련 부분을 정적으로 읽었다. 저장소 전체 감사와 코드 실행은 **미실행**, 그림 생성 당시 revision과의 동일성은 **미확인**이다.
-- 리뷰 검증: 비IID 누락항, Taylor 잔차, 교차항 계수, RMS와 실행별 경계, one-hot 정의, 영공분산 가정, 재귀식 초기항, 이상화 통신량의 8개 검사를 수행했다. 이는 부분 계산 검증이며 논문 전체의 자동 증명은 아니다. GPU 훈련·다중 seed·실제 네트워크 측정은 **미실행**이다.
-- 그림: Figure C.5·C.6, 대표 이미지 Figure 1(b), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). 원문 PDF와 figure PDF에서 추출·rasterize해 무손실 WebP로 변환했다. 데이터나 라벨을 바꾸지 않았다.
+- 원문: *On the Surprising Effectiveness of a Single Global Merging in Decentralized Learning* · Tongtian Zhu et al. · 최초 공개 2025-07-09 · [검토 버전](https://arxiv.org/abs/2507.06542v4) · 검토일 2026-10-23.
+- 읽은 범위: v4 부록 A→B→C→D, D.1–D.9의 정리와 증명. 본문 §1–6은 [1/2] 해설에 연결한다.
+- 추가 출처: [Koloskova 2020](https://proceedings.mlr.press/v119/koloskova20a.html) pp.1·3·5–6, [Kong 2021](https://proceedings.mlr.press/v139/kong21a.html) pp.1·3–4, [Zhu 2023](https://proceedings.mlr.press/v202/zhu23e.html) pp.1·3–4·16–17·22–24, [Wortsman 2022](https://proceedings.mlr.press/v162/wortsman22a.html) pp.1–3, [de Vos 2023](https://papers.nips.cc/paper_files/paper/2023/hash/7172e147d916eef4cb1eb30016ce725f-Abstract-Conference.html) pp.1·5–6를 선택 읽기했다. 모든 참고문헌 전문을 읽은 것은 아니다.
+- 그림 출처: 대표 Figure 1(b)와 해당 편의 Figures 1·2 또는 C.5·C.6은 저자 v4 자산(CC BY 4.0). PDF 추출·래스터화·무손실 WebP 변환을 적용하며 데이터·라벨을 유지한다. [원문](https://arxiv.org/abs/2507.06542v4).
+- 확인하지 않은 것: 연구 코드 실행·모델 학습/재현·원시 데이터 불확실성 추정·전체 형식 인증.

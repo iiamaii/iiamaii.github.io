@@ -3,7 +3,7 @@ title: "SWAP: 로봇은 작업 도중 어떤 VLA 정책으로 바꿔야 할까?"
 description: "SWAP의 정책 선택 MDP와 IQL critic을 원문 순서로 설명하고, 실물 로봇의 성공률 개선부터 분포 이동에서 라우팅이 실패하는 반례까지 분석한다."
 date: "2026-10-12"
 publishedAt: "2026-10-12T13:18:52+09:00"
-updatedAt: "2026-10-22T23:22:50+09:00"
+updatedAt: "2026-10-23T08:56:18+00:00"
 topics: ["robot learning", "vision-language-action", "policy routing", "offline reinforcement learning", "multi-model systems"]
 visibility: "public"
 lang: "ko"
@@ -17,7 +17,7 @@ thumbnail: "/assets/reviews/swap-policy-routing/swap-overview.webp"
 thumbnailAlt: "SWAP 원문 Figure 2. 후보 정책의 성공·실패 로그로 오프라인 routing critic을 학습한 뒤, 현재 관찰에서 정책별 Q값을 비교하고 선택한 정책의 행동 묶음을 실행하는 세 단계."
 ---
 
-로봇이 물체까지 빠르게 이동하는 것과 물체를 정확히 집는 것은 서로 다른 능력이다. 이동에 강한 정책이 집기에서도 가장 좋으리라는 보장은 없다. **SWAP은 여러 시각·언어·행동 모델**(vision-language-action model, VLA)을 준비하고, 작업 도중 현재 장면에 맞는 정책으로 바꾸는 방법이다. 실물 로봇 세 작업에서는 최선의 단일 정책보다 성공률이 높아졌다. 반면 분포가 달라진 시뮬레이션에서는 라우터가 최선의 단일 정책에 못 미치는 결과도 나온다. 이 글은 이 두 결과를 함께 읽는다. [원문 초록·§I·Table I·III](https://arxiv.org/pdf/2610.06926v1#page=1)
+SWAP은 현재 관찰에서 정책별 가치를 평가해 시각·언어·행동 모델(vision-language-action model, VLA)을 행동 묶음마다 교체한다. 실물 세 작업의 30회 평가에서 29회 성공해 최선의 단일 후보의 19회보다 높지만, 강한 단일 정책이 있는 LIBERO-Plus 조건에서는 89.0%로 그 정책의 92.0%보다 낮다. [원문 Tables I·III(b)](https://arxiv.org/pdf/2610.06926v1#page=4) **리뷰 해석.** 후보의 상호보완성과 분포 이동에 따른 가치 추정의 신뢰도가 라우팅의 이득을 결정한다.
 
 원문의 I–VI 순서를 유지하며 문제 정의, 학습 식, 알고리즘, 주요 실험과 실패 조건을 설명한다. SWAP에는 별도의 정리나 증명 절이 없다. 아래 expectile 설명과 작은 계산 예제는 방법 이해를 위한 리뷰 보충이며, SWAP의 최적성 증명이 아니다.
 
@@ -32,6 +32,10 @@ VLA는 카메라 영상과 언어 지시를 받아 로봇 행동을 생성한다
 ## II. 배경과 관련 연구 (Background and Related Work)
 
 원문은 VLA, 언어 모델의 라우팅, 로봇의 가치 함수(value function)를 차례로 연결한다. 이 연결을 이해할 때는 **무엇을 선택하는가**와 **선택이 미래에 영향을 주는가**를 구분하면 좋다. [§II, p. 2](https://arxiv.org/pdf/2610.06926v1#page=2)
+
+저자들은 먼저 여러 데이터·구조의 VLA가 같은 분포 이동에서도 서로 다른 실패를 보인다는 점을 연결한다. LLM 라우팅은 요청마다 비용·능력을 절충하지만, 로봇의 정책 선택은 행동이 이후 관찰을 바꾸는 순차 문제다. 가치 함수의 계보에는 정책 최적화뿐 아니라 SayCan의 skill 선택, 실패 탐지, 배포 시 행동 조향이 있으며, SWAP은 이를 고정된 VLA들 사이의 routing critic으로 연결한다. [원문 §II](https://arxiv.org/pdf/2610.06926v1#page=2)
+
+### 리뷰 보충: 다섯 접근의 역할 비교
 
 | 관련 접근 | 선택하거나 학습하는 대상 | SWAP과 연결되는 지점·차이 |
 | --- | --- | --- |
@@ -101,7 +105,7 @@ $$
 
 ### IQL critic: 지금의 선택과 이후의 성공을 연결한다
 
-SWAP은 두 행동 가치 함수(action-value function) $Q_1,Q_2$와 상태 가치 함수(state-value function) $V$를 학습한다. 핵심은 원문의 식 (1)이다. 모바일에서 읽기 쉽도록 같은 식을 줄바꿈했다. [§IV, 식 (1), p. 3](https://arxiv.org/pdf/2610.06926v1#page=3)
+SWAP은 두 행동 가치 함수(action-value function) $Q_1,Q_2$와 상태 가치 함수(state-value function) $V$를 학습한다. 핵심은 원문의 식 (1)이다. [§IV, 식 (1), p. 3](https://arxiv.org/pdf/2610.06926v1#page=3)
 
 $$
 \begin{aligned}
@@ -289,18 +293,13 @@ SWAP의 기여는 준비된 VLA들의 차이를 **실행 중 학습된 정책 �
 
 ## 리뷰 해석과 남은 질문
 
-가장 흥미로운 점은 모델의 평균 성능과 상태별 유용성이 다를 수 있다는 것이다. 실물에서 $\pi_{0.5}$의 단독 평균은 FAST보다 낮지만 라우터는 집기·회복에 자주 사용한다. 그러나 이 보완성이 OOD에서도 유지되리라는 보장은 없다. **라우팅의 일반화**(routing generalization)는 영상의 새 장면을 인식하는 능력뿐 아니라, 그 장면에서 후보 정책의 상대적 강점을 제대로 추정하는 능력까지 요구한다.
+**리뷰 해석.** 가장 흥미로운 점은 모델의 평균 성능과 상태별 유용성이 다를 수 있다는 것이다. 실물에서 $\pi_{0.5}$의 단독 평균은 FAST보다 낮지만 라우터는 집기·회복에 자주 사용한다. 그러나 이 보완성이 OOD에서도 유지되리라는 보장은 없다. **라우팅의 일반화**(routing generalization)는 영상의 새 장면을 인식하는 능력뿐 아니라, 그 장면에서 후보 정책의 상대적 강점을 제대로 추정하는 능력까지 요구한다.
 
 후속 검증은 세 가지가 특히 유용하다. 첫째, 에피소드 시작에서만 선택하는 학습된 라우터와 비교하면 실행 중 교체의 추가 이득을 분리할 수 있다. 둘째, 낮은 Q 차이에서는 이전 정책을 유지하는 전환 비용·히스테리시스(hysteresis)를 넣고 교체 빈도, 성공률, 실제 시간을 함께 측정할 수 있다. 셋째, Table III(a)처럼 후보 순위가 뒤집히는 조건에서 critic 불확실성과 잘못된 선호를 검사할 수 있다. 이는 리뷰의 검증 제안이며 실행된 SWAP 결과가 아니다.
 
 ## 출처와 읽은 범위
 
-- 원문: Mousumi Das, Aditeya Prajapati, Abrar Anwar, Jesse Thomason, *SWAP: Stepwise Action Policy Routing for Vision-Language-Action Models*, [arXiv:2610.06926v1](https://arxiv.org/abs/2610.06926v1). 최초 공개일은 공식 v1 제출일 2026-10-03이다. 검토일은 2026-10-12다.
-- 첫 번째 읽기: 초록·도입, 전체 절 제목, Figure 1–4·Table I–II 캡션과 주요 결과 개요, 결론·한계를 확인하고 독립 개관을 저장했다.
-- 두 번째 읽기: PDF 9쪽 전체를 확인했다. 본문 I–VI는 pp. 1–7, 참고문헌은 pp. 7–9에 있다. 저자 LaTeX의 본문·Algorithm 1·식 (1)·Table I–IV를 대조하고, Figure 2·4와 식·표가 있는 PDF 페이지를 렌더링해 확인했다. 부록과 SWAP 고유의 형식적 정리는 없다.
-- 추가 원전: IQL v1 §3–4.3, RouteLLM v4 §1·3.1, V-GPS v2 §3·5.1–5.2, OpenVLA-OFT v1 §IV–V의 관련 내용, SayCan v2 공식 초록을 확인했다. 이들 전체 논문의 독립 성능 재검증을 수행한 것은 아니다.
-- 구조 대응: I–VI와 V-A/V-B를 유지했다. 실험 결과 설명은 원문의 성공률→행동 수→Q 분석→선택 빈도→정성 사례→OOD→강한 후보 설정 순서를 따른다. 도식 설명과 IQL 배경을 IV에 보충했다. 감사문·AI 사용 고지와 전체 참고문헌 목록은 리뷰에서 재게시하지 않았다.
-- 그림: 대표·본문 Figure 2와 본문 Figure 4는 [저자 v1 소스](https://arxiv.org/src/2610.06926v1)의 PDF 그림을 래스터화하고 무손실 WebP로 인코딩했다. 내용·색·글자·화살표는 유지했다. 원문은 [arXiv 비독점 배포 라이선스](https://arxiv.org/licenses/nonexclusive-distrib/1.0/)이며 Creative Commons 재이용 허가로 표시하지 않는다. 저작권은 저자에게 있으며 분석에 필요한 두 그림만 출처와 함께 사용한다.
-- 검증: 표 전사·정책 순위·단위·행동 수 감소율·expectile 가상 예제의 계산을 확인했다. **미실행:** 로봇/GPU 학습 재현, 공개 코드 실행, 원시 로그 기반 신뢰구간, 실제 추론 지연·메모리 측정, 형식 증명 검증. 이 글의 검증 범위는 원문 대조와 국소 계산이다.
-
-- 2026-10-22 재점검: 기존 두 읽기와 원문 대응 기록을 재사용해 위에 추가한 지표·가정·예제의 정의를 보완했다. 새 전문 두 읽기로 계산하지 않는다. 새 모델·GPU·로봇 재현과 전체 형식 검증은 미실행이다.
+- 원문: *SWAP: Stepwise Action Policy Routing for Vision-Language-Action Models* · Mousumi Das et al. · 최초 공개 2026-10-03 · [검토 버전](https://arxiv.org/abs/2610.06926v1) · 검토일 2026-10-23.
+- 읽은 범위: v1 본문 I–VI·Algorithm 1·식 (1)·Tables I–IV·Figures 2·4. 논문 고유의 형식 정리·증명은 없다.
+- 그림 출처: Figures 2(대표)·4는 저자 v1 PDF에서 래스터화·무손실 WebP 변환한 해설용 인용이다. 원저자 권리를 유지하며 arXiv 비독점 배포 라이선스를 Creative Commons 재사용 허가로 해석하지 않는다. [원문](https://arxiv.org/abs/2610.06926v1).
+- 확인하지 않은 것: 연구 코드 실행·모델 학습/재현·원시 데이터 불확실성 추정·전체 형식 인증.

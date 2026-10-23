@@ -3,7 +3,7 @@ title: "[3/3] LeJEPA 기술 심층 리뷰: 증명 조건, SIGReg와 수식 검�
 description: "원문 §3→§4→§5의 논증과 부록 A·B를 따라 주요 정리, 보조정리, 중간 유도와 미확인 간극을 자세히 읽는다."
 date: "2026-10-09"
 publishedAt: "2026-10-09T23:54:43+09:00"
-updatedAt: "2026-10-22T23:22:47+09:00"
+updatedAt: "2026-10-23T08:56:15+00:00"
 topics: ["self-supervised learning", "representation learning", "joint embedding predictive architectures", "distribution matching", "computer vision"]
 visibility: "public"
 lang: "ko"
@@ -17,13 +17,15 @@ thumbnail: "/assets/reviews/lejepa/lejepa-core.svg"
 thumbnailAlt: "LeJEPA의 두 제약 설명도: 한 이미지의 뷰들은 전역 뷰 평균에 정렬하고, 각 뷰에서 여러 이미지의 표현은 임의 방향으로 투영해 표준 Gaussian과 맞춘다."
 ---
 
-**LeJEPA의 이론을 이해하려면 등방성 공분산(isotropic covariance)을 선택하는 선형 분석, 가우시안(Gaussian) 모양을 선택하는 피셔 정보(Fisher information) 분석, 그 목표를 유한 투영으로 학습하는 구현을 구분해야 한다.** 이 글은 그 연결을 원문 §3→§4→§5 순서로 따라가며 Appendix A·B의 주요 증명을 펼친다. 저자의 진술과 리뷰가 보충한 유도, 남아 있는 간극을 구분한다. [§§3–5; Appendix A–B](https://arxiv.org/pdf/2511.08544v3#page=5)
+LeJEPA의 이론은 선형 추정의 등방성 공분산(isotropic covariance), 국소 비선형 추정의 피셔 정보(Fisher information), 유한 투영으로 계산하는 등방성 가우시안 투영 정규화(Sketched Isotropic Gaussian Regularization, SIGReg)를 잇는다. 고정된 공분산에서 Gaussian이 피셔 정보를 최소화한다는 결과와, 유한 표본 손실을 계산하는 근사 구현이 각기 다른 역할을 한다. [원문 §3–5·Appendix A–B](https://arxiv.org/pdf/2511.08544v3#page=5) **리뷰 해석.** 분포 선택의 근거는 유용하지만 등호 조건·정규화·유한 근사를 구분해야 구현의 보장을 정확히 읽을 수 있다.
 
 **[3/3] 정리·증명 심층 편**이다. [입문](/reviews/lejepa-overview/) → [전체 해설](/reviews/lejepa-complete/) → 이 글 순서가 권장된다. §§1–2의 문제·배경과 §6 전체 실험은 전체 해설에서 읽는다. 아래에서는 주요 정리의 가정과 계산에 집중하며, 부록 증명은 그 정리가 나오는 본문 위치로 옮겼다.
 
 **표기 대응.** $\mathbf Z\in\mathbb R^{N\times K}$는 표현 행렬, $\mathbf z_{n,v}$는 이미지·뷰 표현이다. 선형 증명의 $\mathbf X$, $p$, $\lambda_{\rm wd}$는 본문의 $\mathbf Z$, $K$, ridge 계수에 대응한다. 여기서 일반 밀도 $p$는 선형 증명의 차원 기호와 다른 역할이다. Appendix의 $d,n$은 해당 계산의 차원·표본 수다. $M=|\mathcal A|$, 주파수 수 $T$, $\widehat D=EP/N$는 설명을 위한 약칭이다.
 
-## 3 Latent Euclidean — 목표 분포의 이론
+<span id="3-latent-euclidean-목표-분포의-이론" aria-hidden="true"></span>
+
+## 3. 잠재 유클리드 공간: 표현은 등방성 가우시안이어야 한다 (Latent Euclidean — Embeddings Should Be Isotropic Gaussian)
 
 ### 3.1 Linear Probing — Lemmas 1–2와 Appendix B.1–B.2
 
@@ -168,9 +170,13 @@ Gaussian이 최소화하는 것은 이 $J(p)$ 기반 상한이다. 상한(bound)
 
 ### 3.3 Geometric and Practical Insights
 
-Figure 3의 반복 logistic 경계는 등방성 직관의 경험적 설명이다. OLS의 coefficient variance 증명과 같은 정리는 아니다. Figure 17의 ‘anisotropic lower variance’ 캡션은 Lemma 2와 상충해 미확인으로 남긴다. [§3.3; Figure 17](https://arxiv.org/pdf/2511.08544v3#page=48)
+Figure 3의 반복 logistic 경계는 등방성의 경험적 예시다. Figure 17은 이진·선형·비선형 타깃의 재표본화 결과를 함께 표시하며, 캡션은 비등방성이 더 낮은 분산을 준다고 서술한다. Lemma 2는 같은 열공간·총 에너지, 정규화 없는 OLS에서 등방성의 더 작은 총 계수 분산을 말한다. [원문 §3.1, Lemma 2](https://arxiv.org/pdf/2511.08544v3#page=5), [Figure 17](https://arxiv.org/pdf/2511.08544v3#page=48)
 
-## 4 SIGReg — 식별과 안정성, 유한 방향의 조건
+**리뷰 해석.** 두 서술의 분산 방향은 반대지만, 타깃 유형과 재표본화 조건이 모두 같다고 확정할 근거는 부족하다. 캡션의 방향을 뒤집는 정오표로 단정하지 않고, 선형 타깃의 설계·잡음·색 대응을 확인할 문제로 남긴다. Lemma 2의 대수적 증명은 이 그림의 캡션과 독립적으로 평가할 수 있다.
+
+<span id="4-sigreg-식별과-안정성-유한-방향의-조건" aria-hidden="true"></span>
+
+## 4. SIGReg: 고차원의 신뢰할 수 있는 등방성 가우시안 정규화 (SIGReg — Reliable Isotropic Gaussian Regularization in High-Dimension)
 
 ### 4.1 Hypothesis Testing as a Judge — Lemma 3, Theorem 2
 
@@ -253,7 +259,9 @@ $$
 
 **Figure 7 읽기.** 가로축은 방향 수 $M$, 세로축은 최종 기대 directional statistic이다. 초록 재표집이 파랑 고정보다 적은 방향으로 낮은 discrepancy를 얻는다. 누적 coverage를 보여주는 합성 실험이며 신경망 SGD의 전역 수렴 증명이 아니다. Figure 6도 두 차원의 X 구조를 둔 표본을 encoder 없이 직접 최적화한 별도 실험이다. [확대](/assets/reviews/lejepa/paper-figure-7.webp) · [Figure 7, p. 10; Figure 6, p. 9](https://arxiv.org/pdf/2511.08544v3#page=10). Balestriero·LeCun, [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), 전체 패널 crop·무손실 WebP 변환.
 
-## 5 LeJEPA — 실제 손실의 표본·정규화 확인
+<span id="5-lejepa-실제-손실의-표본정규화-확인" aria-hidden="true"></span>
+
+## 5. LeJEPA: 안정적이고 확장 가능한 구현 (LeJEPA — Stable and Scalable Implementation)
 
 ### 5.1 SIGReg + Prediction Loss — Theorem 6, Appendix B.6·B.13
 
@@ -302,14 +310,13 @@ $$
 
 본문 §6.1–6.5의 순서대로 안정성·loss 신호·도메인 내 학습·규모/전이·의미 구조를 [전체 해설](/reviews/lejepa-complete/)에 보존했다. 위 증명과 실험의 역할은 다르다. OLS 계수 이론이 모든 classification 정확도를 증명하지 않으며, CF 안정성은 모든 구조의 SGD 전역 수렴을 증명하지 않는다. Galaxy10·IN-1K 결과는 조건부 실용 근거이고, PCA·attention은 정성 근거다.
 
+## 리뷰 해석과 남은 질문
+
+**리뷰 해석.** 분포 선택의 근거는 유용하지만 등호 조건·정규화·유한 근사를 구분해야 구현의 보장을 정확히 읽을 수 있다.
+
 ## 출처와 읽은 범위
 
-- 원문: Balestriero·LeCun, *LeJEPA: Provable and Scalable Self-Supervised Learning Without the Heuristics*. 최초 공개 2025-11-11, 검토본 v3(2025-11-14), 50쪽. [공식 서지·버전 이력](https://arxiv.org/abs/2511.08544).
-- 이번 1차 읽기(2026-10-11): 초록·서론·결론, 전체 목차·Figure 1–2 설명으로 논증 지도를 먼저 작성했다. 2차 읽기: 본문 §§1–7, Appendix A·B.1–B.14의 주요 증명과 C의 추가 표·캡션, D–F의 대안 설명을 PDF·저자 LaTeX로 대조했다. 구면 보간의 인용 원전과 모든 참고문헌의 전문은 독립 재검증하지 않았다.
-- 대응·축약: §§3–5의 순서와 핵심 정리·lemma 번호를 유지했다. Appendix B.6은 예측 손실의 본문 위치 §5.1로 이동했다. trace 제약을 자세히 전개하고 나머지 covariance 제약은 원문으로 연결했다. §§1–2·§6의 전체 설명은 전체 해설로 분담했다. D–F의 검정별 전체 공식은 중심 기여가 아니므로 축약했다.
-- 리뷰 보충: normal-equation 전환, ball moment의 부피 전개, Fisher 잔차 행렬 증명, gradient 2차 bound, Bonferroni 예시, 고정 1D grid alias, 중심 손실의 정확한 분산 항. 추가 조건을 원문 정리의 무조건적 증명으로 표시하지 않는다.
-- 직접 실행: 중심 항등식(2=1+1), 동일 trace OLS 예제(2 대 5.5556), 고정 grid CF alias(약 $2.24\times10^{-16}$), ECF 표본 bias Monte Carlo(20,000회). **미실행:** 공식 코드·GPU 학습·probe·finetuning·DDP·seed·모델 runtime/memory 재현, 전체 증명의 형식 검증. 작은 계산은 논문 모델 재현이 아니다.
-- 미확인: Theorem 5 참조 원전과 norm 전환, Theorem 2의 균일 power 극한, kNN의 전체 잔차 독립성, kernel의 유한 표본 잔차; Figure 11 부호, Figure 12 오차막대, Figure 17 캡션, Table 5 사전학습 칸 상충. 기존 승인 그림만 동일 파일로 사용했다.
-- 대표 자체 그림: [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), Light 300·강조 600. 원문 그림의 귀속·이용 조건·변환은 각 캡션에 기록했다.
-
-- 2026-10-22 재점검: 기존 두 읽기와 원문 대응 기록을 재사용해 위에 추가한 지표·가정·예제의 정의를 보완했다. 새 전문 두 읽기로 계산하지 않는다. 새 모델·GPU·로봇 재현과 전체 형식 검증은 미실행이다.
+- 원문: *LeJEPA: Provable and Scalable Self-Supervised Learning Without the Heuristics* · Randall Balestriero et al. · 최초 공개 2025-11-11 · [검토 버전](https://arxiv.org/abs/2511.08544v3) · 검토일 2026-10-23.
+- 읽은 범위: v3 §3→§4→§5와 Appendix A·B.1–B.14의 관련 정리·증명. 원문에 생략된 중간 계산은 리뷰 보충 유도로 구분한다.
+- 그림 출처: 대표 개념도는 자체 제작물(CC BY 4.0). 원문 그림은 Balestriero·LeCun의 v3 자산(CC BY-SA 4.0)으로 전체 패널 crop·무손실 WebP 변환을 적용한다. [원문](https://arxiv.org/abs/2511.08544v3).
+- 확인하지 않은 것: 연구 코드 실행·모델 학습/재현·원시 데이터 불확실성 추정·전체 형식 인증.
