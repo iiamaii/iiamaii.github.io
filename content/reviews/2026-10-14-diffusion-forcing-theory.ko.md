@@ -3,7 +3,7 @@ title: "[2/2] Diffusion Forcing: 모든 부분 시퀀스의 우도를 학습한�
 description: "부록 A의 ELBO·Gaussian 손실·부분 시퀀스 논증을 따라 두 Jensen 단계와 중간 계산을 설명하고, 원문 부호·전이·가중치의 불일치를 구분한다."
 date: "2026-10-14"
 publishedAt: "2026-10-14T13:58:27+09:00"
-updatedAt: "2026-10-17T22:20:55+09:00"
+updatedAt: "2026-10-22T23:22:51+09:00"
 topics: ["diffusion models", "sequence modeling", "world action model", "robot learning", "probabilistic modeling"]
 visibility: "public"
 lang: "ko"
@@ -19,7 +19,7 @@ thumbnailAlt: "Diffusion Forcing 원문 Figure 2: 서로 다른 토큰별 노이
 
 Diffusion Forcing의 이론은 “노이즈를 무작위로 넣으면 모델이 강해진다”보다 구체적이다. 서로 다른 noise pattern의 우도를 하한으로 연결하고, 충분히 표현력 있는 모델이 여러 denoising 문제를 동시에 최적화할 수 있다는 논증이다. **평균 noise pattern의 학습 손실, 특정 pattern의 ELBO, 유한 모델의 실제 정확도는 서로 다르다.** 이 구분을 유지해야 “모든 부분 시퀀스”라는 표현을 정확하게 읽을 수 있다.
 
-먼저 [[1/2] 방법·실험 편](/reviews/diffusion-forcing-methods/)을 읽는 것을 권한다. 이 글은 v4 **부록 A, pp. 14–19**의 순서인 설정→A.1 주요 결과→A.1.1 Gaussian→A.1.2 부분 시퀀스→A.2 증명을 따른다. A.2의 계산을 자세히 설명하되, 원문에 인쇄된 수식의 부호·방향·가중치 불일치를 그대로 올바른 정리로 인정하지 않는다. 아래의 일관된 형태는 명시한 조건에서의 **리뷰 보충 유도**이며 저자가 발행한 정오표가 아니다.
+먼저 [\[1/2\] 방법·실험 편](/reviews/diffusion-forcing-methods/)을 읽는 것을 권한다. 이 글은 v4 **부록 A, pp. 14–19**의 순서인 설정→A.1 주요 결과→A.1.1 Gaussian→A.1.2 부분 시퀀스→A.2 증명을 따른다. A.2의 계산을 자세히 설명하되, 원문에 인쇄된 수식의 부호·방향·가중치 불일치를 그대로 올바른 정리로 인정하지 않는다. 아래의 일관된 형태는 명시한 조건에서의 **리뷰 보충 유도**이며 저자가 발행한 정오표가 아니다.
 
 ## A. 이론적 정당화: 먼저 대상과 가정을 정한다 (Theoretical Justification)
 
@@ -249,6 +249,15 @@ $$
 
 분모에 넣은 분포의 support가 모델 경로를 다루기에 적절하고 적분이 존재해야 한다. 등호는 importance ratio가 상수인 경우, 즉 이 경로의 변분분포가 모델 posterior와 일치하는 경우다.
 
+**리뷰 보충: 이 부등식의 간극.** 오른쪽 기대값을 이 문단에서만 $\mathcal B_h$라고 부르면, 정규화·support·적분 조건 아래
+
+$$
+\log p_\theta(\mathbf x_t^h\mid\mathbf z_{t-1})-\mathcal B_h
+=D_{\mathrm{KL}}\!\left(r_h\,\Vert\,p_\theta(\mathbf x_t^{h+1:K}\mid\mathbf x_t^h,\mathbf z_{t-1})\right)\geq0.
+$$
+
+즉 간극은 두 경로 분포의 KL이다. 결정론적 latent라는 조건은 앞의 Claim 1을 등호로 만들 수 있지만, 여기의 전방 경로 $r_h$가 모델 posterior와 같은지는 별도 조건이다. 둘을 구분해야 원문의 등호 진술을 과장하지 않는다.
+
 다시 깨끗한 데이터로부터 오염시킨 $\mathbf x_t^h$에 대해 평균하면 원문의 forward expectation을 얻는다. 원문은 $r_h$와 $\mathbf x_t^0$에 조건부인 전방 경로 사이의 차이를 모델 parameter와 무관한 상수로 묶는다. 이 상수를 생략했다고 새로운 학습 항이 사라지는 것은 아니다. [Claim 2, p. 17](https://arxiv.org/pdf/2407.01392v4#page=17)
 
 ### Claim 3, Part 1: Bayes 항등식과 telescoping
@@ -357,3 +366,5 @@ $$
 - 리뷰 보충: $A_j,B_j,h,r_h,R_t,D_{t,j},\mathcal I,u,w_1,w_2$는 설명을 위해 정의한 기호다. Gaussian KL, conditional-mean decomposition, indicator 평균과 유한 공유 모델 예제를 펼쳤다. 원문 인쇄식의 공식 정오표나 전체 정리 인증이 아니다.
 - 검증: 표 기반 주장의 국소 검산과 KL 부호·Gaussian variance·누적 noise 가중치·공유 모델 예제를 계산했다. **미실행:** 전체 정리의 기계/형식 검증, 저자 확인, 모델 학습·sampling·GPU·로봇 재현, raw results 기반 통계 검정.
 - 대표 그림은 [저자 v4 Figure 2](https://arxiv.org/pdf/2407.01392v4#page=3)를 두 편에 공통 사용한다. [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), 원저자 Chen·Marti Monso·Du·Simchowitz·Tedrake·Sitzmann. 원본 PDF를 래스터화·WebP 인코딩했으며 내용·화살표·문자를 유지했다.
+
+- 2026-10-22 재점검: 기존 두 읽기와 원문 대응 기록을 재사용해 위에 추가한 지표·가정·예제의 정의를 보완했다. 새 전문 두 읽기로 계산하지 않는다. 새 모델·GPU·로봇 재현과 전체 형식 검증은 미실행이다.

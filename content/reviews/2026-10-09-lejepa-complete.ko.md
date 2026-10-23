@@ -3,7 +3,7 @@ title: "[2/3] LeJEPA 전체 해설: 목표 분포에서 이론·알고리즘·�
 description: "원문 §§1–7과 하위 절을 유지하며 목표 분포의 이론, SIGReg 설계, 관련 연구, 핵심 실험과 반대 결과를 설명한다."
 date: "2026-10-09"
 publishedAt: "2026-10-09T23:54:43+09:00"
-updatedAt: "2026-10-11T20:35:20+09:00"
+updatedAt: "2026-10-22T23:22:48+09:00"
 topics: ["self-supervised learning", "representation learning", "joint embedding predictive architectures", "distribution matching", "computer vision"]
 visibility: "public"
 lang: "ko"
@@ -19,7 +19,7 @@ thumbnailAlt: "LeJEPA의 두 제약 설명도: 한 이미지의 뷰들은 전역
 
 **LeJEPA의 논증은 ‘후속 과제(downstream task)에 유리한 표현 분포는 무엇인가’에서 시작해, 그 분포를 안정적으로 맞추는 손실과 실제 이미지 학습으로 이어진다.** 저자들은 선형·국소 비선형 프로브(probe)를 분석해 등방성 가우시안(isotropic Gaussian)을 목표로 삼고, SIGReg(Sketched Isotropic Gaussian Regularization)와 이미지 뷰 합의(view agreement)를 결합한다. 이론의 조건과 근사 구현을 구분해야 하지만, 분포 선택·계산·실험을 함께 설명하는 설계가 이 논문의 핵심이다. [§§1–7](https://arxiv.org/pdf/2511.08544v3#page=1)
 
-이 글은 **[2/3] 원문 순서의 전체 해설**이다. [1/3 입문](/reviews/lejepa-overview/) → 이 글 → [3/3 정리·증명 심층](/reviews/lejepa-technical/) 순으로 읽으면 된다. 아래 제목과 하위 절 번호는 원문을 따른다. 주요 증명의 진술·조건은 해당 위치에 남기고, 긴 중간 계산은 심층 편의 같은 §3→§4→§5 순서로 연결했다.
+이 글은 **[2/3] 원문 순서의 전체 해설**이다. [\[1/3\] 입문](/reviews/lejepa-overview/) → 이 글 → [\[3/3\] 정리·증명 심층](/reviews/lejepa-technical/) 순으로 읽으면 된다. 아래 제목과 하위 절 번호는 원문을 따른다. 주요 증명의 진술·조건은 해당 위치에 남기고, 긴 중간 계산은 심층 편의 같은 §3→§4→§5 순서로 연결했다.
 
 **표기.** 원문의 $f_{\boldsymbol\theta}$, $\mathbf z_{n,v}$, $\mathbf Z$, $K$, $V_g$, $\boldsymbol\mu_n$을 유지한다. $M=|\mathcal A|$는 방향 수, $T$는 주파수 grid 크기의 보조 약칭이다. §3의 ridge 계수 $\lambda$와 §5의 손실 혼합 계수 $\lambda$는 서로 다른 역할이다. 부록에서 같은 차원을 $d$, 표본 수를 $n$으로 쓰는 경우 원문 대응을 설명한다.
 
@@ -244,6 +244,14 @@ Figure 9는 IN-10에서 20M 미만의 약 50개 timm 모델, 8개 구조 계열�
 
 Figure 11은 $\mathcal L/\lambda^\alpha$ 같은 보정과 스피어만 순위상관(Spearman rank correlation)을 조사한다. 본문은 85%에서 $\alpha\approx0.4$의 99%를 보고한다. 낮은 손실·높은 정확도 관계에 대한 부호 규약은 명료하지 않아 **높은 단조 관련성**으로 표현한다. $\alpha$ 선택에는 관측한 downstream 결과가 쓰인다. 새로운 도메인에서 평가 라벨 없이 같은 보정이 통한다는 전향적 보장은 아니다. [§6.2, Figures 10–11, 추가 Figures 19·21](https://arxiv.org/pdf/2511.08544v3#page=15)
 
+**상관 지표를 읽는 기준.** Spearman 계수는 두 관측값을 각각 순위로 바꾼 뒤 Pearson 상관을 계산한다. 이 문단의 $A,B$는 비교할 관측값 목록이라는 리뷰 보조 기호다.
+
+$$
+\rho_{\mathrm S}=\operatorname{corr}\!\left(\operatorname{rank}(A),\operatorname{rank}(B)\right).
+$$
+
+범위는 $[-1,1]$이고 절댓값이 클수록 단조 관계가 강하다. 손실이 낮을수록 정확도가 높으면 부호는 음수가 될 수 있다. 따라서 원문의 “99%”를 99% 분류 정확도·성공 확률이나 새로운 모델의 오차 보장으로 읽으면 안 된다. 동률 처리와 부호 변환을 확인하지 못한 상태에서는 앞 문단처럼 관계의 강도만 해석한다. [§6.2, Figure 11](https://arxiv.org/pdf/2511.08544v3#page=15)
+
 ### 6.3 In-Domain LeJEPA Outperforms Frontier Model Transfer Learning
 
 세 번째 질문은 일반 이미지 기반 모델(foundation model)을 가져오는 대신 전문 도메인에서 작은 모델을 직접 사전학습할 가치가 있는가다. Galaxy10은 약 11,000개 학습 이미지와 10개 은하 형태 클래스다. LeJEPA는 기본 pipeline으로 **400 epoch** 도메인 내 사전학습(in-domain pretraining)을 한다. DINOv2/v3는 일반 이미지 사전학습 모델을 가져온 비교다.
@@ -304,3 +312,5 @@ PCA는 **이미지마다 따로** 수행하므로 같은 색이 모든 이미지
 - 대응: 원문 §§1–7·모든 하위 절을 유지했다. 긴 Appendix A·B 계산은 심층 편으로 이동했다. C의 Table 3–7은 해당 실험·비용 위치에 가져왔고 반복 그래프는 요약했다. D–F는 §4의 대안 비교에 필요한 내용만 축약했다. 전체 표의 반복 행·모든 인용 논문의 전문은 포함하지 않는다.
 - 직접 검증: 리뷰의 4개 대수·수치 예제. **미실행:** 공식 코드·GPU 사전학습, probe·finetuning·DDP·seed 재현, 전체 모델 속도·메모리 측정, 전체 증명의 형식 검증. **미확인:** Figure 11 부호 규약, Figure 12 오차막대 정의, Figure 17 캡션 상충, Table 5의 I-JEPA 사전학습 데이터 상충, Theorem 5의 참조 원전 세부.
 - 대표 그림은 자체 개념도([CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), Light 300·강조 600). 본문 원문 그림들은 캡션의 원문 위치와 [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)를 따른다. 모든 이미지는 기존 승인 자산의 동일 파일을 재사용했다.
+
+- 2026-10-22 재점검: 기존 두 읽기와 원문 대응 기록을 재사용해 위에 추가한 지표·가정·예제의 정의를 보완했다. 새 전문 두 읽기로 계산하지 않는다. 새 모델·GPU·로봇 재현과 전체 형식 검증은 미실행이다.

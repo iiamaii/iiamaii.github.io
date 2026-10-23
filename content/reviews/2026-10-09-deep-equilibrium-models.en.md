@@ -3,7 +3,7 @@ title: "Deep Equilibrium Models: learning an endpoint instead of stacking layers
 description: "An accessible guide to fixed points, Broyden solves and implicit differentiation, with the main proofs and language-model experiments explaining memory savings, runtime costs and convergence conditions."
 date: "2026-10-09"
 publishedAt: "2026-10-09T20:40:07+09:00"
-updatedAt: "2026-10-10T18:16:17+09:00"
+updatedAt: "2026-10-22T23:22:46+09:00"
 topics: ["language models", "fixed points", "implicit learning", "memory efficiency", "numerical optimization"]
 visibility: "public"
 lang: "en"
@@ -23,7 +23,29 @@ A deep neural network changes its representation through successive layers. Trai
 
 <strong>Reading the overview figure.</strong> The top row unrolls a shared block into successive layers. The middle row numerically solves $f_\theta(z^\star_{1:T};x_{1:T})=z^\star_{1:T}$. The bottom row solves a linear system at that endpoint for gradients. Arrows indicate computation order within each row. Iterative work remains; the key is avoiding backpropagation through the entire forward solver trajectory. This is an original illustration made for this review. [Enlarge](/assets/reviews/deep-equilibrium-models/deq-core.svg)
 
-## Two costs of increasing depth
+The article follows original §1–6. Appendix A’s proof of Theorem 1 accompanies §3.1.2; Appendix B’s Theorem 2 and Appendix C’s representation result accompany §3.2. Implementation appendices and review interpretation follow the authors’ conclusion.
+
+## 1. Introduction
+
+The authors propose directly computing and differentiating a sequence-level equilibrium. The central question is whether an endpoint equation can reduce activation storage that weight sharing alone leaves unresolved. Section 2 establishes the background; §3 separates output definition from numerical computation. [Original §1](https://arxiv.org/pdf/1909.01377v2#page=1)
+
+## 2. Background
+
+Original §2 connects causal sequence models, memory-efficient networks, and continuous views. Causality requires output at time $t$ to depend only on $x_{1:t}$. Checkpointing recomputes the original path; reversible networks reconstruct earlier activations. Neural ODEs solve a finite-time trajectory, while DEQ defines output through an equilibrium equation. The table below is a review comparison connecting this background to primary sources. [§2, pp. 2–3](https://arxiv.org/pdf/1909.01377v2#page=2)
+
+I read five primary antecedents for their distinct roles. The comparison below uses the indicated sections and DEQ §2–3.
+
+| Research | Why read it alongside DEQ? | Difference from DEQ |
+| --- | --- | --- |
+| [Trellis Networks for Sequence Modeling](https://arxiv.org/pdf/1810.06682v2#page=3), §3–4 | Input injection, depth-wise weight sharing, and a bridge between convolution and recurrent networks | Unrolls finite depth; DEQ defines the output through the block's equilibrium. |
+| [Universal Transformers](https://arxiv.org/pdf/1807.03819v3#page=2), §2 | Repeats shared attention and transition operations with adjustable computation | Uses finite repetitions or position-wise halting, and depth-time representations. DEQ solves a stationary mapping with a residual-based stopping rule. |
+| [Neural Ordinary Differential Equations](https://arxiv.org/pdf/1806.07366v4#page=1), §1–2 | Solver-defined computation and memory savings through an adjoint | Solves a trajectory from an initial state to a finite time; DEQ solves a fixed-point equation and a local linear system. |
+| [Training Deep Nets with Sublinear Memory Cost](https://arxiv.org/pdf/1604.06174v2#page=4), §4 | Checkpointing trades recomputation for activation storage | Preserves the original finite network's computation; DEQ changes the output definition to an equilibrium. |
+| [Reviving and Improving Recurrent Back-Propagation](https://proceedings.mlr.press/v80/liao18c/liao18c.pdf#page=3), §3–4 | Equilibrium gradients, invertibility requirements, and Neumann/CG computation | Implicit differentiation has this and an older RBP lineage. DEQ turns it into a replacement for modern deep sequence stacks and evaluates it at language-model scale. |
+
+Describing DEQ as the first invention of fixed-point differentiation would miss these antecedents. My interpretation is that its contribution combines <strong>direct learning of a deep shared model's endpoint, practical root finding with implicit backward computation, and evaluation at language-model scale</strong>.
+
+## 3. The Deep Equilibrium Sequence Model
 
 An ordinary deep network has different parameters at different layers. Sharing weights across depth prevents parameter count from growing with the number of repetitions, but does not remove the need to store intermediate activations for backpropagation. DEQ starts from a structure with both <strong>weight sharing</strong> and <strong>input injection at every update</strong>. With input $x$ fixed, it repeatedly updates hidden state $z$. [§2–3, Equations 3–4](https://arxiv.org/pdf/1909.01377v2#page=3)
 
@@ -38,7 +60,7 @@ Here $i$ indexes <strong>computational depth</strong>, not the order of tokens i
 
 Instead of asking how many layers should define the output, DEQ asks whether a state unchanged by another application of the block can define it.
 
-## Defining an output by a fixed point
+### 3.1 The Deep Equilibrium Approach
 
 A fixed point, or equilibrium $z^\star$, satisfies:
 
@@ -63,7 +85,7 @@ $$
 
 A finite number of iterations gives a value close to $3$; the equilibrium equation defines the output as $3$. Real DEQs do not generally have such a closed-form answer. They use numerical solvers with tolerances and iteration limits. “Infinite depth” describes the output definition. It does not mean executing infinitely many operations or always obtaining an exact answer at finite cost.
 
-## Forward computation: finding an equilibrium with Broyden's method
+#### 3.1.1 Forward Pass
 
 Newton's method updates a candidate state using the residual $g_\theta(z)$ and its Jacobian. A Jacobian records how each output changes when each state component changes. Building and inverting that matrix is expensive for large sequences. The paper uses <strong>Broyden's method</strong> to update an approximation of the inverse Jacobian. [§3.1.1, Equations 6–7 and 10, p. 4](https://arxiv.org/pdf/1909.01377v2#page=4)
 
@@ -78,7 +100,7 @@ $\alpha$ is a step size. The inverse approximation uses the paper’s $B^{[i]}_{
 
 Crucially, <strong>a root can exist even when naive iteration is unstable</strong>. The function $f(z)=1.2z+1$ has a fixed point at $-5$, but iteration from zero produces $1, 2.2, 3.64, \ldots$. Existence of a root, convergence of repeated application, and successful root finding are distinct questions. This paper does not provide a guarantee that a DEQ solver succeeds for every input. [§3.2, Appendix D, pp. 5, 14–15](https://arxiv.org/pdf/1909.01377v2#page=14)
 
-## Backward computation: why the whole search path need not be saved
+#### 3.1.2 Backward Pass
 
 After obtaining an endpoint, training requires its sensitivity to parameter changes. <strong>Implicit differentiation</strong> supplies that sensitivity. Differentiate both sides of $z^\star_{1:T}=f_\theta(z^\star_{1:T};x_{1:T})$ with respect to $\theta$. [Theorem 1, Equation 8; Appendix A, Equations 13–14](https://arxiv.org/pdf/1909.01377v2#page=13)
 
@@ -120,24 +142,34 @@ For the scalar example, choose target $1$ and loss $\frac12(z^\star-1)^2$. Then 
 
 The derivation has conditions. The function must be differentiable around the selected solution, and <strong>$I-J_{f_\theta}$ must be invertible</strong>. The paper's inverse notation presupposes this requirement. A nearly singular system can amplify state or gradient errors despite a small residual. Moreover, the formula describes an exact equilibrium, while implementation uses an approximate state and approximate linear solve. A small residual alone does not guarantee an accurate gradient. [Appendix A; RBP §3.2](https://proceedings.mlr.press/v80/liao18c/liao18c.pdf#page=3)
 
-## What “constant memory” covers
+#### 3.1.3 Accelerating DEQ by Approximating the Inverse Jacobian
+
+Equation (10) adds a rank-one update to an inverse approximation instead of recomputing an inverse. The difference vectors come from consecutive search states. The displayed denominator must be nonzero.
+
+$$
+\begin{aligned}
+\Delta z^{[i+1]}&=z^{[i+1]}_{1:T}-z^{[i]}_{1:T},\\
+\Delta g_\theta^{[i+1]}&=g_\theta(z^{[i+1]}_{1:T};x_{1:T})-g_\theta(z^{[i]}_{1:T};x_{1:T}),\\
+B_{g_\theta}^{[i+1]}&=B_{g_\theta}^{[i]}
++\frac{\bigl(\Delta z^{[i+1]}-B_{g_\theta}^{[i]}\Delta g_\theta^{[i+1]}\bigr)
+\Delta z^{[i+1]\top}B_{g_\theta}^{[i]}}
+{\Delta z^{[i+1]\top}B_{g_\theta}^{[i]}\Delta g_\theta^{[i+1]}}.
+\end{aligned}
+$$
+
+**Review-supplied check.** Multiplying the updated matrix by $\Delta g_\theta^{[i+1]}$ cancels the scalar numerator and denominator, giving $B_{g_\theta}^{[i+1]}\Delta g_\theta^{[i+1]}=\Delta z^{[i+1]}$. This secant condition matches the change between two points; it does not make the entire inverse Jacobian exact. Near-zero denominators and stopping conditions remain numerical concerns. The backward linear problem also uses VJPs and indirect solvers to avoid storing an explicit Jacobian. [§3.1.3, Eqs. (10)–(11)](https://arxiv.org/pdf/1909.01377v2#page=4)
+
+### 3.2 Properties of Deep Equilibrium Models
+
+Separate memory and representation claims that follow from the output definition.
+
+#### Memory and the choice of transformation
 
 DEQ's memory claim concerns <strong>activation storage as depth increases</strong>. Instead of retaining the full trajectory, it retains the endpoint, input, a local computation graph, and related quantities. Sequence length, hidden width, batch size, parameters, optimizer states, attention matrices, and solver workspace still consume memory. Storage for the Broyden approximation's history depends on implementation and configuration. [§3.2, p. 5](https://arxiv.org/pdf/1909.01377v2#page=5)
 
 Depth-independent storage does not imply fixed total GPU usage for every model. Long inputs and wide attention blocks retain their costs. The empirical savings below also require the paper's specific measurement conditions, including exclusion of word embeddings.
 
-## The actual blocks: TrellisNet and Transformer
-
-DEQ does not introduce a single new attention operation. It applies an equilibrium definition and implicit training to two sequence blocks. [§4, Figure 1, p. 6](https://arxiv.org/pdf/1909.01377v2#page=6)
-
-| Block | State update | Input and context handling |
-| --- | --- | --- |
-| DEQ-TrellisNet | Causal 1D convolution and LSTM-style gating | Input projection injected at every shared convolution update; earlier segment states and padding supply context |
-| DEQ-Transformer | Self-attention, feed-forward transformations, residuals and layer normalization | Input injected into Q/K/V computation; causal masking, relative positions and earlier segment equilibria |
-
-The Transformer implementation uses Transformer-XL's context handling and relative positions. Its depth update must remain the same function, so it is not identical to every recurrent Transformer, including those with depth-dependent time embeddings. Layer normalization and gating help empirical stability; their presence alone does not prove that the full mapping is contractive.
-
-## What the two representation proofs establish
+#### Theorem 2 and Appendix C’s Theorem 3: representation and width
 
 <strong>Theorem 2: two stacked DEQs can be represented by one larger DEQ.</strong> Let the first equilibrium be $w^{(1)}_{1:T}$ and the second $w^{(2)}_{1:T}$. Place both updates in a combined state $[w^{(1)}_{1:T};w^{(2)}_{1:T}]$. [Appendix B, Equations 15–16, p. 13](https://arxiv.org/pdf/1909.01377v2#page=13)
 
@@ -155,21 +187,31 @@ At a fixed point of $\Gamma_\Theta$, both original equations hold. Reading the f
 
 Again, this is a width-expanding construction. It does not establish that arbitrary networks retain their expressivity under weight sharing at unchanged width or that every cost decreases. These theorems explain representation possibilities; practical efficiency requires separate evidence from experiments and solver behavior.
 
-## DEQ in relation to earlier work
+**Expanding Theorem 3’s induction.** Equations (17)–(21) place $W^{[1]},\ldots,W^{[L-1]}$ on the first block subdiagonal of $W_z$ and $W^{[0]}$ in the first block of $W_x$. The blockwise nonlinearity $\sigma$ and $\tilde b$ retain each original layer’s activation and bias. Subscript $k$ below is a **review auxiliary index** for a block.
 
-I read five primary antecedents for their distinct roles. The comparison below uses the indicated sections and DEQ §2–3.
+$$
+\begin{aligned}
+\tilde z^{[i+1]}_1&=\sigma^{[0]}(W^{[0]}x+b^{[0]}),\\
+\tilde z^{[i+1]}_k&=\sigma^{[k-1]}(W^{[k-1]}\tilde z^{[i]}_{k-1}+b^{[k-1]}),
+\quad 2\leq k\leq L,\\
+\tilde z^{[i]}_k&=z^{[k]}\quad\text{for }i\geq k.
+\end{aligned}
+$$
 
-| Research | Why read it alongside DEQ? | Difference from DEQ |
+The first block equals the original first-layer output after one update and stays fixed. If block $k-1$ is correct for $i\geq k-1$, the next update makes block $k$ equal the original layer-$k$ output. After $L$ updates, all blocks therefore contain the original layer outputs. Hidden width becomes the sum of original layer widths, with original parameters stored inside the larger shared matrices. This does not prove fewer trainable parameters, nor convergence of the dense blocks used in actual DEQ experiments. [Appendix C, Theorem 3](https://arxiv.org/pdf/1909.01377v2#page=14)
+
+## 4. Instantiations of DEQ
+
+DEQ does not introduce a single new attention operation. It applies an equilibrium definition and implicit training to two sequence blocks. [§4, Figure 1, p. 6](https://arxiv.org/pdf/1909.01377v2#page=6)
+
+| Block | State update | Input and context handling |
 | --- | --- | --- |
-| [Trellis Networks for Sequence Modeling](https://arxiv.org/pdf/1810.06682v2#page=3), §3–4 | Input injection, depth-wise weight sharing, and a bridge between convolution and recurrent networks | Unrolls finite depth; DEQ defines the output through the block's equilibrium. |
-| [Universal Transformers](https://arxiv.org/pdf/1807.03819v3#page=2), §2 | Repeats shared attention and transition operations with adjustable computation | Uses finite repetitions or position-wise halting, and depth-time representations. DEQ solves a stationary mapping with a residual-based stopping rule. |
-| [Neural Ordinary Differential Equations](https://arxiv.org/pdf/1806.07366v4#page=1), §1–2 | Solver-defined computation and memory savings through an adjoint | Solves a trajectory from an initial state to a finite time; DEQ solves a fixed-point equation and a local linear system. |
-| [Training Deep Nets with Sublinear Memory Cost](https://arxiv.org/pdf/1604.06174v2#page=4), §4 | Checkpointing trades recomputation for activation storage | Preserves the original finite network's computation; DEQ changes the output definition to an equilibrium. |
-| [Reviving and Improving Recurrent Back-Propagation](https://proceedings.mlr.press/v80/liao18c/liao18c.pdf#page=3), §3–4 | Equilibrium gradients, invertibility requirements, and Neumann/CG computation | Implicit differentiation has this and an older RBP lineage. DEQ turns it into a replacement for modern deep sequence stacks and evaluates it at language-model scale. |
+| DEQ-TrellisNet | Causal 1D convolution and LSTM-style gating | Input projection injected at every shared convolution update; earlier segment states and padding supply context |
+| DEQ-Transformer | Self-attention, feed-forward transformations, residuals and layer normalization | Input injected into Q/K/V computation; causal masking, relative positions and earlier segment equilibria |
 
-Describing DEQ as the first invention of fixed-point differentiation would miss these antecedents. My interpretation is that its contribution combines <strong>direct learning of a deep shared model's endpoint, practical root finding with implicit backward computation, and evaluation at language-model scale</strong>.
+The Transformer implementation uses Transformer-XL's context handling and relative positions. Its depth update must remain the same function, so it is not identical to every recurrent Transformer, including those with depth-dependent time embeddings. Layer normalization and gating help empirical stability; their presence alone does not prove that the full mapping is contractive.
 
-## Experiments: compare quality and memory together
+## 5. Experiments
 
 The experiments cover a copy task, Penn Treebank (PTB), and WikiText-103 (WT103). <strong>Perplexity (PPL)</strong> exponentiates average negative log probability of target tokens; lower is better. Comparisons require compatible data, tokenization, vocabulary and evaluation conditions. A percentage change in PPL is not a percentage change in accuracy, and PTB and WT103 values should not be compared directly. [§5, Tables 1–3; Appendix F](https://arxiv.org/pdf/1909.01377v2#page=7)
 
@@ -200,7 +242,7 @@ Runtime comes at a cost. Table 4 reports `DEQ time / baseline time`, so values a
 
 In these experiments, DEQ saves memory but runs more slowly. These are not universal latency ratios across hardware and implementations. Iteration count, the cost of each block evaluation, batching and solver implementation all matter.
 
-## Original Figure 2: how computation changes
+### Figure 2: solver computation during training
 
 <figure class="review-figure" id="paper-figure-2">
 <a href="/assets/reviews/deep-equilibrium-models/paper-figure-2.webp" target="_blank" rel="noopener noreferrer"><img src="/assets/reviews/deep-equilibrium-models/paper-figure-2.webp" width="1732" height="509" alt="Original Figure 2: Broyden iterations per time step across training epochs on the left; log equilibrium residual versus function evaluations on the right." loading="lazy" decoding="async"></a>
@@ -211,7 +253,7 @@ In these experiments, DEQ saves memory but runs more slowly. These are not unive
 
 <strong>The right panel describes a residual.</strong> The horizontal axis counts function evaluations; the vertical axis plots $\|f(z)-z\|_2$ logarithmically. It is neither PPL nor distance to a known correct state. Naive iteration of the weight-tied Transformer decreases the residual at epoch 1 but oscillates at a large residual at epoch 12. DEQ root finding reaches much smaller residuals at both epochs. This supports a distinction between naive iteration and numerical root finding, not a claim of faster wall-clock execution than a finite-depth baseline.
 
-## Original Figure 3: choosing precision and quality
+### Figure 3: precision and quality
 
 <figure class="review-figure" id="paper-figure-3">
 <a href="/assets/reviews/deep-equilibrium-models/paper-figure-3.webp" target="_blank" rel="noopener noreferrer"><img src="/assets/reviews/deep-equilibrium-models/paper-figure-3.webp" width="1737" height="469" alt="Original Figure 3: forward residual tolerance versus validation PPL on the left, and forward iteration limit versus validation PPL on the right." loading="lazy" decoding="async"></a>
@@ -222,7 +264,11 @@ The left panel shows where relaxing the forward residual tolerance damages quali
 
 These experiments use the medium DEQ-Transformer without adaptive embeddings. The accompanying text describes competitive results with $\epsilon <0.1$ or an iteration limit of 30 <strong>for sequences of length 75</strong>. This should not be generalized to the length-150 memory benchmark or treated as an optimal setting for every model. The figure reports validation PPL, distinct from the test PPL in the earlier table.
 
-## Practical conditions and remaining limits
+## 6. Conclusion
+
+The authors conclude that directly solving and optimizing sequence-level fixed points can reduce depth-dependent memory while supporting diverse architectures and competitive sequence modeling. Quality and memory benefits must be read alongside slower runtimes. A solver-independent output definition does not guarantee that every solver succeeds or selects the same root. [Original §6](https://arxiv.org/pdf/1909.01377v2#page=9)
+
+## Appendix D–F: implementation conditions and further limits
 
 The appendices explain implementation details that are easy to miss in the mathematical formulation. [Appendix D–F, pp. 14–16](https://arxiv.org/pdf/1909.01377v2#page=14)
 
@@ -234,7 +280,7 @@ The appendices explain implementation details that are easy to miss in the mathe
 
 This review checked reported numbers, the logic of the equations and constructive proofs, and a scalar explanatory calculation. Large-model retraining, GPU peak-memory and runtime measurement, multi-seed uncertainty evaluation, and formal verification of the complete implementation were <strong>not run</strong>. I did not infer unreported error bars or convergence rates for every input.
 
-## What to retain from the paper
+## Review interpretation and follow-up questions
 
 DEQ changes depth from a list of layers to retain into a state equation to solve. Its output is an equilibrium; its learning signal is that equilibrium's sensitivity. This can substantially reduce activation storage across depth, while solver convergence and numerical gradient stability become central problems.
 
@@ -247,3 +293,5 @@ My main reading question is therefore <strong>which mappings admit usable equili
 - Related-paper reading scope: TrellisNet pp. 2–4; Universal Transformers v3 pp. 2–4; Neural ODE v4 pp. 1–3; sublinear-memory v2 pp. 1 and 3–4; ICML 2018 RBP pp. 2–4. Transformer-XL's implementation role was described from DEQ §4 and official metadata. The two later papers were read at abstract/metadata scope only.
 - The [authors' code repository](https://github.com/locuslab/deq) was inspected but not executed. Its current contents include later work and implementation changes; I did not treat it as an unchanged environment for reproducing the 2019 experiments.
 - The overview diagram is original to this review ([CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)). Figures 2 and 3 are limited quotations from the paper for criticism and explanation, with authors' rights retained. The paper's [arXiv distribution license](https://arxiv.org/licenses/nonexclusive-distrib/1.0/license.html) is not described as a general reuse license.
+
+- Recheck on October 22, 2026: reusing the recorded two readings, this revision restores original §1–6 order. It rechecks v2 pp. 2, 4–5, 9, 13–14 and adds the secant check for Broyden Eq. (10) and blockwise induction for Theorem 3. Appendix A–C explanations move next to their theorems; consequential D–F implementation conditions remain after the conclusion. Repetitive bibliography and peripheral table rows are condensed. Large-scale reproduction, complete numerical-stability verification, and formal verification were not executed.

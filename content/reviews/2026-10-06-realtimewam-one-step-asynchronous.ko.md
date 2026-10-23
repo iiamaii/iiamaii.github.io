@@ -2,7 +2,7 @@
 title: "반복과 대기를 함께 줄이기: RealtimeWAM의 한 단계 비동기 행동 생성"
 description: "Teacher 끝점 지도로 행동 생성을 한 단계로 압축하고 KV 준비 이벤트로 전문가 대기를 줄이는 방법을 읽는다. 평균 성공률, 교란 조건, GPU별 누적 가속과 학습 비용을 구분한다."
 date: "2026-10-06"
-updatedAt: "2026-10-11T22:33:17+09:00"
+updatedAt: "2026-10-22T23:22:43+09:00"
 topics: ["world action model", "robot learning", "policy distillation", "real-time inference", "gpu optimization"]
 visibility: "public"
 lang: "ko"
@@ -20,7 +20,9 @@ thumbnailAlt: "TACD의 teacher·EMA·student와 shared video KV를 보여주는 
 
 **표기 안내.** 식은 원문의 $f_{\theta_{\mathrm S}}$, $v_{\theta_{\mathrm S}}$, $a_0^{\mathrm T}$, $u_{\theta_{\mathrm T}}$, $\mathcal L_{\mathrm{TA}}$를 사용한다. $\operatorname{sg}$는 기울기 차단(stop-gradient)이며, $a_0^\star$라는 정확한 상미분방정식(ordinary differential equation, ODE) 끝점과 수치 teacher 끝점 $a_0^{\mathrm T}$를 구분한다.
 
-## 어떤 질문에서 출발했는가
+원문 §1–6 순서로 구성했다. Appendix C의 오차 유도는 §4.1 바로 뒤에서 풀어 설명하고, 학습 비용과 실물 시연은 결론 뒤의 해당 부록 설명으로 모았다.
+
+## 1. 도입 (Introduction)
 
 월드 액션 모델(world action model, WAM)은 환경의 변화에 대한 학습과 행동 정책을 연결한다. 이 논문의 출발점인 Fast-WAM과 Faster-WAM에서는 영상 전문가가 시각적 조건을 만들고, 행동 전문가가 이를 읽으며 여러 미래 시점의 행동을 묶은 **행동 묶음**(action chunk)을 생성한다. 두 transformer 전문가를 연결하는 구조를 트랜스포머 혼합 구조(Mixture-of-Transformers, MoT)라고 부른다. [RealtimeWAM §3](https://arxiv.org/html/2610.06617v1#S3)
 
@@ -33,7 +35,47 @@ thumbnailAlt: "TACD의 teacher·EMA·student와 shared video KV를 보여주는 
 
 이전 리뷰의 [SyncWorld](https://iiamaii.github.io/reviews/syncworld-visual-calibration/)는 주어진 행동으로 미래 영상을 예측하는 시뮬레이터였다. 여기서는 world 정보를 이용해 행동을 직접 만드는 정책의 추론 비용을 다룬다. 두 글을 `world action model` 주제로 묶되, 같은 구조나 같은 평가 대상으로 취급하지 않는 이유다.
 
-## 핵심 아이디어: 가까운 예측의 일치와 끝점 접근
+## 2. 관련 연구 (Related Work)
+
+저자는 §2를 WAM, 적은 단계 증류(few-step distillation), 로봇 정책의 비동기 추론(asynchronous inference)으로 나눈다. 처음 두 흐름은 행동을 생성하는 모델과 학습을, 세 번째는 생성과 실제 실행 사이의 시간 관계를 다룬다. CEWP는 그중에서도 한 번의 forward 내부에서 두 전문가의 대기를 줄이는 설계다. [원문 §2](https://arxiv.org/html/2610.06617v1#S2)
+
+핵심 관련 연구는 직접 backbone인 **Fast-WAM·Faster-WAM**, 한 단계 학습 원리인 **Consistency Models·MeanFlow**, 실행 연결을 다루는 **RTC**의 다섯 편이다. Fast/Faster의 미래 정보 사용 차이를 먼저 이해한 뒤, 평균 속도와 끝점 지도, chunk 실행과 forward 내부 대기를 구별하면 비교가 쉬워진다. 각 원문과 실제 읽은 범위는 마지막 절에 적었다.
+
+최근 대표 다섯 편은 다른 비용 축을 보여준다. **DIDO**는 상호작용 중심 영상 토큰과 영상 denoising을 압축하므로 이름의 one-step을 행동 1회로 읽으면 안 된다. **AnyStep-WAM**은 고정 1회 대신 관측별로 예산을 바꾸지만, 그 위험 대리 지표(risk proxy)는 물리 실패 확률로 보정된 지표가 아니다. **OpenWAM**의 world/action noise-state 동기화는 CEWP의 CUDA 실행 겹침과 다른 층이고, 양방향 구조에서는 독립 KV 선계산 가정을 다시 확인해야 한다. **ReWAM**은 행동에 유용한 표현을 바꾸며, **WAM-OPD**는 학생이 방문한 이력에 teacher 감독을 붙인다. 서로 다른 GPU·과제 subset의 성공률을 하나의 순위로 만들지는 않았다. [DIDO §3](https://arxiv.org/html/2609.15570v2#S3), [AnyStep §4](https://arxiv.org/html/2609.33748v2#S4), [OpenWAM §3–4](https://arxiv.org/pdf/2609.07398v1), [ReWAM §3](https://arxiv.org/html/2609.38163v1#S3), [WAM-OPD §3–4](https://arxiv.org/html/2608.22364v2#S3)
+
+## 3. 배경 (Preliminaries)
+
+원문 식 (1)–(2)에서 관찰 $o$와 언어 지시 $l$은 영상 전문가의 블록별 KV 조건 $z(o,l)$로 바뀐다. $N$은 영상 transformer 블록 수, $a$는 행동 묶음, $\psi$와 $\theta$는 영상·행동 전문가의 파라미터다. 따라서 영상 조건을 한 번 만들더라도 행동 분포에서 표본을 뽑는 잡음 제거는 여러 번 남을 수 있다.
+
+### 3.1 효율적인 MoT 기반 WAM
+
+$$
+\begin{aligned}
+z(o,l)&=F_{\psi}^{\mathrm{KV}}(o,l)=\{(K_i^v,V_i^v)\}_{i=1}^{N},\\
+p_{\theta}(a\mid o,l)&=p_{\theta}(a\mid z(o,l)).
+\end{aligned}
+$$
+
+### 3.2 행동 생성의 일관성 증류 (Consistency Distillation for Action Generation)
+
+$$
+\begin{aligned}
+a_t&=(1-t)a_0^{\mathrm{data}}+t\epsilon,\quad\epsilon\sim\mathcal N(0,I),\\
+f_\theta(a_t,t)&=a_t-t\,v_\theta(a_t,t),\\
+\tilde a_s&=\texttt{Solver}(a_t,t,s;\theta_{\mathrm T}),\quad 0\leq s<t,\\
+\mathcal L_{\mathrm{CD}}&=\mathbb E_{a_t,t,s}\!\left[
+\left\|f_{\theta_{\mathrm S}}(a_t,t)-\operatorname{sg}\!\left[
+f_{\theta_{\mathrm{ema}}}(\tilde a_s,s)\right]\right\|_2^2\right].
+\end{aligned}
+$$
+
+식 (3)–(5)의 학습에서는 데이터의 clean action $a_0^{\mathrm{data}}$와 Gaussian noise $\epsilon$을 섞어 $a_t$를 만든다. 교사는 $t$에서 가까운 $s<t$로 한 번 적분해 $\tilde a_s$를 만들고, 학생 예측과 EMA 타깃 예측을 맞춘다. 여기서 $v_\theta$는 속도 예측이며 $f_\theta$는 clean 끝점 예측이다. $\operatorname{sg}$는 기울기를 차단하고 $\theta_{\mathrm{ema}}$는 학생 파라미터의 지수 이동 평균이다. EMA는 학생의 이동 평균이며 환경의 최적 행동을 제공하는 oracle이 아니다. [§3.1–3.2, Eqs. (1)–(5)](https://arxiv.org/html/2610.06617v1#S3)
+
+## 4. RealtimeWAM
+
+두 병목에 각각 TACD와 CEWP를 적용한다.
+
+### 4.1 교사 기준 일관성 증류 (Teacher-Anchored Consistency Distillation)
 
 교사 기준 일관성 증류(Teacher-Anchored Consistency Distillation, TACD)는 학생(student) 행동 모델이 한 번의 계산으로 여러 단계 교사(teacher)의 끝점(endpoint)에 가까워지도록 학습하는 방법이다. **일관성 증류**(consistency distillation, CD)는 같은 궤적의 가까운 두 잡음 상태에서 얻은 최종 예측을 맞춘다. 하지만 유한한 학습에서 두 예측이 잘 맞는 것과 둘이 올바른 teacher 끝점에 가까운 것은 다를 수 있다. RealtimeWAM은 이 잔차를 국소 오차(local error)와 전체 오차(global error)로 나눠 설명한다. 이 관측을 consistency model의 일반 이론 전체가 틀렸다는 주장으로 읽어서는 안 된다. [§4.1, 식 6, Figure 3, Appendix C.1](https://arxiv.org/html/2610.06617v1#S4.SS1), [Consistency Models §3–4](https://arxiv.org/html/2303.01469v2#S3)
 
@@ -58,7 +100,60 @@ $a_t$는 잡음이 섞인 행동, $t$는 0이 clean이고 1이 noise인 시간, 
 
 이 감독의 한계도 분명하다. 목표는 teacher가 내는 행동이지 환경의 최적 행동을 확인한 정답이 아니다. Appendix C의 오차 상한에는 teacher 수치 적분 오차도 들어가며, 성공률 보장으로 바뀌지 않는다. teacher 단계 수 5·10·20의 RoboTwin overall은 각각 90.39·90.84·90.77%로, 더 많은 teacher 연산이 항상 더 높은 성공률을 주지도 않는다. [식 9, Appendix C.2–C.3, Table 4](https://arxiv.org/html/2610.06617v1#A3)
 
-## 방법과 가정: 필요한 KV 앞에서만 기다리기
+#### 부록 C.1–C.3의 유도: 끝점 오차는 무엇을 보장하는가?
+
+아래는 부록 C를 해당 방법 옆으로 옮긴 해설이다. 같은 조건 $z(o,l)$과 학습 표본 분포를 고정하고, 교사 ODE의 해가 유일하며 오차·속도 잔차의 2차 모멘트가 유한하다고 가정한다. 먼저 EMA 예측을 더하고 빼면 식 (6)의 두 오차가 된다. 제곱을 펼치면 교차항이 남으므로 두 오차가 독립이라고 가정하면 안 된다.
+
+$$
+\begin{aligned}
+\mathbf e_{\mathrm{total}}&=\mathbf e_{\mathrm{local}}+\mathbf e_{\mathrm{global}},\\
+\mathbb E\|\mathbf e_{\mathrm{total}}\|_2^2
+&=\mathbb E\|\mathbf e_{\mathrm{local}}\|_2^2+\mathbb E\|\mathbf e_{\mathrm{global}}\|_2^2
++2\mathbb E\langle\mathbf e_{\mathrm{local}},\mathbf e_{\mathrm{global}}\rangle.
+\end{aligned}
+$$
+
+Cauchy–Schwarz 부등식은 교차항의 절댓값을 두 평균제곱오차의 제곱근 곱으로 제한한다. 특히 local 오차가 0이어도 total 오차는 global 오차 그대로다. 이것이 추가 감독의 동기이며, 단독으로 CD의 모든 이론적 성질을 반박하는 정리는 아니다.
+
+다음은 부록 C.2의 정확한 항등식이다. 두 끝점에서 공통 $a_t$가 소거되므로 속도 잔차에 $-t$가 곱해진다. $t>0$에서 제곱하고 $t^2$로 나누면, 속도 손실은 **$1/t^2$로 가중한 끝점 손실**이 된다.
+
+$$
+\begin{aligned}
+f_{\theta_{\mathrm S}}(a_t,t)-a_0^{\mathrm T}
+&=-t\left[v_{\theta_{\mathrm S}}(a_t,t)-u_{\theta_{\mathrm T}}(a_t,t)\right],\\
+\mathcal L_{\mathrm{TA}}
+&=\mathbb E\!\left[\frac{\|f_{\theta_{\mathrm S}}(a_t,t)-a_0^{\mathrm T}\|_2^2}{t^2}\right].
+\end{aligned}
+$$
+
+오차 기호는 원문 식 (6)과 같다. $\mathbf e_{\mathrm{local}}=f_{\theta_{\mathrm S}}(a_t,t)-f_{\theta_{\mathrm{ema}}}(\tilde a_s,s)$이고, $\mathbf e_{\mathrm{global}}=f_{\theta_{\mathrm{ema}}}(\tilde a_s,s)-a_0^\star$다. 아래 norm의 속도 함수 인자 $(a_t,t)$는 식 길이를 줄이기 위해 생략한다.
+
+부록 C.3에서는 $\boldsymbol\delta=a_0^{\mathrm T}-a_0^\star$를 더한다. $\|p+q\|^2\leq2\|p\|^2+2\|q\|^2$는 Cauchy–Schwarz와 $2ab\leq a^2+b^2$에서 나온다. 마지막 줄에는 $0<t\leq1$을 쓴다.
+
+$$
+\begin{aligned}
+\mathbf e_{\mathrm{total}}&=-t\left[v_{\theta_{\mathrm S}}(a_t,t)-u_{\theta_{\mathrm T}}(a_t,t)\right]+\boldsymbol\delta,\\
+\mathbb E\|\mathbf e_{\mathrm{total}}\|_2^2
+&\leq 2\mathbb E\!\left[t^2\|v_{\theta_{\mathrm S}}-u_{\theta_{\mathrm T}}\|_2^2\right]+2\mathbb E\|\boldsymbol\delta\|_2^2\\
+&\leq 2\mathcal L_{\mathrm{TA}}+2\mathbb E\|\boldsymbol\delta\|_2^2.
+\end{aligned}
+$$
+
+교사 적분 오차도 별도로 남는다. 교사 속도가 상태에 대해 $L$-Lipschitz이고 정확한 궤적의 2차 시간 미분 노름이 $M$ 이하일 때, 균일 Euler 간격 $h=t/K$의 한 단계 오차는 $Mh^2/2$ 이하다. $D_k$는 $k$번째 수치 상태와 정확한 상태의 거리다. 아래 등비급수 전개는 **리뷰 보충 중간 계산**이며 부록 C.3과 같은 순서다.
+
+$$
+\begin{aligned}
+D_{k+1}&\leq(1+Lh)D_k+\frac{Mh^2}{2},\qquad D_0=0,\quad h=\frac{t}{K},\\
+\|\boldsymbol\delta\|_2=D_K
+&\leq\frac{Mh^2}{2}\sum_{j=0}^{K-1}(1+Lh)^j\\
+&=\frac{Mh}{2L}\left[(1+Lh)^K-1\right]
+\leq\frac{Me^{Lt}t^2}{2K}\quad(L>0).
+\end{aligned}
+$$
+
+마지막 부등식은 $(1+Lh)^K\leq e^{Lt}$와 $e^{Lt}-1\leq Lt e^{Lt}$를 사용한다. $L=0$이면 직접 합해 $D_K\leq Mt^2/(2K)$다. 균일한 $L,M$ 아래 제곱 오차 항은 $O(K^{-2})$이지만, 유한 $K$의 실제 성공률이 단조 증가한다는 결론은 아니다. 위 상한의 대상은 정확한 **교사 ODE 끝점**이며 환경에서의 최적 행동과는 구분된다. [Appendix C.1–C.3, Eqs. (C.1)–(C.4)](https://arxiv.org/html/2610.06617v1#A3)
+
+### 4.2 전문가 간 웨이브프런트 파이프라이닝 (Cross-Expert Wavefront Pipelining)
 
 전문가 간 웨이브프런트 파이프라이닝(Cross-Expert Wavefront Pipelining, CEWP)은 한 GPU의 두 비차단 CUDA 실행 스트림(CUDA stream)에서 영상과 행동 전문가의 계산을 겹친다. 영상 블록이 투영(projection)과 필요한 KV 전처리를 마치면 준비 이벤트(readiness event)를 기록한다. 행동 쪽 projection은 자기 입력 은닉 상태(hidden state)가 준비되면 진행하고, 영상 KV를 실제로 읽는 attention 직전에 이벤트를 기다린다. 영상 쪽은 남은 계산을 계속한다. [§4.2, Figure 4, Appendix D.1](https://arxiv.org/html/2610.06617v1#S4.SS2)
 
@@ -71,7 +166,15 @@ $a_t$는 잡음이 섞인 행동, $t$는 0이 clean이고 1이 noise인 시간, 
 
 여기서 **Faster-WAM은 arXiv:2608.04404**의 future-conditioning 모델이다. 같은 이름의 2608.02365는 Depth-of-Thought를 사용하는 다른 연구이므로 baseline을 합치지 않는다. `*`는 Fast-WAM 기반, `†`는 이 Faster-WAM 기반 RealtimeWAM을 뜻한다. [RealtimeWAM §3, Table 1](https://arxiv.org/html/2610.06617v1#S3), [Faster-WAM Method](https://arxiv.org/html/2608.04404v1#Sx3)
 
-## 결과와 근거: 평균과 하위 조건을 함께 읽기
+## 5. 실험 (Experiments)
+
+성공률과 속도를 별도 축으로 평가한다.
+
+### 5.1 구현·5.2 평가 벤치마크 (Implementation Details; Evaluation Benchmarks)
+
+평가의 세 축은 RoboTwin의 clean/random 조작, LIBERO의 네 suite, LIBERO-Plus의 일곱 교란 조건이다. 성공률(success rate)은 해당 평가에서 과제 성공으로 판정된 rollout의 비율이며 높을수록 좋다. NFE와 지연은 계산 비용이고 성공률과 단위가 다르다. 학습은 영상 전문가를 고정하고 행동 LoRA를 조정하며 TACD의 teacher는 10단계를 사용한다. 비교되는 모든 baseline을 같은 예산으로 다시 학습했다는 의미는 아니다. 각 집계 방식과 비용은 아래 표에 함께 둔다. [§5.1–5.2, Appendix F.1](https://arxiv.org/html/2610.06617v1#S5.SS1)
+
+### 5.3 주요 결과 (Main Results)
 
 **원문 Table 1의 관련 8행.** 성공률 단위는 %, 높을수록 좋다. 함수 평가 횟수(number of function evaluations, NFE)는 잡음 제거(denoising) 함수 평가 수이며 영상과 행동을 분리했다. RoboTwin overall은 clean/random 평균, LIBERO는 네 suite 평균이다. 단순히 teacher의 반복 횟수만 1로 줄인 행을 보면, 한 단계 생성에 별도 학습이 필요한 이유가 드러난다. [Table 1, Appendix F.1](https://arxiv.org/html/2610.06617v1#S5.T1)
 
@@ -88,8 +191,6 @@ $a_t$는 잡음이 섞인 행동, $t$는 0이 clean이고 1이 noise인 시간, 
 
 Fast 대비 RealtimeWAM*의 RoboTwin 평균 손실은 **0.67%포인트**(percentage point, pp), Faster 대비 †는 **0.29pp**다. LIBERO는 각각 같은 점수와 0.1pp 증가를 보고한다. 이 작은 평균 차이만으로 통계적 동등성이나 모든 과제의 품질 유지를 결론낼 수는 없다. 일부 baseline은 앞선 연구에서 인용됐으며 전부 같은 새 실행으로 재현한 표도 아니다. [§5.3, Table 1](https://arxiv.org/html/2610.06617v1#S5.SS3)
 
-anchor 자체의 효과를 읽을 때는 학습되는 전문가도 맞춰야 한다. Table 1의 CD*와 달리, Table 3의 **같은 영상 고정·행동 전용 학습**에서는 CD 89.85%→TACD 90.84%로 0.99pp 증가한다. 그러나 random 열은 89.94%→89.72%로 낮아진다. 모든 하위 조건이 좋아졌다는 설명은 이 표와 맞지 않는다. [Table 3](https://arxiv.org/html/2610.06617v1#S5.T4)
-
 **원문 Table 2에서 Faster와 RealtimeWAM†의 모든 교란 열.** LIBERO-Plus는 카메라·로봇·언어·조명 등 학습 밖 조건을 평가한다. 마지막 변화 열은 리뷰에서 뺄셈으로 계산한 pp이며, overall은 평가 trial 수로 가중한 평균이다. 일곱 숫자의 산술평균으로 다시 계산하지 않는다. [Table 2, Appendix F.1](https://arxiv.org/html/2610.06617v1#S5.T2)
 
 | Perturbation | Faster-WAM | RealtimeWAM† | Change (pp) |
@@ -105,7 +206,11 @@ anchor 자체의 효과를 읽을 때는 학습되는 전문가도 맞춰야 한
 
 전체 손실은 0.6pp지만 robot 조건은 2.6pp, language는 2.2pp 낮아진다. 따라서 “손실 1% 미만”이라는 전체 평균의 요약을 모든 교란(perturbation) 조건에 그대로 적용할 수 없다. 정확한 자체 평가 롤아웃(rollout) 수·반복 시드(seed)·신뢰구간(confidence interval)은 이번에 읽은 focal 범위에서 확정하지 못했다. baseline 원 논문의 trial 수를 자동으로 대입하지 않았다.
 
-## 속도와 학습 비용: 25배는 어디서 왔는가
+### 5.4 구성요소 제거와 속도 분석 (Ablation Study)
+
+anchor 자체의 효과를 읽을 때는 학습되는 전문가도 맞춰야 한다. Table 1의 CD*와 달리, Table 3의 **같은 영상 고정·행동 전용 학습**에서는 CD 89.85%→TACD 90.84%로 0.99pp 증가한다. 그러나 random 열은 89.94%→89.72%로 낮아진다. 모든 하위 조건이 좋아졌다는 설명은 이 표와 맞지 않는다. [Table 3](https://arxiv.org/html/2610.06617v1#S5.T4)
+
+
 
 <figure class="review-figure" id="figure-realtimewam-speed">
 <a href="/assets/reviews/realtimewam/paper-figure-5.svg" target="_blank" rel="noopener noreferrer"><img src="/assets/reviews/realtimewam/paper-figure-5.svg" width="1152" height="263" alt="H100에서 Fast-WAM과 Faster-WAM에 TACD, CUDA Graph, CEWP, 효율 커널을 차례로 적용한 지연 막대와 누적 가속 비율." loading="lazy" decoding="async"></a>
@@ -123,6 +228,12 @@ H100에서 Fast-WAM의 299.7ms는 TACD만 적용하면 65.8ms, CUDA Graph를 추
 
 12.2ms는 H100에서 30Hz의 한 호출 예산인 약 33.3ms 안에 들어간다. 그러나 이것만으로 폐쇄 루프(closed loop) 전체가 30Hz라고 할 수는 없다. †의 RTX 4090D 44.7ms는 그 호출 예산도 넘는다. 소비자 GPU에서 누적 가속 폭이 달라지는 점과 평균 지연 외의 p95/p99, 관측이 행동까지 얼마나 오래됐는지를 확인해야 한다는 판단은 리뷰 해석이다.
 
+## 6. 결론 (Conclusion)
+
+저자는 TACD로 행동 denoising을 한 단계로 압축하고 CEWP로 블록별 의존성을 보존하며 실행을 겹치는 두 기여를 연결한다. 실험은 평균 품질을 대부분 유지하면서 지연을 줄이는 결과를 보이지만, 보정된 실물 실패 확률이나 모든 장비의 전체 제어 주파수를 증명하지 않는다. [원문 §6](https://arxiv.org/html/2610.06617v1#S6)
+
+## 부록 A·F.6: 학습 비용과 실물 시연
+
 **원문 Table A.1의 학습 비용.** 16 H100, 30,000 iteration 조건이다. 영상 고정으로 줄이는 메모리와 teacher anchor로 늘어나는 시간을 구별할 수 있다. [Appendix A](https://arxiv.org/html/2610.06617v1#A1)
 
 | Training setup | Time | Peak memory |
@@ -133,13 +244,7 @@ H100에서 Fast-WAM의 299.7ms는 TACD만 적용하면 65.8ms, CUDA Graph를 추
 
 행동 전용 CD와 TACD의 peak 메모리는 같지만, 학습 시간은 5시간 21분에서 8시간 3분으로 약 50.5% 늘어난다. 배포 비용을 줄이는 대신 teacher rollout 계산을 학습에 지불하는 셈이다. 실제 로봇에서는 AgileX PiPER 양팔과 RTX 4090의 티셔츠 접기 rollout을 제시한다. 이는 질적 시연이며 공통 trial 수·성공률·closed-loop 주파수의 통계 검증을 대신하지 않는다. [Table A.1, Appendix F.6, Figure F.1](https://arxiv.org/html/2610.06617v1#A6.SS6)
 
-## 관련 연구에서 이어지는 질문
-
-핵심 관련 연구는 직접 backbone인 **Fast-WAM·Faster-WAM**, 한 단계 학습 원리인 **Consistency Models·MeanFlow**, 실행 연결을 다루는 **RTC**의 다섯 편이다. Fast/Faster의 미래 정보 사용 차이를 먼저 이해한 뒤, 평균 속도와 끝점 지도, chunk 실행과 forward 내부 대기를 구별하면 비교가 쉬워진다. 각 원문과 실제 읽은 범위는 마지막 절에 적었다.
-
-최근 대표 다섯 편은 다른 비용 축을 보여준다. **DIDO**는 상호작용 중심 영상 토큰과 영상 denoising을 압축하므로 이름의 one-step을 행동 1회로 읽으면 안 된다. **AnyStep-WAM**은 고정 1회 대신 관측별로 예산을 바꾸지만, 그 위험 대리 지표(risk proxy)는 물리 실패 확률로 보정된 지표가 아니다. **OpenWAM**의 world/action noise-state 동기화는 CEWP의 CUDA 실행 겹침과 다른 층이고, 양방향 구조에서는 독립 KV 선계산 가정을 다시 확인해야 한다. **ReWAM**은 행동에 유용한 표현을 바꾸며, **WAM-OPD**는 학생이 방문한 이력에 teacher 감독을 붙인다. 서로 다른 GPU·과제 subset의 성공률을 하나의 순위로 만들지는 않았다. [DIDO §3](https://arxiv.org/html/2609.15570v2#S3), [AnyStep §4](https://arxiv.org/html/2609.33748v2#S4), [OpenWAM §3–4](https://arxiv.org/pdf/2609.07398v1), [ReWAM §3](https://arxiv.org/html/2609.38163v1#S3), [WAM-OPD §3–4](https://arxiv.org/html/2608.22364v2#S3)
-
-## 나의 생각과 남은 질문
+## 리뷰 해석과 남은 질문
 
 이 논문의 유용한 관점은 “모델을 작게 만들기”만으로 효율을 설명하지 않고, 반복 횟수와 실행 의존성(execution dependency)을 분리한 데 있다. 특히 가속 기여를 단계별로 보여주는 Figure 5와 조건을 맞춘 Table 3이 구현 방향을 판단하는 데 도움이 된다. 반면 teacher의 끝점에 가깝다는 사실은 teacher가 낯선 상태에서도 옳다는 뜻이 아니다. 학생의 방문 분포와 접촉 실패를 보는 WAM-OPD·AnyStep의 질문을 함께 가져갈 필요가 있다. 마지막 판단은 리뷰 해석이며 결합 효과를 검증한 결과가 아니다.
 
@@ -152,3 +257,5 @@ H100에서 Fast-WAM의 299.7ms는 TACD만 적용하면 65.8ms, CUDA Graph를 추
 - 최근 대표: [DIDO v2](https://arxiv.org/html/2609.15570v2), §3.1–3.4·§4 초기 설정/Table 1 설명; [AnyStep-WAM v2](https://arxiv.org/html/2609.33748v2), §4.1–4.3·§5.1/Table 1; [OpenWAM v1](https://arxiv.org/pdf/2609.07398v1), PDF p.1·5·8·13–16·33 관련 문단; [ReWAM v1](https://arxiv.org/html/2609.38163v1), 초록·§3.2–3.4; [WAM-OPD v2](https://arxiv.org/html/2608.22364v2), §3.1–3.3·§4.1–4.2/Table 2·§5. 최근 창은 최초 제출 2026-08-01–10-06이며, 관련성으로 고른 대표 다섯 편이지 최신 전체 다섯 편은 아니다.
 - 원문 Figure 2·4·5: Chengtao Lv 외, 2026, [동일 v1 원문](https://arxiv.org/html/2610.06617v1), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). 원본 바이트를 유지했으며 수정·자르기 없음. 첫 그림만 이 리뷰의 설명용 제작물이다.
 - 모든 수치는 저자 보고이고 독립 재현은 미실행이다. 별도 원어민 영문 교정도 미실행이다.
+
+- 2026-10-22 재점검: 기존 두 읽기의 기록을 재사용했다. v1 §3–6 및 Appendix C.1–C.3을 다시 대조해 식 (1)–(5)의 배경, (C.2)–(C.4)의 유도, Euler 오차의 중간 합산을 보완했다. 원문 §1–6 순서를 복원하고 학습 비용은 Appendix A로 이동했다. 개별 과제의 반복 표와 커널 구현 세부는 축약했으며 핵심 성공률·교란별 반대 결과·속도 ablation·학습 비용을 보존했다. GPU 실행·정형 증명·재현은 미실행이다. v2가 공개되어 있지만 이 글의 검토 버전은 요청 당시 v1을 유지한다.

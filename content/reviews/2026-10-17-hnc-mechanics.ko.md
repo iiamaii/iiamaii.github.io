@@ -3,7 +3,7 @@ title: "[2/2] HNC 심화: 함수 보존은 왜 가능하고 어디서 깨지는�
 description: "부록 A–J를 따라 Gauss–Newton 유도, soft projection, 계산 비용, ablation과 probe 밖 검증을 해설한다."
 date: "2026-10-17"
 publishedAt: "2026-10-17T22:11:59+09:00"
-updatedAt: "2026-10-17T22:20:57+09:00"
+updatedAt: "2026-10-22T23:22:53+09:00"
 topics: ["representation learning", "loss landscape", "mechanistic interpretability", "computational neuroscience", "reinforcement learning"]
 visibility: "public"
 lang: "ko"
@@ -19,7 +19,7 @@ thumbnailAlt: "HNC 원문 Figure 1. 곡률이 작은 방향의 탐색과 출력 
 
 HNC의 핵심은 “Hessian의 영공간이면 어디로 움직여도 기능이 같다”가 아니다. **anchor에서 출력 변화의 1차 민감도가 0인 방향을 찾고, 유한한 이동에서 생기는 오차를 복원·거절·재계산으로 관리한다.** 이 차이를 이해해야 함수 보존이라는 표현을 정확히 읽을 수 있다.
 
-[[1/2] 방법·실험 전체 해설](/reviews/hnc-solutions/)을 먼저 읽기를 권한다. 이 글은 **부록 A→B→C→D→E→F→G→H→I→J** 순서를 따른다. 원문에는 HNC 전체의 수렴이나 전역 함수 동등성을 증명하는 번호 붙은 정리가 없다. 중심 수학은 부록 B의 미분 유도이며, 아래 중간 계산·예제는 필요한 곳에 **리뷰 보충**으로 구분한다.
+[\[1/2\] 방법·실험 전체 해설](/reviews/hnc-solutions/)을 먼저 읽기를 권한다. 이 글은 **부록 A→B→C→D→E→F→G→H→I→J** 순서를 따른다. 원문에는 HNC 전체의 수렴이나 전역 함수 동등성을 증명하는 번호 붙은 정리가 없다. 중심 수학은 부록 B의 미분 유도이며, 아래 중간 계산·예제는 필요한 곳에 **리뷰 보충**으로 구분한다.
 
 ## A. 알고리즘과 계산 비용 (Hessian Null-Space Continuation Pseudocode)
 
@@ -214,6 +214,14 @@ Hessian의 정확한 영방향이어도 유한 $t$에서 손실은 0이 아니�
 
 64유닛 RNN은 4,611개 파라미터여서 전체 spectrum을 계산할 수 있다. 5개 anchor의 Hessian participation ratio는 $23.2\pm1.6$이지만, 이것을 영공간 차원으로 빼면 안 된다. 고유값이 큰 몇 방향에 곡률이 집중된 정도를 나타내는 유효 차원이다.
 
+**Participation ratio의 의미.** 이 문단의 $D_{\mathrm{PR}}$은 유효 차원의 리뷰 약칭이다. 0이 아닌 PSD spectrum에 대해
+
+$$
+D_{\mathrm{PR}}=\frac{(\sum_i\lambda_i)^2}{\sum_i\lambda_i^2}.
+$$
+
+같은 양의 고유값이 $r$개면 $r$이고, 하나에 집중되면 1에 가까워진다. 작은 양의 고유값은 rank에 포함되지만 이 지표에는 약하게 기여한다. 따라서 23.2는 23개 방향만 존재한다는 뜻도, 나머지 4,588개가 정확한 영방향이라는 뜻도 아니다. 모든 고유값이 0이면 위 비율은 정의되지 않는다. [Appendix F.2](https://arxiv.org/pdf/2609.38081v1#page=29)
+
 원문 Table 3의 상대 임계값별 median flat dimension은 다음과 같다.
 
 | $\mu_{\mathrm{rel}}$ | median dimension | 전체 파라미터 중 비율 |
@@ -237,6 +245,15 @@ gallery와 10-anchor MDS는 하나의 특이한 도착점만이 아니라 여러
 
 ### G.1–G.4 조향 목적과 설정
 
+**CKA의 계산 대상.** 아래 $X,Y$는 같은 표본 순서의 두 특징 행렬을 열별 중심화한 리뷰 설명 기호다. probe 입력 $\mathbf X$와 구분한다.
+
+$$
+\operatorname{CKA}_{\mathrm{linear}}(X,Y)
+=\frac{\|Y^\top X\|_F^2}{\|X^\top X\|_F\,\|Y^\top Y\|_F}.
+$$
+
+일반적인 이 선형 CKA는 0–1 범위이며 높을수록 표본 간 기하가 유사하다. 직교 좌표변환·전체 스케일 변화에는 불변이지만 임의의 가역 변환에는 불변이 아니다. 분모가 0인 상수 특징에서는 정의되지 않는다. CKA 감소는 출력의 변화나 모든 계산의 비동등성을 직접 판정하지 않는다. [CKA 원전 §3–5, Eq. (14)](https://proceedings.mlr.press/v97/kornblith19a/kornblith19a.pdf#page=5)
+
 $c_{ij}(\boldsymbol\theta)$를 anchor $i$층과 현재 모델 $j$층의 linear CKA라고 하면 원문 식 (12)는
 
 $$
@@ -257,6 +274,8 @@ G.3의 mutual-kNN은 $k=10$ 이웃 집합 교집합을 측정하고 미분에는
 CKA 조향은 5개 probe draw, kNN 조향의 off-probe 평가는 3개 draw다. 비교한 diff-seed fine-tuning은 2 seed이며, single anchor·독립 ViT-S/in1k의 band는 이미지 bootstrap이라 반복 단위가 다르다. 하나의 오차 막대 의미로 통일해 읽으면 안 된다.
 
 CKA 조향은 ImageNet/V2/R/Sketch에서 작은 정확도 손실, 오류 일관성 약 0.8을 보인다. kNN 설정은 오류 일관성 약 0.75와 더 낮은 정확한 예측 일치를 보인다. 임의 Gaussian weight noise를 정확도 손실에 맞춘 비교에서도 HNC의 표현 변화가 더 크다. 이는 단순 손상 대안을 약화하지만 지표 변화가 곧 모든 계산의 변경이라는 증명은 아니다. [G.5–G.6, pp.39–42](https://arxiv.org/pdf/2609.38081v1#page=39)
+
+오류 일관성(error consistency)은 각 이미지에서 두 모델이 **둘 다 맞거나 둘 다 틀리는지**의 일치를 우연 수준으로 보정한 지표다. 둘 다 틀렸을 때 같은 오답 클래스를 골라야 하는 prediction match와 다르다. 따라서 약 0.8이라는 값은 80% 정확도나 정확히 80%의 동일 예측을 뜻하지 않는다. [Appendix G.5](https://arxiv.org/pdf/2609.38081v1#page=39)
 
 ### G.7–G.10 층·방향·probe 수를 바꾸면?
 
@@ -331,3 +350,7 @@ J.1의 학습 정확도 100%를 cross-entropy 0과 동일시하는 문장은 채
 - 불일치: G.3의 kNN probe 256 대 Table 8의 512, J.1의 정확도/zero-loss 표현, 일반 Algorithm 1과 F.3의 손실 제어량 차이를 구분했다. 저자에게 확인하지 않았다.
 - 그림: 공통 Figure 1과 D의 Figure 11, 원문 여섯 저자, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), [저자 v1 소스](https://arxiv.org/src/2609.38081v1). PDF rasterization·WebP encoding 외에 내용·배치·화살표·문자를 바꾸지 않았다.
 - **미실행:** 저자 코드·GPU/학습/walk/뇌 데이터/RL 재현, raw result 통계 검정, 하드웨어 비용 재측정, 전역·기계 형식 검증, 참조 LOBPCG/CG 이론 전체의 독립 증명, 설정 불일치의 저자 확인. 이 글의 국소 계산 검토와 구분한다.
+
+- 2026-10-22 재점검: 기존 두 읽기와 원문 대응 기록을 재사용해 위에 추가한 지표·가정·예제의 정의를 보완했다. 새 전문 두 읽기로 계산하지 않는다. 새 모델·GPU·로봇 재현과 전체 형식 검증은 미실행이다.
+
+- 추가 지표 대조: CKA 원전의 §3–5, Eq. (14)와 focal Appendix F.2·G.5의 지표 설명을 재확인했다. 뇌·모델 원시 데이터로 점수를 재계산하지 않았다.

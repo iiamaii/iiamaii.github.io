@@ -3,7 +3,7 @@ title: "[3/3] LeJEPA 기술 심층 리뷰: 증명 조건, SIGReg와 수식 검�
 description: "원문 §3→§4→§5의 논증과 부록 A·B를 따라 주요 정리, 보조정리, 중간 유도와 미확인 간극을 자세히 읽는다."
 date: "2026-10-09"
 publishedAt: "2026-10-09T23:54:43+09:00"
-updatedAt: "2026-10-11T20:35:19+09:00"
+updatedAt: "2026-10-22T23:22:47+09:00"
 topics: ["self-supervised learning", "representation learning", "joint embedding predictive architectures", "distribution matching", "computer vision"]
 visibility: "public"
 lang: "ko"
@@ -288,6 +288,8 @@ $$
 
 **Algorithm 2의 구현을 따로 읽기.** 실제 code의 중심 loss는 $(NVK)^{-1}\sum_{n,v}\|\mathbf z_{n,v}-\boldsymbol\mu_n\|^2$다. $1/K$는 feature 좌표까지 평균한 결과다. SIGReg는 뷰마다 $N$개 이미지 표현에 적용하고 뷰 평균을 낸다. Eq. (5)의 pairwise 식과 구현을 동일 목적이라고 단정하지 않되, 보고된 실험은 논문이 제시한 center 기반 pipeline으로 설명한다. 예측기(predictor)·지수이동평균 교사(exponential moving average teacher, EMA teacher)·기울기 차단(stop-gradient)는 필수 구성에서 빠지고 projector·optimizer·schedule은 남는다. [§5.1, Algorithm 2](https://arxiv.org/pdf/2511.08544v3#page=11)
 
+**네 종류의 오차는 따로 확인해야 한다.** Theorem 6의 유한 표본 편향, 유한 방향으로 인한 투영 근사, 17점 격자의 수치 적분 오차, 그리고 유한 encoder의 최적화·표현력 오차는 서로 다른 항목이다. $N$을 늘려 첫 항을 줄여도 방향·주파수의 식별 문제가 자동으로 해결되지는 않는다. 위 alias 예제도 이 구분을 위한 국소 예제다. 이 네 항의 합에 대한 전체 신경망 오차 상한을 이 글에서 새로 증명한 것은 아니다. [§4.1–4.3·5.1, Algorithms 1–2](https://arxiv.org/pdf/2511.08544v3#page=10)
+
 ### 5.2 Relation to Prior Work — Appendix B.14
 
 정확한 CF 적분은 kernel discrepancy와 연결되지만 quadrature 구현은 모든 sample pair를 만들지 않는다. moment test로 제한하면 모든 unit $\mathbf a$에서 $\mathbb E[\mathbf a^\top\mathbf z]=0$, $\operatorname{Var}(\mathbf a^\top\mathbf z)=1$을 요구한다.
@@ -309,3 +311,5 @@ $$
 - 직접 실행: 중심 항등식(2=1+1), 동일 trace OLS 예제(2 대 5.5556), 고정 grid CF alias(약 $2.24\times10^{-16}$), ECF 표본 bias Monte Carlo(20,000회). **미실행:** 공식 코드·GPU 학습·probe·finetuning·DDP·seed·모델 runtime/memory 재현, 전체 증명의 형식 검증. 작은 계산은 논문 모델 재현이 아니다.
 - 미확인: Theorem 5 참조 원전과 norm 전환, Theorem 2의 균일 power 극한, kNN의 전체 잔차 독립성, kernel의 유한 표본 잔차; Figure 11 부호, Figure 12 오차막대, Figure 17 캡션, Table 5 사전학습 칸 상충. 기존 승인 그림만 동일 파일로 사용했다.
 - 대표 자체 그림: [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), Light 300·강조 600. 원문 그림의 귀속·이용 조건·변환은 각 캡션에 기록했다.
+
+- 2026-10-22 재점검: 기존 두 읽기와 원문 대응 기록을 재사용해 위에 추가한 지표·가정·예제의 정의를 보완했다. 새 전문 두 읽기로 계산하지 않는다. 새 모델·GPU·로봇 재현과 전체 형식 검증은 미실행이다.

@@ -2,7 +2,7 @@
 title: "Fewer Steps, Less Waiting: Understanding RealtimeWAM"
 description: "How teacher endpoints compress action generation into one step, and KV-ready events reduce expert waiting. Read aggregate accuracy, perturbation losses, device-specific speedups and training cost together."
 date: "2026-10-06"
-updatedAt: "2026-10-10T18:16:14+09:00"
+updatedAt: "2026-10-22T23:22:43+09:00"
 topics: ["world action model", "robot learning", "policy distillation", "real-time inference", "gpu optimization"]
 visibility: "public"
 lang: "en"
@@ -20,7 +20,9 @@ A world action model can predict useful actions and still deliver them too late 
 
 **Notation.** The equations use the paper’s $f_{\theta_{\mathrm S}}$, $v_{\theta_{\mathrm S}}$, $a_0^{\mathrm T}$, $u_{\theta_{\mathrm T}}$ and $\mathcal L_{\mathrm{TA}}$. $\operatorname{sg}$ denotes stop-gradient. The exact ODE endpoint $a_0^\star$ is distinct from the numerical teacher endpoint $a_0^{\mathrm T}$.
 
-## What question does the paper ask?
+This article follows original §1–6. Appendix C’s error derivation is expanded immediately after §4.1; training cost and real-robot demonstrations are grouped under their appendices after the conclusion.
+
+## 1. Introduction
 
 World action models connect learning about environmental change with action policies. In the Fast-WAM and Faster-WAM backbones studied here, a video expert supplies visual conditioning, and an action expert reads it to generate an **action chunk**, a sequence of future actions. The connected transformer experts form a mixture of transformers, or MoT. [§3](https://arxiv.org/html/2610.06617v1#S3)
 
@@ -33,7 +35,47 @@ Even when the video expert runs once, the action expert usually removes noise re
 
 The preceding [SyncWorld review](https://iiamaii.github.io/en/reviews/syncworld-visual-calibration/) concerned a simulator that predicts future video from supplied actions. This paper concerns efficient inference for a policy that directly generates actions using world information. Both belong under `world action model`; their architectures and evaluation roles remain different.
 
-## Core idea: local agreement and endpoint accuracy
+## 2. Related Work
+
+Section 2 separates WAMs, few-step distillation, and asynchronous robot-policy inference. The first two concern generation models and training; the third concerns timing between generation and execution. CEWP specifically reduces waiting between experts inside one forward pass. [Original §2](https://arxiv.org/html/2610.06617v1#S2)
+
+The five core papers are the direct **Fast-WAM and Faster-WAM** backbones, **Consistency Models and MeanFlow** for one-step learning, and **RTC** for execution continuity. First distinguish future information use in the two backbones, then interval-average velocity from endpoint supervision, and chunk execution from waiting inside a forward pass. Their sources and reading scope appear below.
+
+The five recent representative papers address other cost axes. **DIDO** compresses interaction-focused video tokens and video denoising: its one-step title does not imply one action evaluation. **AnyStep-WAM** selects observation-dependent budgets instead of fixing one step, but its risk proxy is not calibrated physical failure probability. **OpenWAM** studies world/action noise-state synchronization, a different layer from CEWP's CUDA scheduling; bidirectional architectures require rechecking independent KV precomputation. **ReWAM** changes the action-relevant representation, while **WAM-OPD** supervises histories visited by the student. Different hardware and task subsets were not combined into a common ranking. [DIDO §3](https://arxiv.org/html/2609.15570v2#S3), [AnyStep §4](https://arxiv.org/html/2609.33748v2#S4), [OpenWAM §3–4](https://arxiv.org/pdf/2609.07398v1), [ReWAM §3](https://arxiv.org/html/2609.38163v1#S3), [WAM-OPD §3–4](https://arxiv.org/html/2608.22364v2#S3)
+
+## 3. Preliminaries
+
+In Eqs. (1)–(2), observation $o$ and instruction $l$ become blockwise video KV conditioning $z(o,l)$. Here $N$ is the number of video transformer blocks, $a$ an action chunk, and $\psi,\theta$ the video and action parameters. Computing visual conditioning once can still leave many denoising evaluations to sample actions.
+
+### 3.1 Efficient Mixture-of-Transformers (MoT)-based WAMs
+
+$$
+\begin{aligned}
+z(o,l)&=F_{\psi}^{\mathrm{KV}}(o,l)=\{(K_i^v,V_i^v)\}_{i=1}^{N},\\
+p_{\theta}(a\mid o,l)&=p_{\theta}(a\mid z(o,l)).
+\end{aligned}
+$$
+
+### 3.2 Consistency Distillation for Action Generation
+
+$$
+\begin{aligned}
+a_t&=(1-t)a_0^{\mathrm{data}}+t\epsilon,\quad\epsilon\sim\mathcal N(0,I),\\
+f_\theta(a_t,t)&=a_t-t\,v_\theta(a_t,t),\\
+\tilde a_s&=\texttt{Solver}(a_t,t,s;\theta_{\mathrm T}),\quad 0\leq s<t,\\
+\mathcal L_{\mathrm{CD}}&=\mathbb E_{a_t,t,s}\!\left[
+\left\|f_{\theta_{\mathrm S}}(a_t,t)-\operatorname{sg}\!\left[
+f_{\theta_{\mathrm{ema}}}(\tilde a_s,s)\right]\right\|_2^2\right].
+\end{aligned}
+$$
+
+In Eqs. (3)–(5), clean data actions $a_0^{\mathrm{data}}$ and Gaussian noise $\epsilon$ form $a_t$. The teacher takes one integration step to a neighboring $s<t$, producing $\tilde a_s$. Training aligns student and EMA-target endpoint predictions. Here $v_\theta$ predicts velocity and $f_\theta$ predicts a clean endpoint. The operator $\operatorname{sg}$ blocks gradients; $\theta_{\mathrm{ema}}$ is an exponential moving average of student parameters. EMA tracks the student; it is not an oracle for optimal environmental actions. [§3.1–3.2, Eqs. (1)–(5)](https://arxiv.org/html/2610.06617v1#S3)
+
+## 4. RealtimeWAM
+
+TACD and CEWP address the two bottlenecks.
+
+### 4.1 Teacher-Anchored Consistency Distillation
 
 Teacher-Anchored Consistency Distillation, or TACD, trains an action student to approach a multi-step teacher endpoint in one evaluation. **Consistency distillation** aligns endpoint predictions from nearby noisy states on the same trajectory. In finite training, however, agreement between two predictions need not mean that either approaches the teacher's correct endpoint. RealtimeWAM explains this through local and global residuals. This observation does not refute consistency-model theory in general. [§4.1, Eq.6, Figure 3, Appendix C.1](https://arxiv.org/html/2610.06617v1#S4.SS1), [Consistency Models §3–4](https://arxiv.org/html/2303.01469v2#S3)
 
@@ -58,7 +100,60 @@ $a_t$ is a noisy action; time $t$ is clean at zero and noise at one. $v_{\theta_
 
 The target is a teacher action, rather than a verified optimal action in the environment. Appendix C's endpoint-error bound also includes numerical integration error; it is not a task-success guarantee. Teacher budgets of 5, 10 and 20 give RoboTwin overall success rates of 90.39, 90.84 and 90.77%, respectively. More teacher computation does not invariably improve success. [Eq.9, Appendix C.2–C.3, Table 4](https://arxiv.org/html/2610.06617v1#A3)
 
-## Method and assumptions: wait immediately before KV use
+#### Appendix C.1–C.3 beside the method: what the endpoint bound guarantees
+
+This explanation relocates Appendix C next to its method. Fix shared conditioning $z(o,l)$ and the training sampling distribution; assume a unique teacher ODE solution and finite second moments of errors and velocity residuals. Adding and subtracting the EMA prediction gives Eq. (6). Expanding the square retains a cross term, so independence must not be assumed.
+
+$$
+\begin{aligned}
+\mathbf e_{\mathrm{total}}&=\mathbf e_{\mathrm{local}}+\mathbf e_{\mathrm{global}},\\
+\mathbb E\|\mathbf e_{\mathrm{total}}\|_2^2
+&=\mathbb E\|\mathbf e_{\mathrm{local}}\|_2^2+\mathbb E\|\mathbf e_{\mathrm{global}}\|_2^2
++2\mathbb E\langle\mathbf e_{\mathrm{local}},\mathbf e_{\mathrm{global}}\rangle.
+\end{aligned}
+$$
+
+Cauchy–Schwarz bounds the cross term by the product of the root mean-squared errors. In particular, zero local error leaves the global error unchanged. This motivates additional supervision; it does not invalidate every theoretical property of CD.
+
+Appendix C.2 then gives an exact identity. The common $a_t$ cancels, leaving the velocity residual multiplied by $-t$. For $t>0$, squaring and dividing by $t^2$ shows that the velocity loss is an **endpoint loss weighted by $1/t^2$**.
+
+$$
+\begin{aligned}
+f_{\theta_{\mathrm S}}(a_t,t)-a_0^{\mathrm T}
+&=-t\left[v_{\theta_{\mathrm S}}(a_t,t)-u_{\theta_{\mathrm T}}(a_t,t)\right],\\
+\mathcal L_{\mathrm{TA}}
+&=\mathbb E\!\left[\frac{\|f_{\theta_{\mathrm S}}(a_t,t)-a_0^{\mathrm T}\|_2^2}{t^2}\right].
+\end{aligned}
+$$
+
+The errors follow Eq. (6): $\mathbf e_{\mathrm{local}}=f_{\theta_{\mathrm S}}(a_t,t)-f_{\theta_{\mathrm{ema}}}(\tilde a_s,s)$ and $\mathbf e_{\mathrm{global}}=f_{\theta_{\mathrm{ema}}}(\tilde a_s,s)-a_0^\star$. Velocity arguments $(a_t,t)$ are omitted inside the norm below for compactness.
+
+Appendix C.3 adds $\boldsymbol\delta=a_0^{\mathrm T}-a_0^\star$. The inequality $\|p+q\|^2\leq2\|p\|^2+2\|q\|^2$ follows from Cauchy–Schwarz and $2ab\leq a^2+b^2$. The last line uses $0<t\leq1$.
+
+$$
+\begin{aligned}
+\mathbf e_{\mathrm{total}}&=-t\left[v_{\theta_{\mathrm S}}(a_t,t)-u_{\theta_{\mathrm T}}(a_t,t)\right]+\boldsymbol\delta,\\
+\mathbb E\|\mathbf e_{\mathrm{total}}\|_2^2
+&\leq 2\mathbb E\!\left[t^2\|v_{\theta_{\mathrm S}}-u_{\theta_{\mathrm T}}\|_2^2\right]+2\mathbb E\|\boldsymbol\delta\|_2^2\\
+&\leq 2\mathcal L_{\mathrm{TA}}+2\mathbb E\|\boldsymbol\delta\|_2^2.
+\end{aligned}
+$$
+
+Teacher integration error remains separate. If its velocity is $L$-Lipschitz in state and the exact trajectory has second time derivative bounded in norm by $M$, a uniform Euler step $h=t/K$ has local error at most $Mh^2/2$. Here $D_k$ is the distance between numerical and exact states after step $k$. The geometric-series expansion below is a **review-supplied intermediate calculation**, retaining Appendix C.3’s order.
+
+$$
+\begin{aligned}
+D_{k+1}&\leq(1+Lh)D_k+\frac{Mh^2}{2},\qquad D_0=0,\quad h=\frac{t}{K},\\
+\|\boldsymbol\delta\|_2=D_K
+&\leq\frac{Mh^2}{2}\sum_{j=0}^{K-1}(1+Lh)^j\\
+&=\frac{Mh}{2L}\left[(1+Lh)^K-1\right]
+\leq\frac{Me^{Lt}t^2}{2K}\quad(L>0).
+\end{aligned}
+$$
+
+The final inequality uses $(1+Lh)^K\leq e^{Lt}$ and $e^{Lt}-1\leq Lt e^{Lt}$. For $L=0$, direct summation gives $D_K\leq Mt^2/(2K)$. Uniform $L,M$ yield an $O(K^{-2})$ squared numerical-error term, not monotonic task success for finite $K$. The target is the exact **teacher ODE endpoint**, distinct from an optimal action in the environment. [Appendix C.1–C.3, Eqs. (C.1)–(C.4)](https://arxiv.org/html/2610.06617v1#A3)
+
+### 4.2 Cross-Expert Wavefront Pipelining
 
 Cross-Expert Wavefront Pipelining, or CEWP, overlaps video and action computation on two nonblocking CUDA streams on one GPU. A video block records a readiness event after projection and required KV preprocessing. The action projection can proceed once its own hidden state is available, then attention waits for the event immediately before reading the video KV. Meanwhile, the video stream continues its remaining work. [§4.2, Figure 4, Appendix D.1](https://arxiv.org/html/2610.06617v1#S4.SS2)
 
@@ -71,7 +166,15 @@ This preserves the original operators and block dependencies. It does not make a
 
 The **Faster-WAM here is arXiv:2608.04404**, the future-conditioning model. The identically named 2608.02365 studies Depth-of-Thought and is a separate paper. `*` denotes Fast-WAM-based RealtimeWAM and `†` this future-conditioning Faster-WAM-based version. [RealtimeWAM §3, Table 1](https://arxiv.org/html/2610.06617v1#S3), [Faster-WAM Method](https://arxiv.org/html/2608.04404v1#Sx3)
 
-## Results: inspect averages and subsets together
+## 5. Experiments
+
+Success rates and runtime are evaluated separately.
+
+### 5.1 Implementation Details; 5.2 Evaluation Benchmarks
+
+The three evaluation axes are clean/random manipulation in RoboTwin, four LIBERO suites, and seven LIBERO-Plus perturbation categories. Success rate is the fraction of evaluation rollouts judged successful; higher is better. NFE and latency measure computational cost with different units. Training freezes the video expert and adapts action LoRA; TACD uses a ten-step teacher. This does not mean every baseline was retrained at a matched budget. The tables below retain aggregation rules and costs. [§5.1–5.2, Appendix F.1](https://arxiv.org/html/2610.06617v1#S5.SS1)
+
+### 5.3 Main Results
 
 **Eight relevant rows from original Table 1.** Success rates are percentages; higher is better. NFE counts denoising function evaluations separately for video and action. RoboTwin overall averages clean/random conditions, while LIBERO averages its four suites. The naive one-step row illustrates why simply reducing the teacher's iteration count is insufficient. [Table 1, Appendix F.1](https://arxiv.org/html/2610.06617v1#S5.T1)
 
@@ -88,8 +191,6 @@ The **Faster-WAM here is arXiv:2608.04404**, the future-conditioning model. The 
 
 RealtimeWAM* loses **0.67 percentage points(pp)** of RoboTwin overall relative to Fast-WAM; † loses **0.29 pp** relative to Faster-WAM. LIBERO is unchanged for * and increases by 0.1 pp for †. These small average differences do not establish statistical equivalence or preservation on every task. Some baseline scores are cited from preceding papers rather than freshly reproduced in one common run. [§5.3, Table 1](https://arxiv.org/html/2610.06617v1#S5.SS3)
 
-The trained experts must also match when isolating the anchor's effect. Unlike CD* in Table 1, Table 3 compares **frozen-video, action-only training**: CD 89.85%→TACD 90.84%, an increase of 0.99 pp. Its random subset nevertheless falls from 89.94 to 89.72%. This is not improvement under every condition. [Table 3](https://arxiv.org/html/2610.06617v1#S5.T4)
-
 **All perturbation columns for Faster and RealtimeWAM† from original Table 2.** LIBERO-Plus evaluates camera, robot, language, lighting and other shifts. The final pp column is subtraction performed for this review. Overall is weighted by evaluation trial counts; it is not the arithmetic mean of the seven printed category rates. [Table 2, Appendix F.1](https://arxiv.org/html/2610.06617v1#S5.T2)
 
 | Perturbation | Faster-WAM | RealtimeWAM† | Change (pp) |
@@ -105,7 +206,11 @@ The trained experts must also match when isolating the anchor's effect. Unlike C
 
 The overall loss is 0.6 pp, but the robot category loses 2.6 pp and language loses 2.2 pp. A below-one-percent aggregate summary therefore cannot be applied to every perturbation. The exact focal evaluation rollout counts, repeated seeds and confidence intervals could not be established from the checked material. The predecessor papers' trial counts were not automatically assigned to RealtimeWAM's own evaluations.
 
-## Speed and training cost: where does 25× come from?
+### 5.4 Ablation Study and latency analysis
+
+The trained experts must also match when isolating the anchor's effect. Unlike CD* in Table 1, Table 3 compares **frozen-video, action-only training**: CD 89.85%→TACD 90.84%, an increase of 0.99 pp. Its random subset nevertheless falls from 89.94 to 89.72%. This is not improvement under every condition. [Table 3](https://arxiv.org/html/2610.06617v1#S5.T4)
+
+
 
 <figure class="review-figure" id="figure-realtimewam-speed">
 <a href="/assets/reviews/realtimewam/paper-figure-5.svg" target="_blank" rel="noopener noreferrer"><img src="/assets/reviews/realtimewam/paper-figure-5.svg" width="1152" height="263" alt="H100 latency bars for Fast-WAM and Faster-WAM after adding TACD, CUDA Graph, CEWP and efficient kernels, with cumulative and incremental speedups." loading="lazy" decoding="async"></a>
@@ -123,6 +228,12 @@ On H100, Fast-WAM goes from 299.7 ms to 65.8 ms with TACD, 23.3 ms after CUDA Gr
 
 The 12.2 ms H100 call fits within a 30 Hz per-call budget of roughly 33.3 ms. That alone does not establish a 30 Hz closed loop. The† version's 44.7 ms on RTX 4090D exceeds even that per-call budget. The need to inspect device-specific gains, p 95/p 99 latency and observation age is this review's interpretation.
 
+## 6. Conclusion
+
+The authors combine one-step action denoising through TACD with dependency-preserving blockwise overlap through CEWP. Experiments show substantially lower latency while largely retaining aggregate quality. They do not prove calibrated real-robot failure probabilities or complete control-loop frequencies for every device. [Original §6](https://arxiv.org/html/2610.06617v1#S6)
+
+## Appendix A and F.6: training cost and real-robot demonstration
+
 **Training cost from original Table A.1**, using 16 H100 GPUs and 30,000 iterations. Distinguish the memory effect of freezing video from the extra time spent computing teacher anchors. [Appendix A](https://arxiv.org/html/2610.06617v1#A1)
 
 | Training setup | Time | Peak memory |
@@ -133,13 +244,7 @@ The 12.2 ms H100 call fits within a 30 Hz per-call budget of roughly 33.3 ms. Th
 
 Action-only CD and TACD have the same reported peak memory, but training time rises from 5 h 21 m to 8 h 3 m, approximately 50.5%. Teacher rollout computation is paid during training to reduce deployment cost. A real-robot garment-folding rollout uses dual-arm AgileX PiPER with RTX 4090. This is qualitative evidence rather than a common-trial success-rate or closed-loop frequency assessment. [Table A.1, Appendix F.6, Figure F.1](https://arxiv.org/html/2610.06617v1#A6.SS6)
 
-## Questions raised by related work
-
-The five core papers are the direct **Fast-WAM and Faster-WAM** backbones, **Consistency Models and MeanFlow** for one-step learning, and **RTC** for execution continuity. First distinguish future information use in the two backbones, then interval-average velocity from endpoint supervision, and chunk execution from waiting inside a forward pass. Their sources and reading scope appear below.
-
-The five recent representative papers address other cost axes. **DIDO** compresses interaction-focused video tokens and video denoising: its one-step title does not imply one action evaluation. **AnyStep-WAM** selects observation-dependent budgets instead of fixing one step, but its risk proxy is not calibrated physical failure probability. **OpenWAM** studies world/action noise-state synchronization, a different layer from CEWP's CUDA scheduling; bidirectional architectures require rechecking independent KV precomputation. **ReWAM** changes the action-relevant representation, while **WAM-OPD** supervises histories visited by the student. Different hardware and task subsets were not combined into a common ranking. [DIDO §3](https://arxiv.org/html/2609.15570v2#S3), [AnyStep §4](https://arxiv.org/html/2609.33748v2#S4), [OpenWAM §3–4](https://arxiv.org/pdf/2609.07398v1), [ReWAM §3](https://arxiv.org/html/2609.38163v1#S3), [WAM-OPD §3–4](https://arxiv.org/html/2608.22364v2#S3)
-
-## My interpretation and remaining questions
+## Review interpretation and open questions
 
 The useful perspective is to separate iteration count from execution dependencies instead of explaining efficiency solely through model size. Figure 5's staged speedups and Table 3's controlled training comparison help guide implementation. However, approaching a teacher endpoint does not establish that the teacher is right in an unfamiliar state. Questions about student visitation and difficult contacts from WAM-OPD and AnyStep remain relevant. This is review interpretation, not a tested result for their combination.
 
@@ -152,3 +257,5 @@ I recommend first measuring sequential/CEWP output differences, event traces and
 - Recent representatives: [DIDO v2](https://arxiv.org/html/2609.15570v2), §3.1–3.4 and initial §4 setup/Table 1 discussion; [AnyStep-WAM v2](https://arxiv.org/html/2609.33748v2), §4.1–4.3 and §5.1/Table 1; [OpenWAM v1](https://arxiv.org/pdf/2609.07398v1), selected passages on PDF pp.1, 5, 8,13–16,33; [ReWAM v1](https://arxiv.org/html/2609.38163v1), abstract and §3.2–3.4; [WAM-OPD v2](https://arxiv.org/html/2608.22364v2), §3.1–3.3, §4.1–4.2/Table 2, §5. The recent window is first submission 2026-08-01 through 10-06. These are five relevant representatives, not the five latest papers overall.
 - Original Figures 2, 4,5: Chengtao Lv et al.,2026, [same-version source](https://arxiv.org/html/2610.06617v1), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Original bytes were retained with no editing or cropping. Only the opening concept diagram was made for this review.
 - Numerical results are author-reported; independent reproduction and separate native-English proofreading were not run.
+
+- Recheck on October 22, 2026: this revision reuses the recorded two readings and rechecks v1 §3–6 and Appendix C.1–C.3. It adds the background in Eqs. (1)–(5), the derivation of (C.2)–(C.4), and intermediate summation of Euler error. Original §1–6 order is restored; training cost moves to Appendix A. Repetitive per-task tables and kernel implementation details are condensed while core success rates, adverse perturbation results, latency ablations, and training cost remain. GPU execution, formal proof verification, and reproduction were not executed. Although v2 is available, the review retains the originally requested v1.

@@ -3,7 +3,7 @@ title: "SWAP: Which VLA Should Control the Robot Next?"
 description: "Follow SWAP's policy-routing MDP and IQL critic in the authors' section order, from real-robot success gains to cases where routing loses to the best policy under distribution shift."
 date: "2026-10-12"
 publishedAt: "2026-10-12T13:18:52+09:00"
-updatedAt: "2026-10-12T13:18:52+09:00"
+updatedAt: "2026-10-22T23:22:50+09:00"
 topics: ["robot learning", "vision-language-action", "policy routing", "offline reinforcement learning", "multi-model systems"]
 visibility: "public"
 lang: "en"
@@ -156,6 +156,8 @@ $$
 
 Taking the smaller critic estimate reduces overestimation. It is not a certified lower bound on true return, nor is Q a calibrated success probability.
 
+**The unit of Q.** With success reward 10 and zero intermediate rewards, Q reflects both success and discounting until success. In a review example, certain success after two discounts gives value $10\gamma^2$. Dividing a Q difference by 10 therefore does not generally give a success-probability difference. Read it as a relative candidate comparison with reward scale, discounting, and data distribution fixed. The two stages in this example are not a measured SWAP completion time. [§III–IV, §V-A](https://arxiv.org/pdf/2610.06926v1#page=3)
+
 Algorithm 1's execution can be read in four steps:
 
 1. Encode the current inputs as $h_t=f(o_t,\text{instruction})$.
@@ -298,3 +300,5 @@ Three follow-up checks would be useful. A learned episode-start router could iso
 - Structure: preserves I–VI and V-A/V-B. Results follow success→steps→Q analysis→occupancy→qualitative example→OOD→dominant-policy setting. Diagram explanation and IQL background supplement IV. Acknowledgments, AI-use disclosure, and the complete bibliography are not republished.
 - Images: representative/body Figure 2 and body Figure 4 come from the [authors' v1 source](https://arxiv.org/src/2610.06926v1), rasterized and encoded as lossless WebP with content, colors, text, and arrows retained. The paper uses the [arXiv nonexclusive distribution license](https://arxiv.org/licenses/nonexclusive-distrib/1.0/), not a claimed Creative Commons reuse permission. Copyright remains with the authors; only the two figures needed for this analysis are used with attribution.
 - Verification: checked table transcription, rankings, units, step reduction, and the illustrative expectile calculation. **Not executed:** robot/GPU training reproduction, public code execution, raw-log confidence intervals, actual inference latency/memory measurement, or formal proof verification. Verification here consists of source cross-checks and local calculations.
+
+- Recheck on October 22, 2026: this revision reuses the recorded two readings and source mapping, adding the metric, assumption, and example definitions above. It is not counted as two new full-paper readings. New model, GPU, robot reproduction, and complete formal verification were not executed.

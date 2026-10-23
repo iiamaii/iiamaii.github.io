@@ -3,7 +3,7 @@ title: "[1/2] HNC: Do Networks with the Same Outputs Compute the Same Way?"
 description: "Follow the paper's sections 1–7 to see how HNC changes RNN memory, ViT representations, and RL behavior while preserving a specified observable."
 date: "2026-10-17"
 publishedAt: "2026-10-17T22:12:00+09:00"
-updatedAt: "2026-10-17T22:20:58+09:00"
+updatedAt: "2026-10-22T23:22:54+09:00"
 topics: ["representation learning", "loss landscape", "mechanistic interpretability", "computational neuroscience", "reinforcement learning"]
 visibility: "public"
 lang: "en"
@@ -19,7 +19,7 @@ thumbnailAlt: "Original Figure 1: HNC alternates flat parameter steps and output
 
 If two networks give the same answers, must they compute those answers the same way? **Hessian Null Space Continuation (HNC) starts from one trained network and finds alternatives with substantially different representations and dynamics while approximately retaining observed outputs.** An RNN can replace fixed-point memory with moving internal states; a ViT can reorganize image similarity after a small weight change. Preservation, however, is enforced approximately on a finite set of inputs. It is not equality of functions on every possible input.
 
-This two-part review covers the 55-page [v1](https://arxiv.org/pdf/2609.38081v1). This article follows **main sections 1–7**, explaining the method and four experimental families. [[2/2] Mathematics, algorithms, and validation](/en/reviews/hnc-mechanics/) follows appendices A–J, including derivations, restoration failures, off-probe behavior, and additional experiments. Read 1→2.
+This two-part review covers the 55-page [v1](https://arxiv.org/pdf/2609.38081v1). This article follows **main sections 1–7**, explaining the method and four experimental families. [\[2/2\] Mathematics, algorithms, and validation](/en/reviews/hnc-mechanics/) follows appendices A–J, including derivations, restoration failures, off-probe behavior, and additional experiments. Read 1→2.
 
 ## 1. Introduction: What Computations Exist Inside a Connected Solution Region?
 
@@ -119,6 +119,20 @@ Flat components mostly pass through; sharp components shrink. This **soft projec
 ## 3. HNC Drives RNNs to Learn Drastically Different Dynamics in a Memory Task
 
 The **3-bit flip-flop (3BFF)** task retains the latest nonzero input on each of three channels, yielding eight binary memory states. The authors train 64-unit tanh RNNs with BPTT and Adam. Standard solutions store the states at eight stable fixed points arranged approximately as a cube in activation space.
+
+**The memory task and fixed point concretely.** Zero input means “no new instruction,” not “set memory to zero.” For one channel, $+1,0,0,-1,0$ requires outputs $+1,+1,+1,-1,-1$, excluding any interval before the first pulse. Three independent remembered signs give eight combinations. This illustrates the task definition, not a new experiment.
+
+$$
+\begin{aligned}
+\mathbf h_t&=\tanh(\mathbf W_{\mathrm{ih}}\mathbf u_t+\mathbf b_{\mathrm{ih}}
++\mathbf W_{\mathrm{hh}}\mathbf h_{t-1}+\mathbf b_{\mathrm{hh}}),\\
+\mathbf y_t&=\mathbf W_{\mathrm{out}}\mathbf h_t+\mathbf b_{\mathrm{out}},\\
+\mathbf h^\star&=\tanh(\mathbf b_{\mathrm{ih}}+\mathbf W_{\mathrm{hh}}\mathbf h^\star+\mathbf b_{\mathrm{hh}})
+\quad(\mathbf u_t=\mathbf0).
+\end{aligned}
+$$
+
+The fixed point is a **hidden state with weights fixed and input zero**. It is stable when nearby state perturbations decay back toward it. HNC changes weights and compares the resulting hidden dynamics and outputs. Constant $\mathbf W_{\mathrm{out}}\mathbf h_t$ can coexist with movement in the readout null space; retained memory outputs do not require every hidden component to stop. [§3, Appendix F.1](https://arxiv.org/pdf/2609.38081v1#page=29)
 
 HNC compares undirected exploration, steering to increase CKA distance $1-\mathrm{CKA}$, and steering to increase DSA distance. CKA concerns similarities among activation samples; DSA concerns temporal state-transition structure. Movement under one metric need not match movement under the other.
 
@@ -227,3 +241,5 @@ A practical reading is that HNC tests **which observations fail to identify an i
 - Organization: main order is retained, with critical experimental settings and counter-results added nearby. [Part 2](/en/reviews/hnc-mechanics/) follows A–J for mathematical details and validation. Repetitive galleries, every hyperparameter row, and the complete bibliography are compressed.
 - Images: Figures 1–5 from the [authors' v1 source](https://arxiv.org/src/2609.38081v1), credited to the six authors above under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Original PDF graphics were rasterized and WebP-encoded. Layout, colors, text, arrows, and data were retained; resolution and encoding changed.
 - Verification: source numbers, comparison conditions, and local algebraic/numerical checks. **Not executed:** author code, GPU/RNN/ViT/RL training or walk reproduction, significance tests from raw data, complete formal verification, hardware timing/memory replication, or author confirmation of inconsistent settings.
+
+- Recheck on October 22, 2026: this revision reuses the recorded two readings and source mapping, adding the metric, assumption, and example definitions above. It is not counted as two new full-paper readings. New model, GPU, robot reproduction, and complete formal verification were not executed.

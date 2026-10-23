@@ -3,7 +3,7 @@ title: "[1/2] Diffusion Forcing: 시간과 노이즈를 따로 조절하면 무�
 description: "토큰마다 독립 노이즈를 학습하는 원리부터 장기 영상 생성, Monte Carlo Guidance, 미로 계획과 로봇 기억 실험까지 원문 순서로 읽는다."
 date: "2026-10-14"
 publishedAt: "2026-10-14T13:58:28+09:00"
-updatedAt: "2026-10-17T22:20:56+09:00"
+updatedAt: "2026-10-22T23:22:52+09:00"
 topics: ["diffusion models", "sequence modeling", "world action model", "robot learning", "probabilistic modeling"]
 visibility: "public"
 lang: "ko"
@@ -19,7 +19,7 @@ thumbnailAlt: "Diffusion Forcing 원문 Figure 2. 시퀀스의 시간축과 노�
 
 다음 프레임을 하나씩 예측하는 모델은 원하는 길이만큼 생성하기 쉽다. 하지만 작은 예측 오류가 누적되면 영상이 무너진다. 여러 프레임을 한꺼번에 diffusion으로 생성하면 미래 목표에 맞춰 결과를 유도하기 좋지만, 모든 프레임을 같은 속도로 확정하는 구조는 유연한 길이와 순차 제어에 제약을 준다. **Diffusion Forcing은 토큰마다 서로 다른 노이즈 수준을 학습해 두 방식 사이를 오갈 수 있게 한다.** 이 자유도를 이용해 장기 생성의 안정화와 미래 보상을 고려한 계획을 수행한다. 실험은 가능성을 보여주지만, 모든 환경의 성능 우위나 무한 길이의 정확성을 증명하지는 않는다. [원문 §1, pp. 1–2](https://arxiv.org/pdf/2407.01392v4#page=1)
 
-35쪽의 v4를 두 편으로 나눴다. 이 글은 **본문 §1–5와 실험·구현에 필요한 부록 B–F**를 원문 순서로 설명한다. 이어지는 [[2/2] 이론과 증명 해설](/reviews/diffusion-forcing-theory/)은 부록 A의 ELBO와 부분 시퀀스 주장을 다룬다. 먼저 이 글을 읽고 이론 편으로 넘어가면 된다. 저자들의 정리에는 표기 불일치가 있어, 이론 편에서 원문 진술과 보충 유도를 구분한다.
+35쪽의 v4를 두 편으로 나눴다. 이 글은 **본문 §1–5와 실험·구현에 필요한 부록 B–F**를 원문 순서로 설명한다. 이어지는 [\[2/2\] 이론과 증명 해설](/reviews/diffusion-forcing-theory/)은 부록 A의 ELBO와 부분 시퀀스 주장을 다룬다. 먼저 이 글을 읽고 이론 편으로 넘어가면 된다. 저자들의 정리에는 표기 불일치가 있어, 이론 편에서 원문 진술과 보충 유도를 구분한다.
 
 ## 1. 도입: 다음 토큰 예측과 전체 시퀀스 diffusion (Introduction)
 
@@ -209,6 +209,14 @@ D4RL Maze2D의 U-Maze·Medium·Large에서 무작위 보행 로그로 미로별 
 
 별표(\*)가 중요하다. <strong>Diffuser*</strong>는 생성한 상태 경로를 따라갈 행동을 수작업 PD controller로 만든 비교다. 생성한 행동을 직접 실행한 열은 성능이 훨씬 낮다. DF는 생성한 행동을 실행한다. 상태 경로와 실행 행동의 관계를 고려하는 설계의 근거지만, 수작업 controller 유무가 다른 비교라는 조건도 유지해야 한다. [Table 1·§4.2, p. 8](https://arxiv.org/pdf/2407.01392v4#page=8)
 
+**100을 넘는 점수의 뜻.** D4RL의 기본 정규화는 기준 최소·최대 return 사이의 위치를 계산한다. 아래는 100배 척도를 설명하는 리뷰 보조 표기이며 $R_{\min},R_{\max}$는 환경별 기준값이다.
+
+$$
+S(R)=100\,\frac{R-R_{\min}}{R_{\max}-R_{\min}}.
+$$
+
+$R>R_{\max}$이면 100을 넘을 수 있다. 기준값은 달성 불가능한 이론적 상한이 아니다. 이 정의만으로 논문 실험의 raw return이나 각 평가의 성공 횟수를 역산하지 않는다. [D4RL 공식 구현, get_normalized_score](https://github.com/Farama-Foundation/D4RL/blob/master/d4rl/offline_env.py)
+
 MCG를 넣으면 여섯 환경 모두에서 **평균 점수**가 올라간다. 다만 이것만으로 각각의 통계적 유의성을 증명한 것은 아니다. Single-task 평균은 DF 141.7 대 Diffuser\* 119.5, multi-task는 146.2 대 129.4다. **Multi2D U-Maze에서는 DF 119.1이 Diffuser\* 128.9보다 낮다.** 따라서 본문의 “여섯 환경 모두에서 우세”라는 문장은 표 전체와 일치하지 않는다.
 
 부록 D.8도 reward가 좋은 planner를 완전히 평가하지 못한다고 경고한다. 목표 근처에 오래 머무는 느린 경로가 높은 점수를 얻을 수 있다. 처음 목표에 도달하는 시간(first hitting time)을 함께 봐야 하지만, 그 지표의 완전한 수치 비교는 제공되지 않는다.
@@ -250,6 +258,14 @@ Franka 로봇이 사과와 오렌지의 자리를 바꾸되 세 번째 빈 슬�
 
 지표는 **합산 연속 순위 확률 점수**(summed continuous ranked probability score, $\operatorname{CRPS}_{\mathrm{sum}}$)다. 특징 차원별 값을 합친 예측 분포와 실제 합을 비교하며 **낮을수록 좋다**. 모든 개별 feature의 정확도나 의존 구조를 이 값 하나로 완전히 평가하지는 않는다. 100개 sampled trajectories와 19 quantiles를 사용하고, DF는 다섯 seed의 평균·표준편차를 보고한다.
 
+CRPS의 기본형은 예측 CDF $F$와 관측 $y$에 대해 다음과 같다. 이 문단의 $F,y,s$는 지표 설명용 기호다.
+
+$$
+\operatorname{CRPS}(F,y)=\int_{\mathbb R}\left(F(s)-\mathbf1\{y\leq s\}\right)^2\,ds.
+$$
+
+$\mathrm{CRPS}_{\mathrm{sum}}$은 각 표본 궤적과 정답을 차원 방향으로 먼저 합한 뒤 이 점수를 구해 예측 시간에 걸쳐 평균한다. 차원별 CRPS를 계산해 더하는 것과 다르다. 같은 합을 가진 서로 다른 feature별 오차는 이 평가에서 구별되지 않을 수 있다. 기본 CRPS는 관측값의 단위를 가지므로 표의 수치를 비교할 때 데이터 전처리·정규화도 유지해야 한다. [TimeGrad §4.1, pp. 4–5](https://proceedings.mlr.press/v139/rasul21a/rasul21a.pdf#page=5)
+
 아래는 Table 2의 주요 비교와 Electricity·Wikipedia 해석에 필요한 NKF 행이다. 전통 통계·다른 copula 모델의 행은 원문에 있으며, 전체 값은 별도의 최저값·순위 검산에도 사용했다.
 
 | 방법 | Exchange | Solar | Electricity | Traffic | Taxi | Wikipedia |
@@ -286,3 +302,7 @@ Franka 로봇이 사과와 오렌지의 자리를 바꾸되 세 번째 빈 슬�
 - 구성: 본문 §1–5·§4.1–4.5 순서를 유지했다. B·D·E·F의 필수 구현·실험 조건을 해당 본문 절에 연결했다. 부록 A의 완결된 해설은 [2편](/reviews/diffusion-forcing-theory/)에 있다. 주변 related work·유사한 추가 영상·전체 참고문헌 재게시를 줄였으며 핵심 비교·반대 결과·비용은 유지했다.
 - 그림: Figure 2·3·4와 Table 1의 위 도식은 [저자 v4 소스](https://arxiv.org/src/2407.01392v4)의 원본 PDF 그림을 래스터화하고 WebP로 인코딩했다. 내용·색·화살표·기호는 유지했고 해상도·인코딩은 변경했다. 논문과 그림의 원저자는 위 저자들이며 [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)에 따라 출처와 변경 사항을 표시한다.
 - 검증: 표의 전사·평균·순위·단위와 ELBO 관련 국소 계산을 확인했다. **미실행:** 모델/GPU/로봇 재현, 공개 코드 실행, 영상 전체 정량 품질 측정, 원시 결과 기반 유의성 검정, 실제 latency·메모리 측정, 전체 정리의 형식 검증.
+
+- 2026-10-22 재점검: 기존 두 읽기와 원문 대응 기록을 재사용해 위에 추가한 지표·가정·예제의 정의를 보완했다. 새 전문 두 읽기로 계산하지 않는다. 새 모델·GPU·로봇 재현과 전체 형식 검증은 미실행이다.
+
+- 이번 추가 원전 범위: D4RL 공식 get_normalized_score 함수의 반환식(코드 읽기만, 실행 미실행), TimeGrad §4.1 pp. 4–5의 CRPS·합산 절차. 표의 raw return·전처리 설정을 새로 확인한 것으로 표시하지 않는다.
