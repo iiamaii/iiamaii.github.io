@@ -13,7 +13,7 @@ const build = (base = '') => spawnSync(process.execPath, ['scripts/build.mjs'], 
 const read = route => fs.readFile(path.join(temp, 'dist', route), 'utf8');
 
 try {
-  for (const entry of ['scripts', 'public', 'site.json']) await fs.cp(path.join(root, entry), path.join(temp, entry), { recursive: true });
+  for (const entry of ['scripts', 'public', 'site.json', 'skills/publish-research-blog/assets']) await fs.cp(path.join(root, entry), path.join(temp, entry), { recursive: true });
   await fs.symlink(path.join(root, 'node_modules'), path.join(temp, 'node_modules'), 'dir');
   await fs.mkdir(path.join(temp, 'content/reviews'), { recursive: true });
   const config = JSON.parse(await fs.readFile(path.join(temp, 'site.json'), 'utf8'));
