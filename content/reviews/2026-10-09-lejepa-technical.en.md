@@ -3,7 +3,7 @@ title: "[3/3] LeJEPA technical review: proof conditions, SIGReg and checked equa
 description: "Detailed theorem and proof commentary following Sections 3–5 and Appendices A–B, with intermediate derivations and unresolved gaps."
 date: "2026-10-09"
 publishedAt: "2026-10-09T23:54:43+09:00"
-updatedAt: "2026-10-11T19:23:15+09:00"
+updatedAt: "2026-10-22T23:22:47+09:00"
 topics: ["self-supervised learning", "representation learning", "joint embedding predictive architectures", "distribution matching", "computer vision"]
 visibility: "public"
 lang: "en"
@@ -288,6 +288,8 @@ $$
 
 **Read Algorithm 2 separately.** Its actual center loss is $(NVK)^{-1}\sum_{n,v}\|\mathbf z_{n,v}-\boldsymbol\mu_n\|^2$. The $1/K$ comes from averaging feature coordinates. SIGReg operates across $N$ images in each view, followed by a view average. The pairwise Eq. (5) and implementation should not be called identical objectives; reported experiments are described through the center-based pipeline supplied by the paper. Predictor, EMA teacher, and stop-gradient are absent from the required core; projector, optimizer, and schedule remain. [Section 5.1, Algorithm 2](https://arxiv.org/pdf/2511.08544v3#page=11)
 
+**Four errors need separate checks:** finite-sample bias in Theorem 6, finite-direction approximation, numerical quadrature on the 17-point grid, and finite-encoder optimization or representation error. Increasing $N$ can reduce the first without resolving directional or frequency identifiability. The alias example isolates this distinction. This review does not derive a combined error bound for the complete neural network. [§4.1–4.3 and 5.1, Algorithms 1–2](https://arxiv.org/pdf/2511.08544v3#page=10)
+
 ### 5.2 Relation to Prior Work — Appendix B.14
 
 An exact CF integral connects to kernel discrepancy; quadrature does not construct every sample pair. A moment-limited test instead asks that every unit $\mathbf a$ satisfy $\mathbb E[\mathbf a^\top\mathbf z]=0$ and $\operatorname{Var}(\mathbf a^\top\mathbf z)=1$.
@@ -309,3 +311,5 @@ The [complete commentary](/en/reviews/lejepa-complete/) preserves Sections 6.1�
 - Executed: center identity (2=1+1), equal-trace OLS example (2 versus 5.5556), fixed-grid CF alias (about $2.24\times10^{-16}$), and ECF sampling-bias Monte Carlo (20,000 repetitions). **Not run:** official code, GPU training, probe/finetuning/DDP/seed/model-runtime/memory reproduction, or full formal proof verification. Small calculations are not paper-model reproduction.
 - Unconfirmed: Theorem 5’s cited sources and norm transfer, Theorem 2’s uniform-power limit, complete kNN-remainder independence, finite-sample kernel remainders; Figure 11 sign, Figure 12 error bars, Figure 17 caption, and Table 5 pretraining conflict. Only identical existing approved images are reused.
 - Review-authored thumbnail: [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), Light 300/Semi Bold 600. Paper-figure attribution, terms, and conversions are recorded in their captions.
+
+- Recheck on October 22, 2026: this revision reuses the recorded two readings and source mapping, adding the metric, assumption, and example definitions above. It is not counted as two new full-paper readings. New model, GPU, robot reproduction, and complete formal verification were not executed.

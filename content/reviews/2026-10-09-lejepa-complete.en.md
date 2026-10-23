@@ -3,7 +3,7 @@ title: "[2/3] LeJEPA in full: from target distribution to theory, algorithm and 
 description: "A section-aligned account of the theory, SIGReg design, related work, and central experiments, including conditions and contrary results."
 date: "2026-10-09"
 publishedAt: "2026-10-09T23:54:43+09:00"
-updatedAt: "2026-10-11T19:23:16+09:00"
+updatedAt: "2026-10-22T23:22:48+09:00"
 topics: ["self-supervised learning", "representation learning", "joint embedding predictive architectures", "distribution matching", "computer vision"]
 visibility: "public"
 lang: "en"
@@ -19,7 +19,7 @@ thumbnailAlt: "LeJEPA combines within-image alignment to the global-view mean wi
 
 **LeJEPA starts with a question about favorable embeddings for unknown downstream tasks, then connects its distribution target to a practical regularizer and image-training pipeline.** The authors analyze linear and local nonlinear probes, choose an isotropic Gaussian target, and combine SIGReg with image-view agreement. Its conditions and finite approximations matter; the connected argument across distribution choice, computation, and experiments is the central contribution. [Sections 1–7](https://arxiv.org/pdf/2511.08544v3#page=1)
 
-This is **[2/3] the complete, section-aligned commentary**. Read [1/3 introduction](/en/reviews/lejepa-overview/) → this article → [3/3 theorem and proof commentary](/en/reviews/lejepa-technical/). Headings and subsection numbers follow the paper. Main statements and assumptions remain where they occur; long intermediate calculations move to the technical version in the same Section 3→4→5 order.
+This is **[2/3] the complete, section-aligned commentary**. Read [\[1/3\] introduction](/en/reviews/lejepa-overview/) → this article → [\[3/3\] theorem and proof commentary](/en/reviews/lejepa-technical/). Headings and subsection numbers follow the paper. Main statements and assumptions remain where they occur; long intermediate calculations move to the technical version in the same Section 3→4→5 order.
 
 **Notation.** We retain $f_{\boldsymbol\theta}$, $\mathbf z_{n,v}$, $\mathbf Z$, $K$, $V_g$, and $\boldsymbol\mu_n$. $M=|\mathcal A|$ abbreviates the direction count; $T$ is a review shorthand for the frequency-grid size. The ridge coefficient $\lambda$ in Section 3 and loss-mixing coefficient $\lambda$ in Section 5 have different roles. Where the appendix uses $d$ for dimension or $n$ for sample count, the correspondence is stated.
 
@@ -244,6 +244,14 @@ The second question is whether training loss signals representation quality befo
 
 Figure 11 investigates an adjustment such as $\mathcal L/\lambda^\alpha$ and Spearman association. The text reports 85% rising to 99% near $\alpha\approx0.4$. The sign convention for lower loss versus higher accuracy is unclear, so this review describes **strong monotonic association**. Selecting $\alpha$ uses observed downstream results; this is not a prospective guarantee of the same label-free selection rule in a new domain. [Section 6.2, Figures 10–11; supplementary Figures 19 and 21](https://arxiv.org/pdf/2511.08544v3#page=15)
 
+**How to read the correlation.** Spearman correlation applies Pearson correlation to the two lists of ranks. Here $A,B$ are review auxiliary symbols for the compared observation lists.
+
+$$
+\rho_{\mathrm S}=\operatorname{corr}\!\left(\operatorname{rank}(A),\operatorname{rank}(B)\right).
+$$
+
+It ranges from $-1$ to $1$; a larger magnitude indicates a stronger monotonic relation. Lower loss paired with higher accuracy can produce a negative sign. The reported “99%” is not 99% classification accuracy, a success probability, or an error guarantee for new models. Without verified tie and sign conventions, retain only the preceding interpretation of association strength. [§6.2, Figure 11](https://arxiv.org/pdf/2511.08544v3#page=15)
+
 ### 6.3 In-Domain LeJEPA Outperforms Frontier Model Transfer Learning
 
 The third question is whether a small model pretrained directly in a specialized domain can be preferable to a general foundation model. Galaxy10 contains about 11,000 training images in ten morphology classes. LeJEPA uses its default pipeline for **400 epochs** of in-domain pretraining. DINOv2/v3 bring general-image pretraining to the comparison.
@@ -304,3 +312,5 @@ Long proofs are expanded rather than removed in the [technical version: ridge/lo
 - Correspondence: all main sections/subsections are retained. Long A–B calculations move to the technical version. C’s Tables 3–7 appear beside the relevant experiments/costs; repetitive graphs are summarized. D–F are condensed to material needed for Section 4’s alternative comparison. Repeated table rows and every cited paper’s full text are excluded.
 - Direct verification: four review-authored algebra/numerical illustrations. **Not run:** official code, GPU pretraining, probe/finetuning/DDP/seed reproduction, whole-model speed/memory measurement, or full formal proof verification. **Unconfirmed:** Figure 11 sign convention, Figure 12 error-bar definition, Figure 17 caption conflict, Table 5 I-JEPA pretraining-data conflict, and Theorem 5’s cited primary details.
 - Thumbnail: review-authored concept diagram, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), Light 300/Semi Bold 600. Paper figures follow their caption locations and [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). All image files are identical existing approved assets.
+
+- Recheck on October 22, 2026: this revision reuses the recorded two readings and source mapping, adding the metric, assumption, and example definitions above. It is not counted as two new full-paper readings. New model, GPU, robot reproduction, and complete formal verification were not executed.

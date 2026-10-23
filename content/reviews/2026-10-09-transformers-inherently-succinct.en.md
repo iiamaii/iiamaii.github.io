@@ -2,7 +2,7 @@
 title: "Why can a Transformer describe the same rules more compactly?"
 description: "A guide to Transformers are Inherently Succinct through long computation histories and small verifiers: size separations, UHAT assumptions, verification complexity, and an appendix connective issue."
 date: "2026-10-09"
-updatedAt: "2026-10-10T18:16:16+09:00"
+updatedAt: "2026-10-22T23:22:45+09:00"
 publishedAt: "2026-10-09T00:06:00+09:00"
 topics: ["language models", "transformer theory", "formal languages", "computational complexity", "formal verification"]
 translationKey: "transformers-inherently-succinct"
@@ -30,7 +30,39 @@ Recognizing a rule and **describing that rule compactly** are different abilitie
 
 **“Long history. Small verifier.”** means keeping the description of the checker small while the long history remains in the input. It does not mean shortening the input. This distinction connects the size lower bounds and verification complexity discussed below.
 
-## What question does the paper ask?
+The article follows original §1–6. Section 3 establishes the non-emptiness tiling construction; §4 reuses it for size lower bounds; §5 extends the reasoning to equivalence. The appendix issue is distinguished as review inspection after the authors’ results.
+
+## 1. Introduction
+
+The authors compare the **description cost of the same language**, beyond expressivity classes. They ask whether known UHAT–LTL expressivity correspondences also give small translations, and use compact verifiers for long computation histories to establish size gaps. Existence and lower-bound theorems, rather than learning or practical benchmarks, are central. [Original §1](https://arxiv.org/pdf/2510.19315v3#page=1)
+
+## 2. Preliminaries
+
+First fix the compared models and their size measures.
+
+### 2.1 Linear Temporal Logic
+
+Linear temporal logic (LTL) relates propositions at string positions to earlier and later positions. Strings satisfying a formula form its language. Comparisons with UHAT fix finite-string semantics and positional and masking conventions. Within that setting, expressivity and description length remain different questions. [§2.1](https://arxiv.org/pdf/2510.19315v3#page=3)
+
+### 2.2 Unique-hard attention transformers
+
+The model is a **unique-hard attention transformer (UHAT)**. It retrieves the vector at one maximum-scoring position, with a fixed rule for breaking ties. This differs from softmax attention, which combines values from multiple positions. [§2.2](https://arxiv.org/pdf/2510.19315v3#page=4)
+
+| Component | Setting in this paper | Why it matters |
+| --- | --- | --- |
+| Attention | One maximum-scoring position | Results do not automatically transfer to softmax models |
+| Position information | No separate positional embeddings | This is not the same model as a RoPE-based LLM |
+| Masks and ties | Restrictions on past/future access; leftmost/rightmost ties | These affect whether the most recent matching position is accessible |
+| Arithmetic and precision | Affine maps and ReLU; upper bounds allow rational weights | The lower-bound construction is also stated for input-length-independent fixed-precision integers |
+| Input length | Finite strings with no fixed maximum length | This differs from accuracy within a bounded context window |
+
+A strict past-access mask permits $j < i$, excluding the current position. The paper calls this “future masking” because it **hides the future**. Choosing the rightmost tied candidate then retrieves the most recent matching past position. Neither the strictness nor the tie rule is incidental. [§2; p.8, Corollaries 11 and 14](https://arxiv.org/pdf/2510.19315v3#page=8)
+
+### 2.3 Boolean RASP
+
+B-RASP sequentially defines Boolean values at each position and attention-based selection of another position. It is an intermediate representation for writing logical checks before translating them into attention layers. Defaults for absent candidates and tie-breaking belong to its semantics. Lemma 9’s polynomial translation concerns a special form of search predicates, not a universal polynomial compiler for arbitrary Boolean programs. [§2.3, Lemma 9](https://arxiv.org/pdf/2510.19315v3#page=4)
+
+### 2.4–2.5 RNNs, size measures, and succinctness
 
 Here, a **language** is a set of strings satisfying a condition. A model receives a string and decides membership. “Do addresses increase correctly, and do adjacent tiles have matching colors?” defines one such recognition task.
 
@@ -45,23 +77,13 @@ A model recognizing more languages need not be more compact on shared tasks. Und
 
 Size includes the binary encoding of the structure and weights, rather than just a parameter count. RNN precision also counts. Otherwise, an arbitrarily precise number could conceal information while appearing to cost one parameter. [§§2.4–2.5](https://arxiv.org/pdf/2510.19315v3#page=5)
 
-## The core idea: a small verifier for a long history
+## 3. The size of smallest witness via non-emptiness problem
 
-### Which Transformer is being studied?
+Theorem 4 asks whether **any** string is accepted. Its lower bound transfers EXPSPACE-complete width-$2^N$ tiling (Proposition 7) to Lemma 8’s B-RASP verifier and then Lemma 9’s polynomial-size UHAT. The reduction needs both directions between valid tilings and accepted strings; missing address, boundary, or adjacency checks break that correspondence. The complete proof of the cited source tiling theorem was not independently verified in this revision.
 
-The model is a **unique-hard attention transformer (UHAT)**. It retrieves the vector at one maximum-scoring position, with a fixed rule for breaking ties. This differs from softmax attention, which combines values from multiple positions. [§2.2](https://arxiv.org/pdf/2510.19315v3#page=4)
+The upper bound goes in another direction. Proposition 12 bounds the bit length of computed UHAT values polynomially in model description size. There are exponentially many possible values, but finitely many and they can be enumerated. Proposition 13 uses them to construct an exponentially sized LTL formula. LTL non-emptiness uses space polynomial in formula size, hence exponential in original UHAT size. Combining bounds gives EXPSPACE-completeness. [§3, Theorem 4, Propositions 7, 10, 12–13; Appendix A.1](https://arxiv.org/pdf/2510.19315v3#page=6)
 
-| Component | Setting in this paper | Why it matters |
-| --- | --- | --- |
-| Attention | One maximum-scoring position | Results do not automatically transfer to softmax models |
-| Position information | No separate positional embeddings | This is not the same model as a RoPE-based LLM |
-| Masks and ties | Restrictions on past/future access; leftmost/rightmost ties | These affect whether the most recent matching position is accessible |
-| Arithmetic and precision | Affine maps and ReLU; upper bounds allow rational weights | The lower-bound construction is also stated for input-length-independent fixed-precision integers |
-| Input length | Finite strings with no fixed maximum length | This differs from accuracy within a bounded context window |
-
-A strict past-access mask permits $j < i$, excluding the current position. The paper calls this “future masking” because it **hides the future**. Choosing the rightmost tied candidate then retrieves the most recent matching past position. Neither the strictness nor the tie rule is incidental. [§2; p.8, Corollaries 11 and 14](https://arxiv.org/pdf/2510.19315v3#page=8)
-
-### Turn a computation history into an addressed table
+### From tiling to B-RASP and UHAT: Lemmas 8–9
 
 The proof replaces running a long computation with checking an already supplied history. It uses a tiling table of width $2^N$, giving every cell an N-bit column address. Each row starts at address zero, proceeds to the final address, and then wraps to zero for the next row. The table is encoded as a string in row order. [§3, Lemma 8; Appendix A.2](https://arxiv.org/pdf/2510.19315v3#page=14)
 
@@ -91,7 +113,17 @@ The authors express these conditions in the Boolean programming language **B-RAS
 
 The saving is in the **description of the verification rules**. The long history remains in the input. The construction does not place the entire history in one small hidden vector or generate a doubly exponentially long output quickly.
 
-## Results and evidence: where do the size gaps come from?
+### Connecting the lower and upper bounds of Theorem 4
+
+The paper also gives a direct translation from **every UHAT to an exponentially sized LTL formula**. The reverse translation, LTL→UHAT, has polynomial size. Confusing the two directions would reverse the central conclusion. [Propositions 13 and 16](https://arxiv.org/pdf/2510.19315v3#page=8)
+
+For the upper bound, hard attention retrieves **one existing vector** rather than accumulating all input positions. Once the model and rational weights are fixed, the bit length of values at each layer can be bounded polynomially in the model description. The proof enumerates possible vectors and describes “this position has this vector” using temporal formulas. [Proposition 12; Appendices A.4–A.5](https://arxiv.org/pdf/2510.19315v3#page=18)
+
+Following UHAT→LTL with a standard translation gives a doubly exponential upper bound for **nondeterministic finite automata (NFAs)**. The lower bound applies to both NFAs and deterministic finite automata (DFAs), but this route alone does not give the same upper bound for DFAs: determinization can incur additional cost. [§4, Theorem 17](https://arxiv.org/pdf/2510.19315v3#page=9)
+
+Masks and ties matter here too. Past-only access with the most recent tied candidate can encode the difficult tiling checks. For the restriction using past-only access with the oldest tied candidate, the paper gives an **NEXP upper bound**; it does not establish NEXP-completeness. [Corollaries 11 and 14](https://arxiv.org/pdf/2510.19315v3#page=8)
+
+## 4. Succinctness across representations
 
 The central tool is the **shortest accepted string**. If a small verifier accepts only extremely long strings, how large must another representation be to impose the same requirement?
 
@@ -110,31 +142,47 @@ The comparison representations guarantee relatively short accepted strings when 
 | --- | --- | --- |
 | LTL: linear temporal logic | At most exponential in formula size | Some language families require exponentially larger LTL descriptions |
 | Finite automata | With q states, an accepted path shorter than q exists | Some language families require doubly exponentially many states |
-| Fixed-precision RNNs | k bits per coordinate and D dimensions give at most 2<sup>kD</sup> states | An exponential gap when precision is included in the description cost |
+| Fixed-precision RNNs | k bits per coordinate and D dimensions give at most $2^{kD}$ states | An exponential gap when precision is included in the description cost |
 
 LTL describes temporal relationships such as what held earlier or what holds until another condition becomes true. A finite automaton updates a finite state as it reads each symbol. Removing a repeated-state cycle from an accepted path gives the short-path property used above. [§2; Theorems 15 and 17, Corollary 18](https://arxiv.org/pdf/2510.19315v3#page=9)
 
 **The quantifiers matter.** There exist witness language families for which every equivalent comparison representation must be large. This does not say that Transformers are smaller on every task. The exponents are first obtained in the family index n; translating them into UHAT description size depends on the polynomial relating that size to n. The result does not assert one exact factor of two raised to the model size for all models. [Definition 2, Theorem 15](https://arxiv.org/pdf/2510.19315v3#page=5)
 
-## An upper bound: unfold the model into a larger formula
+### Size lower bounds: Theorems 15 and 17, Corollary 18
 
-The paper also gives a direct translation from **every UHAT to an exponentially sized LTL formula**. The reverse translation, LTL→UHAT, has polynomial size. Confusing the two directions would reverse the central conclusion. [Propositions 13 and 16](https://arxiv.org/pdf/2510.19315v3#page=8)
+**Intermediate lower-bound calculations.** This review expansion follows Theorems 15 and 17 and Corollary 18. Let $L_n$ be the constructed language family, $\varphi_n$ an equivalent LTL formula, and $q_n$ the number of automaton states. Constant $c>0$ belongs to LTL’s short-witness bound. An RNN with $k$ bits per coordinate and dimension $D$ has at most $2^{kD}$ states.
 
-For the upper bound, hard attention retrieves **one existing vector** rather than accumulating all input positions. Once the model and rational weights are fixed, the bit length of values at each layer can be bounded polynomially in the model description. The proof enumerates possible vectors and describes “this position has this vector” using temporal formulas. [Proposition 12; Appendices A.4–A.5](https://arxiv.org/pdf/2510.19315v3#page=18)
+$$
+\begin{aligned}
+\min_{w\in L_n}|w|&\geq 2^{2^n},\\
+2^{2^n}\leq 2^{c|\varphi_n|}
+&\Longrightarrow |\varphi_n|\geq 2^n/c,\\
+q_n&>2^{2^n},\\
+2^{kD}\geq q_n&\Longrightarrow kD>2^n.
+\end{aligned}
+$$
 
-Following UHAT→LTL with a standard translation gives a doubly exponential upper bound for **nondeterministic finite automata (NFAs)**. The lower bound applies to both NFAs and deterministic finite automata (DFAs), but this route alone does not give the same upper bound for DFAs: determinization can incur additional cost. [§4, Theorem 17](https://arxiv.org/pdf/2510.19315v3#page=9)
+LTL’s small-model property bounds accepted witness length exponentially in $|\varphi_n|$, yielding the first size lower bound. A shortest accepting path in a $q_n$-state automaton repeats no state and has length below $q_n$, yielding the doubly exponential state lower bound. Proposition 1’s finite-state simulation of an RNN then requires an exponential precision–dimension product. The exponent is initially measured in $n$, while UHAT size is $\operatorname{poly}(n)$. [§4, Theorems 15 and 17, Corollary 18](https://arxiv.org/pdf/2510.19315v3#page=9)
 
-## The other side of compactness: verifying all behavior is hard
+### Proposition 16: the reverse translation
+
+LTL translates to UHAT with polynomial expansion. This is the opposite direction from §3’s exponential UHAT→LTL translation. [§4, Proposition 16; Appendix A.6](https://arxiv.org/pdf/2510.19315v3#page=20)
+
+## 5. Applications
 
 A small description can compress an enormous set of behaviors. How difficult is checking that two models agree on **all strings of all lengths**?
 
 The paper establishes **EXPSPACE-completeness** for UHAT nonemptiness—whether any accepted string exists—and language equivalence. These are worst-case decision problems measured in the binary description length of the models. This is not a claim that a forward pass on one string consumes exponential space. [Theorems 4 and 19; Appendices A.1 and A.7](https://arxiv.org/pdf/2510.19315v3#page=10)
 
-Masks and ties matter here too. Past-only access with the most recent tied candidate can encode the difficult tiling checks. For the restriction using past-only access with the oldest tied candidate, the paper gives an **NEXP upper bound**; it does not establish NEXP-completeness. [Corollaries 11 and 14](https://arxiv.org/pdf/2510.19315v3#page=8)
+**Proof of Theorem 19.** For the lower bound, compare a given UHAT with a fixed UHAT recognizing the empty language. They are equivalent exactly when the given language is empty. Theorem 4 and closure of deterministic space classes under complement transfer hardness. For the upper bound, Proposition 13 translates each UHAT into LTL, then decides equivalence in space polynomial in formula size. Since formula size is exponential in original model size, total space is exponential. This concerns the relation between models over **all strings**, not the forward complexity of one supplied string. [§5, Theorem 19; Appendix A.7](https://arxiv.org/pdf/2510.19315v3#page=21)
+
+## 6. Concluding remarks
+
+The authors leave room for practical verification techniques and easier subclasses unable to encode large counters. Whether learning discovers succinct transformers, and whether fixed-precision softmax or average-hard attention has the same gaps, remain separate questions. The paper contains no dataset or learned-accuracy benchmark to add as experimental evidence for these theorems. [Original §6](https://arxiv.org/pdf/2510.19315v3#page=10)
 
 This need not end practical verification. Bounded lengths and simpler model subclasses define different problems. The authors discuss looking for subclasses unable to express the large counters behind the hard instances. [§6](https://arxiv.org/pdf/2510.19315v3#page=10)
 
-## An appendix issue: the AND in Eq. (14e)
+## Review inspection of Appendix A.2: the AND in Eq. (14e)
 
 The preceding results are the **paper's stated theorems and proof structure**. During this review, I found a local issue in the address-counter construction used by the proof. In Appendix A.2, Eq. (14e) requires both a normal increment and a rollover at the current position when there is no earlier error. The same connective appears in the PDF and TeX.
 
@@ -162,13 +210,11 @@ I implemented **only counter Eqs. (14a–e)** in Python. Across ten valid cases 
 
 **The limit of this observation matters.** A typographical error is plausible, but the authors have not confirmed it. I did not validate all five gadgets, B-RASP→UHAT compilation, or precision semantics, so the OR candidate does not certify the complete proof. The issue creates a verification task for the lower bounds relying on this construction; it is not itself a disproof of the theorems.
 
-## My interpretation: a compact verifier rather than a compact executor
+## Review interpretation and follow-up checks
 
 The useful perspective is to view attention as a **shared rule for retrieving positions**. Instead of retaining the entire table in one recurrent hidden state, the verifier retrieves the earlier per-position representations needed for a local relation. This exposes representation costs invisible in a hierarchy based only on expressivity. That is my interpretation of the proof construction.
 
 Three claims remain separate: suitable small weights **exist**, learning can **find** them, and hardware can **execute** them efficiently. This paper concerns the first. Section 6 also leaves succinctness for fixed-precision softmax and average-hard attention to future work. The results therefore do not establish that practical LLMs are always more efficient than RNNs. [§6](https://arxiv.org/pdf/2510.19315v3#page=10)
-
-## Open questions and further reading
 
 The first follow-up is to compare the **complete tiling verifier against an independent oracle**, including the candidate counter repair. Next, check that the special B-RASP→UHAT compilation handles absent candidates and ties correctly. These steps keep a local test from being mistaken for certification of the entire theorem.
 
@@ -190,3 +236,5 @@ The last source depends on assumptions including attention-internal precision an
 - Cover: one original explanatory SVG based on §§3–4, using Light 300 with Semi Bold 600 emphasis. Space Grotesk is under SIL OFL 1.1. Arrow lengths and table dimensions do not encode measured quantities.
 - Paper excerpt: arXiv v3, p.15, Eq. (14e), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Surrounding whitespace was cropped; notation and fonts were not modified.
 - Executed check: finite counter tests with ten valid cases and 774 single-bit variants. Full A–E validation, UHAT compiler execution, machine-checked proofs of the complete theorems, training, and GPU benchmarks were **not executed**.
+
+- Recheck on October 22, 2026: reusing existing orientation and detailed-analysis records, this revision rechecks v3 TeX §3–6 and Appendix A.7. It restores source order and expands reductions and size calculations for Theorems 4, 15, 17, 19 and Corollary 18. Technical definitions in §2 are condensed; the existing local A.2 counterexample is preserved. Complete proof checking of the cited tiling source, the full compiler, and formal verification of all theorems were not executed.

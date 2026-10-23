@@ -3,7 +3,7 @@ title: "[1/3] LeJEPA explained: align image views, match a Gaussian distribution
 description: "An introductory map following the authors’ Sections 1–7: problem, Gaussian target, SIGReg, training, and all five experimental themes."
 date: "2026-10-09"
 publishedAt: "2026-10-09T23:54:43+09:00"
-updatedAt: "2026-10-11T19:23:17+09:00"
+updatedAt: "2026-10-22T23:22:49+09:00"
 topics: ["self-supervised learning", "representation learning", "joint embedding predictive architectures", "distribution matching", "computer vision"]
 visibility: "public"
 lang: "en"
@@ -19,7 +19,7 @@ thumbnailAlt: "LeJEPA combines within-image alignment to the global-view mean wi
 
 **LeJEPA first analyzes which embedding distribution is favorable when downstream tasks are unknown, then turns that target into a practical self-supervised objective.** Views of one image should share information; embeddings across images should match an isotropic Gaussian. The theoretical conclusions have conditions, and training uses finitely many projections and numerical integration. [Sections 1–5](https://arxiv.org/pdf/2511.08544v3#page=1)
 
-This is **[1/3] the introductory map**, following the paper’s Sections 1–7. Continue with [2/3 complete commentary](/en/reviews/lejepa-complete/) → [3/3 theorem and proof commentary](/en/reviews/lejepa-technical/). The complete version covers the central experiments in Sections 6.1–6.5; the technical version expands the main calculations from Appendices A–B.
+This is **[1/3] the introductory map**, following the paper’s Sections 1–7. Continue with [\[2/3\] complete commentary](/en/reviews/lejepa-complete/) → [\[3/3\] theorem and proof commentary](/en/reviews/lejepa-technical/). The complete version covers the central experiments in Sections 6.1–6.5; the technical version expands the main calculations from Appendices A–B.
 
 In the thumbnail, the lower-left objective gathers **views of one image**; the lower-right objective matches **embeddings across images in each view**. The Gaussian constraint acts after the projector. Points and curves are conceptual. [Enlarge the thumbnail](/assets/reviews/lejepa/lejepa-core.svg)
 
@@ -73,6 +73,8 @@ Section 4.2.1 explains why finitely many moments do not uniquely determine a dis
 
 The Epps–Pulley statistic integrates a weighted squared difference between empirical and Gaussian fingerprints. SIGReg averages this statistic across directions. It avoids constructing all sample pairs and scales linearly with batch size when the direction and frequency counts are fixed. The technical version distinguishes the normalization needed for gradient statements. [Section 4.2, Theorems 3–4, Algorithm 1](https://arxiv.org/pdf/2511.08544v3#page=7)
 
+A lower SIGReg value means sampled projected distributions are closer to the target. It is neither a 0–100% success rate nor classification accuracy. Finite directions and frequencies make it an approximation, so a small value does not certify a Gaussian joint distribution. Section 6 evaluates classification separately using labels. [§4.1–4.3, Algorithms 1–2](https://arxiv.org/pdf/2511.08544v3#page=6)
+
 ### 4.3 How SIGReg Beats the Curse of Dimensionality
 
 The authors offer two arguments: smooth densities allow information from sampled directions to constrain nearby directions, and SGD resampling broadens cumulative coverage. Theorem 5’s rate requires smoothness and suitable directional sampling. Success on synthetic data is not a universal convergence proof for encoder training. [Section 4.3; Appendix B.10, Figures 6–7](https://arxiv.org/pdf/2511.08544v3#page=10)
@@ -121,3 +123,5 @@ The authors connect **downstream prediction analysis → isotropic Gaussian targ
 - This version is a short map of Sections 1–7, combining only 2.2–2.3. The [complete version](/en/reviews/lejepa-complete/) retains detailed related work and all central experimental themes; the [technical version](/en/reviews/lejepa-technical/) contains main proofs, supplementary derivations, and gaps.
 - Direct checks: the center-loss identity, an OLS variance example, aliasing on a fixed 1D frequency grid, and a numerical ECF sampling-bias illustration. **Not run:** official code, GPU training, probe/finetuning/DDP reproduction, fresh speed/memory measurements, or full formal proof verification. Existing approved images are reused.
 - The thumbnail is a review-authored concept diagram based on Sections 4–5 and Algorithms 1–2, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); Light (300) typography with Semi Bold (600) emphasis.
+
+- Recheck on October 22, 2026: this revision reuses the recorded two readings and source mapping, adding the metric, assumption, and example definitions above. It is not counted as two new full-paper readings. New model, GPU, robot reproduction, and complete formal verification were not executed.

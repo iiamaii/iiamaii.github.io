@@ -3,7 +3,7 @@ title: "[1/2] Diffusion Forcing: What Changes When Time and Noise Can Be Control
 description: "Follow independent per-token noise from the training objective to long video rollouts, Monte Carlo Guidance, maze planning, and robotic memory in the authors' section order."
 date: "2026-10-14"
 publishedAt: "2026-10-14T13:58:28+09:00"
-updatedAt: "2026-10-17T22:20:56+09:00"
+updatedAt: "2026-10-22T23:22:52+09:00"
 topics: ["diffusion models", "sequence modeling", "world action model", "robot learning", "probabilistic modeling"]
 visibility: "public"
 lang: "en"
@@ -19,7 +19,7 @@ thumbnailAlt: "Original Figure 2: sequence time and diffusion noise axes, with i
 
 A next-frame model can easily generate sequences of different lengths. Small prediction errors, however, can accumulate until its video collapses. Diffusing several frames together makes it easier to guide a sequence toward a future objective, but resolving every frame at the same noise level restricts flexibility in length and sequential control. **Diffusion Forcing trains on independent noise levels for different tokens, allowing sampling to move between these regimes.** It uses that freedom for rollout stabilization and planning with future rewards. The experiments support these capabilities; they do not establish superiority in every environment or accurate generation at infinite length. [§1, pp. 1–2](https://arxiv.org/pdf/2407.01392v4#page=1)
 
-This review divides the 35-page v4 into two articles. This part follows **main sections 1–5**, incorporating essential experimental and implementation details from appendices B–F. [[2/2] Theory and proof walkthrough](/en/reviews/diffusion-forcing-theory/) covers appendix A's ELBO and subsequence claims. Read this article first. The theory article distinguishes the printed statements from supplementary derivations because the source contains mathematical inconsistencies.
+This review divides the 35-page v4 into two articles. This part follows **main sections 1–5**, incorporating essential experimental and implementation details from appendices B–F. [\[2/2\] Theory and proof walkthrough](/en/reviews/diffusion-forcing-theory/) covers appendix A's ELBO and subsequence claims. Read this article first. The theory article distinguishes the printed statements from supplementary derivations because the source contains mathematical inconsistencies.
 
 ## 1. Introduction
 
@@ -209,6 +209,14 @@ All comparison methods in Table 1 are retained below, split into two tables. The
 
 The asterisk matters. <strong>Diffuser*</strong> uses a handcrafted PD controller to turn predicted state paths into actions. Directly executing generated actions performs much worse. DF executes its generated actions. This supports attention to consistency between plans and actions, while retaining the fact that controller conditions differ. [Table 1, §4.2, p. 8](https://arxiv.org/pdf/2407.01392v4#page=8)
 
+**Why a score can exceed 100.** D4RL normalization measures return relative to environment-specific reference values. This review notation shows the 100-point scale:
+
+$$
+S(R)=100\,\frac{R-R_{\min}}{R_{\max}-R_{\min}}.
+$$
+
+If $R>R_{\max}$, the score exceeds 100. The reference maximum is not a theoretical ceiling. This definition does not recover the experiment’s raw returns or success counts. [Official D4RL get_normalized_score implementation](https://github.com/Farama-Foundation/D4RL/blob/master/d4rl/offline_env.py)
+
 MCG improves the **mean score** in all six settings, without establishing statistical significance separately for each. Single-task averages are 141.7 for DF and 119.5 for Diffuser\*; multi-task averages are 146.2 and 129.4. **On Multi2D U-Maze, DF scores 119.1 versus Diffuser\*'s 128.9.** The prose claim of superiority in all six environments therefore does not match the complete table.
 
 Appendix D.8 warns that reward is an imperfect planning metric: a slow path spending longer near the goal may score highly. First hitting time would be useful alongside reward, but a complete numerical comparison is not supplied.
@@ -250,6 +258,14 @@ Appendices E.1 and F.4 evaluate six GluonTS datasets. Context length equals pred
 
 The metric is summed continuous ranked probability score, $\operatorname{CRPS}_{\mathrm{sum}}$, with **lower values better**. It compares the predicted distribution of the feature sum with the observed sum, rather than completely evaluating each feature or the full dependency structure. Estimation uses 100 sampled trajectories and 19 quantiles. DF reports means and standard deviations over five seeds.
 
+For predictive CDF $F$ and observation $y$, basic CRPS is
+
+$$
+\operatorname{CRPS}(F,y)=\int_{\mathbb R}\left(F(s)-\mathbf1\{y\leq s\}\right)^2\,ds.
+$$
+
+Here $F,y,s$ are explanatory metric notation. For $\mathrm{CRPS}_{\mathrm{sum}}$, first sum dimensions within each sampled trajectory and the observations, then score and average over prediction times. This differs from summing per-dimension CRPS: different feature errors can have the same aggregate. Basic CRPS has the observation’s units, so comparisons retain preprocessing and normalization. [TimeGrad §4.1, pp. 4–5](https://proceedings.mlr.press/v139/rasul21a/rasul21a.pdf#page=5)
+
 This table preserves Table 2's principal modern comparisons and the NKF row needed to assess Electricity and Wikipedia. Other statistical and copula rows are available in the original and were included in the review's full-table ranking checks.
 
 | Method | Exchange | Solar | Electricity | Traffic | Taxi | Wikipedia |
@@ -285,3 +301,7 @@ Useful follow-up checks would separate independent noise, stabilization, and fus
 - Mapping: sections 1–5 and experiments 4.1–4.5 remain in source order; essential B/D/E/F material is explained alongside its corresponding main section. Appendix A is fully addressed in [part 2](/en/reviews/diffusion-forcing-theory/). Peripheral related work, repeated additional videos, and the entire bibliography are compressed; key comparisons, contrary results, and compute costs are retained.
 - Images: Figures 2–4 and Table 1's upper diagram come from the [authors' v4 source](https://arxiv.org/src/2407.01392v4). Original PDF graphics were rasterized and WebP-encoded, preserving content, colors, arrows, and notation while changing resolution/encoding. Credit belongs to the paper's listed authors; reuse follows [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) with source and change attribution.
 - Verification: transcription, means, rankings, units, and local ELBO calculations were checked. **Not executed:** model/GPU/robot reproduction, public research-code execution, full quantitative video evaluation, significance tests from raw results, actual latency/memory measurement, and formal verification of the complete theorems.
+
+- Recheck on October 22, 2026: this revision reuses the recorded two readings and source mapping, adding the metric, assumption, and example definitions above. It is not counted as two new full-paper readings. New model, GPU, robot reproduction, and complete formal verification were not executed.
+
+- Additional source scope: the return expression in official D4RL get_normalized_score (read only, not executed), and TimeGrad §4.1 pp. 4–5 for CRPS and summation. Experiment-specific raw returns and preprocessing were not newly verified.

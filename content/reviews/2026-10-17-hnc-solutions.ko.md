@@ -3,7 +3,7 @@ title: "[1/2] HNC: 같은 출력을 내는 신경망은 내부에서도 같은 �
 description: "한 모델 주변의 함수 보존 영역을 따라가며 RNN의 기억, ViT의 표현, 강화학습 정책을 바꾸는 HNC를 원문 §1–7 순서로 읽는다."
 date: "2026-10-17"
 publishedAt: "2026-10-17T22:12:00+09:00"
-updatedAt: "2026-10-17T22:20:58+09:00"
+updatedAt: "2026-10-22T23:22:54+09:00"
 topics: ["representation learning", "loss landscape", "mechanistic interpretability", "computational neuroscience", "reinforcement learning"]
 visibility: "public"
 lang: "ko"
@@ -19,7 +19,7 @@ thumbnailAlt: "HNC 원문 Figure 1. 평평한 가중치 방향으로 이동하�
 
 같은 질문에 같은 답을 내는 두 신경망이 내부에서도 같은 방식으로 계산할까? **Hessian Null Space Continuation(HNC)은 하나의 학습 모델에서 출발해, 관찰한 출력은 거의 유지하면서 내부 표현과 동역학이 크게 다른 대안을 찾는다.** 기억을 고정점에 저장하던 RNN이 내부 상태를 계속 움직이며 기억하도록 바뀌고, ViT는 가중치를 조금 바꾸고도 이미지 간 유사 관계를 크게 재편한다. 다만 출력 보존은 유한한 입력에서 근사적으로 강제한다. 모든 입력에서 같은 함수라는 보장은 아니다.
 
-55쪽의 [v1](https://arxiv.org/pdf/2609.38081v1)을 두 편으로 나눴다. 이 글은 **본문 §1–7의 순서**를 유지하며 핵심 방법과 네 실험군을 설명한다. [[2/2] 수학·알고리즘·검증 심화](/reviews/hnc-mechanics/)는 부록 A–J를 따라 수학 유도, 복원 실패, probe 밖 평가와 추가 실험을 다룬다. 1→2 순서를 권한다.
+55쪽의 [v1](https://arxiv.org/pdf/2609.38081v1)을 두 편으로 나눴다. 이 글은 **본문 §1–7의 순서**를 유지하며 핵심 방법과 네 실험군을 설명한다. [\[2/2\] 수학·알고리즘·검증 심화](/reviews/hnc-mechanics/)는 부록 A–J를 따라 수학 유도, 복원 실패, probe 밖 평가와 추가 실험을 다룬다. 1→2 순서를 권한다.
 
 ## 1. 도입: 연결된 해들 안에는 어떤 계산이 있는가? (Introduction)
 
@@ -119,6 +119,20 @@ $$
 ## 3. RNN: 같은 기억을 다른 동역학으로 유지하기
 
 **3-bit flip-flop(3BFF)** 과제는 세 입력 채널의 마지막 0이 아닌 값을 기억한다. 세 이진 기억이므로 상태는 8개다. 저자들은 64개 tanh 유닛의 RNN을 BPTT와 Adam으로 학습한다. 기본 해는 8개 기억 상태를 안정 고정점(stable fixed point)에 저장하고, 활성 공간에서 이 점들이 큐브처럼 배치된다.
+
+**기억 과제와 고정점을 구체적으로 보면.** 입력의 0은 “기억을 0으로 바꾸라”가 아니라 “새 지시가 없다”는 뜻이다. 한 채널에 $+1,0,0,-1,0$을 주면 첫 pulse 이전 구간을 제외한 목표는 $+1,+1,+1,-1,-1$이다. 세 채널이 독립이므로 마지막 부호의 조합이 8개다. 예시는 과제 정의를 풀어 쓴 것이며 새 실험이 아니다.
+
+$$
+\begin{aligned}
+\mathbf h_t&=\tanh(\mathbf W_{\mathrm{ih}}\mathbf u_t+\mathbf b_{\mathrm{ih}}
++\mathbf W_{\mathrm{hh}}\mathbf h_{t-1}+\mathbf b_{\mathrm{hh}}),\\
+\mathbf y_t&=\mathbf W_{\mathrm{out}}\mathbf h_t+\mathbf b_{\mathrm{out}},\\
+\mathbf h^\star&=\tanh(\mathbf b_{\mathrm{ih}}+\mathbf W_{\mathrm{hh}}\mathbf h^\star+\mathbf b_{\mathrm{hh}})
+\quad(\mathbf u_t=\mathbf0).
+\end{aligned}
+$$
+
+이 고정점은 **가중치를 고정하고 입력이 0일 때의 은닉 상태**다. 고정점 근처의 작은 상태 교란이 다시 줄어들면 안정적이라고 한다. HNC가 바꾸는 것은 가중치이고, 비교하는 것은 바뀐 모델의 은닉 동역학과 출력이다. $\mathbf W_{\mathrm{out}}\mathbf h_t$가 일정해도 readout의 영공간 성분은 움직일 수 있다. 따라서 기억 출력 유지와 모든 은닉 상태의 정지는 동치가 아니다. [§3, Appendix F.1](https://arxiv.org/pdf/2609.38081v1#page=29)
 
 HNC는 무방향, CKA 거리 $1-\mathrm{CKA}$를 키우는 조향, DSA 거리를 키우는 조향을 비교한다. CKA는 샘플 사이의 표현 유사 구조를, DSA는 시간에 따른 상태 전이 구조를 측정한다. 한 지표에서 멀어지는 것과 다른 지표에서 멀어지는 것은 같지 않다.
 
@@ -227,3 +241,5 @@ HNC의 실용적인 독해는 “같은 기능을 구현하는 진짜 구조 하
 - 구성: 본문 순서를 유지하고 핵심 실험 설정·반대 결과를 가까이 보충했다. 부록 A–J의 수학과 검증 조건은 [2편](/reviews/hnc-mechanics/)에 원문 순서로 연결한다. 반복 gallery·모든 hyperparameter 행·전체 bibliography 재게시는 축약한다.
 - 그림: Figure 1–5는 [저자 v1 소스](https://arxiv.org/src/2609.38081v1)의 PDF 원본을 래스터화하고 WebP로 인코딩했다. 원저자는 위 여섯 저자이며 [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)에 따라 출처와 변경을 표시한다. 원문 색·레이아웃·글자·화살표·데이터를 유지했으며 해상도·인코딩은 변경했다.
 - 검증: 표의 수치·비교 조건·수학 유도의 국소 계산을 확인했다. **미실행:** 저자 코드 실행, GPU/RNN/ViT/RL 학습·walk 재현, raw data 기반 유의성 검정, 전체 정리 형식 검증, 실제 하드웨어 시간·메모리 재측정, 원문 설정 불일치의 저자 확인.
+
+- 2026-10-22 재점검: 기존 두 읽기와 원문 대응 기록을 재사용해 위에 추가한 지표·가정·예제의 정의를 보완했다. 새 전문 두 읽기로 계산하지 않는다. 새 모델·GPU·로봇 재현과 전체 형식 검증은 미실행이다.

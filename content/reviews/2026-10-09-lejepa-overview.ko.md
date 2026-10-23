@@ -3,7 +3,7 @@ title: "[1/3] LeJEPA 입문: 같은 이미지는 가깝게, 표현 분포는 Gau
 description: "저자의 §§1–7 순서로 문제, Gaussian 목표, SIGReg, 학습과 다섯 실험 축을 짧게 따라가는 입문 지도."
 date: "2026-10-09"
 publishedAt: "2026-10-09T23:54:43+09:00"
-updatedAt: "2026-10-11T20:35:21+09:00"
+updatedAt: "2026-10-22T23:22:49+09:00"
 topics: ["self-supervised learning", "representation learning", "joint embedding predictive architectures", "distribution matching", "computer vision"]
 visibility: "public"
 lang: "ko"
@@ -19,7 +19,7 @@ thumbnailAlt: "LeJEPA의 두 제약 설명도: 한 이미지의 뷰들은 전역
 
 **LeJEPA는 후속 과제(downstream task)를 아직 모를 때 유리한 표현 분포를 먼저 분석하고, 그 목표를 실제 학습 손실로 연결하는 자기지도학습(self-supervised learning) 방법이다.** 같은 이미지에서 만든 여러 뷰(view)는 공통 내용을 공유하게 하고, 서로 다른 이미지의 표현 분포는 등방성 가우시안(isotropic Gaussian)에 맞춘다. 이론의 적용에는 조건이 있으며 실제 학습은 유한한 투영과 수치 적분을 사용한다. [원문 §§1–5](https://arxiv.org/pdf/2511.08544v3#page=1)
 
-이 글은 **[1/3] 입문 지도**다. 원문의 §§1–7 순서를 유지하며, 증명과 상세 비교는 [2/3 전체 해설](/reviews/lejepa-complete/) → [3/3 정리·증명 심층](/reviews/lejepa-technical/) 순서로 읽을 수 있다. 전체 해설에는 §6.1–6.5의 핵심 실험이, 심층 편에는 Appendix A·B의 주요 계산이 있다.
+이 글은 **[1/3] 입문 지도**다. 원문의 §§1–7 순서를 유지하며, 증명과 상세 비교는 [\[2/3\] 전체 해설](/reviews/lejepa-complete/) → [\[3/3\] 정리·증명 심층](/reviews/lejepa-technical/) 순서로 읽을 수 있다. 전체 해설에는 §6.1–6.5의 핵심 실험이, 심층 편에는 Appendix A·B의 주요 계산이 있다.
 
 대표 그림에서 왼쪽 아래 손실은 **한 이미지의 여러 뷰**를 모으고, 오른쪽 아래 손실은 **각 뷰에서 여러 이미지**의 표현 분포를 맞춘다. Gaussian 목표는 투영 헤드(projector) 뒤의 공간에 적용한다. 점과 곡선은 설명용이다. [대표 그림 확대](/assets/reviews/lejepa/lejepa-core.svg)
 
@@ -73,6 +73,8 @@ thumbnailAlt: "LeJEPA의 두 제약 설명도: 한 이미지의 뷰들은 전역
 
 Epps–Pulley 통계는 표본의 지문과 Gaussian 지문의 차이를 가중 적분한다. SIGReg는 여러 방향의 통계를 평균한다. 표본 쌍을 모두 만들 필요가 없고, 방향·주파수 수를 고정하면 batch 크기에 선형으로 계산한다. 기울기의 정규화 조건은 심층 편에서 구분한다. [§4.2, Theorems 3–4, Algorithm 1](https://arxiv.org/pdf/2511.08544v3#page=7)
 
+여기서 SIGReg가 낮다는 것은 **표본 투영의 분포가 목표에 가깝다**는 뜻이다. 0–100% 성공률이나 분류 정확도가 아니다. 실제로는 유한 방향·유한 주파수에서 근사하므로 낮은 값만으로 전체 결합 분포가 Gaussian이라고 인증할 수 없다. 뒤의 §6은 별도 라벨을 사용한 분류 평가다. [§4.1–4.3, Algorithms 1–2](https://arxiv.org/pdf/2511.08544v3#page=6)
+
 ### 4.3 How SIGReg Beats the Curse of Dimensionality
 
 저자들의 논리는 두 가지다. 부드러운 밀도에서는 관측한 방향의 영향이 주변 방향으로 퍼질 수 있고, SGD 반복마다 새 방향을 뽑으면 누적 관측 범위가 넓어진다. Theorem 5의 감소율에는 매끄러움(smoothness)과 방향 배치 조건이 있다. 합성 실험의 성공도 전체 학습의 보편적 수렴 증명을 대신하지 않는다. [§4.3; Appendix B.10, Figures 6–7](https://arxiv.org/pdf/2511.08544v3#page=10)
@@ -121,3 +123,5 @@ $$
 - 이 글은 §§1–7의 짧은 지도다. 2.2–2.3만 함께 요약했다. 상세 관련 연구·모든 핵심 실험은 [전체 해설](/reviews/lejepa-complete/), 주요 증명·보충 유도·간극은 [심층 편](/reviews/lejepa-technical/)에 있다.
 - 직접 검증: 리뷰의 중심 손실 항등식, OLS 분산 예제, 1D 고정 주파수 grid의 alias, ECF 표본 bias 수치 예제. **미실행:** 공식 코드 실행, GPU 학습, probe·finetuning·DDP 재현, 속도·메모리 재측정, 전체 증명의 형식 검증. 그림은 기존 승인 자산을 재사용했다.
 - 대표 그림은 §§4–5·Algorithms 1–2에 근거한 자체 개념도, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). 기본 Light(300), 강조 Semi Bold(600).
+
+- 2026-10-22 재점검: 기존 두 읽기와 원문 대응 기록을 재사용해 위에 추가한 지표·가정·예제의 정의를 보완했다. 새 전문 두 읽기로 계산하지 않는다. 새 모델·GPU·로봇 재현과 전체 형식 검증은 미실행이다.

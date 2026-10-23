@@ -3,7 +3,7 @@ title: "[2/2] Diffusion Forcing: What Does Learning Every Subsequence Likelihood
 description: "Follow appendix A's ELBO, Gaussian loss, and subsequence argument through two Jensen steps and intermediate calculations, separating printed inconsistencies from supplementary derivations."
 date: "2026-10-14"
 publishedAt: "2026-10-14T13:58:27+09:00"
-updatedAt: "2026-10-17T22:20:55+09:00"
+updatedAt: "2026-10-22T23:22:51+09:00"
 topics: ["diffusion models", "sequence modeling", "world action model", "robot learning", "probabilistic modeling"]
 visibility: "public"
 lang: "en"
@@ -19,7 +19,7 @@ thumbnailAlt: "Original Figure 2: independently noised tokens trained together a
 
 Diffusion Forcing's theory is more specific than “random noise makes a model robust.” It connects noise-pattern likelihoods to a lower bound, then argues that an expressive model can optimize multiple denoising problems simultaneously. **An average training objective, an ELBO for a particular pattern, and a finite model's actual accuracy are different objects.** That distinction is essential to understanding “all subsequences.”
 
-Read [[1/2] Methods and experiments](/en/reviews/diffusion-forcing-methods/) first. This article follows **appendix A, pp. 14–19**, in its original order: setup, A.1 main results, A.1.1 Gaussian specialization, A.1.2 subsequences, and A.2 proof. The proof is expanded without accepting printed sign, transition-direction, and weighting inconsistencies as correct statements. Consistent formulas below are **supplementary review derivations under stated conditions**, not an author-issued erratum.
+Read [\[1/2\] Methods and experiments](/en/reviews/diffusion-forcing-methods/) first. This article follows **appendix A, pp. 14–19**, in its original order: setup, A.1 main results, A.1.1 Gaussian specialization, A.1.2 subsequences, and A.2 proof. The proof is expanded without accepting printed sign, transition-direction, and weighting inconsistencies as correct statements. Consistent formulas below are **supplementary review derivations under stated conditions**, not an author-issued erratum.
 
 ## A. Theoretical Justification: Objects and Assumptions
 
@@ -249,6 +249,15 @@ $$
 
 The proposal must have suitable support and the integrals must exist. Equality requires a constant importance ratio, equivalently matching the model's posterior over this path.
 
+**Review expansion: the gap in this inequality.** Name the right-hand expectation $\mathcal B_h$ within this paragraph. Under normalization, support, and integrability conditions,
+
+$$
+\log p_\theta(\mathbf x_t^h\mid\mathbf z_{t-1})-\mathcal B_h
+=D_{\mathrm{KL}}\!\left(r_h\,\Vert\,p_\theta(\mathbf x_t^{h+1:K}\mid\mathbf x_t^h,\mathbf z_{t-1})\right)\geq0.
+$$
+
+The gap is a KL between path distributions. Deterministic latents can make Claim 1 tight; equality between forward path $r_h$ and the model posterior is an additional condition here. These are distinct equality requirements.
+
 Averaging over $\mathbf x_t^h$ corrupted from clean data gives the forward expectation. The source moves differences between $r_h$ and forward paths conditioned on $\mathbf x_t^0$ into a parameter-independent constant. Dropping such constants does not remove a parameter-dependent training term. [Claim 2, p. 17](https://arxiv.org/pdf/2407.01392v4#page=17)
 
 ### Claim 3, Part 1: Bayes' Identity and Telescoping
@@ -357,3 +366,5 @@ This review checks the two Jensen steps, Bayes cancellation, KL sign, Gaussian m
 - Supplementary notation: $A_j,B_j,h,r_h,R_t,D_{t,j},\mathcal I,u,w_1,w_2$. The review expands Gaussian KL, conditional-mean decomposition, indicator averaging, and a finite shared-model example. It is not an official erratum or complete theorem certification.
 - Verification: local checks of table claims, KL sign, Gaussian variance, cumulative noise weights, and the shared-model example. **Not executed:** complete mechanical/formal theorem verification, author confirmation, model training/sampling/GPU/robot reproduction, and statistical tests from raw results.
 - Both parts share [original Figure 2](https://arxiv.org/pdf/2407.01392v4#page=3). Credit: Chen, Marti Monso, Du, Simchowitz, Tedrake, Sitzmann, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The PDF graphic was rasterized and WebP-encoded with content, arrows, and text preserved.
+
+- Recheck on October 22, 2026: this revision reuses the recorded two readings and source mapping, adding the metric, assumption, and example definitions above. It is not counted as two new full-paper readings. New model, GPU, robot reproduction, and complete formal verification were not executed.

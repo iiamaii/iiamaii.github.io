@@ -3,7 +3,7 @@ title: "[2/2] HNC in Depth: Why Function Preservation Works, and Where It Fails"
 description: "Follow appendices A–J through Gauss–Newton derivations, soft projection, compute costs, ablations, and off-probe validation."
 date: "2026-10-17"
 publishedAt: "2026-10-17T22:11:59+09:00"
-updatedAt: "2026-10-17T22:20:57+09:00"
+updatedAt: "2026-10-22T23:22:53+09:00"
 topics: ["representation learning", "loss landscape", "mechanistic interpretability", "computational neuroscience", "reinforcement learning"]
 visibility: "public"
 lang: "en"
@@ -19,7 +19,7 @@ thumbnailAlt: "Original Figure 1: HNC alternates low-curvature exploration and o
 
 HNC does not mean that any movement inside a Hessian null space preserves function. **It identifies directions with zero first-order output sensitivity at the anchor, then manages finite-step drift using restoration, rejection, and recomputation.** This distinction determines how to read its preservation claims.
 
-Read [[1/2] Methods and experiments](/en/reviews/hnc-solutions/) first. This article follows **appendices A→B→C→D→E→F→G→H→I→J**. The paper has no numbered theorem establishing global function equivalence or convergence of the entire HNC procedure. Its central mathematical argument is the derivative calculation in B. Expanded calculations and examples below are identified as **review supplements**.
+Read [\[1/2\] Methods and experiments](/en/reviews/hnc-solutions/) first. This article follows **appendices A→B→C→D→E→F→G→H→I→J**. The paper has no numbered theorem establishing global function equivalence or convergence of the entire HNC procedure. Its central mathematical argument is the derivative calculation in B. Expanded calculations and examples below are identified as **review supplements**.
 
 ## A. Hessian Null-Space Continuation Pseudocode
 
@@ -214,6 +214,14 @@ The retraining transitions are not certified as one continuous function-preservi
 
 The 64-unit RNN has 4,611 parameters, permitting a full spectrum. Across five anchors its Hessian participation ratio is $23.2\pm1.6$. This effective curvature dimension is not a count to subtract from parameter dimension to obtain nullity.
 
+**What participation ratio measures.** Let $D_{\mathrm{PR}}$ be a review abbreviation for effective dimension. For a nonzero PSD spectrum,
+
+$$
+D_{\mathrm{PR}}=\frac{(\sum_i\lambda_i)^2}{\sum_i\lambda_i^2}.
+$$
+
+It equals $r$ for $r$ equal positive eigenvalues and approaches one when curvature concentrates in one. Tiny positive eigenvalues count toward rank but contribute little here. Thus 23.2 does not mean only 23 directions exist or every other direction is exactly null. An all-zero spectrum makes the ratio undefined. [Appendix F.2](https://arxiv.org/pdf/2609.38081v1#page=29)
+
 Original Table 3 reports median flat dimensions at different relative thresholds:
 
 | $\mu_{\mathrm{rel}}$ | Median dimension | Fraction of parameters |
@@ -237,6 +245,15 @@ After 8,000 resumed SGD steps, lower task loss coexists with retained difference
 
 ### G.1–G.4 Steering Objectives and Settings
 
+**What CKA compares.** Here $X,Y$ are review notation for column-centered feature matrices with matching sample order, distinct from probe inputs $\mathbf X$.
+
+$$
+\operatorname{CKA}_{\mathrm{linear}}(X,Y)
+=\frac{\|Y^\top X\|_F^2}{\|X^\top X\|_F\,\|Y^\top Y\|_F}.
+$$
+
+This linear CKA ranges from zero to one, with larger values indicating more similar sample geometry. It is invariant to orthogonal coordinate changes and isotropic scaling, not arbitrary invertible transforms. Constant features make the denominator zero. Lower CKA does not directly establish changed outputs or inequivalence of every computation. [CKA source §3–5, Eq. (14)](https://proceedings.mlr.press/v97/kornblith19a/kornblith19a.pdf#page=5)
+
 With $c_{ij}(\boldsymbol\theta)$ denoting linear CKA between anchor layer $i$ and current layer $j$, equation (12) is:
 
 $$
@@ -257,6 +274,8 @@ G.3's mutual-kNN metric measures overlap of $k=10$ neighbor sets and uses smooth
 CKA steering uses five probe draws and the kNN off-probe evaluation uses three. The diff-seed reference has two fine-tuning seeds; single-anchor and independently trained ViT-S/in1k bands instead use image bootstraps. Error bars therefore have different sampling units.
 
 CKA endpoints have small accuracy losses and error consistency near 0.8 across ImageNet/V2/R/Sketch. The kNN configuration has error consistency near 0.75 and lower exact prediction agreement. Gaussian weight noise matched for accuracy loss produces smaller representational displacement. This weakens a generic-damage explanation without proving that a changed metric captures every computational change. [G.5–G.6, pp.39–42](https://arxiv.org/pdf/2609.38081v1#page=39)
+
+Error consistency is chance-corrected agreement on whether both models are correct or both are wrong on each image. Unlike prediction match, agreement when wrong does not require the same incorrect class. A value near 0.8 therefore means neither 80% accuracy nor exactly 80% identical predictions. [Appendix G.5](https://arxiv.org/pdf/2609.38081v1#page=39)
 
 ### G.7–G.10 Layers, Directions, and Probe Size
 
@@ -331,3 +350,7 @@ J.1's identification of 100% training accuracy with zero cross-entropy is not ad
 - Source issues: G.3's 256 kNN probes versus Table 8's 512; J.1's accuracy/zero-loss wording; and the loss-control distinction between general Algorithm 1 and F.3. No author confirmation was obtained.
 - Images: shared Figure 1 and Figure 11 in D, by the six original authors under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), from the [v1 author source](https://arxiv.org/src/2609.38081v1). PDF rasterization and WebP encoding changed resolution/encoding, preserving content, layout, arrows, and text.
 - **Not executed:** author code, GPU/training/walk/neural-data/RL reproduction, raw-result statistical tests, hardware replication, global/mechanical formal verification, independent complete proofs of the cited LOBPCG/CG theory, or author confirmation of inconsistent settings. These differ from local calculation checks in this review.
+
+- Recheck on October 22, 2026: this revision reuses the recorded two readings and source mapping, adding the metric, assumption, and example definitions above. It is not counted as two new full-paper readings. New model, GPU, robot reproduction, and complete formal verification were not executed.
+
+- Additional metric check: CKA source §3–5, Eq. (14), and focal Appendix F.2 and G.5 metric descriptions. Scores were not recomputed from raw brain or model data.
