@@ -128,8 +128,8 @@
 @media(max-width:600px){.prose .math-display{padding:14px 10px}.prose .math-display .katex{font-size:1em}}
 
 /* Optional prerequisite explanations, collapsed by native details semantics. */
-.prose .review-background{margin:24px 0;border:1px solid var(--line);border-radius:6px;background:var(--soft);min-width:0}
-.prose .review-background>summary{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:48px;padding:12px 16px;list-style:none;cursor:pointer;font-size:.875rem;font-weight:500;line-height:1.7;color:var(--ink)}
+.prose .review-background{margin:24px 0;border:1px solid var(--line);border-radius:6px;background:var(--soft);min-width:0;font-size:.8em}
+.prose .review-background>summary{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:38px;padding:6px 16px;list-style:none;cursor:pointer;font-size:inherit;font-weight:500;line-height:1.7;color:var(--ink)}
 .prose .review-background>summary::-webkit-details-marker{display:none}
 .prose .review-background>summary::marker{content:''}
 .prose .review-background>summary>span:first-child{min-width:0;overflow-wrap:anywhere}
@@ -140,5 +140,8 @@
 .prose .review-background>summary:focus-visible{outline:2px solid var(--blue);outline-offset:3px;border-radius:5px}
 .prose .review-background[open]>summary{border-bottom:1px solid var(--line)}
 .prose .review-background-body{min-width:0;padding:16px;overflow-wrap:anywhere}
+.prose .review-background-body h3{font-size:1.2em}
+.prose .review-background-body pre{font-size:.8125em}
+.prose .review-background-body table{font-size:.875em}
 .prose .review-background-body>:first-child{margin-top:0}
 .prose .review-background-body>:last-child{margin-bottom:0}
