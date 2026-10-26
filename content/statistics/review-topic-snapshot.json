@@ -2,14 +2,14 @@
   "schemaVersion": 1,
   "id": "review-topic-snapshot",
   "visibility": "public",
-  "updatedAt": "2026-10-26T08:50:34Z",
+  "updatedAt": "2026-10-26T10:34:40Z",
   "title": {
     "ko": "공개 리뷰의 논문·주제 연결",
     "en": "Papers and topic links across public reviews"
   },
   "summary": {
-    "ko": "공개 리뷰 19편을 고유 논문 12개로 묶어 대표 주제 분포와 공통 주제를 집계합니다.",
-    "en": "19 public reviews grouped into 12 unique papers, with primary-topic counts and shared-topic links."
+    "ko": "공개 리뷰 21편을 고유 논문 14개로 묶어 대표 주제 분포와 공통 주제를 집계합니다.",
+    "en": "21 public reviews grouped into 14 unique papers, with primary-topic counts and shared-topic links."
   },
   "notes": {
     "ko": "공개·발행 시각 조건을 통과한 리뷰만 포함합니다. 한영 번역은 같은 리뷰로, 같은 arXiv ID(버전 제외)·DOI·원문 URL의 연재는 같은 논문으로 묶습니다. 대표 리뷰는 [1/N] 등 가장 앞선 편이며 동순위는 키 순입니다. 막대는 대표 리뷰의 첫 주제별 고유 논문 수, 관계선 가중치는 각 논문의 공개 연재 전체 주제 합집합 사이의 교집합 크기입니다. 선이 없는 논문도 포함합니다. 이 집계는 블로그에 등록한 주제의 연결이며 인용·인과 관계나 연구 분야 전체의 분포를 뜻하지 않습니다.",
@@ -19,6 +19,8 @@
     "deep-equilibrium-models",
     "diffusion-forcing-methods",
     "diffusion-forcing-theory",
+    "dust-activation-search",
+    "eggroll-low-rank-evolution",
     "hnc-mechanics",
     "hnc-solutions",
     "lehami-symplectic-world-models",
@@ -64,6 +66,28 @@
       "label": {
         "ko": "[2/2] Diffusion Forcing: 모든 부분 시퀀스의 우도를 학습한다는 것은 무엇을 뜻할까?",
         "en": "[2/2] Diffusion Forcing: What Does Learning Every Subsequence Likelihood Mean?"
+      },
+      "location": {
+        "ko": "공개 리뷰 메타데이터 · paperUrl / topics / 연재 순서",
+        "en": "Public review metadata · paperUrl / topics / series order"
+      }
+    },
+    {
+      "url": "https://iiamaii.github.io/reviews/dust-activation-search/",
+      "label": {
+        "ko": "Dust: 토큰별 탐색으로 역전파에 다가가는 사전학습",
+        "en": "Dust: token-wise search approaches backpropagation"
+      },
+      "location": {
+        "ko": "공개 리뷰 메타데이터 · paperUrl / topics / 연재 순서",
+        "en": "Public review metadata · paperUrl / topics / series order"
+      }
+    },
+    {
+      "url": "https://iiamaii.github.io/reviews/eggroll-low-rank-evolution/",
+      "label": {
+        "ko": "EGGROLL: 저랭크 탐색으로 넓히는 학습의 범위",
+        "en": "EGGROLL: expanding trainable systems through low-rank search"
       },
       "location": {
         "ko": "공개 리뷰 메타데이터 · paperUrl / topics / 연재 순서",
@@ -288,6 +312,13 @@
         },
         {
           "label": {
+            "ko": "zeroth-order optimization",
+            "en": "zeroth-order optimization"
+          },
+          "value": 2
+        },
+        {
+          "label": {
             "ko": "decentralized learning",
             "en": "decentralized learning"
           },
@@ -380,6 +411,14 @@
           }
         },
         {
+          "id": "paper-a9af6855b2b19bb2",
+          "paperSlug": "eggroll-low-rank-evolution",
+          "label": {
+            "ko": "EGGROLL",
+            "en": "EGGROLL"
+          }
+        },
+        {
           "id": "paper-95789b2eda66739b",
           "paperSlug": "syncworld-visual-calibration",
           "label": {
@@ -434,6 +473,14 @@
             "ko": "RePR",
             "en": "RePR"
           }
+        },
+        {
+          "id": "paper-4b350aa2264060c3",
+          "paperSlug": "dust-activation-search",
+          "label": {
+            "ko": "Dust",
+            "en": "Dust"
+          }
         }
       ],
       "edges": [
@@ -486,6 +533,11 @@
           "source": "paper-e2c5835a26dabc32",
           "target": "paper-febb5f4c118822ad",
           "weight": 1
+        },
+        {
+          "source": "paper-a9af6855b2b19bb2",
+          "target": "paper-4b350aa2264060c3",
+          "weight": 5
         },
         {
           "source": "paper-95789b2eda66739b",
