@@ -29,3 +29,31 @@ test('invalid TeX fails the build; unsafe commands cannot create links', () => {
   const html = parse('$\\href{javascript:alert(1)}{x}$');
   assert.doesNotMatch(html, /href=/);
 });
+test('collapsed background preserves Markdown, links and accessible math within its body', () => {
+  const source = String.raw`<details class="review-background">
+<summary><span>Background: expectation</span><span class="review-background-toggle" aria-hidden="true"></span></summary>
+<div class="review-background-body">
+
+**Definition.** For a discrete variable $X$:
+
+$$
+\mathbb{E}[X]=\sum_i p_i x_i
+$$
+
+[Source](https://example.org/source)
+
+</div>
+</details>
+
+Main argument continues.`;
+  const html = parse(source);
+  const body = html.match(/<details class="review-background">([\s\S]*?)<\/details>/)?.[1];
+  assert.ok(body);
+  assert.doesNotMatch(html, /<details[^>]*\bopen\b/);
+  assert.match(body, /<strong>Definition\.<\/strong>/);
+  assert.equal((body.match(/class="katex"/g) || []).length, 2);
+  assert.match(body, /<math /);
+  assert.match(body, /<a href="https:\/\/example.org\/source">Source<\/a>/);
+  assert.match(html, /<\/details>\s*<p>Main argument continues\.<\/p>/);
+  assert.throws(() => parse(source.replace('\\sum_i', '\\notARealCommand')), /Undefined control sequence/);
+});

@@ -18,7 +18,18 @@
 
 {{Put reviewer judgments only in sentences starting with **Review interpretation.**, without source links. Quote the authors' own conclusion first. Do not add caveats denying claims neither the paper nor a reasonable reader makes. Do not invent methods, theory, or experiments absent from this section.}}
 
-### Review supplement: {{a concept the paper treats briefly, or an external comparison}}
+{{Use the background block below only for a prerequisite needed to understand a core element but not separately explained in the paper, or a specific gap a reader identifies. Move it immediately before or after the sentence or equation that needs it; remove it when unnecessary. Follow the selection and presentation rules in SKILL.md.}}
+
+<details class="review-background">
+<summary><span>Background: {{concept, equation, or theory}}</span><span class="review-background-toggle" aria-hidden="true"></span></summary>
+<div class="review-background-body">
+
+{{Connection to this passage; necessary definitions, symbols and assumptions; minimal equations, derivations or examples; verified source links and section/page locations. Keep the paper's core argument and short definitions of body symbols in the main text. Reader feedback and selection reasons belong only in the handoff. Preserve the blank lines and unindented structure for Markdown/LaTeX rendering; do not add open.}}
+
+</div>
+</details>
+
+### Review supplement: {{brief intuition or external comparison outside the prerequisite block}}
 
 {{Only when needed, briefly, with its relation to the paper stated. It should not outweigh the source material.}}
 
