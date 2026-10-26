@@ -8,7 +8,8 @@
     "test": "node scripts/check.mjs && node --test scripts/*.test.mjs",
     "dev": "node scripts/dev.mjs",
     "new": "node scripts/new-post.mjs",
-    "stats:new": "node scripts/new-statistics.mjs"
+    "stats:new": "node scripts/new-statistics.mjs",
+    "stats:update": "node scripts/build.mjs --update-statistics"
   },
   "engines": {
     "node": ">=22"

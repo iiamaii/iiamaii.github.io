@@ -222,6 +222,7 @@ dist/                 빌드 결과 (Git 제외)
 
 ```sh
 npm run stats:new -- analysis-id
+npm run stats:update
 ```
 
-생성된 비공개 JSON을 채운 뒤 검증하고 공개합니다. [분석 형식·작성 절차](skills/publish-research-blog/references/statistics-format.md)와 [템플릿](skills/publish-research-blog/assets/statistics-analysis.json)을 따릅니다. 페이지의 전체 리뷰·주제 수는 자동 갱신되고, 저장된 분석 결과는 재분석하여 JSON을 갱신해야 합니다. 이미지 해상도·압축 기준은 [포스팅 스킬](skills/publish-research-blog/SKILL.md)의 이미지 절에 있습니다.
+생성된 비공개 JSON을 채운 뒤 검증하고 공개합니다. [분석 형식·갱신 규칙](skills/publish-research-blog/references/statistics-format.md)과 [템플릿](skills/publish-research-blog/assets/statistics-analysis.json)을 따릅니다. 리뷰·주제 수는 빌드 시 계산하며, `stats:update`는 현재 공개 리뷰로 주제 집계 JSON을 재계산합니다. 번역은 리뷰 한 편, 같은 원문 ID의 연재는 고유 논문 하나로 세고, 변경이 없으면 집계 날짜를 유지합니다. 관리 집계가 오래되면 빌드가 실패하므로 포스트와 함께 갱신·커밋합니다. 다른 실험 분석은 원문을 재검증해 직접 수정합니다. 이미지 기준은 [포스팅 스킬](skills/publish-research-blog/SKILL.md)을 따릅니다.

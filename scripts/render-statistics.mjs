@@ -36,20 +36,23 @@ export function renderStatistics({ analyses, reviews, lang, href }) {
         const group = []; visit(node.id, group); groups.push(group);
       }
       const ordered = groups.flat(), positions = new Map();
-      const columns = groups.length > 2 ? 2 : 1;
-      const rowHeight = Math.max(180, ...groups.map(group => group.length > 4 ? 300 : 180));
-      const height = Math.ceil(groups.length / columns) * rowHeight;
+      const columns = groups.length > 2 && groups.every(group => group.length <= 4) ? 2 : 1;
+      const groupHeight = group => group.length > 4 ? Math.ceil(group.length / 2) * 100 + 80 : 180;
+      const rowHeights = Array.from({ length: Math.ceil(groups.length / columns) }, (_, row) => Math.max(...groups.slice(row * columns, (row + 1) * columns).map(groupHeight)));
+      const height = rowHeights.reduce((sum, value) => sum + value, 0);
       const palette = ['blue', 'teal', 'amber', 'rose', 'violet', 'slate'];
       groups.forEach((group, groupIndex) => {
         const centerX = (groupIndex % columns + .5) * 640 / columns;
-        const centerY = (Math.floor(groupIndex / columns) + .5) * rowHeight - 12;
+        const row = Math.floor(groupIndex / columns), rowHeight = rowHeights[row];
+        const top = rowHeights.slice(0, row).reduce((sum, value) => sum + value, 0);
+        const centerY = top + rowHeight / 2 - 12;
         const radiusX = columns === 1 ? 190 : 84;
         const radiusY = rowHeight * .28;
         group.forEach((node, index) => {
           const angle = group.length === 2 ? Math.PI - index * Math.PI : -Math.PI / 2 + index * Math.PI * 2 / group.length;
           positions.set(node.id, {
-            x: centerX + (group.length === 1 ? 0 : radiusX * Math.cos(angle)),
-            y: centerY + (group.length < 3 ? 0 : radiusY * Math.sin(angle)),
+            x: group.length > 4 ? centerX + (index % 2 ? 1 : -1) * (columns === 1 ? 140 : 70) : centerX + (group.length === 1 ? 0 : radiusX * Math.cos(angle)),
+            y: group.length > 4 ? top + 45 + Math.floor(index / 2) * 100 + index % 2 * 36 : centerY + (group.length < 3 ? 0 : radiusY * Math.sin(angle)),
             color: palette[groupIndex % palette.length]
           });
         });
@@ -58,12 +61,21 @@ export function renderStatistics({ analyses, reviews, lang, href }) {
       const percentX = x => (x / 640 * 100).toFixed(3);
       const percentY = y => (y / height * 100).toFixed(3);
       const colorStyle = color => `--network-color:var(--network-${color})`;
-      visual = `<div class="network-meta"><span>${chart.nodes.length}${ko ? '개 항목' : ' items'}</span><span>${chart.edges.length}${ko ? '개 연결' : ' links'}</span></div><div class="network-stage" style="aspect-ratio:640 / ${height}" role="group" aria-labelledby="${chartId}-title" aria-describedby="${chartId}-description"><svg class="stat-network" viewBox="0 0 640 ${height}" preserveAspectRatio="none" aria-hidden="true" focusable="false">${chart.edges.map(edge => {
+      const placedWeights = [];
+      const weightPositions = chart.edges.map(edge => {
+        const a = positions.get(edge.source), b = positions.get(edge.target);
+        const candidates = [.5, .4, .6, .3, .7, .2, .8].map(t => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t }));
+        const point = candidates.find(p => !placedWeights.some(other => Math.abs(p.x - other.x) < 80 && Math.abs(p.y - other.y) < 30)) || candidates[0];
+        placedWeights.push(point);
+        return point;
+      });
+      visual = `<div class="network-meta"><span>${chart.nodes.length}${ko ? '개 항목' : ' items'}</span><span>${chart.edges.length}${ko ? '개 연결' : ' links'}</span></div><div class="network-stage" style="aspect-ratio:640 / ${height}${groups.some(group => group.length > 4) ? `;min-height:${height}px` : ''}" role="group" aria-labelledby="${chartId}-title" aria-describedby="${chartId}-description"><svg class="stat-network" viewBox="0 0 640 ${height}" preserveAspectRatio="none" aria-hidden="true" focusable="false">${chart.edges.map(edge => {
         const a = positions.get(edge.source), b = positions.get(edge.target);
         return `<line class="network-edge" x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" style="${colorStyle(a.color)}" stroke-width="${1.5 + edge.weight / maxWeight * 1.5}"/>`;
-      }).join('')}</svg>${chart.edges.map(edge => {
+      }).join('')}</svg>${chart.edges.map((edge, index) => {
         const a = positions.get(edge.source), b = positions.get(edge.target);
-        return `<span class="network-weight" aria-hidden="true" style="left:${percentX((a.x + b.x) / 2)}%;top:${percentY((a.y + b.y) / 2)}%;${colorStyle(a.color)}">${format(edge.weight)}</span>`;
+        const point = weightPositions[index];
+        return `<span class="network-weight" aria-hidden="true" style="left:${percentX(point.x)}%;top:${percentY(point.y)}%;${colorStyle(a.color)}">${format(edge.weight)}</span>`;
       }).join('')}${ordered.map((node, index) => {
         const p = positions.get(node.id), number = String(index + 1).padStart(2, '0');
         const tag = node.paperSlug ? 'a' : 'span';

@@ -22,7 +22,8 @@ export function validateAnalysis(raw, publicSlugs = new Set()) {
   if (raw.schemaVersion !== 1) fail('schemaVersion', 'must be 1');
   const id = identifier(raw.id, 'id');
   if (!['private', 'public'].includes(raw.visibility ?? 'private')) fail('visibility', 'public or private required');
-  if (typeof raw.updatedAt !== 'string' || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:Z|[+-]\d{2}:\d{2})$/.test(raw.updatedAt) || !Number.isFinite(Date.parse(raw.updatedAt))) fail('updatedAt', 'ISO date/time with seconds and timezone required');
+  const time = typeof raw.updatedAt === 'string' && raw.updatedAt.match(/^\d{4}-\d{2}-\d{2}T(\d{2}):(\d{2}):(\d{2})(?:Z|[+-]\d{2}:\d{2})$/);
+  if (!time || Number(time[1]) > 23 || Number(time[2]) > 59 || Number(time[3]) > 59 || !Number.isFinite(Date.parse(raw.updatedAt))) fail('updatedAt', 'ISO date/time with seconds and timezone required');
   const calendar = raw.updatedAt.slice(0, 10);
   if (new Date(`${calendar}T00:00:00Z`).toISOString().slice(0, 10) !== calendar) fail('updatedAt', 'invalid calendar date');
   const paperSlugs = raw.paperSlugs ?? [];

@@ -2,68 +2,248 @@
   "schemaVersion": 1,
   "id": "review-topic-snapshot",
   "visibility": "public",
-  "updatedAt": "2026-10-09T01:35:34Z",
+  "updatedAt": "2026-10-26T08:50:34Z",
   "title": {
-    "ko": "공개 리뷰의 주제 연결",
-    "en": "Topic links across public reviews"
+    "ko": "공개 리뷰의 논문·주제 연결",
+    "en": "Papers and topic links across public reviews"
   },
   "summary": {
-    "ko": "공개된 논문 리뷰 4편의 첫 번째 주제 분포와 공통 주제를 살펴봅니다.",
-    "en": "A snapshot of primary topics and shared topics across four public paper reviews."
+    "ko": "공개 리뷰 19편을 고유 논문 12개로 묶어 대표 주제 분포와 공통 주제를 집계합니다.",
+    "en": "19 public reviews grouped into 12 unique papers, with primary-topic counts and shared-topic links."
   },
   "notes": {
-    "ko": "저장 시점의 공개 리뷰 4편만 포함한 스냅샷입니다. 한영 번역은 같은 논문으로 한 번만 셉니다. 막대는 첫 번째 주제 기준이고, 관계선은 전체 주제 집합의 공통 항목 수입니다. 선이 없는 논문도 표시합니다. 인용 관계나 연구 분야 전체의 분포를 의미하지 않습니다. 리뷰나 주제를 바꾸면 이 분석을 다시 계산해 저장해야 합니다.",
-    "en": "This saved snapshot includes only four public reviews. Korean and English translations count as one paper. Bars count the first topic; edge weights count shared entries across all assigned topics. Isolated papers remain visible. These are not citation links or a distribution of the entire research field. Recompute and save this analysis when reviews or topics change."
+    "ko": "공개·발행 시각 조건을 통과한 리뷰만 포함합니다. 한영 번역은 같은 리뷰로, 같은 arXiv ID(버전 제외)·DOI·원문 URL의 연재는 같은 논문으로 묶습니다. 대표 리뷰는 [1/N] 등 가장 앞선 편이며 동순위는 키 순입니다. 막대는 대표 리뷰의 첫 주제별 고유 논문 수, 관계선 가중치는 각 논문의 공개 연재 전체 주제 합집합 사이의 교집합 크기입니다. 선이 없는 논문도 포함합니다. 이 집계는 블로그에 등록한 주제의 연결이며 인용·인과 관계나 연구 분야 전체의 분포를 뜻하지 않습니다.",
+    "en": "Only public, already published reviews are included. Translations count as one review; series sharing an arXiv ID (ignoring versions), DOI, or source URL count as one paper. The earliest numbered part represents a paper, with slug order breaking ties. Bars count unique papers by the representative review’s first topic. Edge weights count the intersection of the unions of topics across each paper’s public parts. Isolated papers are included. These are assigned blog-topic links, not citation or causal links or the distribution of the entire research field."
   },
   "paperSlugs": [
-    "realtimewam-one-step-asynchronous",
-    "syncworld-visual-calibration",
+    "deep-equilibrium-models",
+    "diffusion-forcing-methods",
+    "diffusion-forcing-theory",
+    "hnc-mechanics",
+    "hnc-solutions",
+    "lehami-symplectic-world-models",
+    "lehami-symplectic-world-models-technical",
+    "lejepa-complete",
+    "lejepa-overview",
+    "lejepa-technical",
     "looped-models-fixed-points",
+    "realtimewam-one-step-asynchronous",
+    "repr-latent-tokenization",
+    "repr-latent-tokenization-technical",
+    "single-global-merging",
+    "single-global-merging-theory",
+    "swap-policy-routing",
+    "syncworld-visual-calibration",
     "transformers-inherently-succinct"
   ],
   "sources": [
     {
-      "url": "https://iiamaii.github.io/reviews/realtimewam-one-step-asynchronous/",
+      "url": "https://iiamaii.github.io/reviews/deep-equilibrium-models/",
       "label": {
-        "ko": "RealtimeWAM",
-        "en": "RealtimeWAM"
+        "ko": "Deep Equilibrium Models: 층을 쌓는 대신 평형 상태를 학습하기",
+        "en": "Deep Equilibrium Models: learning an endpoint instead of stacking layers"
       },
       "location": {
-        "ko": "공개 리뷰 메타데이터 · topics",
-        "en": "Public review metadata · topics"
+        "ko": "공개 리뷰 메타데이터 · paperUrl / topics / 연재 순서",
+        "en": "Public review metadata · paperUrl / topics / series order"
       }
     },
     {
-      "url": "https://iiamaii.github.io/reviews/syncworld-visual-calibration/",
+      "url": "https://iiamaii.github.io/reviews/diffusion-forcing-methods/",
       "label": {
-        "ko": "SyncWorld",
-        "en": "SyncWorld"
+        "ko": "[1/2] Diffusion Forcing: 시간과 노이즈를 따로 조절하면 무엇이 달라질까?",
+        "en": "[1/2] Diffusion Forcing: What Changes When Time and Noise Can Be Controlled Separately?"
       },
       "location": {
-        "ko": "공개 리뷰 메타데이터 · topics",
-        "en": "Public review metadata · topics"
+        "ko": "공개 리뷰 메타데이터 · paperUrl / topics / 연재 순서",
+        "en": "Public review metadata · paperUrl / topics / series order"
+      }
+    },
+    {
+      "url": "https://iiamaii.github.io/reviews/diffusion-forcing-theory/",
+      "label": {
+        "ko": "[2/2] Diffusion Forcing: 모든 부분 시퀀스의 우도를 학습한다는 것은 무엇을 뜻할까?",
+        "en": "[2/2] Diffusion Forcing: What Does Learning Every Subsequence Likelihood Mean?"
+      },
+      "location": {
+        "ko": "공개 리뷰 메타데이터 · paperUrl / topics / 연재 순서",
+        "en": "Public review metadata · paperUrl / topics / series order"
+      }
+    },
+    {
+      "url": "https://iiamaii.github.io/reviews/hnc-mechanics/",
+      "label": {
+        "ko": "[2/2] HNC 심화: 함수 보존은 왜 가능하고 어디서 깨지는가?",
+        "en": "[2/2] HNC in Depth: Why Function Preservation Works, and Where It Fails"
+      },
+      "location": {
+        "ko": "공개 리뷰 메타데이터 · paperUrl / topics / 연재 순서",
+        "en": "Public review metadata · paperUrl / topics / series order"
+      }
+    },
+    {
+      "url": "https://iiamaii.github.io/reviews/hnc-solutions/",
+      "label": {
+        "ko": "[1/2] HNC: 같은 출력을 내는 신경망은 내부에서도 같은 계산을 할까?",
+        "en": "[1/2] HNC: Do Networks with the Same Outputs Compute the Same Way?"
+      },
+      "location": {
+        "ko": "공개 리뷰 메타데이터 · paperUrl / topics / 연재 순서",
+        "en": "Public review metadata · paperUrl / topics / series order"
+      }
+    },
+    {
+      "url": "https://iiamaii.github.io/reviews/lehami-symplectic-world-models/",
+      "label": {
+        "ko": "[1/2] LeHami: 잠재 공간의 부피를 보존하는 월드 모델",
+        "en": "[1/2] LeHami: preserving latent volume in a world model"
+      },
+      "location": {
+        "ko": "공개 리뷰 메타데이터 · paperUrl / topics / 연재 순서",
+        "en": "Public review metadata · paperUrl / topics / series order"
+      }
+    },
+    {
+      "url": "https://iiamaii.github.io/reviews/lehami-symplectic-world-models-technical/",
+      "label": {
+        "ko": "[2/2] LeHami 심화: 보장의 증명과 표현이 실패하는 조건",
+        "en": "[2/2] LeHami in depth: the proof and the conditions for useful representations"
+      },
+      "location": {
+        "ko": "공개 리뷰 메타데이터 · paperUrl / topics / 연재 순서",
+        "en": "Public review metadata · paperUrl / topics / series order"
+      }
+    },
+    {
+      "url": "https://iiamaii.github.io/reviews/lejepa-complete/",
+      "label": {
+        "ko": "[2/3] LeJEPA 전체 해설: 목표 분포에서 이론·알고리즘·실험까지",
+        "en": "[2/3] LeJEPA in full: from target distribution to theory, algorithm and experiments"
+      },
+      "location": {
+        "ko": "공개 리뷰 메타데이터 · paperUrl / topics / 연재 순서",
+        "en": "Public review metadata · paperUrl / topics / series order"
+      }
+    },
+    {
+      "url": "https://iiamaii.github.io/reviews/lejepa-overview/",
+      "label": {
+        "ko": "[1/3] LeJEPA 입문: 같은 이미지는 가깝게, 표현 분포는 가우시안으로",
+        "en": "[1/3] LeJEPA explained: align image views, match a Gaussian distribution"
+      },
+      "location": {
+        "ko": "공개 리뷰 메타데이터 · paperUrl / topics / 연재 순서",
+        "en": "Public review metadata · paperUrl / topics / series order"
+      }
+    },
+    {
+      "url": "https://iiamaii.github.io/reviews/lejepa-technical/",
+      "label": {
+        "ko": "[3/3] LeJEPA 기술 심층 리뷰: 증명 조건, SIGReg와 수식 검토",
+        "en": "[3/3] LeJEPA technical review: proof conditions, SIGReg and checked equations"
+      },
+      "location": {
+        "ko": "공개 리뷰 메타데이터 · paperUrl / topics / 연재 순서",
+        "en": "Public review metadata · paperUrl / topics / series order"
       }
     },
     {
       "url": "https://iiamaii.github.io/reviews/looped-models-fixed-points/",
       "label": {
-        "ko": "Looped models",
-        "en": "Looped models"
+        "ko": "끝점으로 반복 경로를 대신할 수 있을까: Looped Models와 고정점의 효율",
+        "en": "Can an endpoint replace the recurrent path? Efficiency at fixed points in looped models"
       },
       "location": {
-        "ko": "공개 리뷰 메타데이터 · topics",
-        "en": "Public review metadata · topics"
+        "ko": "공개 리뷰 메타데이터 · paperUrl / topics / 연재 순서",
+        "en": "Public review metadata · paperUrl / topics / series order"
+      }
+    },
+    {
+      "url": "https://iiamaii.github.io/reviews/realtimewam-one-step-asynchronous/",
+      "label": {
+        "ko": "반복과 대기를 함께 줄이기: RealtimeWAM의 한 단계 비동기 행동 생성",
+        "en": "Fewer Steps, Less Waiting: Understanding RealtimeWAM"
+      },
+      "location": {
+        "ko": "공개 리뷰 메타데이터 · paperUrl / topics / 연재 순서",
+        "en": "Public review metadata · paperUrl / topics / series order"
+      }
+    },
+    {
+      "url": "https://iiamaii.github.io/reviews/repr-latent-tokenization/",
+      "label": {
+        "ko": "[1/2] RePR: 생성하기 좋은 표현은 어떻게 학습할까?",
+        "en": "[1/2] RePR: learning representations that make generation easier"
+      },
+      "location": {
+        "ko": "공개 리뷰 메타데이터 · paperUrl / topics / 연재 순서",
+        "en": "Public review metadata · paperUrl / topics / series order"
+      }
+    },
+    {
+      "url": "https://iiamaii.github.io/reviews/repr-latent-tokenization-technical/",
+      "label": {
+        "ko": "[2/2] RePR 심화: PMI 유도·구현·스케일링 수치를 따라가기",
+        "en": "[2/2] RePR in depth: PMI derivations, implementation, and scaling evidence"
+      },
+      "location": {
+        "ko": "공개 리뷰 메타데이터 · paperUrl / topics / 연재 순서",
+        "en": "Public review metadata · paperUrl / topics / series order"
+      }
+    },
+    {
+      "url": "https://iiamaii.github.io/reviews/single-global-merging/",
+      "label": {
+        "ko": "[1/2] Single Global Merging: 드문 통신 뒤 최종 전역 병합이 성능을 회복하는 이유",
+        "en": "[1/2] Single Global Merging: why a final global merge recovers performance after sparse communication"
+      },
+      "location": {
+        "ko": "공개 리뷰 메타데이터 · paperUrl / topics / 연재 순서",
+        "en": "Public review metadata · paperUrl / topics / series order"
+      }
+    },
+    {
+      "url": "https://iiamaii.github.io/reviews/single-global-merging-theory/",
+      "label": {
+        "ko": "[2/2] Single Global Merging 심화: 부록 실험과 증명의 조건을 풀어 읽기",
+        "en": "[2/2] Single Global Merging in depth: appendix experiments and proof conditions"
+      },
+      "location": {
+        "ko": "공개 리뷰 메타데이터 · paperUrl / topics / 연재 순서",
+        "en": "Public review metadata · paperUrl / topics / series order"
+      }
+    },
+    {
+      "url": "https://iiamaii.github.io/reviews/swap-policy-routing/",
+      "label": {
+        "ko": "SWAP: 로봇은 작업 도중 어떤 VLA 정책으로 바꿔야 할까?",
+        "en": "SWAP: Which VLA Should Control the Robot Next?"
+      },
+      "location": {
+        "ko": "공개 리뷰 메타데이터 · paperUrl / topics / 연재 순서",
+        "en": "Public review metadata · paperUrl / topics / series order"
+      }
+    },
+    {
+      "url": "https://iiamaii.github.io/reviews/syncworld-visual-calibration/",
+      "label": {
+        "ko": "카메라가 바뀌어도 행동을 읽을 수 있을까: SyncWorld와 시각 보정",
+        "en": "Can a World Model Read Actions After the Camera Moves? SyncWorld and Visual Calibration"
+      },
+      "location": {
+        "ko": "공개 리뷰 메타데이터 · paperUrl / topics / 연재 순서",
+        "en": "Public review metadata · paperUrl / topics / series order"
       }
     },
     {
       "url": "https://iiamaii.github.io/reviews/transformers-inherently-succinct/",
       "label": {
-        "ko": "Transformer succinctness",
-        "en": "Transformer succinctness"
+        "ko": "Transformer는 같은 규칙을 왜 더 작게 표현할 수 있을까",
+        "en": "Why can a Transformer describe the same rules more compactly?"
       },
       "location": {
-        "ko": "공개 리뷰 메타데이터 · topics",
-        "en": "Public review metadata · topics"
+        "ko": "공개 리뷰 메타데이터 · paperUrl / topics / 연재 순서",
+        "en": "Public review metadata · paperUrl / topics / series order"
       }
     }
   ],
@@ -72,19 +252,33 @@
       "id": "primary-topics",
       "type": "bar",
       "title": {
-        "ko": "첫 번째 주제별 리뷰 수",
-        "en": "Reviews by primary topic"
+        "ko": "대표 주제별 고유 논문 수",
+        "en": "Unique papers by primary topic"
       },
       "description": {
-        "ko": "리뷰마다 첫 번째 주제 하나로 분류합니다. 복수 주제로 인한 중복 집계는 없습니다.",
-        "en": "Each review is classified by its first topic, without double counting multi-topic reviews."
+        "ko": "논문마다 대표 리뷰의 첫 번째 주제 하나로 분류합니다. 번역·연재 중복을 제외합니다.",
+        "en": "One primary topic per paper, taken from its representative review. Translations and series do not add duplicate papers."
       },
       "unit": {
-        "ko": "편",
-        "en": "papers"
+        "ko": "고유 논문 수",
+        "en": "unique papers"
       },
       "direction": "none",
       "values": [
+        {
+          "label": {
+            "ko": "language models",
+            "en": "language models"
+          },
+          "value": 3
+        },
+        {
+          "label": {
+            "ko": "representation learning",
+            "en": "representation learning"
+          },
+          "value": 2
+        },
         {
           "label": {
             "ko": "world action model",
@@ -94,10 +288,38 @@
         },
         {
           "label": {
-            "ko": "language models",
-            "en": "language models"
+            "ko": "decentralized learning",
+            "en": "decentralized learning"
           },
-          "value": 2
+          "value": 1
+        },
+        {
+          "label": {
+            "ko": "diffusion models",
+            "en": "diffusion models"
+          },
+          "value": 1
+        },
+        {
+          "label": {
+            "ko": "robot learning",
+            "en": "robot learning"
+          },
+          "value": 1
+        },
+        {
+          "label": {
+            "ko": "self-supervised learning",
+            "en": "self-supervised learning"
+          },
+          "value": 1
+        },
+        {
+          "label": {
+            "ko": "world models",
+            "en": "world models"
+          },
+          "value": 1
         }
       ]
     },
@@ -109,24 +331,56 @@
         "en": "Papers connected by shared topics"
       },
       "description": {
-        "ko": "점은 논문, 선과 숫자는 두 리뷰에 공통으로 지정된 주제 수입니다.",
-        "en": "Nodes represent papers. Lines and numbers show how many assigned topics each pair shares."
+        "ko": "점 하나는 고유 논문 하나이며, 선과 숫자는 두 논문에 공통으로 지정된 주제 수입니다.",
+        "en": "Each node is one unique paper. Lines and numbers show the count of assigned topics shared by each pair."
       },
       "relationship": {
-        "ko": "무방향 관계 · 선이 두꺼울수록 공통 주제가 많음",
-        "en": "Undirected links · thicker lines indicate more shared topics"
+        "ko": "무방향 관계 · 공통 주제 수",
+        "en": "Undirected links · shared-topic count"
       },
       "nodes": [
         {
-          "id": "realtimewam-one-step-asynchronous",
-          "paperSlug": "realtimewam-one-step-asynchronous",
+          "id": "paper-882baaa57fbae246",
+          "paperSlug": "deep-equilibrium-models",
           "label": {
-            "ko": "RealtimeWAM",
-            "en": "RealtimeWAM"
+            "ko": "Deep Equilibrium Models",
+            "en": "Deep Equilibrium Models"
           }
         },
         {
-          "id": "syncworld-visual-calibration",
+          "id": "paper-218acdcdd2011c45",
+          "paperSlug": "diffusion-forcing-methods",
+          "label": {
+            "ko": "Diffusion Forcing",
+            "en": "Diffusion Forcing"
+          }
+        },
+        {
+          "id": "paper-c38866ad0a71477c",
+          "paperSlug": "single-global-merging",
+          "label": {
+            "ko": "Single Global Merging",
+            "en": "Single Global Merging"
+          }
+        },
+        {
+          "id": "paper-7195e47271e561ab",
+          "paperSlug": "transformers-inherently-succinct",
+          "label": {
+            "ko": "Transformer succinctness",
+            "en": "Transformer succinctness"
+          }
+        },
+        {
+          "id": "paper-e2c5835a26dabc32",
+          "paperSlug": "lejepa-overview",
+          "label": {
+            "ko": "LeJEPA",
+            "en": "LeJEPA"
+          }
+        },
+        {
+          "id": "paper-95789b2eda66739b",
           "paperSlug": "syncworld-visual-calibration",
           "label": {
             "ko": "SyncWorld",
@@ -134,7 +388,23 @@
           }
         },
         {
-          "id": "looped-models-fixed-points",
+          "id": "paper-91190968040b019b",
+          "paperSlug": "hnc-solutions",
+          "label": {
+            "ko": "HNC",
+            "en": "HNC"
+          }
+        },
+        {
+          "id": "paper-fbfedc0295010a9a",
+          "paperSlug": "realtimewam-one-step-asynchronous",
+          "label": {
+            "ko": "RealtimeWAM",
+            "en": "RealtimeWAM"
+          }
+        },
+        {
+          "id": "paper-05fbe32450052fd6",
           "paperSlug": "looped-models-fixed-points",
           "label": {
             "ko": "Looped models",
@@ -142,23 +412,114 @@
           }
         },
         {
-          "id": "transformers-inherently-succinct",
-          "paperSlug": "transformers-inherently-succinct",
+          "id": "paper-987b7c4061c26fdd",
+          "paperSlug": "swap-policy-routing",
           "label": {
-            "ko": "Transformer succinctness",
-            "en": "Transformer succinctness"
+            "ko": "SWAP",
+            "en": "SWAP"
+          }
+        },
+        {
+          "id": "paper-c044b79ba7ee6aa7",
+          "paperSlug": "lehami-symplectic-world-models",
+          "label": {
+            "ko": "LeHami",
+            "en": "LeHami"
+          }
+        },
+        {
+          "id": "paper-febb5f4c118822ad",
+          "paperSlug": "repr-latent-tokenization",
+          "label": {
+            "ko": "RePR",
+            "en": "RePR"
           }
         }
       ],
       "edges": [
         {
-          "source": "realtimewam-one-step-asynchronous",
-          "target": "syncworld-visual-calibration",
+          "source": "paper-882baaa57fbae246",
+          "target": "paper-7195e47271e561ab",
+          "weight": 1
+        },
+        {
+          "source": "paper-882baaa57fbae246",
+          "target": "paper-05fbe32450052fd6",
           "weight": 2
         },
         {
-          "source": "looped-models-fixed-points",
-          "target": "transformers-inherently-succinct",
+          "source": "paper-218acdcdd2011c45",
+          "target": "paper-95789b2eda66739b",
+          "weight": 2
+        },
+        {
+          "source": "paper-218acdcdd2011c45",
+          "target": "paper-fbfedc0295010a9a",
+          "weight": 2
+        },
+        {
+          "source": "paper-218acdcdd2011c45",
+          "target": "paper-987b7c4061c26fdd",
+          "weight": 1
+        },
+        {
+          "source": "paper-218acdcdd2011c45",
+          "target": "paper-febb5f4c118822ad",
+          "weight": 1
+        },
+        {
+          "source": "paper-7195e47271e561ab",
+          "target": "paper-05fbe32450052fd6",
+          "weight": 1
+        },
+        {
+          "source": "paper-e2c5835a26dabc32",
+          "target": "paper-91190968040b019b",
+          "weight": 1
+        },
+        {
+          "source": "paper-e2c5835a26dabc32",
+          "target": "paper-c044b79ba7ee6aa7",
+          "weight": 1
+        },
+        {
+          "source": "paper-e2c5835a26dabc32",
+          "target": "paper-febb5f4c118822ad",
+          "weight": 1
+        },
+        {
+          "source": "paper-95789b2eda66739b",
+          "target": "paper-fbfedc0295010a9a",
+          "weight": 2
+        },
+        {
+          "source": "paper-95789b2eda66739b",
+          "target": "paper-987b7c4061c26fdd",
+          "weight": 1
+        },
+        {
+          "source": "paper-91190968040b019b",
+          "target": "paper-05fbe32450052fd6",
+          "weight": 1
+        },
+        {
+          "source": "paper-91190968040b019b",
+          "target": "paper-c044b79ba7ee6aa7",
+          "weight": 1
+        },
+        {
+          "source": "paper-91190968040b019b",
+          "target": "paper-febb5f4c118822ad",
+          "weight": 1
+        },
+        {
+          "source": "paper-fbfedc0295010a9a",
+          "target": "paper-987b7c4061c26fdd",
+          "weight": 1
+        },
+        {
+          "source": "paper-c044b79ba7ee6aa7",
+          "target": "paper-febb5f4c118822ad",
           "weight": 1
         }
       ]

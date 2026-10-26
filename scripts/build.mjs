@@ -7,7 +7,8 @@ import { mathExtension } from './math.mjs';
 import { languages, languageRoute, localizedConfig, copy } from './i18n.mjs';
 import { createRenderer } from './render.mjs';
 import { normalizeTopic, normalizeTopics } from './topics.mjs';
-import { loadAnalyses } from './statistics.mjs';
+import { loadAnalyses, validateAnalysis } from './statistics.mjs';
+import { createReviewTopicSnapshot, sameSnapshot } from './review-topic-snapshot.mjs';
 import { postTimes } from './post-times.mjs';
 import { paperMetadata } from './paper-metadata.mjs';
 
@@ -147,6 +148,23 @@ for (const pair of newestPairs) {
 const publicConfig = { ...config, topics: [...topicMap.values()] };
 await Promise.all(publicConfig.topics.map(topic => checkImage(topic.thumbnail)));
 
+const snapshotFile = path.join(root, 'content/statistics/review-topic-snapshot.json');
+const refreshStatistics = process.argv.includes('--update-statistics');
+let previousSnapshot;
+try { previousSnapshot = JSON.parse(await fs.readFile(snapshotFile, 'utf8')); } catch (error) { if (error.code !== 'ENOENT') throw error; }
+if (previousSnapshot?.visibility === 'public' || (refreshStatistics && !previousSnapshot)) {
+  const expected = createReviewTopicSnapshot({ pairs, topics: publicConfig.topics, url: config.url, base, updatedAt: previousSnapshot?.updatedAt, previous: previousSnapshot });
+  if (!sameSnapshot(previousSnapshot ?? null, expected)) {
+    if (!refreshStatistics) throw new Error('review-topic-snapshot is stale. Run npm run stats:update, review the JSON diff, then commit it with the affected reviews.');
+    if (expected) {
+      expected.updatedAt = new Date(now).toISOString().replace(/\.\d{3}Z$/, 'Z');
+      validateAnalysis(expected, new Set(pairs.keys()));
+      await fs.mkdir(path.dirname(snapshotFile), { recursive: true });
+      await fs.writeFile(snapshotFile, `${JSON.stringify(expected, null, 2)}\n`);
+    } else await fs.rm(snapshotFile);
+    console.log('Updated review-topic-snapshot from current public reviews.');
+  } else if (refreshStatistics) console.log('Topic statistics unchanged; updatedAt preserved.');
+} else if (refreshStatistics) console.log('Private topic snapshot preserved; not published by this command.');
 const analyses = await loadAnalyses(path.join(root, 'content/statistics'), new Set(pairs.keys()), now);
 
 const assetBuffers = await Promise.all(['style.css', 'site.js', 'theme.js', 'reviews.js', 'review-query.js', 'statistics.js', 'favicon-32.png', 'favicon-64.png'].map(file => fs.readFile(path.join(root, 'public/assets', file))));

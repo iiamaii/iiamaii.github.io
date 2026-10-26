@@ -28,6 +28,11 @@ test('sources, public references, schema and unique chart ids are validated', ()
   const version = fixture(); version.schemaVersion = 2; assert.throws(() => validateAnalysis(version, keys), /schemaVersion/);
   const duplicate = fixture(); duplicate.charts.push(structuredClone(duplicate.charts[0])); assert.throws(() => validateAnalysis(duplicate, keys), /duplicate chart/);
 });
+test('analysis update timestamps reject rolled-over dates and midnight hour 24', () => {
+  for (const updatedAt of ['2020-01-01T24:00:00Z', '2020-02-30T12:00:00Z', '2020-01-01T12:60:00Z']) {
+    assert.throws(() => validateAnalysis({ ...fixture(), updatedAt }, keys), /updatedAt/);
+  }
+});
 const network = () => ({ id: 'links', type: 'network', title: bi('Links'), description: bi('Two items'), relationship: bi('Shared topics'), nodes: [{ id: 'a', label: bi('A'), paperSlug: 'paper-a' }, { id: 'b', label: bi('B') }, { id: 'isolated', label: bi('Isolated') }], edges: [{ source: 'a', target: 'b', weight: 2 }] });
 test('networks retain isolated nodes and reject dangling, self, duplicate and invalid weighted edges', () => {
   const raw = fixture(); raw.charts = [network()];

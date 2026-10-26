@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "analysis-id",
   "visibility": "private",
-  "updatedAt": "2026-10-09T01:35:34Z",
+  "updatedAt": "",
   "title": {
     "ko": "분석 제목",
     "en": "Analysis title"
@@ -12,8 +12,8 @@
     "en": "Scope and question"
   },
   "notes": {
-    "ko": "데이터셋·버전·실험 조건·집계 방식·한계",
-    "en": "Dataset, version, conditions, aggregation and limitations"
+    "ko": "분석 단위(리뷰/고유 논문)·대상 범위·원문 버전·데이터셋/분할·표본 수·실험 조건·집계식·발췌 기준·한계",
+    "en": "Counting unit (reviews/unique papers), scope, source version, dataset/split, sample size, conditions, aggregation, selection and limitations"
   },
   "paperSlugs": [],
   "sources": [
