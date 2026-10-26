@@ -31,7 +31,7 @@ test('invalid TeX fails the build; unsafe commands cannot create links', () => {
 });
 test('collapsed background preserves Markdown, links and accessible math within its body', () => {
   const source = String.raw`<details class="review-background">
-<summary><span>Background: expectation</span><span class="review-background-toggle" aria-hidden="true"></span></summary>
+<summary><span>Supplementary explanation: expectation</span><span class="review-background-toggle" aria-hidden="true"></span></summary>
 <div class="review-background-body">
 
 **Definition.** For a discrete variable $X$:

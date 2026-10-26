@@ -18,10 +18,10 @@
 
 {{Put reviewer judgments only in sentences starting with **Review interpretation.**, without source links. Quote the authors' own conclusion first. Do not add caveats denying claims neither the paper nor a reasonable reader makes. Do not invent methods, theory, or experiments absent from this section.}}
 
-{{Use the background block below only for a prerequisite needed to understand a core element but not separately explained in the paper, or a specific gap a reader identifies. Move it immediately before or after the sentence or equation that needs it; remove it when unnecessary. Follow the selection and presentation rules in SKILL.md.}}
+{{Use the supplementary explanation block below only for a prerequisite needed to understand a core element but not separately explained in the paper, or a specific gap a reader identifies. Move it immediately before or after the sentence or equation that needs it; remove it when unnecessary. Follow the selection and presentation rules in SKILL.md.}}
 
 <details class="review-background">
-<summary><span>Background: {{concept, equation, or theory}}</span><span class="review-background-toggle" aria-hidden="true"></span></summary>
+<summary><span>Supplementary explanation: {{concept, equation, or theory}}</span><span class="review-background-toggle" aria-hidden="true"></span></summary>
 <div class="review-background-body">
 
 {{Connection to this passage; necessary definitions, symbols and assumptions; minimal equations, derivations or examples; verified source links and section/page locations. Keep the paper's core argument and short definitions of body symbols in the main text. Reader feedback and selection reasons belong only in the handoff. Preserve the blank lines and unindented structure for Markdown/LaTeX rendering; do not add open.}}
