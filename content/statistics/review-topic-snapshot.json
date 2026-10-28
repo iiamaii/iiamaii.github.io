@@ -2,14 +2,14 @@
   "schemaVersion": 1,
   "id": "review-topic-snapshot",
   "visibility": "public",
-  "updatedAt": "2026-10-26T10:34:40Z",
+  "updatedAt": "2026-10-28T23:55:48Z",
   "title": {
     "ko": "공개 리뷰의 논문·주제 연결",
     "en": "Papers and topic links across public reviews"
   },
   "summary": {
-    "ko": "공개 리뷰 21편을 고유 논문 14개로 묶어 대표 주제 분포와 공통 주제를 집계합니다.",
-    "en": "21 public reviews grouped into 14 unique papers, with primary-topic counts and shared-topic links."
+    "ko": "공개 리뷰 25편을 고유 논문 15개로 묶어 대표 주제 분포와 공통 주제를 집계합니다.",
+    "en": "25 public reviews grouped into 15 unique papers, with primary-topic counts and shared-topic links."
   },
   "notes": {
     "ko": "공개·발행 시각 조건을 통과한 리뷰만 포함합니다. 한영 번역은 같은 리뷰로, 같은 arXiv ID(버전 제외)·DOI·원문 URL의 연재는 같은 논문으로 묶습니다. 대표 리뷰는 [1/N] 등 가장 앞선 편이며 동순위는 키 순입니다. 막대는 대표 리뷰의 첫 주제별 고유 논문 수, 관계선 가중치는 각 논문의 공개 연재 전체 주제 합집합 사이의 교집합 크기입니다. 선이 없는 논문도 포함합니다. 이 집계는 블로그에 등록한 주제의 연결이며 인용·인과 관계나 연구 분야 전체의 분포를 뜻하지 않습니다.",
@@ -32,6 +32,10 @@
     "realtimewam-one-step-asynchronous",
     "repr-latent-tokenization",
     "repr-latent-tokenization-technical",
+    "score-geometry-laplace",
+    "score-geometry-manifold",
+    "score-geometry-weak-proof",
+    "score-geometry-wkb",
     "single-global-merging",
     "single-global-merging-theory",
     "swap-policy-routing",
@@ -216,6 +220,50 @@
       }
     },
     {
+      "url": "https://iiamaii.github.io/reviews/score-geometry-laplace/",
+      "label": {
+        "ko": "[2/4] Laplace 근사에서 오차 분리 정리까지",
+        "en": "[2/4] From Laplace asymptotics to score-error separation"
+      },
+      "location": {
+        "ko": "공개 리뷰 메타데이터 · paperUrl / topics / 연재 순서",
+        "en": "Public review metadata · paperUrl / topics / series order"
+      }
+    },
+    {
+      "url": "https://iiamaii.github.io/reviews/score-geometry-manifold/",
+      "label": {
+        "ko": "[1/4] 기하를 배우는 score와 확률을 배우는 score",
+        "en": "[1/4] Geometry before density in score learning"
+      },
+      "location": {
+        "ko": "공개 리뷰 메타데이터 · paperUrl / topics / 연재 순서",
+        "en": "Public review metadata · paperUrl / topics / series order"
+      }
+    },
+    {
+      "url": "https://iiamaii.github.io/reviews/score-geometry-weak-proof/",
+      "label": {
+        "ko": "[4/4] 약한 정상 방정식으로 균등 극한을 직접 증명하기",
+        "en": "[4/4] A weak-stationarity proof of uniform sampling"
+      },
+      "location": {
+        "ko": "공개 리뷰 메타데이터 · paperUrl / topics / 연재 순서",
+        "en": "Public review metadata · paperUrl / topics / series order"
+      }
+    },
+    {
+      "url": "https://iiamaii.github.io/reviews/score-geometry-wkb/",
+      "label": {
+        "ko": "[3/4] 비보존적 score의 정상분포와 혼합 시간",
+        "en": "[3/4] Non-conservative scores, stationary laws, and mixing"
+      },
+      "location": {
+        "ko": "공개 리뷰 메타데이터 · paperUrl / topics / 연재 순서",
+        "en": "Public review metadata · paperUrl / topics / series order"
+      }
+    },
+    {
       "url": "https://iiamaii.github.io/reviews/single-global-merging/",
       "label": {
         "ko": "[1/2] Single Global Merging: 드문 통신 뒤 최종 전역 병합이 성능을 회복하는 이유",
@@ -351,6 +399,13 @@
             "en": "world models"
           },
           "value": 1
+        },
+        {
+          "label": {
+            "ko": "생성 모델",
+            "en": "Generative Models"
+          },
+          "value": 1
         }
       ]
     },
@@ -392,6 +447,14 @@
           "label": {
             "ko": "Single Global Merging",
             "en": "Single Global Merging"
+          }
+        },
+        {
+          "id": "paper-10d641a2d1ffd4ef",
+          "paperSlug": "score-geometry-manifold",
+          "label": {
+            "ko": "When Scores Learn Geometry",
+            "en": "When Scores Learn Geometry"
           }
         },
         {
