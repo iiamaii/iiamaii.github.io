@@ -3,7 +3,7 @@ title: "[4/4] Score Geometry: 균등 극한 증명"
 description: "반사 경계를 둔 고리 영역과 전체 평면의 단위원 모형에서 잔차를 미분하지 않고 균등 극한과 사후분포를 증명한다."
 date: "2026-10-29"
 publishedAt: "2026-10-29T08:55:40+09:00"
-updatedAt: "2026-10-29T13:13:09+09:00"
+updatedAt: "2026-10-29T14:52:48+09:00"
 topics: ["생성 모델", "확률과 기하"]
 visibility: "public"
 lang: "ko"
@@ -13,8 +13,8 @@ paperPublishedDate: "2025-09-29"
 authors: ["Xiang Li", "Zebang Shen", "Ya-Ping Hsieh", "Niao He"]
 year: "2026"
 paperUrl: "https://arxiv.org/abs/2509.24912v2"
-thumbnail: "/assets/score-geometry/cover-4.svg"
-thumbnailAlt: "기하·분포 학습 시리즈 4편: 약한 정상 방정식으로 균등 극한을 직접 증명하기"
+thumbnail: "/assets/score-geometry/paper-figure-1.svg"
+thumbnailAlt: "논문 Fig.1: 분포 복원과 다양체 기하 학습, 균등 탐색 목표 비교"
 ---
 
 정상 방정식을 분포 비교에 쓰는 시험함수(test function)에 적분하면, 근사 뒤 남는 오차항인 잔차 drift(residual drift)를 미분하지 않고 균등 극한을 식별할 수 있다. 이 글은 온도 $\theta$와 잔차 크기 $\delta_\theta$에 대해 단위원을 둘러싼 고리 영역(annulus)에 반사 경계를 두고, 다양체까지 거리의 제곱을 평균한 법선(normal) 방향의 2차 모멘트(second moment) $M_\theta\le\delta_\theta^2+4\theta$를 얻고, 반사 경계가 없는 명시적 전역 모형까지 증명을 이어 간다. <strong>리뷰 해석.</strong> 작은 잔차의 큰 미분을 허용하면서도 결론을 얻는 보충 경로이며, 그 범위는 아래에 명시한 단위원 모형과 전역 조건이다.
@@ -756,5 +756,5 @@ $$
 - 원문: Xiang Li, Zebang Shen, Ya-Ping Hsieh, Niao He, *When Scores Learn Geometry: Rate Separations under the Manifold Hypothesis*. 최초 공개 2025-09-29, 검토 버전 v2(2026-03-16), 검토일 2026-10-29. [공식 원문](https://arxiv.org/abs/2509.24912v2).
 - 연결 범위: 원문 부록 B.4–B.6을 출발점으로 하며, 명제 S.1과 F.1 및 그 예제는 리뷰 보충 유도다.
 - 추가 원전: [Kang–Ramanan, §2–3·Theorem 1, 파일 pp.1–7](https://arxiv.org/pdf/1204.4969v1#page=7), [Pavliotis, 저자 공개 원고 §4.1·4.6, 파일 pp.83–84·109–110](https://wwwf.imperial.ac.uk/~pavl/PavliotisBook.pdf#page=83). 전자는 반사 정상성의 부등식 부호를, 후자는 확률 흐름과 가역성의 배경을 제공한다.
-- 그림: 대표 이미지는 자체 제작한 벡터 설명 그림이다. 본문의 별도 수치 예제 그림은 명시한 모형의 결정론적 적분 결과다.
+- 그림: 시리즈 썸네일은 [원문 Fig.1](https://arxiv.org/html/2509.24912v2#S1.F1)을 재사용한다. 벡터 도형은 유지하고 내부 래스터만 원래 픽셀 크기의 WebP(품질 95)로 변환한 자산이다. 원문에는 arXiv 영구 비독점 공개 라이선스가 표시되어 있다. 본문의 별도 수치 예제 그림은 명시한 모형의 결정론적 적분 결과다.
 - 확인하지 않은 것: 신경망 학습, Stable Diffusion 이미지 생성의 독립 재현과 정리의 형식 검증.

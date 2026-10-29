@@ -3,7 +3,7 @@ title: "[4/4] Score Geometry: Proving a Uniform Limit"
 description: "Complete supplementary proofs on a reflecting annulus and a confining whole-plane model, allowing residual derivatives to grow."
 date: "2026-10-29"
 publishedAt: "2026-10-29T08:55:40+09:00"
-updatedAt: "2026-10-29T13:13:09+09:00"
+updatedAt: "2026-10-29T14:52:48+09:00"
 topics: ["생성 모델", "확률과 기하"]
 visibility: "public"
 lang: "en"
@@ -13,8 +13,8 @@ paperPublishedDate: "2025-09-29"
 authors: ["Xiang Li", "Zebang Shen", "Ya-Ping Hsieh", "Niao He"]
 year: "2026"
 paperUrl: "https://arxiv.org/abs/2509.24912v2"
-thumbnail: "/assets/score-geometry/cover-4.svg"
-thumbnailAlt: "A weak-stationarity proof of uniform sampling"
+thumbnail: "/assets/score-geometry/paper-figure-1.svg"
+thumbnailAlt: "Paper Figure 1: distribution recovery, manifold geometry learning, and uniform exploration"
 topicNames: {"생성 모델": "Generative Models", "확률과 기하": "Probability and Geometry"}
 ---
 
@@ -705,5 +705,5 @@ The whole-plane extension adds a globally small residual and a confining radial 
 - Starting paper: Xiang Li, Zebang Shen, Ya-Ping Hsieh, Niao He, *When Scores Learn Geometry: Rate Separations under the Manifold Hypothesis*. First released 2025-09-29; reviewed v2, 2026-03-16, on 2026-10-29. [Official record](https://arxiv.org/abs/2509.24912v2).
 - Scope: the connection to B.4–B.6; Propositions S.1 and F.1, their derivations, and their exact examples are supplementary reviewer analysis.
 - Supporting sources: [Kang–Ramanan §§2–3 and Theorem 1, physical PDF pp.1–7](https://arxiv.org/pdf/1204.4969v1#page=7); [Pavliotis author manuscript §§4.1 and 4.6, physical pp.83–84 and 109–110](https://wwwf.imperial.ac.uk/~pavl/PavliotisBook.pdf#page=83). The selected passages supply reflected-stationarity signs and probability-current background.
-- Figures: an original vector cover and deterministic explanatory plots of the explicitly stated models.
+- Figures: The series thumbnail reuses [paper Figure 1](https://arxiv.org/html/2509.24912v2#S1.F1), retaining vector elements and encoding its embedded rasters as WebP at quality 95 without changing their pixel dimensions. The paper carries the arXiv perpetual non-exclusive distribution license. The body plots are deterministic explanatory calculations for the explicitly stated models.
 - Not independently reproduced: neural training, Stable Diffusion generation, or formal machine verification of the proofs.

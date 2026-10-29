@@ -3,7 +3,7 @@ title: "[2/4] Score Geometry: Laplace and Error Separation"
 description: "A detailed derivation of the manifold Laplace limit, Gaussian smoothing, and the distinct score-error requirements for support and density."
 date: "2026-10-29"
 publishedAt: "2026-10-29T08:55:42+09:00"
-updatedAt: "2026-10-29T14:25:51+09:00"
+updatedAt: "2026-10-29T14:52:50+09:00"
 topics: ["생성 모델", "확률과 기하"]
 visibility: "public"
 lang: "en"
@@ -13,8 +13,8 @@ paperPublishedDate: "2025-09-29"
 authors: ["Xiang Li", "Zebang Shen", "Ya-Ping Hsieh", "Niao He"]
 year: "2026"
 paperUrl: "https://arxiv.org/abs/2509.24912v2"
-thumbnail: "/assets/score-geometry/cover-2.svg"
-thumbnailAlt: "From Laplace asymptotics to score-error separation"
+thumbnail: "/assets/score-geometry/paper-figure-1.svg"
+thumbnailAlt: "Paper Figure 1: distribution recovery, manifold geometry learning, and uniform exploration"
 topicNames: {"생성 모델": "Generative Models", "확률과 기하": "Probability and Geometry"}
 ---
 
@@ -372,5 +372,5 @@ Theorem 4.1 compares final generated-density scores. Its vanishing-error conditi
 - Target paper: Xiang Li, Zebang Shen, Ya-Ping Hsieh, Niao He, *When Scores Learn Geometry: Rate Separations under the Manifold Hypothesis*. First released 2025-09-29; reviewed v2, 2026-03-16, on 2026-10-29. [Official record](https://arxiv.org/abs/2509.24912v2).
 - Scope: Appendix A, B.1–B.3, Corollary B.1, Lemmas B.1–B.4, Theorems B.1–B.2, and the connection to Theorem 4.1.
 - Supporting sources: [Łapiński v7, Theorem 2, p.5](https://arxiv.org/pdf/1502.03266v7#page=5); [Leobacher–Steinicke, Theorem 2 and Theorem C](https://arxiv.org/abs/1811.10578). Hwang's full text is not independently verified; the needed special case is derived above.
-- Figures: the representative cover is an original vector illustration.
+- Figures: The series thumbnail reuses [paper Figure 1](https://arxiv.org/html/2509.24912v2#S1.F1), retaining vector elements and encoding its embedded rasters as WebP at quality 95 without changing their pixel dimensions. The paper carries the arXiv perpetual non-exclusive distribution license.
 - Not independently reproduced: neural training, image generation, or formal machine verification of the proofs.

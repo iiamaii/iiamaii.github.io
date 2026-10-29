@@ -3,7 +3,7 @@ title: "[1/4] Score Geometry: 기하와 빈도"
 description: "작은 잡음에서 기하와 빈도 정보의 척도가 갈라지는 이유, 다섯 정리와 원·타원 및 이미지 생성 실험을 설명한다."
 date: "2026-10-29"
 publishedAt: "2026-10-29T08:55:43+09:00"
-updatedAt: "2026-10-29T14:25:52+09:00"
+updatedAt: "2026-10-29T14:52:51+09:00"
 topics: ["생성 모델", "확률과 기하"]
 visibility: "public"
 lang: "ko"
@@ -13,8 +13,8 @@ paperPublishedDate: "2025-09-29"
 authors: ["Xiang Li", "Zebang Shen", "Ya-Ping Hsieh", "Niao He"]
 year: "2026"
 paperUrl: "https://arxiv.org/abs/2509.24912v2"
-thumbnail: "/assets/score-geometry/cover-1.svg"
-thumbnailAlt: "기하·분포 학습 시리즈 1편: 기하를 배우는 score와 확률을 배우는 score"
+thumbnail: "/assets/score-geometry/paper-figure-1.svg"
+thumbnailAlt: "논문 Fig.1: 분포 복원과 다양체 기하 학습, 균등 탐색 목표 비교"
 ---
 
 작은 잡음의 점수 함수(score function)는 데이터 다양체로 돌아오는 기하 신호를 $\sigma^{-2}$ 척도로, 그 위의 빈도 신호를 $O(1)$ 척도로 담는다. Li 등의 *When Scores Learn Geometry*는 이 차이를 이용해 score에 $\sigma^\alpha$를 곱하는 조절된 score Langevin(Tempered Score Langevin, TS Langevin)을 제시한다. [원문 정리 3.1·5.1–5.2, §7](https://arxiv.org/html/2509.24912v2#S3)
@@ -171,19 +171,102 @@ $\sigma\to0$이면 이 Gaussian 확률측도는 0에 확률이 모두 놓인 점
 
 두 평활화 밀도는 확산 모델의 전방 잡음 과정(forward noising process)에서 시점별 주변분포에 해당한다. 잡음 일정 $\sigma(t)$를 쓰면 역과정은 $p_{\sigma(t)}$를 거쳐 $\sigma(t)\to0$에서 원래 분포를 복원하려 한다. 고정된 잡음에서 학습 score로 Langevin을 직접 실행하거나, 역과정의 predictor 뒤에 Langevin corrector를 붙일 수도 있다. 원문의 이론은 두 평활화에 공통으로 적용된다. [원문 §2.1](https://arxiv.org/html/2509.24912v2#S2.SS1)
 
-### 2.2 Bayesian Inverse Problems
+### 2.2 베이지안 역문제(Bayesian Inverse Problems)
 
-관측 $y$와 likelihood $p(y\mid x)\propto e^{-v(x)}$가 주어지면, 원래 prior가 $\mu_{\mathrm{data}}$일 때 posterior는 $e^{-v(x)}d\mu_{\mathrm{data}}(x)$에 비례한다. $v$는 관측에 맞지 않는 정도를 측정하는 음의 로그 likelihood다. 미분 가능한 경우 guidance는 $-\nabla v$다. 원문 §2.2는 이를 정의하고, §6에서 prior를 다양체 부피 균등분포로 바꾸었을 때의 posterior를 분석한다. 이 해설의 자세한 유도는 §6과 부록 B.6에 있다.
+베이지안 역문제는 관측 $y=A(x)+\xi$에서 관측 전의 정보와 관측값을 결합해 미지의 신호 $x$의 분포를 구하는 문제다. $x\in\mathbb R^d$, $y\in\mathbb R^m$이고 $A:\mathbb R^d\to\mathbb R^m$는 관측 연산자(measurement map), $\xi$는 $x$와 독립인 관측 잡음이다. 사전분포(prior distribution)는 관측 전의 지식, 우도(likelihood) $p(y\mid x)$는 후보 $x$가 주어진 관측을 얼마나 잘 설명하는지, 사후분포(posterior distribution)는 둘을 결합한 결과다. 우도는 $x$를 고정했을 때 $y$의 밀도이며, $x$에 대해 적분하면 1이어야 하는 함수는 아니다. [원문 §2.2](https://arxiv.org/html/2509.24912v2#S2.SS2)
 
-구체적으로 베이지안 역문제(Bayesian inverse problem)는 $y=A(x)+\xi$에서 $x$를 추정하는 문제다. Gaussian 관측 잡음이면 $v(x;y)=\|A(x)-y\|^2/(2s^2)$이고 $s$는 관측 잡음의 표준편차다. 이상적인 posterior Langevin의 drift는 $-\nabla v+\nabla\log p_{\mathrm{prior}}$다.
+관측 $y$를 고정하고 $p(y\mid x)\propto e^{-v(x;y)}$로 쓰자. $v$는 $x$와 무관한 상수를 제외한 음의 로그 우도(negative log-likelihood)다. 일반 사전측도 $\mu_{\mathrm{prior}}$에 대한 Bayes 공식은
 
-원문이 다루는 플러그 앤 플레이(Plug-and-Play, PnP) 접근에서는 사전분포의 정규화 상수를 모르거나 표본만 가진 상황에서도 그 score $\hat s$를 사용할 수 있다. 관측 오차 항과 사전 score를 합친 원문 Eq.(4)는
+$$
+\begin{aligned}
+Z(y)&=\int e^{-v(z;y)}\,d\mu_{\mathrm{prior}}(z),\qquad 0<Z(y)<\infty,\\
+d\mu_y(x)&=\frac{e^{-v(x;y)}}{Z(y)}\,d\mu_{\mathrm{prior}}(x).
+\end{aligned}
+$$
+
+이다. $Z(y)$는 전체 확률을 1로 맞추는 정규화 상수다. 주변 공간에 양의 매끄러운 사전밀도 $p_{\mathrm{prior}}$가 있을 때에는 사후밀도 $\pi_y$의 score가 두 항으로 분리된다.
+
+$$
+\nabla_x\log\pi_y(x)
+=-\nabla_x v(x;y)+\nabla_x\log p_{\mathrm{prior}}(x).
+$$
+
+아래 보충 설명은 Gaussian 우도부터 이 분해까지 계산한다. 여기서 관측 잡음의 표준편차 $s$와 앞 절에서 데이터를 평활화한 잡음 폭 $\sigma$는 서로 다른 매개변수다.
+
+<details class="review-background">
+<summary><span>보충 설명: Gaussian 우도에서 사후 score까지</span><span class="review-background-toggle" aria-hidden="true"></span></summary>
+<div class="review-background-body">
+
+<strong>리뷰 보충 유도.</strong> $y$와 $s>0$를 고정하고 $x$에 대해 계산한다.
+
+**1. 관측 잡음의 밀도를 우도로 바꾼다.** $\xi\sim\mathcal N(0,s^2I_m)$이면 $x$를 정했을 때 남는 잡음은 $y-A(x)$다. 따라서
+
+$$
+\begin{aligned}
+p(y\mid x)
+&=(2\pi s^2)^{-m/2}
+\exp\!\left[-\frac{\|y-A(x)\|^2}{2s^2}\right],\\
+-\log p(y\mid x)
+&=\frac m2\log(2\pi s^2)+\frac{\|A(x)-y\|^2}{2s^2}.
+\end{aligned}
+$$
+
+첫 항은 $x$와 무관하므로 사후분포를 정규화할 때 상쇄된다. 그래서 $v(x;y)=\|A(x)-y\|^2/(2s^2)$만 남긴다. 같은 관측 오차라도 $s$가 작을수록 더 큰 비용을 준다.
+
+**2. 결합밀도를 조건부 밀도로 바꾼다.** 사전밀도가 있는 경우 $p(x,y)=p(y\mid x)p_{\mathrm{prior}}(x)$다. 이 식을 $x$에 대해 적분한 $p(y)$로 나누면
+
+$$
+\begin{aligned}
+\pi_y(x)
+&=\frac{p(y\mid x)p_{\mathrm{prior}}(x)}
+{\int_{\mathbb R^d}p(y\mid z)p_{\mathrm{prior}}(z)\,dz}\\
+&=\frac{e^{-v(x;y)}p_{\mathrm{prior}}(x)}
+{\int_{\mathbb R^d}e^{-v(z;y)}p_{\mathrm{prior}}(z)\,dz}
+=\frac{e^{-v(x;y)}p_{\mathrm{prior}}(x)}{Z(y)}.
+\end{aligned}
+$$
+
+Gaussian 앞의 상수는 분자와 분모에서 같다. $Z(y)$는 우도의 그 상수를 제거한 정규화 상수이므로, 일반적으로 관측의 밀도 $p(y)$ 자체와 같지는 않다. 사전분포가 다양체 위에만 놓일 때에도 본문의 측도 형태는 그대로 쓸 수 있다.
+
+**3. 로그를 취한 뒤 미분한다.** $p_{\mathrm{prior}}(x)>0$이고 필요한 미분이 존재하면
+
+$$
+\begin{aligned}
+\log\pi_y(x)&=-v(x;y)+\log p_{\mathrm{prior}}(x)-\log Z(y),\\
+\nabla_x\log Z(y)&=0,\\
+\nabla_x\log\pi_y(x)&=-\nabla_x v(x;y)+\nabla_x\log p_{\mathrm{prior}}(x).
+\end{aligned}
+$$
+
+$Z(y)$ 안의 적분 변수는 $z$다. $y$를 고정한 뒤 $x$로 미분하므로 정규화 상수의 미분이 0이 된다. 사전밀도 자체도 $p_{\mathrm{prior}}=\widetilde p/C$로만 알려져 있다면 $\nabla\log p_{\mathrm{prior}}=\nabla\log\widetilde p$여서 알 수 없는 상수 $C$가 사라진다.
+
+**4. 관측 오차의 미분을 실제로 계산한다.** $A$가 미분 가능하고 $J_A(x)\in\mathbb R^{m\times d}$가 그 야코비안이면, 성분별 연쇄법칙(chain rule)으로
+
+$$
+\begin{aligned}
+\partial_{x_j}v(x;y)
+&=\frac{1}{s^2}\sum_{k=1}^m
+\bigl(A_k(x)-y_k\bigr)\,\partial_{x_j}A_k(x),\\
+\nabla_x v(x;y)&=\frac{1}{s^2}J_A(x)^\top\bigl(A(x)-y\bigr).
+\end{aligned}
+$$
+
+$A(x)=Mx$인 선형 관측에서는 $J_A=M$이므로 관측 유도항(guidance)은 $-\nabla_xv=M^\top(y-Mx)/s^2$다. 현재 예측과 관측의 차이를 신호 공간으로 되돌리는 방향이며, 앞의 음수 부호는 관측 오차를 줄이는 쪽을 선택한다.
+
+이 유도는 [원문 §2.2와 Eq.(4)](https://arxiv.org/html/2509.24912v2#S2.SS2)의 중간 계산을 펼친 것이다. Bayes 공식의 밀도·측도 형태는 [Kekkonen 강의노트 §1.3, Theorem 1.9, 인쇄 pp.7–9](https://www.damtp.cam.ac.uk/research/cia/files/teaching/Inverse_Problems_Lent_2018/19y_01m_16d_LectureNotes.pdf#page=8)에서 함께 확인할 수 있다.
+
+</div>
+</details>
+
+플러그 앤 플레이(Plug-and-Play, PnP) 접근에서는 사전밀도의 상수를 모르거나 사전 표본만 가지고 있어도 학습한 사전 score $\hat s$를 넣을 수 있다. 위 사후 score를 Langevin 이동항(drift)으로 쓰고 그 사전 항을 $\hat s$로 교체하면 원문 Eq.(4)가 된다.
 
 $$
 dX_t=-\nabla_x v(X_t;y)dt+\hat s(X_t)dt+\sqrt2\,dW_t.
 $$
 
-이다. $\hat s$가 $p_\sigma$의 score를 근사할 때, 저자들은 기존 분포 복원의 엄격한 정확도 요구와 부피 균등 사전분포의 강건성을 대비한다. [원문 §2.2, Eq.(4)](https://arxiv.org/html/2509.24912v2#S2.SS2)
+고정된 $\sigma>0$에서 $p_{\mathrm{prior}}=p_\sigma$이고 $\hat s=\nabla\log p_\sigma$가 정확하다면, 정규화·매끄러움 등 필요한 조건 아래 목표 정상밀도는 $\pi_y\propto e^{-v}p_\sigma$다. 바로 다음 절에서 확률 흐름을 대입해 이 사실을 확인한다. 학습한 score가 근사값이면 그 동일성은 자동으로 성립하지 않는다.
+
+사전분포가 원래 데이터 측도 $d\mu_{\mathrm{data}}=\rho\,d\mathcal M$이면 Bayes 공식의 목표는 $e^{-v}\rho\,d\mathcal M$에 비례한다. 원문의 [§6과 이 글의 정리·유도](#정리와-유도)는 사전을 부피 균등분포로 바꿔 $e^{-v}\,d\mathcal M$를 목표로 한다. [원문 Theorem 6.1](https://arxiv.org/html/2509.24912v2#S6.Thmtheorem1), [부록 B.6의 증명 연결](https://arxiv.org/html/2509.24912v2#A2.SS6), [3편의 WKB 증명 해설](/reviews/score-geometry-wkb/#b6-다양체-위-베이지안-사후분포-proof-for-theorem-61)을 함께 연결한다.
 
 ### 2.3 Langevin과 비가역 정상분포
 
@@ -193,13 +276,96 @@ $$
 dX_t=b(X_t)\,dt+\sqrt2\,dW_t
 $$
 
-의 밀도는 Fokker–Planck 방정식 $\partial_t\pi=-\nabla\cdot(b\pi)+\Delta\pi$를 따른다. 정상분포(stationary distribution)는 우변이 0인 분포다.
+에서 $b$는 이동항이고 $W_t$는 $d$차원 표준 Brownian 운동(standard Brownian motion)이다. 시간 $t$에서의 밀도 $\pi_t$는 Fokker–Planck 방정식
 
-<strong>리뷰 보충 유도.</strong> 분포의 성질을 적분으로 확인하는 데 쓰는 시험함수(test function) $h$에 Itô 공식을 적용하면 평균 변화율은 $\mathbb E[b\cdot\nabla h+\Delta h]$다. 이를 부분적분하여 미분을 밀도 쪽으로 옮기면 위 방정식이 나온다. $\sqrt2$가 확산 계수를 1로 만들기 때문에 Laplacian 앞에 $1/2$가 붙지 않는다.
+$$
+\partial_t\pi_t=-\nabla\cdot(b\pi_t)+\Delta\pi_t
+$$
 
-Itô 공식에서 2차 미분이 사라지지 않는 이유는 Brownian 증가량이 $O(\sqrt{dt})$이기 때문이다. $dX_i\,dX_j=2\delta_{ij}dt$인 이차변동(quadratic variation)을 Taylor의 $\tfrac12\partial_{ij}h\,dX_i\,dX_j$에 넣으면 $\Delta h\,dt$가 남는다. 생성자(generator) $Lh=b\cdot\nabla h+\Delta h$와 적분에서 미분을 밀도 쪽으로 옮긴 수반 연산자(adjoint operator) $L^*\pi$가 각각 시험함수·밀도의 진화를 표현한다.
+을 따른다. 여기서 $\nabla\cdot$는 벡터장의 발산(divergence), $\Delta=\sum_{i=1}^d\partial_{x_i}^2$는 Laplacian이다. 이때 발산은 앞서 밀도값이 무한히 커진다는 뜻으로 쓴 발산과 달리, 벡터장이 한 지점에서 퍼져 나가는 양을 나타내는 미분 연산이다. 정상분포(stationary distribution)는 밀도가 시간에 따라 변하지 않아 우변이 0인 분포다. [원문 §2.3](https://arxiv.org/html/2509.24912v2#S2.SS3)
 
-$b=-\nabla f$이면 $\pi\propto e^{-f}$에서 확률 흐름 $j=b\pi-\nabla\pi$가 0이다. 반면 학습된 벡터장이 gradient가 아닐 때는 $j$가 0이 아니어도 $\nabla\cdot j=0$일 수 있다. 따라서 비가역(non-reversible) 동역학의 정상분포를 임의로 $e^{-f}$라고 쓸 수 없다. 논문이 WKB를 도입하는 이유다. [원문 §2.3](https://arxiv.org/html/2509.24912v2#S2.SS3)
+<details class="review-background">
+<summary><span>보충 설명: Itô 공식에서 Fokker–Planck 방정식까지</span><span class="review-background-toggle" aria-hidden="true"></span></summary>
+<div class="review-background-body">
+
+<strong>리뷰 보충 유도.</strong> 분포의 변화를 적분으로 관찰하는 시험함수(test function) $h\in C_c^\infty(\mathbb R^d)$를 잡는다. 이는 매끄럽고 충분히 먼 곳에서 0이 되는 함수다. 아래 계산에는 밀도의 미분과 적분·기댓값을 교환할 수 있는 매끄러움 및 적분 가능성을 둔다. 시험함수의 지지집합이 콤팩트하므로 부분적분의 무한대 경계항은 0이다.
+
+**1. Brownian 잡음의 2차 효과를 계산한다.** 독립인 Brownian 성분은 이차변동(quadratic variation) 규칙 $dW_i\,dW_j=\delta_{ij}\,dt$를 따른다. $\delta_{ij}$는 $i=j$이면 1, 다르면 0이다. 이동항과의 곱은 이 규칙에서 0이므로
+
+$$
+\begin{aligned}
+dX_i\,dX_j
+&=(\sqrt2\,dW_i)(\sqrt2\,dW_j)
+=2\delta_{ij}\,dt,\\
+dh(X_t)
+&=\sum_i\partial_i h(X_t)\,dX_i
++\frac12\sum_{i,j}\partial_{ij}h(X_t)\,dX_i\,dX_j\\
+&=\bigl(b\cdot\nabla h+\Delta h\bigr)(X_t)\,dt
++\sqrt2\,\nabla h(X_t)\cdot dW_t.
+\end{aligned}
+$$
+
+Itô 공식의 $1/2$와공분산(covariance)의 2가 곱해져 1이 된다. 그래서 $\Delta h$ 앞에 $1/2$가 남지 않는다. $dX_i\,dX_j$는 보통의 미소량을 곱한 것이 아니라 확률 과정의 이차변동을 적는 표기다.
+
+**2. 기댓값을 취한다.** 필요한 적분 가능성 아래 Itô 확률적분의 기댓값은 0이다. 따라서 시험함수에 작용하는 생성자(generator) $L$과 평균 변화율은
+
+$$
+\begin{aligned}
+Lh&=b\cdot\nabla h+\Delta h,\\
+\frac{d}{dt}\mathbb E[h(X_t)]
+&=\mathbb E[(Lh)(X_t)]
+=\int_{\mathbb R^d}(Lh)(x)\pi_t(x)\,dx.
+\end{aligned}
+$$
+
+한편 $\mathbb E[h(X_t)]=\int h\pi_t\,dx$이므로 왼쪽은 $\int h\,\partial_t\pi_t\,dx$다. 이제 오른쪽의 $h$에 붙은 미분을 밀도 쪽으로 옮긴다.
+
+**3. 이동항은 한 번, 확산항은 두 번 부분적분한다.** 공간 적분의 영역은 모두 $\mathbb R^d$다. 각 성분에 대해
+
+$$
+\begin{aligned}
+\int b_i\pi_t\,\partial_i h\,dx
+&=-\int h\,\partial_i(b_i\pi_t)\,dx,\\
+\int\pi_t\,\partial_{ii}h\,dx
+&=-\int(\partial_i\pi_t)(\partial_i h)\,dx\\
+&=\int h\,\partial_{ii}\pi_t\,dx.
+\end{aligned}
+$$
+
+첫째 줄에는 음수 부호가 하나 생긴다. 둘째·셋째 줄은 두 번 옮기므로 음수 부호가 두 번 생겨 최종적으로 양수다. 모든 성분을 더하면
+
+$$
+\int h\,\partial_t\pi_t\,dx
+=\int h\bigl[-\nabla\cdot(b\pi_t)+\Delta\pi_t\bigr]\,dx.
+$$
+
+이 식이 모든 시험함수 $h$에 대해 성립하므로 본문의 Fokker–Planck 방정식을 얻는다. 매끄러운 경우에는 점별 방정식으로 읽으며, 더 약한 매끄러움에서는 위 적분 등식이 약한 형태(weak form)의 정의가 된다. 밀도 쪽의 연산자 $L^*\pi=-\nabla\cdot(b\pi)+\Delta\pi$를 생성자의 수반 연산자(adjoint operator)라 부르는 이유도 $\int(Lh)\pi=\int h(L^*\pi)$라는 관계에 있다.
+
+이는 원문 §2.3에서 쓰는 정상 방정식의 기초 유도다. Itô 공식과 수반 연산자를 통한 전방 방정식의 연결은 [Goodman 강의노트 Lesson 5, §2, pp.4–6](https://math.nyu.edu/~goodman/teaching/StochCalc2018/notes/Lesson5.pdf#page=4)에서 확인할 수 있다.
+
+</div>
+</details>
+
+이 방정식은 확률 흐름(probability current) $j_t$를 사용해 다음처럼 쓸 수 있다.
+
+$$
+j_t=b\pi_t-\nabla\pi_t,\qquad
+\partial_t\pi_t=-\nabla\cdot j_t.
+$$
+
+특히 $b=-\nabla f$이고 $\pi=Z_f^{-1}e^{-f}$가 정규화 가능한 매끄러운 밀도이면, 연쇄법칙을 직접 대입해
+
+$$
+\begin{aligned}
+\nabla\pi&=-\pi\nabla f,\\
+j&=(-\nabla f)\pi-(-\pi\nabla f)=0,\\
+L^*\pi&=-\nabla\cdot j=0
+\end{aligned}
+$$
+
+을 얻는다. 앞 절의 사후분포에는 $f=v-\log p_{\mathrm{prior}}$를 넣으면 된다. 이 계산은 목표 밀도가 정상 방정식을 만족함을 확인하며, 그 밀도로의 장시간 수렴에는 별도의 존재·유일성·수렴 조건이 필요하다.
+
+학습된 벡터장이 gradient가 아니면 $j\ne0$이어도 $\nabla\cdot j=0$일 수 있다. 확률은 계속 순환하면서도 각 위치의 밀도는 일정할 수 있다는 뜻이다. 따라서 비가역(non-reversible) 동역학의 정상분포를 임의로 $e^{-f}$라고 놓을 수 없다. 논문이 WKB를 도입하는 이유이며, 그 전개는 [3편 부록 B.4 해설](/reviews/score-geometry-wkb/)에서 이어진다.
 
 ## 3. Gaussian 평활화는 분포보다 기하를 먼저 복원한다 (Central Insight: Gaussian Smoothing Recovers Geometry Before Distribution)
 
@@ -364,11 +530,22 @@ WKB 가정은 단순한 계산 편의가 아니다. 튜브형 이웃으로의 �
 
 ### 목표가 어떻게 달라지는가
 
-데이터 빈도를 prior로 쓰면 posterior는 $e^{-v}\rho\,d\mathcal M$다. 반면 부피에 대한 균등 prior를 쓰면 $e^{-v}\,d\mathcal M$다. TS는 후자를 목표로 한다. 따라서 원래 데이터 prior의 posterior를 더 부정확한 score로 그대로 얻는 알고리즘이 아니다.
+앞 절의 Bayes 공식에 사전분포를 대입하자. 관측 $y$를 고정하고 $v(x;y)$를 $v(x)$로 줄여 쓰면, 두 사후분포는 정확히 다음과 같다.
 
-<strong>보충 유도 최대 엔트로피.</strong> $\mathcal M$의 부피를 $V_{\mathcal M}$라 하면 균등 밀도는 $1/V_{\mathcal M}$이고, 부피 기준 밀도 $\rho$의 엔트로피를 생각하자.
+$$
+\begin{aligned}
+d\mu_y^{\mathrm{data}}(x)
+&=\frac{e^{-v(x)}\rho(x)\,d\mathcal M(x)}
+{\int_{\mathcal M}e^{-v(z)}\rho(z)\,d\mathcal M(z)},\\
+d\mu_y^{\mathrm{unif}}(x)
+&=\frac{e^{-v(x)}\,d\mathcal M(x)}
+{\int_{\mathcal M}e^{-v(z)}\,d\mathcal M(z)}.
+\end{aligned}
+$$
 
-Kullback–Leibler 발산(Kullback–Leibler divergence, KL)은 같은 기준측도에 대한 두 밀도 $p,q$의 $D_{\mathrm{KL}}(p\|q)=\int p\log(p/q)$다. $q$를 기준으로 $t=p/q$라 두면 $t\log t$의 볼록성과 $\int tq=1$ 때문에 적분이 0 이상이다. 등호는 두 분포가 같은 경우에만 성립한다. 아래 엔트로피 상계와 균등분포의 최적성은 바로 적분이 0 이상이라는 성질(nonnegativity)에서 나온다.
+첫째는 데이터가 자주 나타난 위치에 $\rho$만큼 더 큰 사전 가중치를 둔다. 둘째는 다양체의 같은 부피에 같은 사전 확률을 준다. TS는 둘째를 목표로 하므로, 원래 데이터 prior의 posterior와 목표 분포가 달라진다. [원문 §6과 Theorem 6.1](https://arxiv.org/html/2509.24912v2#S6)
+
+부피 균등분포는 부피측도를 기준으로 한 미분 엔트로피(differential entropy)를 최대화한다. 이를 Kullback–Leibler 발산(Kullback–Leibler divergence, KL)으로 계산하자. $V_{\mathcal M}=\int_{\mathcal M}d\mathcal M$라 하면
 
 $$
 -\int_{\mathcal M}\rho\log\rho\,d\mathcal M
@@ -378,7 +555,50 @@ $$
 \le\log V_{\mathcal M}.
 $$
 
-“최대 엔트로피 prior”는 이 기준 측도를 먼저 택했을 때의 표현이다. 다른 좌표의 Lebesgue 측도에 대해 무조건 균등하다는 뜻이 아니다.
+이 등식과 부등식의 계산은 아래에 둔다. “최대 엔트로피 prior”는 기준측도를 다양체 부피로 택했을 때의 표현이다.
+
+<details class="review-background">
+<summary><span>보충 설명: 균등분포의 최대 엔트로피를 직접 계산하기</span><span class="review-background-toggle" aria-hidden="true"></span></summary>
+<div class="review-background-body">
+
+<strong>리뷰 보충 유도.</strong> 부피 기준 균등 밀도를 $u_{\mathcal M}=1/V_{\mathcal M}$라 쓰자. 이미 정의한 $\rho$와 $u_{\mathcal M}$는 둘 다 $d\mathcal M$에 대해 적분하면 1이다. 여기서는 두 밀도가 양수이고 아래 적분이 유한한 경우를 생각한다.
+
+**1. 발산의 로그를 전개한다.** 같은 기준측도에 대한 두 밀도의 KL 발산을 현재 경우에 쓰면
+
+$$
+\begin{aligned}
+D_{\mathrm{KL}}(\rho\|u_{\mathcal M})
+&=\int_{\mathcal M}\rho\log\frac{\rho}{u_{\mathcal M}}\,d\mathcal M\\
+&=\int_{\mathcal M}\rho\bigl(\log\rho+\log V_{\mathcal M}\bigr)\,d\mathcal M\\
+&=\int_{\mathcal M}\rho\log\rho\,d\mathcal M+\log V_{\mathcal M}.
+\end{aligned}
+$$
+
+마지막 줄에서는 상수 $\log V_{\mathcal M}$를 적분 밖으로 꺼내고 $\int\rho\,d\mathcal M=1$을 썼다. 항을 옮기면 본문의 엔트로피 등식이다.
+
+**2. 왜 KL 발산이 0 이상인지 보인다.** $t=\rho/u_{\mathcal M}>0$라 두자. 함수 $G(t)=t\log t-t+1$은
+
+$$
+G'(t)=\log t,\qquad G''(t)=\frac1t>0,\qquad
+G(t)\ge G(1)=0
+$$
+
+을 만족한다. 즉 $t\log t\ge t-1$이다. 이 부등식에 양의 밀도 $u_{\mathcal M}$를 곱해 적분하면
+
+$$
+\begin{aligned}
+D_{\mathrm{KL}}(\rho\|u_{\mathcal M})
+&=\int_{\mathcal M}u_{\mathcal M}\,t\log t\,d\mathcal M\\
+&\ge\int_{\mathcal M}u_{\mathcal M}(t-1)\,d\mathcal M\\
+&=\int_{\mathcal M}\rho\,d\mathcal M
+-\int_{\mathcal M}u_{\mathcal M}\,d\mathcal M=0.
+\end{aligned}
+$$
+
+등호는 $t=1$, 즉 두 밀도가 거의 모든 곳에서 같을 때만 성립한다. 따라서 엔트로피의 최댓값은 $\log V_{\mathcal M}$이고 부피 균등분포가 이를 달성한다. 이는 두 분포의 비율에 관한 기초 계산을 리뷰에서 덧붙인 것이며, 원문의 새로운 정리가 아니다. 좌표 $u$에 대한 균등 밀도와는 다르며, 둘의 차이는 [앞 절의 계량·부피 보정](#다양체-가설과-좌표)에서 설명했다.
+
+</div>
+</details>
 
 ### 정리와 유도
 
@@ -396,7 +616,63 @@ $$
 {\int_U e^{-v(\Phi(w))}\sqrt{\det g(w)}\,dw}.
 $$
 
-gradient인 경우 정상밀도의 지수에 $-v-\sigma^\alpha f_\sigma$가 들어간다. $\theta=\sigma^{2-\alpha}$로 바꾸면 주위의 큰 거리 항은 $d_{\mathcal M}/\theta$, 부피 위에 남는 유효 목적은 $v$다. 일반 경우에도 부록 B.4의 $f_1=v$를 사용한다. 자세한 연결은 부록 B.6에 있다. [원문 Theorem 6.1](https://arxiv.org/html/2509.24912v2#S6.Thmtheorem1)
+이다. 아래는 그 결론을 gradient인 경우에 정규화까지 직접 연결하는 <strong>리뷰 보충 유도</strong>다. 일반적인 비gradient 경우의 원문 증명은 뒤의 링크로 구별한다.
+
+**1. 관측항이 없을 때의 정상분포를 분리한다.** 정규화 가능한 밀도 $\nu_\sigma$를 아래처럼 정의한다. Theorem 5.1의 조건 아래에서는 그 확률측도가 부피 균등분포로 약수렴한다.
+
+$$
+\nu_\sigma(dx)
+=\frac{e^{-\sigma^\alpha f_\sigma(x)}\,dx}
+{\int_{\mathbb R^d}e^{-\sigma^\alpha f_\sigma(z)}\,dz}
+\ \Rightarrow\ \frac{d\mathcal M}{V_{\mathcal M}}.
+$$
+
+관측 유도항을 더한 drift는 $-\nabla(v+\sigma^\alpha f_\sigma)$다. §2.3의 확률 흐름 계산에 $f=v+\sigma^\alpha f_\sigma$를 대입하면 guided 정상측도 $\Pi_\sigma$는 정확히
+
+$$
+\Pi_\sigma(dx)
+=\frac{e^{-v(x)}\nu_\sigma(dx)}
+{\int_{\mathbb R^d}e^{-v(z)}\nu_\sigma(dz)}
+$$
+
+가 된다. 분자와 분모에는 같은 사전 정규화 상수가 들어 있으므로 상쇄된다.
+
+**2. 분자와 분모의 극한을 따로 계산한다.** $h$를 임의의 유계 연속 함수라 하면, 약수렴은 다음 적분의 극한을 준다.
+
+$$
+\begin{aligned}
+\int h(x)e^{-v(x)}\nu_\sigma(dx)
+&\longrightarrow\frac{1}{V_{\mathcal M}}
+\int_{\mathcal M}h(x)e^{-v(x)}\,d\mathcal M(x),\\
+\int e^{-v(x)}\nu_\sigma(dx)
+&\longrightarrow\frac{1}{V_{\mathcal M}}
+\int_{\mathcal M}e^{-v(x)}\,d\mathcal M(x)>0.
+\end{aligned}
+$$
+
+원문은 $v$의 연속성을 튜브형 이웃에서만 가정하므로 그 점을 확인해야 한다. 다양체를 포함하는 작은 이웃 $N$에서 1이고 튜브 바깥에서 0인 매끄러운 함수 $\chi\in[0,1]$를 택하면 $\widetilde v=\chi v$는 전역 유계 연속 함수로 확장된다. $v=\widetilde v$인 $N$ 바깥의 차이는
+
+$$
+\left|\int h(e^{-v}-e^{-\widetilde v})\,d\nu_\sigma\right|
+\le2\|h\|_\infty e^{\|v\|_\infty}\nu_\sigma(N^c)
+\longrightarrow0
+$$
+
+이다. 극한 측도는 $\mathcal M\subset N$에 놓이고 $N^c$는 닫혀 있으므로 그 질량이 0으로 간다. 따라서 연속 확장에 약수렴을 적용한 뒤 원래 $v$로 돌아올 수 있다. 분모는 같은 계산에서 $h=1$로 두면 된다.
+
+**3. 두 극한의 비를 취하고 좌표를 바꾼다.** 극한 분모가 양수이므로
+
+$$
+\int h\,d\Pi_\sigma
+=\frac{\int he^{-v}\,d\nu_\sigma}{\int e^{-v}\,d\nu_\sigma}
+\longrightarrow
+\frac{\int_{\mathcal M}he^{-v}\,d\mathcal M}
+{\int_{\mathcal M}e^{-v}\,d\mathcal M}.
+$$
+
+공통 상수 $1/V_{\mathcal M}$가 상쇄된다. 이것이 $d\mu_y^{\mathrm{unif}}$로의 약수렴이다. 마지막으로 $x=\Phi(u)$, $d\mathcal M=\sqrt{\det g(u)}\,du$를 대입하면 위의 좌표 밀도 $\pi_{\mathrm{post}}$가 나온다. 하나의 좌표로 덮이지 않는 경우에는 앞 절과 같이 단위 분할을 사용한다.
+
+**일반 score와 원문 증명의 연결.** 비gradient score에서는 guided 정상측도를 단순히 $e^{-v}\nu_\sigma$로 쓸 수 없다. 원문은 [부록 B.6](https://arxiv.org/html/2509.24912v2#A2.SS6)에서 [B.4의 Theorem B.3](https://arxiv.org/html/2509.24912v2#A2.Thmtheorem3)에 $f_1=v$를 넣고 [B.1의 Theorem B.1](https://arxiv.org/html/2509.24912v2#A2.Thmtheorem1)을 적용한다. 재조정된 이동항에서 관측항이 $-\theta\nabla v$가 되는 계산, 진폭 $e^{-v}$와 법선 Hessian의 역할은 [3편의 부록 B.6 해설](/reviews/score-geometry-wkb/#b6-다양체-위-베이지안-사후분포-proof-for-theorem-61)에 연결한다. 일반 score의 정상밀도를 정하는 WKB 계산은 그 글의 B.4에 있다.
 
 가정의 범위도 구별해야 한다. 흔한 Gaussian likelihood의 이차함수 $v$는 보통 전역 유계가 아니다. 콤팩트 다양체 위에서 유계라는 사실만으로 원문의 전역 가정이 그대로 성립하지 않는다. 전역 꼬리·집중에 대한 추가 분석이나 바깥에서의 절단을 따로 확인해야 한다.
 
@@ -477,5 +753,6 @@ $\alpha=1$을 고정한 Table 2에서는 3 prompts×5 corrector 수의 15개 비
 
 - 원문: Xiang Li, Zebang Shen, Ya-Ping Hsieh, Niao He, *When Scores Learn Geometry: Rate Separations under the Manifold Hypothesis*. 최초 공개 2025-09-29, 검토 버전 v2(2026-03-16), 검토일 2026-10-29. [공식 원문](https://arxiv.org/abs/2509.24912v2).
 - 읽은 범위: 본문 §1–8, Fig.1–3과 Table 1. 실험의 전체 표와 설정은 [3편](/reviews/score-geometry-wkb/)에서 다룬다.
-- 그림: 대표 이미지는 자체 제작 벡터 그림이다. 원문 Fig.1–3은 해당 결과의 해설을 위한 부분 인용이며, 저자·버전은 위 원문과 같다. 그림 영역을 벡터로 추출하며 Fig.1 내부의 래스터만 원래 픽셀 크기를 유지한 WebP(품질 95)로 바꾼다. Fig.3은 긴 변 1,500픽셀의 WebP(품질 92)로 변환한다. 원문에는 arXiv 영구 비독점 공개 라이선스가 표시되어 있다. 별도 예제 그림은 명시한 모형의 자체 계산이다.
+- 보충 설명의 기초 출처: [Kekkonen §1.3, 인쇄 pp.7–9](https://www.damtp.cam.ac.uk/research/cia/files/teaching/Inverse_Problems_Lent_2018/19y_01m_16d_LectureNotes.pdf#page=8), [Goodman Lesson 5 §2, pp.4–6](https://math.nyu.edu/~goodman/teaching/StochCalc2018/notes/Lesson5.pdf#page=4). 해당 부분은 Bayes 공식과 Itô·전방 방정식 연결에 사용한다.
+- 그림: 시리즈 썸네일은 원문 Fig.1을 재사용한다. 원문 Fig.1–3은 해당 결과의 해설을 위한 부분 인용이며, 저자·버전은 위 원문과 같다. 그림 영역을 벡터로 추출하며 Fig.1 내부의 래스터만 원래 픽셀 크기를 유지한 WebP(품질 95)로 바꾼다. Fig.3은 긴 변 1,500픽셀의 WebP(품질 92)로 변환한다. 원문에는 arXiv 영구 비독점 공개 라이선스가 표시되어 있다. 별도 예제 그림은 명시한 모형의 자체 계산이다.
 - 확인하지 않은 것: 신경망 학습, Stable Diffusion 이미지 생성의 독립 재현과 정리의 형식 검증.

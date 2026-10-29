@@ -3,7 +3,7 @@ title: "[3/4] Score Geometry: Stationarity and Mixing"
 description: "The stationary-density expansion, its assumptions, the complete additional experiments, and the argument connecting tempering to mixing."
 date: "2026-10-29"
 publishedAt: "2026-10-29T08:55:41+09:00"
-updatedAt: "2026-10-29T14:25:50+09:00"
+updatedAt: "2026-10-29T14:52:49+09:00"
 topics: ["생성 모델", "확률과 기하"]
 visibility: "public"
 lang: "en"
@@ -13,8 +13,8 @@ paperPublishedDate: "2025-09-29"
 authors: ["Xiang Li", "Zebang Shen", "Ya-Ping Hsieh", "Niao He"]
 year: "2026"
 paperUrl: "https://arxiv.org/abs/2509.24912v2"
-thumbnail: "/assets/score-geometry/cover-3.svg"
-thumbnailAlt: "Non-conservative scores, stationary laws, and mixing"
+thumbnail: "/assets/score-geometry/paper-figure-1.svg"
+thumbnailAlt: "Paper Figure 1: distribution recovery, manifold geometry learning, and uniform exploration"
 topicNames: {"생성 모델": "Generative Models", "확률과 기하": "Probability and Geometry"}
 ---
 
@@ -712,5 +712,5 @@ For mixing, the barrier-removal mechanism is useful even before a universal quan
 - Target paper: Xiang Li, Zebang Shen, Ya-Ping Hsieh, Niao He, *When Scores Learn Geometry: Rate Separations under the Manifold Hypothesis*. First release 2025-09-29; reviewed v2, 2026-03-16, on 2026-10-29. [Official record](https://arxiv.org/abs/2509.24912v2).
 - Scope: B.4–B.6, C.1–C.4, D.1–D.3; Theorem B.3, Lemmas B.5–B.6, Equation (20), Proposition D.1, Tables 2–4, Figure 4.
 - Supporting sources: [Bouchet–Reygner §§3.1–3.3](https://arxiv.org/abs/1507.02104); [Majerski Theorem 2.4 and Corollary 2.5](https://arxiv.org/abs/1511.00302v2); [Menz–Schlichting Theorems 3.2 and 3.8](https://arxiv.org/abs/1202.1510v4); [Gong–He–Shen v2, Assumptions 1–4 and Theorems 2 and 4](https://arxiv.org/abs/2501.00429v2); [Guerra–Orriols §3.2, Theorem 3.12](https://www.dpmms.cam.ac.uk/~adblg2/EllipticPDELent2026.pdf). These are the indicated selected sections; the Gilbarg–Trudinger book is not independently read in full.
-- Figures: an original vector cover; paper Figure 4 is a figure-area quotation preserved as vectors for the analysis. The paper carries the arXiv perpetual non-exclusive distribution license.
+- Figures: The series thumbnail reuses [paper Figure 1](https://arxiv.org/html/2509.24912v2#S1.F1), retaining vector elements and encoding its embedded rasters as WebP at quality 95 without changing their pixel dimensions. The paper carries the arXiv perpetual non-exclusive distribution license. Paper Figure 4 is a figure-area quotation preserved as vectors for the analysis.
 - Not independently reproduced: neural training, Stable Diffusion generation, or formal machine verification of the proofs.

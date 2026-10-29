@@ -3,7 +3,7 @@ title: "[2/4] Score Geometry: Laplace와 오차 분리"
 description: "좌표 밀도와 부피 밀도, 두 Hessian, Laplace 근사의 중간 계산을 통해 지지집합과 원래 분포의 복원 조건을 증명한다."
 date: "2026-10-29"
 publishedAt: "2026-10-29T08:55:42+09:00"
-updatedAt: "2026-10-29T14:25:51+09:00"
+updatedAt: "2026-10-29T14:52:50+09:00"
 topics: ["생성 모델", "확률과 기하"]
 visibility: "public"
 lang: "ko"
@@ -13,8 +13,8 @@ paperPublishedDate: "2025-09-29"
 authors: ["Xiang Li", "Zebang Shen", "Ya-Ping Hsieh", "Niao He"]
 year: "2026"
 paperUrl: "https://arxiv.org/abs/2509.24912v2"
-thumbnail: "/assets/score-geometry/cover-2.svg"
-thumbnailAlt: "기하·분포 학습 시리즈 2편: Laplace 근사에서 오차 분리 정리까지"
+thumbnail: "/assets/score-geometry/paper-figure-1.svg"
+thumbnailAlt: "논문 Fig.1: 분포 복원과 다양체 기하 학습, 균등 탐색 목표 비교"
 ---
 
 작은 온도 $\theta$에서 최소점이 곡면 전체를 이루면, Laplace 근사의 극한 밀도에는 법선 Hessian(normal Hessian) 행렬식의 역제곱근이 남는다. 이 계산은 기하 복원에 충분한 score 오차 $o(\sigma^{-2})$와 원래 분포 복원에 충분한 $o(1)$의 차이를 연결한다. [원문 부록 B.1–B.3](https://arxiv.org/html/2509.24912v2#A2.SS1)
@@ -384,5 +384,5 @@ $$
 - 원문: Xiang Li, Zebang Shen, Ya-Ping Hsieh, Niao He, *When Scores Learn Geometry: Rate Separations under the Manifold Hypothesis*. 최초 공개 2025-09-29, 검토 버전 v2(2026-03-16), 검토일 2026-10-29. [공식 원문](https://arxiv.org/abs/2509.24912v2).
 - 읽은 범위: 부록 A, B.1–B.3의 Corollary B.1, Lemmas B.1–B.4, Theorems B.1–B.2와 정리 4.1의 연결.
 - 추가 원전: [Łapiński v7, Theorem 2, 파일 p.5](https://arxiv.org/pdf/1502.03266v7#page=5), [Leobacher–Steinicke, Theorems 2 및 C](https://arxiv.org/abs/1811.10578). Hwang(1980)의 전문은 미확인이며 필요한 특수형은 본문에서 유도한다.
-- 그림: 대표 이미지는 자체 제작한 벡터 설명 그림이다. 본문의 별도 수치 예제 그림은 명시한 모형의 결정론적 적분 결과다.
+- 그림: 시리즈 썸네일은 [원문 Fig.1](https://arxiv.org/html/2509.24912v2#S1.F1)을 재사용한다. 벡터 도형은 유지하고 내부 래스터만 원래 픽셀 크기의 WebP(품질 95)로 변환한 자산이다. 원문에는 arXiv 영구 비독점 공개 라이선스가 표시되어 있다. 본문의 별도 수치 예제 그림은 명시한 모형의 결정론적 적분 결과다.
 - 확인하지 않은 것: 신경망 학습, Stable Diffusion 이미지 생성의 독립 재현과 정리의 형식 검증.

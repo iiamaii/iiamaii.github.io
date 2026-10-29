@@ -3,7 +3,7 @@ title: "[3/4] Score Geometry: 정상분포와 혼합"
 description: "비보존적 score의 정상밀도 전개와 온도 조건을 유도하고, 추가 실험 전체와 Poincaré 부등식의 혼합 논증을 검토한다."
 date: "2026-10-29"
 publishedAt: "2026-10-29T08:55:41+09:00"
-updatedAt: "2026-10-29T14:25:50+09:00"
+updatedAt: "2026-10-29T14:52:49+09:00"
 topics: ["생성 모델", "확률과 기하"]
 visibility: "public"
 lang: "ko"
@@ -13,8 +13,8 @@ paperPublishedDate: "2025-09-29"
 authors: ["Xiang Li", "Zebang Shen", "Ya-Ping Hsieh", "Niao He"]
 year: "2026"
 paperUrl: "https://arxiv.org/abs/2509.24912v2"
-thumbnail: "/assets/score-geometry/cover-3.svg"
-thumbnailAlt: "기하·분포 학습 시리즈 3편: 비보존적 score의 정상분포와 혼합 시간"
+thumbnail: "/assets/score-geometry/paper-figure-1.svg"
+thumbnailAlt: "논문 Fig.1: 분포 복원과 다양체 기하 학습, 균등 탐색 목표 비교"
 ---
 
 기울기가 아닌 score의 정상밀도(stationary density), 즉 시간이 지나도 변하지 않는 확률밀도는 Gibbs 공식만으로 정해지지 않는다. 원문은 Wentzel–Kramers–Brillouin(WKB) 전개를 가정하고, 오차 지수 $\beta>-2$에 대해 $\max(-\beta,0)<\alpha<2$인 조절된 score Langevin(Tempered Score Langevin, TS Langevin)의 균등 극한을 유도한다. [원문 정리 5.2, 부록 B.4–B.5](https://arxiv.org/html/2509.24912v2#A2.SS4)
@@ -734,5 +734,5 @@ $$
 - 원문: Xiang Li, Zebang Shen, Ya-Ping Hsieh, Niao He, *When Scores Learn Geometry: Rate Separations under the Manifold Hypothesis*. 최초 공개 2025-09-29, 검토 버전 v2(2026-03-16), 검토일 2026-10-29. [공식 원문](https://arxiv.org/abs/2509.24912v2).
 - 읽은 범위: 부록 B.4–B.6, C.1–C.4, D.1–D.3; Theorem B.3, Lemmas B.5–B.6, Eq.(20), Proposition D.1, Tables 2–4와 Fig.4.
 - 추가 원전: [Bouchet–Reygner §3.1–3.3](https://arxiv.org/abs/1507.02104), [Majerski, Theorem 2.4·Corollary 2.5](https://arxiv.org/abs/1511.00302v2), [Menz–Schlichting, Theorems 3.2·3.8](https://arxiv.org/abs/1202.1510v4), [Gong–He–Shen v2, Assumptions 1–4·Theorems 2·4](https://arxiv.org/abs/2501.00429v2), [Guerra–Orriols §3.2, Theorem 3.12](https://www.dpmms.cam.ac.uk/~adblg2/EllipticPDELent2026.pdf). Gilbarg–Trudinger 책 전문은 독립 열람하지 않았으며 필요한 최대원리의 형태는 위 강의노트로 대조한다.
-- 그림: 대표 이미지는 자체 제작 벡터 그림이다. 원문 Fig.4는 해당 결과의 해설을 위한 부분 인용이며, 저자·버전은 위 원문과 같다. 이 편에서 사용하는 Fig.4의 영역을 벡터로 추출한다. 원문에는 arXiv 영구 비독점 공개 라이선스가 표시되어 있다. 별도 예제 그림은 명시한 모형의 자체 계산이다.
+- 그림: 시리즈 썸네일은 [원문 Fig.1](https://arxiv.org/html/2509.24912v2#S1.F1)을 재사용한다. 벡터 도형은 유지하고 내부 래스터만 원래 픽셀 크기의 WebP(품질 95)로 변환한 자산이다. 원문에는 arXiv 영구 비독점 공개 라이선스가 표시되어 있다. 원문 Fig.4는 해당 결과의 해설을 위한 부분 인용이며, 저자·버전은 위 원문과 같다. 이 편에서 사용하는 Fig.4의 영역을 벡터로 추출한다. 원문에는 arXiv 영구 비독점 공개 라이선스가 표시되어 있다. 별도 예제 그림은 명시한 모형의 자체 계산이다.
 - 확인하지 않은 것: 신경망 학습, Stable Diffusion 이미지 생성의 독립 재현과 정리의 형식 검증.

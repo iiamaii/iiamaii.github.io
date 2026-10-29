@@ -3,7 +3,7 @@ title: "[1/4] Score Geometry: Shape and Density"
 description: "Why small-noise scores encode shape more strongly than frequency, and what the five main theorems and experiments establish."
 date: "2026-10-29"
 publishedAt: "2026-10-29T08:55:43+09:00"
-updatedAt: "2026-10-29T14:25:52+09:00"
+updatedAt: "2026-10-29T14:52:51+09:00"
 topics: ["생성 모델", "확률과 기하"]
 visibility: "public"
 lang: "en"
@@ -13,8 +13,8 @@ paperPublishedDate: "2025-09-29"
 authors: ["Xiang Li", "Zebang Shen", "Ya-Ping Hsieh", "Niao He"]
 year: "2026"
 paperUrl: "https://arxiv.org/abs/2509.24912v2"
-thumbnail: "/assets/score-geometry/cover-1.svg"
-thumbnailAlt: "Geometry before density in score learning"
+thumbnail: "/assets/score-geometry/paper-figure-1.svg"
+thumbnailAlt: "Paper Figure 1: distribution recovery, manifold geometry learning, and uniform exploration"
 topicNames: {"생성 모델": "Generative Models", "확률과 기하": "Probability and Geometry"}
 ---
 
@@ -166,29 +166,199 @@ These two families are the marginals of forward noising processes in diffusion m
 
 ### 2.2 Bayesian Inverse Problems
 
-For an observation $y=A(x)+\xi$, write the likelihood as $p(y\mid x)\propto e^{-v(x;y)}$. Gaussian observation noise of standard deviation $s$ gives $v(x;y)=\|A(x)-y\|^2/(2s^2)$. A prior measure $\mu_{\mathrm{data}}$ leads to a posterior proportional to $e^{-v}d\mu_{\mathrm{data}}$.
+A Bayesian inverse problem combines an observation $y=A(x)+\xi$ with information available before the observation to infer a distribution over the unknown signal. Here $x\in\mathbb R^d$, $y\in\mathbb R^m$, $A:\mathbb R^d\to\mathbb R^m$ is the measurement map, and the observation noise $\xi$ is independent of $x$. The prior distribution describes information before seeing the data; the likelihood $p(y\mid x)$ evaluates how a proposed signal explains the data; the posterior distribution combines both. A likelihood is a density in $y$ for fixed $x$, so it need not integrate to one over candidate signals $x$. [Paper §2.2](https://arxiv.org/html/2509.24912v2#S2.SS2)
 
-Plug-and-Play (PnP) sampling can use a prior score even when the prior's normalizing constant is unknown or the prior is accessible only through samples. With an estimated prior score $\hat s$, the paper's Equation (4) is
+Fix $y$ and write $p(y\mid x)\propto e^{-v(x;y)}$. The potential $v$ is the negative log-likelihood after removing terms independent of $x$. For a general prior measure $\mu_{\mathrm{prior}}$, Bayes' formula reads
+
+$$
+\begin{aligned}
+Z(y)&=\int e^{-v(z;y)}\,d\mu_{\mathrm{prior}}(z),\qquad 0<Z(y)<\infty,\\
+d\mu_y(x)&=\frac{e^{-v(x;y)}}{Z(y)}\,d\mu_{\mathrm{prior}}(x).
+\end{aligned}
+$$
+
+The normalizing constant $Z(y)$ makes total probability one. If the prior has a positive smooth ambient density $p_{\mathrm{prior}}$, the score of the posterior density $\pi_y$ separates into
+
+$$
+\nabla_x\log\pi_y(x)
+=-\nabla_x v(x;y)+\nabla_x\log p_{\mathrm{prior}}(x).
+$$
+
+The following calculation develops this decomposition from a Gaussian observation model. The observation-noise standard deviation $s$ and the data-smoothing width $\sigma$ from the preceding section are different parameters.
+
+<details class="review-background">
+<summary><span>Supplementary explanation: from Gaussian likelihood to posterior score</span><span class="review-background-toggle" aria-hidden="true"></span></summary>
+<div class="review-background-body">
+
+<strong>Supplementary derivation.</strong> Hold $y$ and $s>0$ fixed throughout the derivatives with respect to $x$.
+
+**1. Turn the noise density into a likelihood.** With $\xi\sim\mathcal N(0,s^2I_m)$, a candidate $x$ leaves residual noise $y-A(x)$. Thus
+
+$$
+\begin{aligned}
+p(y\mid x)
+&=(2\pi s^2)^{-m/2}
+\exp\!\left[-\frac{\|y-A(x)\|^2}{2s^2}\right],\\
+-\log p(y\mid x)
+&=\frac m2\log(2\pi s^2)+\frac{\|A(x)-y\|^2}{2s^2}.
+\end{aligned}
+$$
+
+The first term does not depend on $x$ and cancels when the posterior is normalized. This leaves $v(x;y)=\|A(x)-y\|^2/(2s^2)$. Smaller $s$ assigns a larger penalty to the same observation error.
+
+**2. Convert the joint density into a conditional density.** When the prior has a density, $p(x,y)=p(y\mid x)p_{\mathrm{prior}}(x)$. Divide by its integral over $x$, namely $p(y)$:
+
+$$
+\begin{aligned}
+\pi_y(x)
+&=\frac{p(y\mid x)p_{\mathrm{prior}}(x)}
+{\int_{\mathbb R^d}p(y\mid z)p_{\mathrm{prior}}(z)\,dz}\\
+&=\frac{e^{-v(x;y)}p_{\mathrm{prior}}(x)}
+{\int_{\mathbb R^d}e^{-v(z;y)}p_{\mathrm{prior}}(z)\,dz}
+=\frac{e^{-v(x;y)}p_{\mathrm{prior}}(x)}{Z(y)}.
+\end{aligned}
+$$
+
+The Gaussian prefactor is the same in numerator and denominator. Because $Z(y)$ is defined after removing that likelihood prefactor, it is generally different from the marginal observation density $p(y)$. The measure formulation in the main text also covers a prior supported entirely on the manifold.
+
+**3. Take a logarithm, then differentiate.** For a positive differentiable prior density,
+
+$$
+\begin{aligned}
+\log\pi_y(x)&=-v(x;y)+\log p_{\mathrm{prior}}(x)-\log Z(y),\\
+\nabla_x\log Z(y)&=0,\\
+\nabla_x\log\pi_y(x)&=-\nabla_x v(x;y)+\nabla_x\log p_{\mathrm{prior}}(x).
+\end{aligned}
+$$
+
+The integration variable in $Z(y)$ is $z$; $y$ remains fixed, so differentiation with respect to $x$ gives zero. An unknown prior normalizer cancels too: if $p_{\mathrm{prior}}=\widetilde p/C$, then $\nabla\log p_{\mathrm{prior}}=\nabla\log\widetilde p$.
+
+**4. Differentiate the observation loss explicitly.** For differentiable $A$, let $J_A(x)\in\mathbb R^{m\times d}$ be its Jacobian. The componentwise chain rule gives
+
+$$
+\begin{aligned}
+\partial_{x_j}v(x;y)
+&=\frac{1}{s^2}\sum_{k=1}^m
+\bigl(A_k(x)-y_k\bigr)\,\partial_{x_j}A_k(x),\\
+\nabla_x v(x;y)&=\frac{1}{s^2}J_A(x)^\top\bigl(A(x)-y\bigr).
+\end{aligned}
+$$
+
+For a linear measurement $A(x)=Mx$, the Jacobian is $M$, and the guidance term becomes $-\nabla_xv=M^\top(y-Mx)/s^2$. It maps the prediction residual back to signal space; the minus sign selects the direction of decreasing observation loss.
+
+These are intermediate calculations for [paper §2.2 and Equation (4)](https://arxiv.org/html/2509.24912v2#S2.SS2). For the density and measure formulations of Bayes' formula, see [Kekkonen's lecture notes, §1.3, Theorem 1.9, printed pp.7–9](https://www.damtp.cam.ac.uk/research/cia/files/teaching/Inverse_Problems_Lent_2018/19y_01m_16d_LectureNotes.pdf#page=8).
+
+</div>
+</details>
+
+Plug-and-Play (PnP) methods can insert a learned prior score $\hat s$ when the prior normalizer is unknown or only prior samples are available. Using the posterior score as the Langevin drift and replacing its prior term with $\hat s$ produces the paper's Equation (4):
 
 $$
 dX_t=-\nabla_x v(X_t;y)dt+\hat s(X_t)dt+\sqrt2\,dW_t.
 $$
 
-The likelihood contributes $-\nabla v$ and the prior contributes $\hat s$. Section 6 changes the prior to intrinsic uniform volume; it consequently changes the posterior being sought. [Paper §2.2](https://arxiv.org/html/2509.24912v2#S2.SS2)
+At fixed $\sigma>0$, if $p_{\mathrm{prior}}=p_\sigma$ and $\hat s=\nabla\log p_\sigma$ is exact, the target stationary density is $\pi_y\propto e^{-v}p_\sigma$, subject to the required normalization and regularity conditions. The next section verifies this by substituting into the probability current. An approximate learned score does not automatically preserve this identity.
+
+For the original data prior $d\mu_{\mathrm{data}}=\rho\,d\mathcal M$, Bayes' formula instead defines a target proportional to $e^{-v}\rho\,d\mathcal M$. [Section 6 and its derivation below](#theorem-61) replace that prior with uniform manifold volume and target $e^{-v}\,d\mathcal M$. See [Theorem 6.1](https://arxiv.org/html/2509.24912v2#S6.Thmtheorem1), [the proof connection in Appendix B.6](https://arxiv.org/html/2509.24912v2#A2.SS6), and [Part 3's WKB proof discussion](/en/reviews/score-geometry-wkb/#b6-proof-for-theorem-61).
 
 ### 2.3 Stationary Distribution for Non-reversible Dynamics
 
-The stochastic differential equation (SDE)
+In the stochastic differential equation (SDE)
 
 $$
 dX_t=b(X_t)\,dt+\sqrt2\,dW_t
 $$
 
-has the Fokker–Planck equation $\partial_t\pi=-\nabla\cdot(b\pi)+\Delta\pi$. Stationarity means that its right-hand side vanishes.
+$b$ is the drift and $W_t$ is standard $d$-dimensional Brownian motion. Its time-dependent density $\pi_t$ satisfies the Fokker–Planck equation
 
-<strong>Supplementary derivation.</strong> Applying Itô's formula to a test function $h$ gives generator $Lh=b\cdot\nabla h+\Delta h$. Brownian increments are of size $\sqrt{dt}$, so their quadratic variation is $dX_i\,dX_j=2\delta_{ij}dt$. The second-order Taylor term contributes $\Delta h\,dt$, explaining the diffusion coefficient and the absence of an extra factor $1/2$. Integration by parts transfers derivatives to the density and gives the Fokker–Planck equation.
+$$
+\partial_t\pi_t=-\nabla\cdot(b\pi_t)+\Delta\pi_t
+$$
 
-If $b=-\nabla f$, the normalizable Gibbs density $e^{-f}$ has zero probability current $j=b\pi-\nabla\pi$. A non-gradient field may instead have nonzero current with $\nabla\cdot j=0$. A stationary law can exist without a scalar-potential formula. This is the reason for the WKB analysis later. [Paper §2.3](https://arxiv.org/html/2509.24912v2#S2.SS3)
+Here $\nabla\cdot$ is the divergence of a vector field and $\Delta=\sum_{i=1}^d\partial_{x_i}^2$ is the Laplacian. Vector-field divergence is a differential operator measuring local outward flow; it is distinct from a density value diverging to infinity, discussed earlier. A stationary distribution has a time-independent density and hence a zero right-hand side. [Paper §2.3](https://arxiv.org/html/2509.24912v2#S2.SS3)
+
+<details class="review-background">
+<summary><span>Supplementary explanation: from Itô's formula to Fokker–Planck</span><span class="review-background-toggle" aria-hidden="true"></span></summary>
+<div class="review-background-body">
+
+<strong>Supplementary derivation.</strong> Observe the law through a test function $h\in C_c^\infty(\mathbb R^d)$: a smooth function that vanishes outside a compact set. Assume the regularity and integrability needed to exchange density derivatives, integrals, and expectations. Compact support of the test function removes the boundary terms at infinity in the integrations by parts.
+
+**1. Compute the second-order effect of Brownian noise.** Independent Brownian components obey the quadratic-variation rule $dW_i\,dW_j=\delta_{ij}\,dt$, where $\delta_{ij}$ is one for $i=j$ and zero otherwise. Products involving the drift vanish in this calculus, so
+
+$$
+\begin{aligned}
+dX_i\,dX_j
+&=(\sqrt2\,dW_i)(\sqrt2\,dW_j)
+=2\delta_{ij}\,dt,\\
+dh(X_t)
+&=\sum_i\partial_i h(X_t)\,dX_i
++\frac12\sum_{i,j}\partial_{ij}h(X_t)\,dX_i\,dX_j\\
+&=\bigl(b\cdot\nabla h+\Delta h\bigr)(X_t)\,dt
++\sqrt2\,\nabla h(X_t)\cdot dW_t.
+\end{aligned}
+$$
+
+The factor $1/2$ in Itô's formula multiplies a covariance factor of two. Their product is one, leaving no factor $1/2$ in front of $\Delta h$. The notation $dX_i\,dX_j$ denotes quadratic variation rather than ordinary multiplication of infinitesimals.
+
+**2. Take expectations.** Under the necessary integrability conditions, an Itô stochastic integral has expectation zero. The generator $L$, acting on test functions, therefore determines the mean rate of change:
+
+$$
+\begin{aligned}
+Lh&=b\cdot\nabla h+\Delta h,\\
+\frac{d}{dt}\mathbb E[h(X_t)]
+&=\mathbb E[(Lh)(X_t)]
+=\int_{\mathbb R^d}(Lh)(x)\pi_t(x)\,dx.
+\end{aligned}
+$$
+
+Since $\mathbb E[h(X_t)]=\int h\pi_t\,dx$, the left-hand side is $\int h\,\partial_t\pi_t\,dx$. We now move the derivatives on $h$ to the density.
+
+**3. Integrate the drift term once and the diffusion term twice.** All spatial integrals below are over $\mathbb R^d$. For each component,
+
+$$
+\begin{aligned}
+\int b_i\pi_t\,\partial_i h\,dx
+&=-\int h\,\partial_i(b_i\pi_t)\,dx,\\
+\int\pi_t\,\partial_{ii}h\,dx
+&=-\int(\partial_i\pi_t)(\partial_i h)\,dx\\
+&=\int h\,\partial_{ii}\pi_t\,dx.
+\end{aligned}
+$$
+
+The first line acquires one minus sign. The diffusion term transfers derivatives twice and therefore has a positive final sign. Summing the components yields
+
+$$
+\int h\,\partial_t\pi_t\,dx
+=\int h\bigl[-\nabla\cdot(b\pi_t)+\Delta\pi_t\bigr]\,dx.
+$$
+
+Because the identity holds for every test function $h$, it gives the Fokker–Planck equation in the main text. With smooth densities it is a pointwise equation; at lower regularity the integral identity defines its weak form. The density operator $L^*\pi=-\nabla\cdot(b\pi)+\Delta\pi$ is called the adjoint of the generator because $\int(Lh)\pi=\int h(L^*\pi)$.
+
+This develops the stationary-equation background used in paper §2.3. For the connection between Itô's formula, the adjoint, and the forward equation, see [Goodman's lecture notes, Lesson 5, §2, pp.4–6](https://math.nyu.edu/~goodman/teaching/StochCalc2018/notes/Lesson5.pdf#page=4).
+
+</div>
+</details>
+
+Define the probability current $j_t$ to express the density equation as a conservation law:
+
+$$
+j_t=b\pi_t-\nabla\pi_t,\qquad
+\partial_t\pi_t=-\nabla\cdot j_t.
+$$
+
+In particular, for $b=-\nabla f$ and a normalizable smooth Gibbs density $\pi=Z_f^{-1}e^{-f}$, direct differentiation gives
+
+$$
+\begin{aligned}
+\nabla\pi&=-\pi\nabla f,\\
+j&=(-\nabla f)\pi-(-\pi\nabla f)=0,\\
+L^*\pi&=-\nabla\cdot j=0
+\end{aligned}
+$$
+
+Taking $f=v-\log p_{\mathrm{prior}}$ recovers the posterior from the previous section. This verifies that the target density satisfies the stationary equation; long-time convergence to it additionally requires suitable existence, uniqueness, and convergence conditions.
+
+A learned non-gradient field may have $j\ne0$ while $\nabla\cdot j=0$: probability can circulate without changing the density at any location. A non-reversible stationary law therefore need not have an arbitrary scalar-potential expression $e^{-f}$. This motivates the paper's WKB analysis, developed in [Part 3's Appendix B.4 discussion](/en/reviews/score-geometry-wkb/).
 
 ## 3. Central Insight: Gaussian Smoothing Recovers Geometry Before Distribution
 
@@ -341,9 +511,22 @@ The order of limits matters: first consider a stationary law for each fixed $\si
 
 ### A different prior means a different posterior
 
-A data-density prior gives posterior $e^{-v}\rho\,d\mathcal M$. An intrinsic uniform prior gives $e^{-v}d\mathcal M$. The tempered construction targets the second law.
+Insert each prior into Bayes' formula. Hold the observation $y$ fixed and abbreviate $v(x;y)$ to $v(x)$. The two normalized posterior measures are
 
-<strong>Supplementary derivation.</strong> Let $V_{\mathcal M}$ be the manifold's volume. Kullback–Leibler (KL) divergence is $D_{\mathrm{KL}}(p\|q)=\int p\log(p/q)$ for densities relative to the same reference measure. Writing $t=p/q$, convexity of $t\log t$ and $\int tq=1$ give nonnegativity, with equality exactly when the laws coincide. Consequently,
+$$
+\begin{aligned}
+d\mu_y^{\mathrm{data}}(x)
+&=\frac{e^{-v(x)}\rho(x)\,d\mathcal M(x)}
+{\int_{\mathcal M}e^{-v(z)}\rho(z)\,d\mathcal M(z)},\\
+d\mu_y^{\mathrm{unif}}(x)
+&=\frac{e^{-v(x)}\,d\mathcal M(x)}
+{\int_{\mathcal M}e^{-v(z)}\,d\mathcal M(z)}.
+\end{aligned}
+$$
+
+The first gives more prior weight to locations frequently observed in the data, through $\rho$. The second assigns equal prior probability to equal manifold volumes. The tempered construction targets the second posterior. [Paper §6 and Theorem 6.1](https://arxiv.org/html/2509.24912v2#S6)
+
+Uniform volume maximizes differential entropy relative to the manifold-volume reference. Use Kullback–Leibler divergence (KL) to calculate this bound. Let $V_{\mathcal M}=\int_{\mathcal M}d\mathcal M$. Then
 
 $$
 -\int_{\mathcal M}\rho\log\rho\,d\mathcal M
@@ -353,7 +536,50 @@ $$
 \le\log V_{\mathcal M}.
 $$
 
-Uniform volume maximizes differential entropy relative to that volume reference. The statement depends on the chosen reference measure and does not imply uniform coordinate density.
+The calculation below establishes both the equality and the inequality. The maximum-entropy statement uses manifold volume as its reference measure.
+
+<details class="review-background">
+<summary><span>Supplementary explanation: calculating the maximum entropy of uniform volume</span><span class="review-background-toggle" aria-hidden="true"></span></summary>
+<div class="review-background-body">
+
+<strong>Supplementary derivation.</strong> Write the uniform volume density as $u_{\mathcal M}=1/V_{\mathcal M}$. Both $\rho$ and $u_{\mathcal M}$ integrate to one against $d\mathcal M$. Consider positive densities for which the following integrals are finite.
+
+**1. Expand the logarithm in the divergence.** For these densities with respect to the same reference measure,
+
+$$
+\begin{aligned}
+D_{\mathrm{KL}}(\rho\|u_{\mathcal M})
+&=\int_{\mathcal M}\rho\log\frac{\rho}{u_{\mathcal M}}\,d\mathcal M\\
+&=\int_{\mathcal M}\rho\bigl(\log\rho+\log V_{\mathcal M}\bigr)\,d\mathcal M\\
+&=\int_{\mathcal M}\rho\log\rho\,d\mathcal M+\log V_{\mathcal M}.
+\end{aligned}
+$$
+
+The last line takes the constant $\log V_{\mathcal M}$ outside the integral and uses $\int\rho\,d\mathcal M=1$. Rearranging gives the entropy identity in the main text.
+
+**2. Establish nonnegativity explicitly.** Set $t=\rho/u_{\mathcal M}>0$. The function $G(t)=t\log t-t+1$ satisfies
+
+$$
+G'(t)=\log t,\qquad G''(t)=\frac1t>0,\qquad
+G(t)\ge G(1)=0
+$$
+
+Thus $t\log t\ge t-1$. Multiply by the positive density $u_{\mathcal M}$ and integrate:
+
+$$
+\begin{aligned}
+D_{\mathrm{KL}}(\rho\|u_{\mathcal M})
+&=\int_{\mathcal M}u_{\mathcal M}\,t\log t\,d\mathcal M\\
+&\ge\int_{\mathcal M}u_{\mathcal M}(t-1)\,d\mathcal M\\
+&=\int_{\mathcal M}\rho\,d\mathcal M
+-\int_{\mathcal M}u_{\mathcal M}\,d\mathcal M=0.
+\end{aligned}
+$$
+
+Equality requires $t=1$ almost everywhere, meaning that the densities coincide. The maximum entropy is therefore $\log V_{\mathcal M}$, attained by uniform volume. This is an elementary supplementary calculation of density ratios, not a new theorem of the paper. Uniform coordinate density is a different object; see the [metric and volume correction earlier](#manifolds-coordinates-and-two-densities).
+
+</div>
+</details>
 
 ### Theorem 6.1
 
@@ -371,7 +597,63 @@ $$
 {\int_U e^{-v(\Phi(w))}\sqrt{\det g(w)}\,dw}.
 $$
 
-For a gradient score, the stationary exponent is $-v-\sigma^\alpha f_\sigma$. After the time rescaling $\theta=\sigma^{2-\alpha}$, normal confinement survives while $v$ remains as the finite tangential objective. The general argument uses $f_1=v$ in the WKB calculation. [Theorem 6.1](https://arxiv.org/html/2509.24912v2#S6.Thmtheorem1)
+The following <strong>supplementary derivation</strong> establishes the gradient case through explicit normalization. The paper's proof for general non-gradient scores is linked separately afterward.
+
+**1. Separate the stationary law without observations.** Define the normalizable law $\nu_\sigma$ below. Under the conditions of Theorem 5.1, it converges weakly to uniform manifold volume:
+
+$$
+\nu_\sigma(dx)
+=\frac{e^{-\sigma^\alpha f_\sigma(x)}\,dx}
+{\int_{\mathbb R^d}e^{-\sigma^\alpha f_\sigma(z)}\,dz}
+\ \Rightarrow\ \frac{d\mathcal M}{V_{\mathcal M}}.
+$$
+
+Adding observation guidance gives drift $-\nabla(v+\sigma^\alpha f_\sigma)$. Substitute $f=v+\sigma^\alpha f_\sigma$ into the probability-current calculation in §2.3. The guided stationary law $\Pi_\sigma$ is exactly
+
+$$
+\Pi_\sigma(dx)
+=\frac{e^{-v(x)}\nu_\sigma(dx)}
+{\int_{\mathbb R^d}e^{-v(z)}\nu_\sigma(dz)}
+$$
+
+The same prior normalizing constant appears in numerator and denominator and cancels.
+
+**2. Evaluate the numerator and denominator separately.** For any bounded continuous function $h$, weak convergence gives
+
+$$
+\begin{aligned}
+\int h(x)e^{-v(x)}\nu_\sigma(dx)
+&\longrightarrow\frac{1}{V_{\mathcal M}}
+\int_{\mathcal M}h(x)e^{-v(x)}\,d\mathcal M(x),\\
+\int e^{-v(x)}\nu_\sigma(dx)
+&\longrightarrow\frac{1}{V_{\mathcal M}}
+\int_{\mathcal M}e^{-v(x)}\,d\mathcal M(x)>0.
+\end{aligned}
+$$
+
+The paper assumes continuity of $v$ only in the tube, which needs attention here. Choose a smooth $\chi\in[0,1]$ equal to one on a smaller neighborhood $N$ of the manifold and zero outside the tube. Then $\widetilde v=\chi v$ extends to a bounded continuous function on the whole space. Since $v=\widetilde v$ on $N$, the discrepancy outside it satisfies
+
+$$
+\left|\int h(e^{-v}-e^{-\widetilde v})\,d\nu_\sigma\right|
+\le2\|h\|_\infty e^{\|v\|_\infty}\nu_\sigma(N^c)
+\longrightarrow0
+$$
+
+The limiting law is supported on $\mathcal M\subset N$, and the closed complement $N^c$ has mass tending to zero. We can therefore apply weak convergence to the continuous extension and return to the original $v$. Taking $h=1$ establishes the denominator limit.
+
+**3. Take the ratio and change coordinates.** The limiting denominator is positive, so
+
+$$
+\int h\,d\Pi_\sigma
+=\frac{\int he^{-v}\,d\nu_\sigma}{\int e^{-v}\,d\nu_\sigma}
+\longrightarrow
+\frac{\int_{\mathcal M}he^{-v}\,d\mathcal M}
+{\int_{\mathcal M}e^{-v}\,d\mathcal M}.
+$$
+
+The common constant $1/V_{\mathcal M}$ cancels. This is weak convergence to $d\mu_y^{\mathrm{unif}}$. Substituting $x=\Phi(u)$ and $d\mathcal M=\sqrt{\det g(u)}\,du$ yields the displayed coordinate density $\pi_{\mathrm{post}}$. As earlier, multiple charts are combined using a partition of unity.
+
+**Connection to the general-score proof.** For a non-gradient score, multiplying the unguided stationary law by $e^{-v}$ need not produce the guided stationary law. In [Appendix B.6](https://arxiv.org/html/2509.24912v2#A2.SS6), the paper instead inserts $f_1=v$ into [Theorem B.3 in B.4](https://arxiv.org/html/2509.24912v2#A2.Thmtheorem3) and applies [Theorem B.1 in B.1](https://arxiv.org/html/2509.24912v2#A2.Thmtheorem1). The rescaled guidance $-\theta\nabla v$, amplitude $e^{-v}$, and normal Hessian are connected in [Part 3's Appendix B.6 discussion](/en/reviews/score-geometry-wkb/#b6-proof-for-theorem-61). Its B.4 discussion develops the WKB calculation for the general-score stationary density.
 
 The familiar quadratic Gaussian observation loss is generally unbounded on the entire ambient space. Its bounded restriction to a compact manifold does not establish the theorem's global assumption; a tail argument or an external cutoff is needed for that example.
 
@@ -447,5 +729,6 @@ The remaining bridge is from stationary, continuous-time, small-noise laws to tr
 
 - Target paper: Xiang Li, Zebang Shen, Ya-Ping Hsieh, Niao He, *When Scores Learn Geometry: Rate Separations under the Manifold Hypothesis*. First released 2025-09-29; reviewed version v2, 2026-03-16; reviewed 2026-10-29. [Official record](https://arxiv.org/abs/2509.24912v2).
 - Scope: §§1–8, Figures 1–3, Table 1; the complete additional experimental settings and tables are in [Part 3](/en/reviews/score-geometry-wkb/).
-- Figures: the cover and separable-model plot are original explanatory vector graphics. Paper Figures 1–3 are limited figure-area quotations for analysis. Vector elements are retained; Figure 1's embedded rasters keep their pixel dimensions and are encoded as WebP at quality 95. Figure 3 is rendered to a 1,500-pixel long edge and encoded as WebP at quality 92. The source carries the arXiv perpetual non-exclusive distribution license.
+- Background sources: [Kekkonen §1.3, printed pp.7–9](https://www.damtp.cam.ac.uk/research/cia/files/teaching/Inverse_Problems_Lent_2018/19y_01m_16d_LectureNotes.pdf#page=8) for Bayes' formula; [Goodman Lesson 5 §2, pp.4–6](https://math.nyu.edu/~goodman/teaching/StochCalc2018/notes/Lesson5.pdf#page=4) for the Itô/forward-equation connection.
+- Figures: the series thumbnail reuses paper Figure 1; the separable-model plot is an original explanatory vector graphic. Paper Figures 1–3 are limited figure-area quotations for analysis. Vector elements are retained; Figure 1's embedded rasters keep their pixel dimensions and are encoded as WebP at quality 95. Figure 3 is rendered to a 1,500-pixel long edge and encoded as WebP at quality 92. The source carries the arXiv perpetual non-exclusive distribution license.
 - Not independently reproduced: neural training, Stable Diffusion image generation, or formal verification of the theorems.
