@@ -1,9 +1,9 @@
 ---
-title: "[1/4] Geometry before density in score learning"
+title: "[1/4] Score Geometry: Shape and Density"
 description: "Why small-noise scores encode shape more strongly than frequency, and what the five main theorems and experiments establish."
 date: "2026-10-29"
 publishedAt: "2026-10-29T08:55:43+09:00"
-updatedAt: "2026-10-29T08:55:43+09:00"
+updatedAt: "2026-10-29T09:31:36+09:00"
 topics: ["생성 모델", "확률과 기하"]
 visibility: "public"
 lang: "en"
@@ -22,7 +22,7 @@ At small noise levels, a score contains a strong instruction to return to the da
 
 <strong>Review interpretation.</strong> The separation provides a concrete reason to target uniform geometric exploration; the image experiments offer preliminary evidence for that direction rather than a quantitative test of uniformity on an image manifold.
 
-This first part covers §§1–8; [2/4 develops the Laplace proofs](/en/reviews/score-geometry-laplace/), [3/4 examines stationary densities, additional experiments, and mixing](/en/reviews/score-geometry-wkb/), and [4/4 gives supplementary weak-stationarity proofs](/en/reviews/score-geometry-weak-proof/).
+This first part covers §§1–8; [[2/4] Score Geometry: Laplace and Error Separation](/en/reviews/score-geometry-laplace/), [[3/4] Score Geometry: Stationarity and Mixing](/en/reviews/score-geometry-wkb/), and [[4/4] Score Geometry: Proving a Uniform Limit](/en/reviews/score-geometry-weak-proof/).
 
 ## 1. Introduction
 

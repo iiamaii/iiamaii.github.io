@@ -1,9 +1,9 @@
 ---
-title: "[3/4] Non-conservative scores, stationary laws, and mixing"
+title: "[3/4] Score Geometry: Stationarity and Mixing"
 description: "The stationary-density expansion, its assumptions, the complete additional experiments, and the argument connecting tempering to mixing."
 date: "2026-10-29"
 publishedAt: "2026-10-29T08:55:41+09:00"
-updatedAt: "2026-10-29T08:55:41+09:00"
+updatedAt: "2026-10-29T09:31:34+09:00"
 topics: ["생성 모델", "확률과 기하"]
 visibility: "public"
 lang: "en"
@@ -22,7 +22,7 @@ A learned score need not be a gradient, so its stationary density cannot general
 
 <strong>Review interpretation.</strong> The important structure is the passage from normal transport to a closed tangential elliptic equation; differentiating the residual and obtaining uniform global mixing constants require their own justification.
 
-This third part covers B.4–B.6, C, and D; [1/4 presents the main results](/en/reviews/score-geometry-manifold/), [2/4 develops the Laplace and density-ratio arguments](/en/reviews/score-geometry-laplace/), and [4/4 gives supplementary weak-stationarity proofs](/en/reviews/score-geometry-weak-proof/).
+This third part covers B.4–B.6, C, and D; [[1/4] Score Geometry: Shape and Density](/en/reviews/score-geometry-manifold/), [[2/4] Score Geometry: Laplace and Error Separation](/en/reviews/score-geometry-laplace/), and [[4/4] Score Geometry: Proving a Uniform Limit](/en/reviews/score-geometry-weak-proof/).
 
 ## B.4. Manifold WKB Analysis of the Stationary Distribution
 

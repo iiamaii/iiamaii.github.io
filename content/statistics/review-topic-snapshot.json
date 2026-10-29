@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "review-topic-snapshot",
   "visibility": "public",
-  "updatedAt": "2026-10-28T23:55:48Z",
+  "updatedAt": "2026-10-29T00:31:49Z",
   "title": {
     "ko": "공개 리뷰의 논문·주제 연결",
     "en": "Papers and topic links across public reviews"
@@ -222,8 +222,8 @@
     {
       "url": "https://iiamaii.github.io/reviews/score-geometry-laplace/",
       "label": {
-        "ko": "[2/4] Laplace 근사에서 오차 분리 정리까지",
-        "en": "[2/4] From Laplace asymptotics to score-error separation"
+        "ko": "[2/4] Score Geometry: Laplace와 오차 분리",
+        "en": "[2/4] Score Geometry: Laplace and Error Separation"
       },
       "location": {
         "ko": "공개 리뷰 메타데이터 · paperUrl / topics / 연재 순서",
@@ -233,8 +233,8 @@
     {
       "url": "https://iiamaii.github.io/reviews/score-geometry-manifold/",
       "label": {
-        "ko": "[1/4] 기하를 배우는 score와 확률을 배우는 score",
-        "en": "[1/4] Geometry before density in score learning"
+        "ko": "[1/4] Score Geometry: 기하와 빈도",
+        "en": "[1/4] Score Geometry: Shape and Density"
       },
       "location": {
         "ko": "공개 리뷰 메타데이터 · paperUrl / topics / 연재 순서",
@@ -244,8 +244,8 @@
     {
       "url": "https://iiamaii.github.io/reviews/score-geometry-weak-proof/",
       "label": {
-        "ko": "[4/4] 약한 정상 방정식으로 균등 극한을 직접 증명하기",
-        "en": "[4/4] A weak-stationarity proof of uniform sampling"
+        "ko": "[4/4] Score Geometry: 균등 극한 증명",
+        "en": "[4/4] Score Geometry: Proving a Uniform Limit"
       },
       "location": {
         "ko": "공개 리뷰 메타데이터 · paperUrl / topics / 연재 순서",
@@ -255,8 +255,8 @@
     {
       "url": "https://iiamaii.github.io/reviews/score-geometry-wkb/",
       "label": {
-        "ko": "[3/4] 비보존적 score의 정상분포와 혼합 시간",
-        "en": "[3/4] Non-conservative scores, stationary laws, and mixing"
+        "ko": "[3/4] Score Geometry: 정상분포와 혼합",
+        "en": "[3/4] Score Geometry: Stationarity and Mixing"
       },
       "location": {
         "ko": "공개 리뷰 메타데이터 · paperUrl / topics / 연재 순서",

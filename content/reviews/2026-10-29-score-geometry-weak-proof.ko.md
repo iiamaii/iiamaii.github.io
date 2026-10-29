@@ -1,9 +1,9 @@
 ---
-title: "[4/4] 약한 정상 방정식으로 균등 극한을 직접 증명하기"
+title: "[4/4] Score Geometry: 균등 극한 증명"
 description: "반사 원환과 전체 평면의 단위원 모형에서 잔차를 미분하지 않고 균등 극한과 사후분포를 증명한다."
 date: "2026-10-29"
 publishedAt: "2026-10-29T08:55:40+09:00"
-updatedAt: "2026-10-29T08:55:40+09:00"
+updatedAt: "2026-10-29T09:31:33+09:00"
 topics: ["생성 모델", "확률과 기하"]
 visibility: "public"
 lang: "ko"
@@ -19,7 +19,7 @@ thumbnailAlt: "기하·분포 학습 시리즈 4편: 약한 정상 방정식으�
 
 정상 방정식을 시험함수에 적분하면 잔차 drift를 미분하지 않고 균등 극한을 식별할 수 있다. 이 글은 온도 $\theta$와 잔차 크기 $\delta_\theta$에 대해 단위원의 반사 원환에서 법선 모멘트 $M_\theta\le\delta_\theta^2+4\theta$를 얻고, 반사 경계가 없는 명시적 전역 모형까지 증명을 이어 간다. <strong>리뷰 해석.</strong> 작은 잔차의 큰 미분을 허용하면서도 결론을 얻는 보충 경로이며, 그 범위는 아래에 명시한 단위원 모형과 전역 조건이다.
 
-이 시리즈의 4편이다. [1/4 기하를 배우는 score와 확률을 배우는 score](/reviews/score-geometry-manifold/) · [2/4 Laplace 근사에서 오차 분리 정리까지](/reviews/score-geometry-laplace/) · [3/4 비보존적 score의 정상분포와 혼합 시간](/reviews/score-geometry-wkb/).
+이 시리즈의 4편이다. [[1/4] Score Geometry: 기하와 빈도](/reviews/score-geometry-manifold/) · [[2/4] Score Geometry: Laplace와 오차 분리](/reviews/score-geometry-laplace/) · [[3/4] Score Geometry: 정상분포와 혼합](/reviews/score-geometry-wkb/).
 
 ## 1 원문에서 무엇을 더 정당화하려는가
 

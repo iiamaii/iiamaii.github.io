@@ -1,9 +1,9 @@
 ---
-title: "[4/4] A weak-stationarity proof of uniform sampling"
+title: "[4/4] Score Geometry: Proving a Uniform Limit"
 description: "Complete supplementary proofs on a reflecting annulus and a confining whole-plane model, allowing residual derivatives to grow."
 date: "2026-10-29"
 publishedAt: "2026-10-29T08:55:40+09:00"
-updatedAt: "2026-10-29T08:55:40+09:00"
+updatedAt: "2026-10-29T09:31:33+09:00"
 topics: ["생성 모델", "확률과 기하"]
 visibility: "public"
 lang: "en"
@@ -20,7 +20,7 @@ topicNames: {"생성 모델": "Generative Models", "확률과 기하": "Probabil
 
 A stationary equation can identify a uniform limit without differentiating the residual drift. For temperature $\theta$ and residual bound $\delta_\theta$, this article proves the normal mean-square estimate $M_\theta\le\delta_\theta^2+4\theta$ on a reflecting annulus, then removes reflection in an explicit confining whole-plane model. <strong>Review interpretation.</strong> This supplies a supplementary route that permits growing residual derivatives, within the circle models and global assumptions stated below.
 
-This final part contains reviewer-derived results; [1/4 presents the paper](/en/reviews/score-geometry-manifold/), [2/4 explains the Laplace proofs](/en/reviews/score-geometry-laplace/), and [3/4 develops the paper's non-conservative stationary analysis](/en/reviews/score-geometry-wkb/).
+This final part contains reviewer-derived results; [[1/4] Score Geometry: Shape and Density](/en/reviews/score-geometry-manifold/), [[2/4] Score Geometry: Laplace and Error Separation](/en/reviews/score-geometry-laplace/), and [[3/4] Score Geometry: Stationarity and Mixing](/en/reviews/score-geometry-wkb/).
 
 ## 1. The justification problem
 

@@ -1,9 +1,9 @@
 ---
-title: "[2/4] Laplace 근사에서 오차 분리 정리까지"
+title: "[2/4] Score Geometry: Laplace와 오차 분리"
 description: "좌표 밀도와 부피 밀도, 두 Hessian, Laplace 근사의 중간 계산을 통해 지지집합과 원래 분포의 복원 조건을 증명한다."
 date: "2026-10-29"
 publishedAt: "2026-10-29T08:55:42+09:00"
-updatedAt: "2026-10-29T08:55:42+09:00"
+updatedAt: "2026-10-29T09:31:35+09:00"
 topics: ["생성 모델", "확률과 기하"]
 visibility: "public"
 lang: "ko"
@@ -21,7 +21,7 @@ thumbnailAlt: "기하·분포 학습 시리즈 2편: Laplace 근사에서 오차
 
 <strong>리뷰 해석.</strong> 이 논문의 정확도 분리는 정규화 상수와 좌표 야코비안을 함께 추적할 때 가장 분명해진다.
 
-이 시리즈의 2편이다. [1/4 기하를 배우는 score와 확률을 배우는 score](/reviews/score-geometry-manifold/) · [3/4 비보존적 score의 정상분포와 혼합 시간](/reviews/score-geometry-wkb/) · [4/4 약한 정상 방정식으로 균등 극한을 직접 증명하기](/reviews/score-geometry-weak-proof/).
+이 시리즈의 2편이다. [[1/4] Score Geometry: 기하와 빈도](/reviews/score-geometry-manifold/) · [[3/4] Score Geometry: 정상분포와 혼합](/reviews/score-geometry-wkb/) · [[4/4] Score Geometry: 균등 극한 증명](/reviews/score-geometry-weak-proof/).
 
 ## A. 증명을 위한 기호와 기초 (Additional Notation and Preliminaries)
 

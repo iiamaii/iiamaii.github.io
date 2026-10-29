@@ -1,9 +1,9 @@
 ---
-title: "[1/4] 기하를 배우는 score와 확률을 배우는 score"
+title: "[1/4] Score Geometry: 기하와 빈도"
 description: "작은 잡음에서 기하와 빈도 정보의 척도가 갈라지는 이유, 다섯 정리와 원·타원 및 이미지 생성 실험을 설명한다."
 date: "2026-10-29"
 publishedAt: "2026-10-29T08:55:43+09:00"
-updatedAt: "2026-10-29T08:55:43+09:00"
+updatedAt: "2026-10-29T09:31:36+09:00"
 topics: ["생성 모델", "확률과 기하"]
 visibility: "public"
 lang: "ko"
@@ -21,7 +21,7 @@ thumbnailAlt: "기하·분포 학습 시리즈 1편: 기하를 배우는 score�
 
 <strong>리뷰 해석.</strong> 기하와 빈도를 분리한 정리는 균등 탐색이라는 별도 목표를 설계할 근거가 되며, 대규모 이미지 결과는 그 가능성을 보여 주는 초기 증거다.
 
-이 시리즈의 1편이다. [2/4 Laplace 근사에서 오차 분리 정리까지](/reviews/score-geometry-laplace/) · [3/4 비보존적 score의 정상분포와 혼합 시간](/reviews/score-geometry-wkb/) · [4/4 약한 정상 방정식으로 균등 극한을 직접 증명하기](/reviews/score-geometry-weak-proof/).
+이 시리즈의 1편이다. [[2/4] Score Geometry: Laplace와 오차 분리](/reviews/score-geometry-laplace/) · [[3/4] Score Geometry: 정상분포와 혼합](/reviews/score-geometry-wkb/) · [[4/4] Score Geometry: 균등 극한 증명](/reviews/score-geometry-weak-proof/).
 
 ## 1. 서론과 관련 연구 (Introduction)
 

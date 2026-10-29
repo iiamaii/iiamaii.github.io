@@ -1,9 +1,9 @@
 ---
-title: "[2/4] From Laplace asymptotics to score-error separation"
+title: "[2/4] Score Geometry: Laplace and Error Separation"
 description: "A detailed derivation of the manifold Laplace limit, Gaussian smoothing, and the distinct score-error requirements for support and density."
 date: "2026-10-29"
 publishedAt: "2026-10-29T08:55:42+09:00"
-updatedAt: "2026-10-29T08:55:42+09:00"
+updatedAt: "2026-10-29T09:31:35+09:00"
 topics: ["생성 모델", "확률과 기하"]
 visibility: "public"
 lang: "en"
@@ -22,7 +22,7 @@ When an energy is minimized along a manifold rather than at one point, small-tem
 
 <strong>Review interpretation.</strong> The rate separation is most convincing when the proof tracks both normalization and coordinate volume: neither can be discarded as a harmless constant before the relevant ratio is formed.
 
-This second part covers Appendix A and B.1–B.3; [1/4 states the main results](/en/reviews/score-geometry-manifold/), [3/4 treats non-conservative scores and mixing](/en/reviews/score-geometry-wkb/), and [4/4 develops supplementary weak proofs](/en/reviews/score-geometry-weak-proof/).
+This second part covers Appendix A and B.1–B.3; [[1/4] Score Geometry: Shape and Density](/en/reviews/score-geometry-manifold/), [[3/4] Score Geometry: Stationarity and Mixing](/en/reviews/score-geometry-wkb/), and [[4/4] Score Geometry: Proving a Uniform Limit](/en/reviews/score-geometry-weak-proof/).
 
 ## A. Additional Notation and Preliminaries
 

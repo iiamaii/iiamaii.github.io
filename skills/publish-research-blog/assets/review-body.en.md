@@ -1,6 +1,6 @@
 {{Lead in two or three sentences: the core contribution, one or two representative results whose table number, unit, compared rows, and conditions are rechecked against the source table, and a one-line verdict on how far the claim holds on its evidence (not a "one should distinguish…" caveat or a restatement of the authors' conclusion). Do not fill it with a question, a reading guide, disclaimers, or notation notes alone.}}
 
-{{Series or depth versions only: one sentence giving this part's source scope and [n/N] links to adjacent parts. An overview does not replace the detailed account.}}
+{{Series or depth versions only: use [n/N] Shared Keyword: Short Subtitle consistently in all concise series titles; give this part's source scope and matching links to adjacent parts in one sentence. An overview does not replace the detailed account.}}
 
 {{Repeat the section below using the paper's actual numbers, headings, and order. Remove these instructions and unfinished placeholders from the article.}}
 

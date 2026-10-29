@@ -1,9 +1,9 @@
 ---
-title: "[3/4] 비보존적 score의 정상분포와 혼합 시간"
+title: "[3/4] Score Geometry: 정상분포와 혼합"
 description: "비보존적 score의 정상밀도 전개와 온도 조건을 유도하고, 추가 실험 전체와 Poincaré 부등식의 혼합 논증을 검토한다."
 date: "2026-10-29"
 publishedAt: "2026-10-29T08:55:41+09:00"
-updatedAt: "2026-10-29T08:55:41+09:00"
+updatedAt: "2026-10-29T09:31:34+09:00"
 topics: ["생성 모델", "확률과 기하"]
 visibility: "public"
 lang: "ko"
@@ -21,7 +21,7 @@ thumbnailAlt: "기하·분포 학습 시리즈 3편: 비보존적 score의 정�
 
 <strong>리뷰 해석.</strong> 법선 수송에서 접선 타원형 방정식으로 이어지는 구조가 핵심 성과이며, 잔차 미분과 전역 혼합의 정당화는 가정과 별도로 추적해야 한다.
 
-이 시리즈의 3편이다. [1/4 기하를 배우는 score와 확률을 배우는 score](/reviews/score-geometry-manifold/) · [2/4 Laplace 근사에서 오차 분리 정리까지](/reviews/score-geometry-laplace/) · [4/4 약한 정상 방정식으로 균등 극한을 직접 증명하기](/reviews/score-geometry-weak-proof/).
+이 시리즈의 3편이다. [[1/4] Score Geometry: 기하와 빈도](/reviews/score-geometry-manifold/) · [[2/4] Score Geometry: Laplace와 오차 분리](/reviews/score-geometry-laplace/) · [[4/4] Score Geometry: 균등 극한 증명](/reviews/score-geometry-weak-proof/).
 
 ## B.4. 비보존적 동역학의 정상밀도 (Manifold WKB Analysis of the Stationary Distribution)
 
