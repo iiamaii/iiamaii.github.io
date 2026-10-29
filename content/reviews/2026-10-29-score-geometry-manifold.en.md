@@ -3,7 +3,7 @@ title: "[1/4] Score Geometry: Shape and Density"
 description: "Why small-noise scores encode shape more strongly than frequency, and what the five main theorems and experiments establish."
 date: "2026-10-29"
 publishedAt: "2026-10-29T08:55:43+09:00"
-updatedAt: "2026-10-29T11:06:38+09:00"
+updatedAt: "2026-10-29T11:16:15+09:00"
 topics: ["생성 모델", "확률과 기하"]
 visibility: "public"
 lang: "en"
@@ -40,7 +40,7 @@ The paper organizes its comparison around four lines of work.
 
 - <strong>Distribution learning.</strong> Existing convergence analyses connect score accuracy to recovery of a target law, including questions about dimension dependence. The authors' distinction is that a joint distributional error bound does not itself separate shape information from density information.
 - <strong>Detection of the data manifold.</strong> The paper distinguishes Stanczuk and colleagues' intrinsic-dimension estimation, Ventura and colleagues' analysis of linear subspaces, Pavlova and colleagues' primarily empirical evidence, and Pidstrigach's regularity conditions for concentration. It positions the present work around noise-dependent approximation rates and uniform sampling, rather than support detection alone.
-- <strong>Small-noise score asymptotics.</strong> The authors describe prior results by Lu, Lyu, Liu, and collaborators as identifying the singular projection-like component. Their claimed advance is to isolate the density-dependent higher-order information instead of placing it inside an undifferentiated bounded remainder.
+- <strong>Asymptotic behavior of the score.</strong> The authors describe prior results by Lu, Lyu, Liu, and collaborators as identifying the singular projection-like component. Their claimed advance is to isolate the density-dependent higher-order information instead of placing it inside an undifferentiated bounded remainder.
 - <strong>Uniform manifold sampling.</strong> Graph normalizations associated with Coifman, Hein, and collaborators cancel sampling density and recover a Laplace–Beltrami operator. The paper contrasts those geometric-operator constructions with large ambient generative models, and contrasts its inference-time modification with De Santi and colleagues' fine-tuning approach to uniform exploration.
 
 These are the comparisons made in the target paper's related-work section. [Paper §1.1](https://arxiv.org/html/2509.24912v2#S1.SS1)
