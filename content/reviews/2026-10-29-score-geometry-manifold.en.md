@@ -3,7 +3,7 @@ title: "[1/4] Score Geometry: Shape and Density"
 description: "Why small-noise scores encode shape more strongly than frequency, and what the five main theorems and experiments establish."
 date: "2026-10-29"
 publishedAt: "2026-10-29T08:55:43+09:00"
-updatedAt: "2026-10-29T09:31:36+09:00"
+updatedAt: "2026-10-29T11:06:38+09:00"
 topics: ["생성 모델", "확률과 기하"]
 visibility: "public"
 lang: "en"

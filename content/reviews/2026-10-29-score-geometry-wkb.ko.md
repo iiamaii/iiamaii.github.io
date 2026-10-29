@@ -3,7 +3,7 @@ title: "[3/4] Score Geometry: 정상분포와 혼합"
 description: "비보존적 score의 정상밀도 전개와 온도 조건을 유도하고, 추가 실험 전체와 Poincaré 부등식의 혼합 논증을 검토한다."
 date: "2026-10-29"
 publishedAt: "2026-10-29T08:55:41+09:00"
-updatedAt: "2026-10-29T09:31:34+09:00"
+updatedAt: "2026-10-29T11:06:36+09:00"
 topics: ["생성 모델", "확률과 기하"]
 visibility: "public"
 lang: "ko"

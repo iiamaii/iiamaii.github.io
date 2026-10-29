@@ -3,7 +3,7 @@ title: "[1/4] Score Geometry: 기하와 빈도"
 description: "작은 잡음에서 기하와 빈도 정보의 척도가 갈라지는 이유, 다섯 정리와 원·타원 및 이미지 생성 실험을 설명한다."
 date: "2026-10-29"
 publishedAt: "2026-10-29T08:55:43+09:00"
-updatedAt: "2026-10-29T09:31:36+09:00"
+updatedAt: "2026-10-29T11:06:38+09:00"
 topics: ["생성 모델", "확률과 기하"]
 visibility: "public"
 lang: "ko"

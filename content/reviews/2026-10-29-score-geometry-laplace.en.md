@@ -3,7 +3,7 @@ title: "[2/4] Score Geometry: Laplace and Error Separation"
 description: "A detailed derivation of the manifold Laplace limit, Gaussian smoothing, and the distinct score-error requirements for support and density."
 date: "2026-10-29"
 publishedAt: "2026-10-29T08:55:42+09:00"
-updatedAt: "2026-10-29T09:31:35+09:00"
+updatedAt: "2026-10-29T11:06:37+09:00"
 topics: ["생성 모델", "확률과 기하"]
 visibility: "public"
 lang: "en"

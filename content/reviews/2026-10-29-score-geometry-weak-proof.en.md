@@ -3,7 +3,7 @@ title: "[4/4] Score Geometry: Proving a Uniform Limit"
 description: "Complete supplementary proofs on a reflecting annulus and a confining whole-plane model, allowing residual derivatives to grow."
 date: "2026-10-29"
 publishedAt: "2026-10-29T08:55:40+09:00"
-updatedAt: "2026-10-29T09:31:33+09:00"
+updatedAt: "2026-10-29T11:06:35+09:00"
 topics: ["생성 모델", "확률과 기하"]
 visibility: "public"
 lang: "en"

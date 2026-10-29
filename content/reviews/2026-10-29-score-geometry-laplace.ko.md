@@ -3,7 +3,7 @@ title: "[2/4] Score Geometry: Laplace와 오차 분리"
 description: "좌표 밀도와 부피 밀도, 두 Hessian, Laplace 근사의 중간 계산을 통해 지지집합과 원래 분포의 복원 조건을 증명한다."
 date: "2026-10-29"
 publishedAt: "2026-10-29T08:55:42+09:00"
-updatedAt: "2026-10-29T09:31:35+09:00"
+updatedAt: "2026-10-29T11:06:37+09:00"
 topics: ["생성 모델", "확률과 기하"]
 visibility: "public"
 lang: "ko"

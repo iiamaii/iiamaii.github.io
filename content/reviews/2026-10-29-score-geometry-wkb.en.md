@@ -3,7 +3,7 @@ title: "[3/4] Score Geometry: Stationarity and Mixing"
 description: "The stationary-density expansion, its assumptions, the complete additional experiments, and the argument connecting tempering to mixing."
 date: "2026-10-29"
 publishedAt: "2026-10-29T08:55:41+09:00"
-updatedAt: "2026-10-29T09:31:34+09:00"
+updatedAt: "2026-10-29T11:06:36+09:00"
 topics: ["생성 모델", "확률과 기하"]
 visibility: "public"
 lang: "en"

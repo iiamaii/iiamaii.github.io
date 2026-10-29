@@ -3,7 +3,7 @@ title: "[4/4] Score Geometry: 균등 극한 증명"
 description: "반사 원환과 전체 평면의 단위원 모형에서 잔차를 미분하지 않고 균등 극한과 사후분포를 증명한다."
 date: "2026-10-29"
 publishedAt: "2026-10-29T08:55:40+09:00"
-updatedAt: "2026-10-29T09:31:33+09:00"
+updatedAt: "2026-10-29T11:06:35+09:00"
 topics: ["생성 모델", "확률과 기하"]
 visibility: "public"
 lang: "ko"
