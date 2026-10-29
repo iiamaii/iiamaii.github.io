@@ -3,7 +3,7 @@ title: "[1/4] Score Geometry: 기하와 빈도"
 description: "작은 잡음에서 기하와 빈도 정보의 척도가 갈라지는 이유, 다섯 정리와 원·타원 및 이미지 생성 실험을 설명한다."
 date: "2026-10-29"
 publishedAt: "2026-10-29T08:55:43+09:00"
-updatedAt: "2026-10-29T14:52:51+09:00"
+updatedAt: "2026-10-29T15:42:22+09:00"
 topics: ["생성 모델", "확률과 기하"]
 visibility: "public"
 lang: "ko"
@@ -89,6 +89,19 @@ $$
 
 다양체를 얇은 관처럼 둘러싼 영역을 <strong>튜브형 이웃(tubular neighborhood)</strong>이라 부른다. 여기서는 각 점에서 가장 가까운 다양체 위의 점이 유일하게 정해지도록 충분히 작은 영역을 사용한다. 그 점으로 보내는 연산이 최근접점 사영(nearest-point projection)이다.
 
+이 영역에서 사용하는 핵심 거리 함수는 원문 Eq.(2)의 **거리 제곱의 절반**이다. 최근접점이 유일한 튜브형 이웃에서는 그 기울기도 다음처럼 명시된다.
+
+$$
+\begin{aligned}
+d_{\mathcal M}(x)
+&=\frac12\operatorname{dist}(x,\mathcal M)^2
+=\min_{y\in\mathcal M}\frac12\|x-y\|^2,\\
+\nabla d_{\mathcal M}(x)&=x-P_{\mathcal M}(x).
+\end{aligned}
+$$
+
+[원문 Eq.(2)](https://arxiv.org/html/2509.24912v2#S2.E2). 자세한 좌표 유도는 아래에 둔다.
+
 <details class="review-background">
 <summary><span>보충 설명: 튜브형 이웃과 최근접점 사영</span><span class="review-background-toggle" aria-hidden="true"></span></summary>
 <div class="review-background-body">
@@ -120,7 +133,15 @@ $$
 
 ### 2.1 Gaussian 평활화(Gaussian smoothing): 분산 폭증과 분산 보존
 
-분산 폭증(variance exploding, VE)은 $X_\sigma=Y+\sigma Z$, 분산 보존(variance preserving, VP)은 $X_\sigma=\sqrt{1-\sigma^2}Y+\sigma Z$다. $Y\sim\mu_{\mathrm{data}}$, $Z\sim\mathcal N(0,I_d)$이고, VP에서는 $0<\sigma<1$이다. 통합 표기 $\gamma(\sigma)=1$ 또는 $\sqrt{1-\sigma^2}$를 쓰면 원문 Eq.(3)은 다음이다.
+분산 폭증(variance exploding, VE)과 분산 보존(variance preserving, VP)은 $Y\sim\mu_{\mathrm{data}}$, $Z\sim\mathcal N(0,I_d)$에 대해 다음 두 확률변수를 만든다. VP에서는 $0<\sigma<1$이다.
+
+$$
+X_\sigma^{\mathrm{VE}}=Y+\sigma Z,
+\qquad
+X_\sigma^{\mathrm{VP}}=\sqrt{1-\sigma^2}\,Y+\sigma Z.
+$$
+
+원문 Eq.(1)의 이 두 법칙을 통합해 $\gamma(\sigma)=1$ 또는 $\sqrt{1-\sigma^2}$로 쓰면, 주변 공간 밀도인 Eq.(3)은
 
 $$
 p_\sigma(x)=\frac1{(2\pi\sigma^2)^{d/2}}
@@ -367,6 +388,16 @@ $$
 
 학습된 벡터장이 gradient가 아니면 $j\ne0$이어도 $\nabla\cdot j=0$일 수 있다. 확률은 계속 순환하면서도 각 위치의 밀도는 일정할 수 있다는 뜻이다. 따라서 비가역(non-reversible) 동역학의 정상분포를 임의로 $e^{-f}$라고 놓을 수 없다. 논문이 WKB를 도입하는 이유이며, 그 전개는 [3편 부록 B.4 해설](/reviews/score-geometry-wkb/)에서 이어진다.
 
+이때 사용하는 WKB의 출발 형태는 작은 매개변수 $\theta>0$에 대해
+
+$$
+\pi_\theta(x)=\frac1{Z_\theta}
+e^{-V(x)/\theta}c_\theta(x),\qquad
+c_\theta\longrightarrow c_0>0\quad\text{in }C^2.
+$$
+
+다. $Z_\theta$는 정규화 상수, $V$는 질량 집중 위치를 정하는 지수부 함수, $c_\theta$는 진폭이다. 이는 원문 Eq.(5)의 지수부·진폭 분리와 가정 B.2의 수렴 조건을 함께 적은 형태다. 이 형태가 성립한다고 가정한 뒤 정상 방정식으로 $V,c_0$를 결정한다. [원문 Eq.(5)](https://arxiv.org/html/2509.24912v2#S2.E5), [가정 B.2](https://arxiv.org/html/2509.24912v2#A2.Thmassumption2).
+
 ## 3. Gaussian 평활화는 분포보다 기하를 먼저 복원한다 (Central Insight: Gaussian Smoothing Recovers Geometry Before Distribution)
 
 ### 정리의 정확한 내용
@@ -406,16 +437,20 @@ $-\sigma^{-2}d_{\mathcal M}$는 다양체 밖의 점에 큰 비용을 매긴다.
 
 공간에 따라 달라지는 밀도 항을 지우더라도 큰 거리 항은 남길 수 있다. 바로 이 분리가 §4·5의 서로 다른 정확도 조건으로 이어진다.
 
-<details class="review-background">
-<summary><span>보충 설명: score의 실제 크기</span><span class="review-background-toggle" aria-hidden="true"></span></summary>
-<div class="review-background-body">
-
-아래 score 근사는 더 강한 매끄러움 조건으로 부록 B.5에서 따로 증명해야 한다. log-density의 $o(1)$을 단순 미분해서 얻는 식이 아니다.
+데이터 밀도에 추가적인 $C^2$ 매끄러움 조건을 두면, 부록 B.5는 작은 고정 튜브형 이웃에서 균일하게
 
 $$
 s^*(x,\sigma)
 =-\frac{x-P_{\mathcal M}(x)}{\sigma^2}+O(1).
 $$
+
+를 보인다. 앞의 거리 기울기 때문에 큰 항은 최근접점으로 돌아가는 방향이다. 이 식은 log-density의 $o(1)$을 미분한 결과가 아니라, 미분한 Gaussian 적분을 직접 추정한 결과다. [원문 Eq.(20), 부록 B.5](https://arxiv.org/html/2509.24912v2#A2.E20).
+
+<details class="review-background">
+<summary><span>보충 설명: score의 실제 크기</span><span class="review-background-toggle" aria-hidden="true"></span></summary>
+<div class="review-background-body">
+
+위 score 근사에서 관찰 위치에 따라 큰 항의 실제 크기가 달라진다.
 
 법선 거리가 고정된 $\delta>0$라면 큰 항은 $\delta/\sigma^2$다. 하지만 거리 자체가 $O(\sigma)$인 전형적인 잡음 샘플에서는 $O(\sigma^{-1})$이고, 정확히 다양체 위에서는 이 항이 0이다. 따라서 $\Theta(\sigma^{-2})$라는 표현은 주로 <strong>거리 항의 계수와 고정된 튜브형 이웃의 점근 전개</strong>를 가리킨다.
 
@@ -442,9 +477,32 @@ $L^\infty$ 오차는 $K$에서의 최악 오차다. 학습 샘플 평균의 제�
 
 ### Theorem 4.1 세 결론
 
-1. $E_\sigma=o(\sigma^{-2})$이면 모든 $\delta>0$에 대해 $\pi_\sigma(\operatorname{dist}(x,\mathcal M)>\delta)\to0$이다.
-2. 다양체 위의 임의의 $C^1$ 목표 밀도로 수렴하면서도 score 오차가 사라지지 않는 구성을 만들 수 있다. 원문의 표기는 $E_\sigma=\Omega(1)$이다.
-3. $E_\sigma=o(1)$이면 $\pi_\sigma$는 원래 데이터 측도로 약수렴한다.
+**1. 다양체 근처로의 집중.** 모든 고정된 $\delta>0$에 대해
+
+$$
+E_\sigma=o(\sigma^{-2})
+\quad\Longrightarrow\quad
+\int_{\{x:\operatorname{dist}(x,\mathcal M)>\delta\}}
+\pi_\sigma(x)\,dx\longrightarrow0
+\qquad(\delta>0).
+$$
+
+**2. 다양체 위의 빈도는 달라질 수 있다.** $\eta\ge0$, $\int_{\mathcal M}\eta\,d\mathcal M=1$인 임의의 $C^1$ 목표 밀도를 택하면, 정리의 조건을 만족하면서 다음을 이루는 생성 밀도열을 구성할 수 있다.
+
+$$
+\pi_\sigma(x)\,dx\Rightarrow\eta(x)\,d\mathcal M(x),
+\qquad E_\sigma=\Omega(1).
+$$
+
+**3. 원래 데이터 분포의 복원.** 충분히 작은 절대 score 오차는
+
+$$
+E_\sigma=o(1)
+\quad\Longrightarrow\quad
+\pi_\sigma(x)\,dx\Rightarrow\mu_{\mathrm{data}}.
+$$
+
+를 보장한다.
 
 [원문 Theorem 4.1](https://arxiv.org/html/2509.24912v2#S4.Thmtheorem1)
 
@@ -480,7 +538,15 @@ $$
 \widetilde\pi_\sigma(x)\propto e^{-\sigma^\alpha f_\sigma(x)}.
 $$
 
-정확한 score이면 이는 $p_\sigma(x)^{\sigma^\alpha}$를 정규화한 것이다. log-density 전개를 넣으면
+정확한 score인 경우 정규화까지 쓰면
+
+$$
+\widetilde\pi_\sigma(x)
+=\frac{p_\sigma(x)^{\sigma^\alpha}}
+{\int_{\mathbb R^d}p_\sigma(z)^{\sigma^\alpha}\,dz}.
+$$
+
+이다. log-density 전개를 넣으면
 
 $$
 \log\widetilde\pi_\sigma(x)
@@ -506,7 +572,20 @@ $$
 \max\{-\beta,0\}<\alpha<2
 $$
 
-이면 정상분포는 $\mathcal M$의 리만 부피에 대한 균등 확률측도로 약수렴한다. 좌표 밀도로 쓰면 $\widetilde\pi(u)\propto\sqrt{\det g(u)}$다.
+이면 정규화된 균등 극한은
+
+$$
+\begin{aligned}
+\widetilde\pi_\sigma(x)\,dx
+&\Rightarrow\frac{d\mathcal M}{V_{\mathcal M}},
+\qquad V_{\mathcal M}=\int_{\mathcal M}d\mathcal M,\\
+\widetilde\pi_0(u)
+&=\frac{\sqrt{\det g(u)}}
+{\int_U\sqrt{\det g(w)}\,dw}.
+\end{aligned}
+$$
+
+이다. 좌표식은 단위 분할로 전역 적분을 합친다는 앞 절의 관례를 따른다.
 
 두 부등식은 서로 다른 일을 한다. $\alpha<2$는 법선 집중을 남기며, $\alpha+\beta>0$는 학습 오차의 효과를 사라지게 하고, $\alpha>0$는 원래 데이터 밀도의 효과를 지운다. 예컨대 $E_\sigma=O(1)$이면 $\beta=-1/2$를 택할 수 있으므로 $\alpha=1$이 조건을 만족한다. $E_\sigma=o(\sigma^{-3/2})$이면 $3/2<\alpha<2$가 정리가 허용하는 범위다. [Theorem 5.1](https://arxiv.org/html/2509.24912v2#S5.Thmtheorem1)
 

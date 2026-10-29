@@ -3,7 +3,7 @@ title: "[3/4] Score Geometry: 정상분포와 혼합"
 description: "비보존적 score의 정상밀도 전개와 온도 조건을 유도하고, 추가 실험 전체와 Poincaré 부등식의 혼합 논증을 검토한다."
 date: "2026-10-29"
 publishedAt: "2026-10-29T08:55:41+09:00"
-updatedAt: "2026-10-29T14:52:49+09:00"
+updatedAt: "2026-10-29T15:42:20+09:00"
 topics: ["생성 모델", "확률과 기하"]
 visibility: "public"
 lang: "ko"
@@ -43,6 +43,19 @@ $$
 
 이를 시간 재조정하면 drift $b_\theta/\theta$, 잡음 $\sqrt2$인 확률미분방정식(stochastic differential equation, SDE)이 된다. <strong>정상분포는 같지만, 같은 시간 길이에 같은 궤적 분포를 만든다는 뜻은 아니다.</strong>
 
+원문 Eq.(13)의 시간 재조정 자체를 식으로 쓰면
+
+$$
+\begin{aligned}
+Y_t&=X_{t/\theta},\qquad
+\widetilde W_t=\sqrt\theta\,W_{t/\theta},\\
+dY_t&=\frac{b_\theta(Y_t)}{\theta}\,dt
++\sqrt2\,d\widetilde W_t.
+\end{aligned}
+$$
+
+이다. Brownian 시간 재조정으로 $\widetilde W$도 표준 Brownian 운동이다. 기존 궤적을 $1/\theta$배 빠르게 읽으므로 drift는 $1/\theta$, 잡음은 $1/\sqrt\theta$배가 되어 위 식을 얻는다. [원문 Eq.(13)](https://arxiv.org/html/2509.24912v2#A2.E13).
+
 ### WKB가 무엇을 가정하는가
 
 Wentzel–Kramers–Brillouin(WKB) 근사는 작은 매개변수를 지수부와 느린 진폭으로 나누는 방법이다.
@@ -64,6 +77,28 @@ $V$는 지수부의 비용 함수로서 질량이 어디에 모이는지 정하�
 $$
 0=-\nabla\cdot(b_\theta\pi_\theta)+\theta\Delta\pi_\theta.
 $$
+
+원문 Eq.(14)로 넘어가는 곱의 미분을 먼저 펼치자. 정규화 전 밀도를 $\varrho_\theta=e^{-V/\theta}c_\theta$라 쓰면, 공간에 대해 상수인 정규화 인자는 아래 미분에 영향을 주지 않는다.
+
+$$
+\begin{aligned}
+\varrho_\theta&=e^{-V/\theta}c_\theta,\\
+\nabla\varrho_\theta
+&=e^{-V/\theta}\left(\nabla c_\theta
+-\frac{c_\theta}{\theta}\nabla V\right),\\
+\Delta\varrho_\theta
+&=e^{-V/\theta}\left[
+\Delta c_\theta-\frac2\theta\nabla V\cdot\nabla c_\theta
+-\frac{\Delta V}{\theta}c_\theta
++\frac{|\nabla V|^2}{\theta^2}c_\theta\right],\\
+\nabla\cdot(b_\theta\varrho_\theta)
+&=e^{-V/\theta}\left[
+(\nabla\cdot b_\theta)c_\theta+b_\theta\cdot\nabla c_\theta
+-\frac{b_\theta\cdot\nabla V}{\theta}c_\theta\right].
+\end{aligned}
+$$
+
+첫째 식의 gradient에 다시 발산을 취하면 가운데 두 교차항이 같아서 계수 2가 생긴다. 이를 $-\nabla\cdot(b_\theta\varrho_\theta)+\theta\Delta\varrho_\theta=0$에 대입하고 양수인 $e^{-V/\theta}$로 나누면 원문 Eq.(14)의 모든 항이 남는다. [원문 Eq.(14)](https://arxiv.org/html/2509.24912v2#A2.E14).
 
 지수 인자를 약분하면 다음 항들을 얻는다.
 
@@ -176,6 +211,34 @@ $$
 
 ### Lemma B.6: 법선 미분을 transport로 제거한다
 
+원문 식 (18)–(19)의 중간 계산을 성분별로 쓰자. 이 계산에서만 $z=(u,r)$, $c=\widetilde c_0$, $F=f_0$, $M=G^{-1}$라 줄여 쓰고, 아래첨자는 해당 좌표에 대한 미분을 뜻한다. 예를 들어 $c_k=\partial_{z_k}c$, $F_{pi}=\partial_{z_pz_i}F$다. $q=d-n$은 법선 차원이다. 수송식은
+
+$$
+T(z)=\sum_{k,p=1}^d c_k(z)M_{kp}(z)F_p(z)=0.
+$$
+
+다. 곱의 세 인자를 하나씩 미분하면 식 (18)은
+
+$$
+\begin{aligned}
+0=\partial_iT
+=\sum_{k,p=1}^d\bigl[
+ c_{ki}M_{kp}F_p
++c_k(\partial_iM_{kp})F_p
++c_kM_{kp}F_{pi}\bigr].
+\end{aligned}
+$$
+
+이다. 다양체 위에서는
+
+$$
+\nabla_zF(u,0)=0,\qquad
+M(u,0)=\begin{pmatrix}g^{-1}&0\\0&I_q\end{pmatrix},\qquad
+\nabla_z^2F(u,0)=\begin{pmatrix}0&0\\0&H_N\end{pmatrix}.
+$$
+
+이므로 앞 두 항은 $F_p=0$ 때문에 사라진다. 남은 항의 법선 성분만 쓰면 아래의 $H_N\partial_r\widetilde c_0=0$을 얻는다. [원문 Eq.(18)](https://arxiv.org/html/2509.24912v2#A2.E18).
+
 transport 식을 좌표로 $a(u,r)\cdot\partial_u\widetilde c_0+b(u,r)\cdot\partial_r\widetilde c_0=0$라 쓰자. $r=0$에서는 $a=b=0$이다. 최소점 집합을 따라 기울기가 0이므로 Hessian의 접선·혼합 성분도 0이고, metric의 block 구조를 사용하면 $\partial_r a=0$이다. 법선 Hessian을 $H_N$이라 하면 $\partial_r b=H_N$이다.
 
 한 번 법선 미분한 식은
@@ -184,7 +247,33 @@ $$
 H_N\,\partial_r\widetilde c_0=0.
 $$
 
-$H_N$의 모든 고유값이 0보다 큰 양의 정부호(positive definite) 행렬이므로 $\partial_r\widetilde c_0=0$이다. 두 번 미분하면 법선 Hessian $C=\partial^2_{rr}\widetilde c_0$에 대해 다음 형태의 Sylvester 방정식을 얻는다.
+$H_N$의 모든 고유값이 0보다 큰 양의 정부호(positive definite) 행렬이므로 $\partial_r\widetilde c_0=0$이다. 다시 미분하면 아홉 항이 생긴다. 그중 $F_p$를 인자로 갖는 네 항은 $r=0$에서 0이므로, 원문 식 (19)에 대응하는 나머지 다섯 항은
+
+$$
+\begin{aligned}
+0=\partial_{ij}T\big|_{r=0}
+=\sum_{k,p=1}^d\bigl[&
+ c_{ki}M_{kp}F_{pj}+c_{kj}M_{kp}F_{pi}\\
+&+c_k(\partial_iM_{kp})F_{pj}
++c_k(\partial_jM_{kp})F_{pi}\\
+&+c_kM_{kp}F_{pij}\bigr]_{r=0}.
+\end{aligned}
+$$
+
+이다. 위 다섯 항에는 $c$의 2차 미분까지만 남는다. 원문의 $c\in C^2$ 조건 아래에서는 $z_0=(u,0)$에서 $M\nabla F=0$임을 이용해 이를 정당화할 수 있다. $\nabla c$를 1차까지, $M\nabla F$를 2차까지 Taylor 전개해 곱한 뒤 수송식의 2차 계수를 비교하면 같은 다섯 항을 얻는다. 따라서 이 항등식을 얻으려고 $c$의 3차 미분 존재를 추가로 가정할 필요는 없다.
+
+이제 $i,j$를 법선 좌표로 제한하고 이미 얻은 $\partial_rc=0$을 쓴다. 첫 두 항은 $CH_N+H_NC$가 되고, 나머지는 접선 미분 $\partial_{u_\ell}c$의 선형결합이다. 그 계수 행렬을 명시하면
+
+$$
+a_\ell(z)=\bigl[M(z)\nabla_zF(z)\bigr]_{u_\ell},
+\qquad
+[A_\ell(u)]_{ij}
+=\partial_{r_i r_j}a_\ell(u,0).
+$$
+
+다. 따라서 법선 Hessian $C=\partial^2_{rr}\widetilde c_0$는 아래 Sylvester 방정식을 만족한다. [원문 Eq.(19)](https://arxiv.org/html/2509.24912v2#A2.E19).
+
+
 
 $$
 H_NC+CH_N+\sum_i A_i(u)\,\partial_{u_i}\widetilde c_0=0.
@@ -458,6 +547,21 @@ $$
 
 sampling은 $\sigma_{\min}=0.01$, $\Delta t=0.1$, 10,000 steps와 10,000 runs를 사용한다. 부록의 구현은 $\widehat s$를 drift로 쓰고 vanilla 잡음을 $\sqrt{2\sigma^2}$, TS 잡음을 $\sqrt{2\sigma^{2-\alpha}}$로 쓴다. 이 시간 재조정은 정상분포 비교에는 맞지만 실제 수치 시간과 수렴 속도는 구분해야 한다.
 
+해당 구현의 두 확률미분방정식을 나란히 쓰면 다음과 같다. 여기서 $\widehat s_\sigma=\sigma^2s_\sigma$이고 $\sigma_{\min}=0.01$이다.
+
+$$
+\begin{aligned}
+\text{vanilla:}\quad dX_t
+&=\widehat s_{\sigma_{\min}}(X_t)\,dt
++\sqrt{2\sigma_{\min}^2}\,dW_t,\\
+\text{TS:}\quad dX_t
+&=\widehat s_{\sigma_{\min}}(X_t)\,dt
++\sqrt{2\sigma_{\min}^{2-\alpha}}\,dW_t.
+\end{aligned}
+$$
+
+TS 식의 생성자를 $\sigma_{\min}^{2-\alpha}$로 나누면 drift가 $\sigma_{\min}^\alpha s_{\sigma_{\min}}$, 확산 계수가 1인 본문의 TS 동역학이 된다. 같은 정상분포를 얻는다는 비교와 고정 스텝 크기에서의 수치 궤적 비교는 구별한다. [원문 C.1, Sampling](https://arxiv.org/html/2509.24912v2#A3.SS1).
+
 ### C.2 Stable Diffusion 1.5
 
 이미지 평가는 대조적 언어·이미지 사전학습(Contrastive Language–Image Pre-training, CLIP) 특징을 쓴다. 프롬프트 유사도(prompt similarity, P-sim)는 높을수록 정렬이 좋고, 이미지 간 유사도(image-to-image similarity, I-sim)는 낮을수록 이 특징 공간에서 다양하다. 표의 P / I는 이 두 지표이며 원문 단위를 유지한다. 비교 방법은 잡음 제거 확산 확률 모델(Denoising Diffusion Probabilistic Models, DDPM), 예측–보정(predictor–corrector, PC), 그리고 TS다.
@@ -591,6 +695,18 @@ $$
 
 단위원 균등분포에서는 Fourier 모드 $e^{iku}$가 $-\Delta_{\mathcal M}$의 고유함수이고 고유값은 $k^2$다. 0이 아닌 첫 번째 고유값(first nonzero eigenvalue)은 1이다. 법선 우물이 아무리 강해도 접선 방향에 깊은 두 봉우리 사이의 장벽이 남으면 전역 혼합은 느릴 수 있다.
 
+목표 오차 $0<\eta<D_0:=\chi^2(p_0\|\pi)<\infty$를 정하면, 위 상계를 $\eta$ 이하로 만드는 충분한 시간도 직접 계산할 수 있다.
+
+$$
+e^{-2C_{\mathrm{PI}}t}D_0\le\eta
+\quad\Longleftrightarrow\quad
+2C_{\mathrm{PI}}t\ge\log\frac{D_0}{\eta}
+\quad\Longleftrightarrow\quad
+t\ge\frac1{2C_{\mathrm{PI}}}\log\frac{D_0}{\eta}.
+$$
+
+이는 초기 오차와 목표 정확도를 함께 포함한 혼합 시간 상계다. 원문의 $O(C_{\mathrm{PI}}^{-1}\log(1/\eta))$는 초기 오차를 고정했을 때의 차수 표현이다. [원문 D.1](https://arxiv.org/html/2509.24912v2#A4.SS1).
+
 ### D.2 장벽을 제거하는 메커니즘
 
 원문은 단위원 주변 potential
@@ -612,6 +728,16 @@ $$
 
 $\alpha+\beta>0$이면 접선 장벽은 사라지고 $\alpha<2$이면 법선 집중은 남는다. <strong>지우고 싶은 장벽과 남기고 싶은 장벽의 척도가 다르기 때문에</strong> 가능한 선택이다.
 
+이 예제에서 저자들이 제시하는 표준·TS 혼합 비교의 목표 차수는
+
+$$
+C_{\mathrm{PI}}^{\mathrm{vanilla}}
+=O\!\left(e^{-\sigma^\beta}\right),
+\qquad C_{\mathrm{PI}}^{\mathrm{TS}}\ge c_*>0.
+$$
+
+다. $c_*$는 잡음에 독립인 양의 상수다. 이 두 식을 현재의 비매끄러운 예제에 대한 완성된 증명으로 받아들이려면 아래 조건을 추가로 점검해야 한다. [원문 D.2](https://arxiv.org/html/2509.24912v2#A4.SS2).
+
 다만 원문의 $\phi$는 $x_1=0$에서 미분 불가능하고 전역 oscillation도 무한하다. 매끄러운 Eyring–Kramers 정리나 크기가 제한된 함수를 더해 퍼텐셜을 바꾸는 섭동(perturbation) 정리를 이 식에 문자 그대로 적용해서는 안 된다. 예를 들어 해설용으로
 
 $$
@@ -620,10 +746,6 @@ $$
 
 를 쓰면 전역 매끄럽고 $0\le\phi_{\mathrm{smooth}}\le1$이며, 단위원에서 $\tfrac12\sin^2u$라는 이중 우물 장벽을 만든다. 이것은 <strong>매끄러움 조건을 갖춘 대체 toy 예제</strong>다. 원문 실험을 다시 실행한 결과로 제시하지 않는다.
 
-<details class="review-background">
-<summary><span>보충 설명: Holley–Stroock 섭동 정리</span><span class="review-background-toggle" aria-hidden="true"></span></summary>
-<div class="review-background-body">
-
 $\mu\propto e^{-U}$이고 $\nu\propto e^{-U-\delta U}$라 하자. $\operatorname{osc}(\delta U)=\sup\delta U-\inf\delta U<\infty$이면
 
 $$
@@ -631,6 +753,12 @@ C_{\mathrm{PI}}(\nu)
 \ge e^{-\operatorname{osc}(\delta U)}
 C_{\mathrm{PI}}(\mu).
 $$
+
+[Menz–Schlichting, Theorem 3.2](https://arxiv.org/abs/1202.1510v4).
+
+<details class="review-background">
+<summary><span>보충 설명: Holley–Stroock 섭동 정리</span><span class="review-background-toggle" aria-hidden="true"></span></summary>
+<div class="review-background-body">
 
 직접 증명도 가능하다. $m\le d\nu/d\mu\le M$이면 $M/m=e^{\operatorname{osc}(\delta U)}$이고
 
@@ -695,13 +823,30 @@ $$
 
 생성자 $L_\theta=-\nabla V\cdot\nabla+\theta\Delta$와 $W=e^{V/(2\theta)}$를 쓰면
 
+생성자와 양의 시험함수를 식으로 분리하면
+
+$$
+L_\theta h=-\nabla V\cdot\nabla h+\theta\Delta h,
+\qquad W(x)=\exp\!\left[\frac{V(x)}{2\theta}\right]>0.
+$$
+
+이다. 곱과 지수함수의 미분으로 다음 값을 얻는다.
+
 $$
 \frac{L_\theta W}{\theta W}
 =\frac{\Delta V}{2\theta}
 -\frac{|\nabla V|^2}{4\theta^2}.
 $$
 
-우변이 $-\lambda+b\mathbf1_U$ 이하이고, $U$ 내부의 조건부 측도가 PI 상수 $\rho_U$를 가지면 원문 Proposition D.1 형태의 결과는
+필요한 Lyapunov 조건은 $\lambda>0$, $b\ge0$에 대해 모든 공간에서
+
+$$
+\frac{L_\theta W(x)}{\theta W(x)}
+\le-\lambda+b\mathbf1_U(x)
+\qquad\text{for every }x\in\mathbb R^d.
+$$
+
+가 성립하는 것이다. 이 조건 아래, $U$ 내부의 조건부 측도가 PI 상수 $\rho_U$를 가지면 원문 Proposition D.1 형태의 결과는
 
 $$
 C_{\mathrm{PI}}\ge

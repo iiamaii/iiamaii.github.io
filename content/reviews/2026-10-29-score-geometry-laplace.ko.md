@@ -3,7 +3,7 @@ title: "[2/4] Score Geometry: Laplace와 오차 분리"
 description: "좌표 밀도와 부피 밀도, 두 Hessian, Laplace 근사의 중간 계산을 통해 지지집합과 원래 분포의 복원 조건을 증명한다."
 date: "2026-10-29"
 publishedAt: "2026-10-29T08:55:42+09:00"
-updatedAt: "2026-10-29T14:52:50+09:00"
+updatedAt: "2026-10-29T15:42:21+09:00"
 topics: ["생성 모델", "확률과 기하"]
 visibility: "public"
 lang: "ko"
@@ -94,7 +94,31 @@ $$
 F(x)=F(x^*)+\frac\theta2 z^\top Hz+O(\theta^{3/2}\|z\|^3).
 $$
 
-leading integral은 $e^{-F(x^*)/\theta}\theta^{m/2}a(x^*)\int e^{-z^\top Hz/2}\,dz$다. 선형변환 $w=H^{1/2}z$의 야코비안이 $(\det H)^{-1/2}$이므로 Gaussian 적분이 $(2\pi)^{m/2}/\sqrt{\det H}$가 된다. 원래 적분의 폭이 $\sqrt\theta$라는 사실과 Hessian 행렬식이 나타나는 이유를 동시에 설명한다.
+치환으로 생기는 야코비안까지 적으면 다음 등식은 정확하다. 적분 영역을 $\Omega$라 쓰고 $I_\theta$를 원래 적분이라 두자.
+
+$$
+\begin{aligned}
+I_\theta
+&=\int_\Omega a(x)e^{-F(x)/\theta}\,dx\\
+&=e^{-F(x^*)/\theta}\theta^{m/2}
+\int_{D_\theta}a(x^*+\sqrt\theta\,z)
+\exp\!\left[-\frac{F(x^*+\sqrt\theta\,z)-F(x^*)}{\theta}\right]dz,\\
+D_\theta&=\{z:x^*+\sqrt\theta\,z\in\Omega\}.
+\end{aligned}
+$$
+
+$$
+\begin{aligned}
+\int_{\mathbb R^m}e^{-z^\top Hz/2}\,dz
+&=\frac1{\sqrt{\det H}}
+\int_{\mathbb R^m}e^{-\|w\|^2/2}\,dw\\
+&=\frac1{\sqrt{\det H}}
+\prod_{j=1}^m\int_{\mathbb R}e^{-w_j^2/2}\,dw_j
+=\frac{(2\pi)^{m/2}}{\sqrt{\det H}}.
+\end{aligned}
+$$
+
+두 번째 식에서는 $w=H^{1/2}z$와 $dz=(\det H)^{-1/2}dw$를 사용했다. 첫 번째 적분의 진폭은 최소점 근처에서 $a(x^*)$로, 지수부는 Taylor 전개로 중심 Gaussian에 가까워진다. 이 국소 계산과 앞서 명시한 꼬리·균일 오차 조건을 결합하면 Corollary B.1의 $(2\pi\theta)^{m/2}/\sqrt{\det H}$가 나온다. $D_\theta$ 전체에서 Taylor 나머지를 무조건 균일하게 버린 것은 아니다.
 
 최소점에서 떨어진 부분은 $e^{-c/\theta}$처럼 작다. 이 항은 모든 고정 거듭제곱 $\theta^m$보다 빨리 작아진다. 지역 Gaussian 계산을 전역 적분 근사로 바꾸려면 이 꼬리 제어가 반드시 필요하다.
 
@@ -157,6 +181,20 @@ $$
 
 <strong>리뷰 보충 유도.</strong> $h_k(x)=\min\{1,k\,\operatorname{dist}(x,G^c)\}$는 $1_G$로 증가하는 유계 연속 함수다. 약수렴을 먼저 각 $h_k$에 적용하고 $k\to\infty$에서 단조수렴을 쓰면 위 부등식이 나온다. 열린 집합들의 질량이 0으로 가는 것을 이용해 다양체 바깥의 극한 질량이 없다고 결론낸다.
 
+중간 부등식도 쓰면, $0\le h_k\le 1_G$를 이용해
+
+$$
+\begin{aligned}
+\int h_k\,d\mu
+&=\lim_{\theta\to0}\int h_k\,d\mu_\theta
+\le\liminf_{\theta\to0}\mu_\theta(G),\\
+\mu(G)&=\lim_{k\to\infty}\int h_k\,d\mu
+\le\liminf_{\theta\to0}\mu_\theta(G).
+\end{aligned}
+$$
+
+가 된다. 먼저 고정된 $k$에서 약수렴을 쓰고 그 뒤에 $k\to\infty$를 보낸다. 두 극한을 근거 없이 교환하지 않는다.
+
 원문은 이 보조정리에 연결성도 명시하지만, 이 단계의 “최소점 집합으로의 집중” 자체는 각 성분에 공통 최소값과 간격이 있으면 된다. 연결성은 이후 최대원리로 전체 부피 균등성을 논할 때 더 직접적으로 중요해진다.
 
 ### 정리 B.1 최종적으로 남는 다양체 위의 밀도
@@ -170,6 +208,21 @@ $$
 $$
 
 좌표 $du$ 기준으로는 여기에 $\sqrt{\det g(u)}$를 곱한다.
+
+정규화 상수 $Z_0$와 $du$ 기준 좌표 밀도 $\pi_0$를 모두 쓰면
+
+$$
+\begin{aligned}
+Z_0&=\int_U
+\frac{e^{-f_1(w,0)}\sqrt{\det g(w)}}
+{\sqrt{\det H_N(w)}}\,dw,\\
+\pi_0(u)&=
+\frac{e^{-f_1(u,0)}\sqrt{\det g(u)}}
+{Z_0\sqrt{\det H_N(u)}}.
+\end{aligned}
+$$
+
+이다. 실제 전역 적분은 아래의 단위 분할로 합친다. 부피 기준 밀도는 좌표 밀도에서 $\sqrt{\det g(u)}$를 나눈 값이다.
 
 <strong>보충 증명.</strong> 분포를 적분으로 비교하는 데 쓰는 유계 매끄러운 시험함수(test function) $h$에 대해, 튜브형 이웃 좌표의 부피 야코비안을 $j(u,r)=|\det J(u,r)|$라 쓰자.
 
@@ -196,6 +249,17 @@ $$
 ## B.2. Gaussian 평활화의 점근 전개 (Proof for Theorem 3.1)
 
 이 절의 정밀한 진술은 원문 <strong>Theorem B.2</strong>다. 본문 Theorem 3.1은 이를 개략적으로 요약한 것이다.
+
+근사를 적용하는 출발 적분 자체도 적어 두자. 분산 폭증(variance exploding, VE)의 주변 공간 밀도는 원문 Eq.(3)에서
+
+$$
+p_\sigma^{\mathrm{VE}}(x)
+=(2\pi\sigma^2)^{-d/2}
+\int_U p_{\mathrm{data}}(u)
+\exp\!\left[-\frac{\|x-\Phi(u)\|^2}{2\sigma^2}\right]du.
+$$
+
+다. $U$는 국소 좌표 영역이며 여러 패치는 단위 분할로 합친다. 이 식에서 Gaussian 정규화는 $d$차원이고 실제 데이터 적분은 $n$차원이라는 점을 추적한다. [원문 Eq.(3)](https://arxiv.org/html/2509.24912v2#S2.E3).
 
 ### 1단계 적분의 최소점과 Hessian
 
@@ -329,6 +393,22 @@ VP에서는 $\delta$와 $\sigma$에 독립인 충분히 작은 상수 배를 사
 $E_\sigma=o(1)$이면 $K$에서 $e^{\Delta_\sigma}=1+o(1)$가 균일하다. 따라서 $\pi_\sigma$와 $\mu_\sigma$의 차이는 $K$에서의 적분도, $K$ 밖의 질량도 0으로 간다. 즉 두 평활화 측도 사이의 전변동 거리(total variation distance), 곧 사건별 확률 차이의 최댓값도 0으로 간다. $\mu_\sigma\Rightarrow\mu_{\mathrm{data}}$이므로 $\pi_\sigma\Rightarrow\mu_{\mathrm{data}}$다.
 
 이는 원문의 Theorem B.1 사용과 같은 결론을 더 직접적인 밀도 비로 얻는 보충 증명이다. 전변동으로 직접 비교한 대상은 $\pi_\sigma$와 <strong>매끄러운 $\mu_\sigma$</strong>다. 주변 공간에서 매끄러운 측도와 저차원 $\mu_{\mathrm{data}}$ 자체가 전변동으로 수렴한다는 주장은 아니다.
+
+
+이 결론에 쓰는 전변동 거리(total variation distance, TV) 상계를 직접 쓰자. 앞에서 정의한 $m_\sigma=\pi_\sigma(K)$, $n_\sigma=\mu_\sigma(K)$와 $D_\sigma=\|\Delta_\sigma\|_{L^\infty(K)}\to0$에 대해
+
+$$
+\begin{aligned}
+\|\pi_\sigma\,dx-\mu_\sigma\|_{\mathrm{TV}}
+&=\frac12\int_{\mathbb R^d}|\pi_\sigma-p_\sigma|\,dx\\
+&\le\frac12\left[
+ n_\sigma(e^{D_\sigma}-1)
+ +(1-m_\sigma)+(1-n_\sigma)\right]
+\longrightarrow0.
+\end{aligned}
+$$
+
+$K$ 안에서는 $|e^{\Delta_\sigma}-1|\le e^{D_\sigma}-1$을 사용하고, 바깥에서는 두 분포의 남은 질량을 더했다. 세 항이 각각 0으로 가므로 score 오차에서 분포 복원으로 넘어가는 적분 단계가 완성된다.
 
 ### 2번 결론 다른 접선 밀도도 가능하다
 

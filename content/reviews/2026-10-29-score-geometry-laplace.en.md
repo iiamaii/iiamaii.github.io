@@ -3,7 +3,7 @@ title: "[2/4] Score Geometry: Laplace and Error Separation"
 description: "A detailed derivation of the manifold Laplace limit, Gaussian smoothing, and the distinct score-error requirements for support and density."
 date: "2026-10-29"
 publishedAt: "2026-10-29T08:55:42+09:00"
-updatedAt: "2026-10-29T14:52:50+09:00"
+updatedAt: "2026-10-29T15:42:21+09:00"
 topics: ["생성 모델", "확률과 기하"]
 visibility: "public"
 lang: "en"
@@ -87,13 +87,37 @@ $$
 
 Uniformity requires simultaneous control of derivatives and amplitudes, a positive lower bound for Hessian eigenvalues, and the external energy gap. The constants $c_1,\ldots,c_6,m_1,m_2$ in the paper keep track of these different requirements. [Łapiński v7, Theorem 2, Portable Document Format (PDF) p.5](https://arxiv.org/pdf/1502.03266v7#page=5)
 
-<strong>Supplementary derivation.</strong> Set $x=x^*+\sqrt\theta,z$ and $H=\nabla^2F(x^*)$:
+<strong>Supplementary derivation.</strong> Set $x=x^*+\sqrt\theta\,z$ and $H=\nabla^2F(x^*)$:
 
 $$
 F(x)=F(x^*)+\frac\theta2 z^\top Hz+O(\theta^{3/2}\|z\|^3).
 $$
 
-The leading integral is $e^{-F(x^*)/\theta}\theta^{m/2}a(x^*)\int e^{-z^\top Hz/2}dz$. Changing variables to $H^{1/2}z$ contributes $(\det H)^{-1/2}$, and the remaining Gaussian integral is $(2\pi)^{m/2}$. This explains both the $\sqrt\theta$ width and the determinant factor. An external contribution bounded by $e^{-c/\theta}$ is smaller than every fixed power of temperature, allowing this local computation to describe the entire integral.
+Include the change-of-variable Jacobian explicitly. Write $\Omega$ for the integration domain and $I_\theta$ for the original integral; the first transformation is exact.
+
+$$
+\begin{aligned}
+I_\theta
+&=\int_\Omega a(x)e^{-F(x)/\theta}\,dx\\
+&=e^{-F(x^*)/\theta}\theta^{m/2}
+\int_{D_\theta}a(x^*+\sqrt\theta\,z)
+\exp\!\left[-\frac{F(x^*+\sqrt\theta\,z)-F(x^*)}{\theta}\right]dz,\\
+D_\theta&=\{z:x^*+\sqrt\theta\,z\in\Omega\}.
+\end{aligned}
+$$
+
+$$
+\begin{aligned}
+\int_{\mathbb R^m}e^{-z^\top Hz/2}\,dz
+&=\frac1{\sqrt{\det H}}
+\int_{\mathbb R^m}e^{-\|w\|^2/2}\,dw\\
+&=\frac1{\sqrt{\det H}}
+\prod_{j=1}^m\int_{\mathbb R}e^{-w_j^2/2}\,dw_j
+=\frac{(2\pi)^{m/2}}{\sqrt{\det H}}.
+\end{aligned}
+$$
+
+The second identity uses $w=H^{1/2}z$ and $dz=(\det H)^{-1/2}dw$. Near the minimum, the first integral's amplitude approaches $a(x^*)$ and its Taylor-expanded exponent approaches the centered Gaussian. Combining that local calculation with the stated tail and uniform-error conditions yields Corollary B.1's factor $(2\pi\theta)^{m/2}/\sqrt{\det H}$. This does not discard the Taylor remainder uniformly over all of $D_\theta$.
 
 ### Assumption B.1 and Lemma B.1: integrate the normal directions first
 
@@ -148,7 +172,21 @@ $$
 \quad(G\text{ is open}).
 $$
 
-<strong>Supplementary derivation.</strong> For an open set $G$, the continuous functions $h_k(x)=\min\{1,k,\operatorname{dist}(x,G^c)\}$ increase to its indicator. Weak convergence applies at each fixed $k$, and monotone convergence then gives the inequality. Applying it to regions separated from $\mathcal M$ rules out limiting mass there.
+<strong>Supplementary derivation.</strong> For an open set $G$, the continuous functions $h_k(x)=\min\{1,k\,\operatorname{dist}(x,G^c)\}$ increase to its indicator. Weak convergence applies at each fixed $k$, and monotone convergence then gives the inequality. Applying it to regions separated from $\mathcal M$ rules out limiting mass there.
+
+The intermediate inequalities use $0\le h_k\le 1_G$:
+
+$$
+\begin{aligned}
+\int h_k\,d\mu
+&=\lim_{\theta\to0}\int h_k\,d\mu_\theta
+\le\liminf_{\theta\to0}\mu_\theta(G),\\
+\mu(G)&=\lim_{k\to\infty}\int h_k\,d\mu
+\le\liminf_{\theta\to0}\mu_\theta(G).
+\end{aligned}
+$$
+
+First use weak convergence at fixed $k$, then let $k$ increase. No unsupported exchange of the two limits is needed.
 
 The source lemma states connectedness. Concentration itself only requires a common minimum value and the relevant gaps on the components; connectedness becomes more decisive in the later maximum-principle argument for a single uniform amplitude.
 
@@ -163,6 +201,21 @@ $$
 $$
 
 This is an intrinsic-volume density. Its coordinate version includes another factor $\sqrt{\det g(u)}$.
+
+Writing both the normalizer $Z_0$ and the coordinate density $\pi_0$ gives
+
+$$
+\begin{aligned}
+Z_0&=\int_U
+\frac{e^{-f_1(w,0)}\sqrt{\det g(w)}}
+{\sqrt{\det H_N(w)}}\,dw,\\
+\pi_0(u)&=
+\frac{e^{-f_1(u,0)}\sqrt{\det g(u)}}
+{Z_0\sqrt{\det H_N(u)}}.
+\end{aligned}
+$$
+
+Global integration uses the partition of unity explained below. Dividing the coordinate density by $\sqrt{\det g(u)}$ recovers the intrinsic-volume density.
 
 <strong>Supplementary proof.</strong> Write $j(u,r)=|\det J(u,r)|$ for the ambient-volume Jacobian. For a bounded smooth test function $h$,
 
@@ -189,6 +242,17 @@ For half the squared distance, $f_0=d_{\mathcal M}$, the normal Hessian is exact
 ## B.2. Proof for Theorem 3.1
 
 Theorem B.2 is the precise form of the main-text expansion. Its derivation separates minimization, integration, logarithms, and the variance-preserving (VP) correction.
+
+The input integral is essential to the approximation. For variance-exploding (VE) smoothing, paper Equation (3) gives
+
+$$
+p_\sigma^{\mathrm{VE}}(x)
+=(2\pi\sigma^2)^{-d/2}
+\int_U p_{\mathrm{data}}(u)
+\exp\!\left[-\frac{\|x-\Phi(u)\|^2}{2\sigma^2}\right]du.
+$$
+
+Here $U$ is a coordinate domain, and multiple patches are combined by a partition of unity. The Gaussian normalizer is $d$-dimensional while the data integral is $n$-dimensional. [Paper Equation (3)](https://arxiv.org/html/2509.24912v2#S2.E3).
 
 ### 1. Locate the minimum and compute its tangent Hessian
 
@@ -320,6 +384,22 @@ For VP, a fixed smaller distance constant handles the small displacement of the 
 If $E_\sigma=o(1)$, then $e^{\Delta_\sigma}=1+o(1)$ uniformly on $K$. Integrating this density-ratio difference, then adding the two vanishing tails outside $K$, proves that $\pi_\sigma$ and the smooth law $\mu_\sigma$ approach each other in total variation. Since $\mu_\sigma\Rightarrow\mu_{\mathrm{data}}$, the generated law has the same weak limit.
 
 This is a direct supplementary proof of the source's conclusion. Total variation compares two ambient smooth measures here. It is not total-variation convergence from a smooth measure to a singular manifold-supported measure.
+
+
+Make the total variation distance (TV) estimate explicit. With $m_\sigma=\pi_\sigma(K)$, $n_\sigma=\mu_\sigma(K)$, and $D_\sigma=\|\Delta_\sigma\|_{L^\infty(K)}\to0$ as defined above,
+
+$$
+\begin{aligned}
+\|\pi_\sigma\,dx-\mu_\sigma\|_{\mathrm{TV}}
+&=\frac12\int_{\mathbb R^d}|\pi_\sigma-p_\sigma|\,dx\\
+&\le\frac12\left[
+ n_\sigma(e^{D_\sigma}-1)
+ +(1-m_\sigma)+(1-n_\sigma)\right]
+\longrightarrow0.
+\end{aligned}
+$$
+
+Inside $K$, use $|e^{\Delta_\sigma}-1|\le e^{D_\sigma}-1$; outside, add the two remaining masses. All three terms vanish, completing the integral step from score error to distribution recovery.
 
 ### Conclusion 2: change the limiting density at finite score cost
 

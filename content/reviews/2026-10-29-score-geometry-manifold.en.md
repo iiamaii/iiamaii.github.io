@@ -3,7 +3,7 @@ title: "[1/4] Score Geometry: Shape and Density"
 description: "Why small-noise scores encode shape more strongly than frequency, and what the five main theorems and experiments establish."
 date: "2026-10-29"
 publishedAt: "2026-10-29T08:55:43+09:00"
-updatedAt: "2026-10-29T14:52:51+09:00"
+updatedAt: "2026-10-29T15:42:22+09:00"
 topics: ["생성 모델", "확률과 기하"]
 visibility: "public"
 lang: "en"
@@ -84,6 +84,19 @@ Equal angular increments therefore carry different arc lengths. Only a circle ma
 
 A tubular neighborhood is a thin tube around the manifold. We choose it narrow enough that every point has a unique nearest point on the manifold; nearest-point projection sends a point to that nearest point.
 
+The central distance function is the **half squared distance** in paper Equation (2). Where the nearest point is unique, its gradient is explicit:
+
+$$
+\begin{aligned}
+d_{\mathcal M}(x)
+&=\frac12\operatorname{dist}(x,\mathcal M)^2
+=\min_{y\in\mathcal M}\frac12\|x-y\|^2,\\
+\nabla d_{\mathcal M}(x)&=x-P_{\mathcal M}(x).
+\end{aligned}
+$$
+
+[Paper Equation (2)](https://arxiv.org/html/2509.24912v2#S2.E2). The coordinate derivation follows below.
+
 <details class="review-background">
 <summary><span>Supplementary explanation: the tube and nearest-point projection</span><span class="review-background-toggle" aria-hidden="true"></span></summary>
 <div class="review-background-body">
@@ -115,7 +128,15 @@ The metric $g=(D_u\Phi)^\top D_u\Phi$ is $n\times n$. The full tube Jacobian $J=
 
 ### 2.1 The Gaussian Smoothed Measure and Connection to Diffusion Models
 
-Variance-exploding (VE) smoothing is $X_\sigma=Y+\sigma Z$; variance-preserving (VP) smoothing is $X_\sigma=\sqrt{1-\sigma^2}Y+\sigma Z$, where $Y\sim\mu_{\mathrm{data}}$ and $Z\sim\mathcal N(0,I_d)$. VP uses $0<\sigma<1$. Set $\gamma(\sigma)=1$ or $\sqrt{1-\sigma^2}$ respectively. Equation (3) becomes
+Variance-exploding (VE) and variance-preserving (VP) smoothing construct the following random variables, with $Y\sim\mu_{\mathrm{data}}$ and $Z\sim\mathcal N(0,I_d)$. VP requires $0<\sigma<1$.
+
+$$
+X_\sigma^{\mathrm{VE}}=Y+\sigma Z,
+\qquad
+X_\sigma^{\mathrm{VP}}=\sqrt{1-\sigma^2}\,Y+\sigma Z.
+$$
+
+These are the two laws in paper Equation (1). Set $\gamma(\sigma)=1$ or $\sqrt{1-\sigma^2}$ to write their ambient density as Equation (3):
 
 $$
 p_\sigma(x)=\frac1{(2\pi\sigma^2)^{d/2}}
@@ -360,6 +381,16 @@ Taking $f=v-\log p_{\mathrm{prior}}$ recovers the posterior from the previous se
 
 A learned non-gradient field may have $j\ne0$ while $\nabla\cdot j=0$: probability can circulate without changing the density at any location. A non-reversible stationary law therefore need not have an arbitrary scalar-potential expression $e^{-f}$. This motivates the paper's WKB analysis, developed in [Part 3's Appendix B.4 discussion](/en/reviews/score-geometry-wkb/).
 
+The WKB starting form, for a small parameter $\theta>0$, is
+
+$$
+\pi_\theta(x)=\frac1{Z_\theta}
+e^{-V(x)/\theta}c_\theta(x),\qquad
+c_\theta\longrightarrow c_0>0\quad\text{in }C^2.
+$$
+
+Here $Z_\theta$ normalizes the density, $V$ determines where mass concentrates, and $c_\theta$ is the amplitude. This combines the exponential/amplitude separation of Equation (5) with the convergence requirement of Assumption B.2. The stationary equation determines $V$ and $c_0$ once this form is assumed. [Paper Equation (5)](https://arxiv.org/html/2509.24912v2#S2.E5), [Assumption B.2](https://arxiv.org/html/2509.24912v2#A2.Thmassumption2).
+
 ## 3. Central Insight: Gaussian Smoothing Recovers Geometry Before Distribution
 
 ### Theorem 3.1
@@ -397,16 +428,20 @@ The leading rescaled log-density is a distance function independent of the origi
 
 The distance penalty has coefficient $\sigma^{-2}$, while the spatially varying density information is finite. The term $-\tfrac q2\log(2\pi\sigma^2)$ also diverges, but is constant in $x$ and disappears on taking a score. This distinction makes it possible to erase frequency without erasing confinement.
 
-<details class="review-background">
-<summary><span>Supplementary explanation: how large is the score itself?</span><span class="review-background-toggle" aria-hidden="true"></span></summary>
-<div class="review-background-body">
-
-The stronger score estimate is proved separately in Appendix B.5:
+With the additional $C^2$ data-density regularity used in Appendix B.5, uniformly in a fixed sufficiently narrow tube,
 
 $$
 s^*(x,\sigma)
 =-\frac{x-P_{\mathcal M}(x)}{\sigma^2}+O(1).
 $$
+
+The distance-gradient identity makes the leading term point toward the nearest manifold point. This follows by estimating differentiated Gaussian integrals, rather than differentiating an $o(1)$ log-density remainder. [Paper Equation (20), Appendix B.5](https://arxiv.org/html/2509.24912v2#A2.E20).
+
+<details class="review-background">
+<summary><span>Supplementary explanation: how large is the score itself?</span><span class="review-background-toggle" aria-hidden="true"></span></summary>
+<div class="review-background-body">
+
+The estimate above has different magnitudes depending on where the point is evaluated.
 
 At a fixed positive normal distance $\delta$, the leading magnitude is $\delta/\sigma^2$. At a typical noise displacement of size $O(\sigma)$, it is $O(\sigma^{-1})$. Exactly on the manifold, that leading vector vanishes. The $\sigma^{-2}$ separation concerns the coefficient and the fixed-tube asymptotics, not a universal magnitude at every sample location.
 
@@ -431,9 +466,30 @@ Assumption 4.1 requires $-\log\pi_\sigma\in C^1(K)$, concentration on a compact 
 
 ### The three conclusions of Theorem 4.1
 
-1. If $E_\sigma=o(\sigma^{-2})$, then for every fixed $\delta>0$, the mass farther than $\delta$ from $\mathcal M$ tends to zero.
-2. For an arbitrary $C^1$ target density on $\mathcal M$, the paper constructs generated laws converging to that target with $E_\sigma=\Omega(1)$.
-3. If $E_\sigma=o(1)$, then the generated laws converge weakly to the original data measure.
+**1. Concentration near the manifold.** For every fixed $\delta>0$,
+
+$$
+E_\sigma=o(\sigma^{-2})
+\quad\Longrightarrow\quad
+\int_{\{x:\operatorname{dist}(x,\mathcal M)>\delta\}}
+\pi_\sigma(x)\,dx\longrightarrow0
+\qquad(\delta>0).
+$$
+
+**2. The frequency along the manifold may change.** For any $C^1$ target density with $\eta\ge0$ and $\int_{\mathcal M}\eta\,d\mathcal M=1$, one can construct generated densities satisfying the theorem's assumptions and
+
+$$
+\pi_\sigma(x)\,dx\Rightarrow\eta(x)\,d\mathcal M(x),
+\qquad E_\sigma=\Omega(1).
+$$
+
+**3. Recovery of the original data law.** Vanishing absolute score error gives
+
+$$
+E_\sigma=o(1)
+\quad\Longrightarrow\quad
+\pi_\sigma(x)\,dx\Rightarrow\mu_{\mathrm{data}}.
+$$
 
 These are concentration, possible density distortion, and a sufficient condition for distribution recovery respectively. The $\Omega(1)$ statement is a lower bound; it does not itself assert an upper bound by a constant. Concentration alone also permits almost all mass to collect on a small part of the support. [Theorem 4.1](https://arxiv.org/html/2509.24912v2#S4.Thmtheorem1)
 
@@ -461,7 +517,15 @@ $$
 \widetilde\pi_\sigma(x)\propto e^{-\sigma^\alpha f_\sigma(x)}.
 $$
 
-For an exact score, this is the normalized power $p_\sigma^{\sigma^\alpha}$. Substitution of the density expansion yields
+For an exact score, normalization gives
+
+$$
+\widetilde\pi_\sigma(x)
+=\frac{p_\sigma(x)^{\sigma^\alpha}}
+{\int_{\mathbb R^d}p_\sigma(z)^{\sigma^\alpha}\,dz}.
+$$
+
+Substitution of the density expansion yields
 
 $$
 \log\widetilde\pi_\sigma(x)
@@ -487,7 +551,20 @@ $$
 \max\{-\beta,0\}<\alpha<2
 $$
 
-gives weak convergence of the stationary laws to normalized Riemannian volume. In coordinates, the limit has density proportional to $\sqrt{\det g(u)}$.
+gives the normalized uniform limit
+
+$$
+\begin{aligned}
+\widetilde\pi_\sigma(x)\,dx
+&\Rightarrow\frac{d\mathcal M}{V_{\mathcal M}},
+\qquad V_{\mathcal M}=\int_{\mathcal M}d\mathcal M,\\
+\widetilde\pi_0(u)
+&=\frac{\sqrt{\det g(u)}}
+{\int_U\sqrt{\det g(w)}\,dw}.
+\end{aligned}
+$$
+
+The coordinate expression uses the earlier convention of combining local integrals with a partition of unity.
 
 The conditions have separate jobs: $\alpha<2$ retains confinement, $\alpha+\beta>0$ removes approximation error, and $\alpha>0$ erases the data-density term. For example, $E_\sigma=O(1)$ allows $\beta=-1/2$ and $\alpha=1$. With a specified bound $E_\sigma=o(\sigma^{-3/2})$, the theorem's exponent interval is $3/2<\alpha<2$. [Theorem 5.1](https://arxiv.org/html/2509.24912v2#S5.Thmtheorem1)
 

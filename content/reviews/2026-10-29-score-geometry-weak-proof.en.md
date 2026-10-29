@@ -3,7 +3,7 @@ title: "[4/4] Score Geometry: Proving a Uniform Limit"
 description: "Complete supplementary proofs on a reflecting annulus and a confining whole-plane model, allowing residual derivatives to grow."
 date: "2026-10-29"
 publishedAt: "2026-10-29T08:55:40+09:00"
-updatedAt: "2026-10-29T14:52:48+09:00"
+updatedAt: "2026-10-29T15:42:19+09:00"
 topics: ["생성 모델", "확률과 기하"]
 visibility: "public"
 lang: "en"
@@ -32,6 +32,19 @@ b_\theta=-\nabla f_0-\theta\nabla f_1+\widehat b_\theta,
 $$
 
 and substitutes $e^{-V/\theta}c_\theta$ into its stationary Fokker–Planck equation (FPE). This partial differential equation (PDE), when expanded pointwise, contains $\nabla\cdot\widehat b_\theta$.
+
+Make the strong equation being compared explicit. When a stationary measure has a smooth density $p_\theta$,
+
+$$
+\begin{aligned}
+0&=-\nabla\cdot(b_\theta p_\theta)+\theta\Delta p_\theta,\\
+-\nabla\cdot(\widehat b_\theta p_\theta)
+&=-p_\theta\nabla\cdot\widehat b_\theta
+-\widehat b_\theta\cdot\nabla p_\theta.
+\end{aligned}
+$$
+
+The second line is the product rule. It shows exactly where the residual's value and its divergence enter as different terms. The weak argument below moves derivatives to test functions instead of requiring this strong density expansion. [Paper Appendix B.4, Equation (14)](https://arxiv.org/html/2509.24912v2#A2.E14).
 
 Small function values do not imply small derivatives. The field amplitude $\theta^{3/2}\sin(u/\theta^2)$ is $o(\theta)$ while its angular derivative has amplitude $\theta^{-1/2}$. On a circle, integer frequencies make the example periodic. This observation questions a coefficient-matching justification; it is not by itself a counterexample to the limiting distribution.
 
@@ -653,6 +666,16 @@ $$
 \int[\varphi''-v_0'\varphi']d\nu=0.
 \tag{F16}
 $$
+
+Writing the guided stationary measure as $\mu_\theta^v$, the final normalized weak limit is
+
+$$
+\mu_\theta^v\Rightarrow
+\frac{e^{-v(\cos u,\sin u)}}
+{\int_0^{2\pi}e^{-v(\cos w,\sin w)}\,dw}\,du.
+$$
+
+On the unit circle, $du$ is arc length, and the fixed observation $y$ is absorbed into $v$. The formula therefore displays the likelihood-weighted uniform-volume posterior directly.
 
 Its unique probability solution is $Z^{-1}e^{-v_0(u)}du$. The weighted Poisson construction in §8.2 proves this without first assuming a limiting density: solve $(\rho_0\varphi')'=\rho_0g_0$ and test the limiting equation. The posterior is likelihood times the uniform-volume prior on the unit circle.
 

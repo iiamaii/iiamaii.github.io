@@ -3,7 +3,7 @@ title: "[4/4] Score Geometry: 균등 극한 증명"
 description: "반사 경계를 둔 고리 영역과 전체 평면의 단위원 모형에서 잔차를 미분하지 않고 균등 극한과 사후분포를 증명한다."
 date: "2026-10-29"
 publishedAt: "2026-10-29T08:55:40+09:00"
-updatedAt: "2026-10-29T14:52:48+09:00"
+updatedAt: "2026-10-29T15:42:19+09:00"
 topics: ["생성 모델", "확률과 기하"]
 visibility: "public"
 lang: "ko"
@@ -31,6 +31,19 @@ b_\theta=-\nabla f_0-\theta\nabla f_1+\widehat b_\theta,
 $$
 
 로 쓰고, 정상밀도에 $e^{-V/\theta}c_\theta$를 대입한다. 정상 Fokker–Planck 방정식(Fokker–Planck equation, FPE)은 밀도를 미분하는 편미분방정식(partial differential equation, PDE)이다. 이를 점별로 전개하면 $\nabla\cdot\widehat b_\theta$가 나타난다.
+
+비교하는 강한 형태도 명시하자. 정상측도가 매끄러운 밀도 $p_\theta$를 갖는 경우에는
+
+$$
+\begin{aligned}
+0&=-\nabla\cdot(b_\theta p_\theta)+\theta\Delta p_\theta,\\
+-\nabla\cdot(\widehat b_\theta p_\theta)
+&=-p_\theta\nabla\cdot\widehat b_\theta
+-\widehat b_\theta\cdot\nabla p_\theta.
+\end{aligned}
+$$
+
+다. 두 번째 줄은 곱의 미분 공식이다. 잔차의 함수값과 그 발산이 서로 다른 항으로 들어가는 지점이 여기다. 아래 약한 유도는 미분을 시험함수로 옮겨 이 강한 밀도 전개를 필요로 하지 않는다. [원문 부록 B.4, Eq.(14)](https://arxiv.org/html/2509.24912v2#A2.E14).
 
 문제는 함수값이 작다고 그 미분까지 같은 차수로 작아지는 것은 아니라는 점이다. 예를 들어 $\theta^{3/2}\sin(u/\theta^2)$의 진폭은 $o(\theta)$지만 미분의 진폭은 $\theta^{-1/2}$다. 원 위의 주기성을 맞추려면 주파수를 정수로 고르면 된다.
 
@@ -699,6 +712,16 @@ $$
 \int[\varphi''-v_0'\varphi']d\nu=0.
 \tag{F16}
 $$
+
+guided 정상측도를 $\mu_\theta^v$라 쓰면 최종 약극한은 정규화까지 포함해
+
+$$
+\mu_\theta^v\Rightarrow
+\frac{e^{-v(\cos u,\sin u)}}
+{\int_0^{2\pi}e^{-v(\cos w,\sin w)}\,dw}\,du.
+$$
+
+다. $du$는 단위원의 호 길이와 같고, 관측 $y$는 $v$ 안에 고정되어 있다. 따라서 이 식이 부피 균등 사전에 likelihood를 곱한 사후분포를 직접 보여 준다.
 
 유일한 확률 해는 $\rho_0(u)du=Z^{-1}e^{-v_0(u)}du$다. 밀도 존재를 먼저 가정하지 않는 식별은 [반사 경계를 둔 고리 영역 해설](/reviews/score-geometry-weak-proof/)의 가중 Poisson 방정식과 같다. $\int g_0\rho_0=0$이면 $(\rho_0\varphi')'=\rho_0g_0$를 주기적으로 풀어 (F16)에서 $\int g_0d\nu=0$을 얻는다. 결과는 단위원의 부피 균등 사전분포(prior)에 관측 우도(likelihood)를 곱한 사후분포(posterior)다.
 

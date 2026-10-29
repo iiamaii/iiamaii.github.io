@@ -3,7 +3,7 @@ title: "[3/4] Score Geometry: Stationarity and Mixing"
 description: "The stationary-density expansion, its assumptions, the complete additional experiments, and the argument connecting tempering to mixing."
 date: "2026-10-29"
 publishedAt: "2026-10-29T08:55:41+09:00"
-updatedAt: "2026-10-29T14:52:49+09:00"
+updatedAt: "2026-10-29T15:42:20+09:00"
 topics: ["생성 모델", "확률과 기하"]
 visibility: "public"
 lang: "en"
@@ -42,6 +42,19 @@ $$
 
 A time change gives drift $b_\theta/\theta$ and noise amplitude $\sqrt2$. Its stationary law is unchanged, although finite-time trajectories and mixing measured in those time units differ.
 
+The time change in paper Equation (13) is explicitly
+
+$$
+\begin{aligned}
+Y_t&=X_{t/\theta},\qquad
+\widetilde W_t=\sqrt\theta\,W_{t/\theta},\\
+dY_t&=\frac{b_\theta(Y_t)}{\theta}\,dt
++\sqrt2\,d\widetilde W_t.
+\end{aligned}
+$$
+
+Brownian scaling makes $\widetilde W$ standard Brownian motion. Reading the original path $1/\theta$ times faster multiplies the drift by $1/\theta$ and the noise by $1/\sqrt\theta$. [Paper Equation (13)](https://arxiv.org/html/2509.24912v2#A2.E13).
+
 ### What the WKB assumption contains
 
 The stationary density is assumed to split into an exponential action and a slower amplitude:
@@ -63,6 +76,28 @@ Start from
 $$
 0=-\nabla\cdot(b_\theta\pi_\theta)+\theta\Delta\pi_\theta.
 $$
+
+First expand the product derivatives leading to paper Equation (14). Write the unnormalized density as $\varrho_\theta=e^{-V/\theta}c_\theta$; a spatially constant normalizer has no effect on these derivatives.
+
+$$
+\begin{aligned}
+\varrho_\theta&=e^{-V/\theta}c_\theta,\\
+\nabla\varrho_\theta
+&=e^{-V/\theta}\left(\nabla c_\theta
+-\frac{c_\theta}{\theta}\nabla V\right),\\
+\Delta\varrho_\theta
+&=e^{-V/\theta}\left[
+\Delta c_\theta-\frac2\theta\nabla V\cdot\nabla c_\theta
+-\frac{\Delta V}{\theta}c_\theta
++\frac{|\nabla V|^2}{\theta^2}c_\theta\right],\\
+\nabla\cdot(b_\theta\varrho_\theta)
+&=e^{-V/\theta}\left[
+(\nabla\cdot b_\theta)c_\theta+b_\theta\cdot\nabla c_\theta
+-\frac{b_\theta\cdot\nabla V}{\theta}c_\theta\right].
+\end{aligned}
+$$
+
+Taking the divergence of the gradient produces two identical cross terms, hence the factor two. Insert these expressions into $-\nabla\cdot(b_\theta\varrho_\theta)+\theta\Delta\varrho_\theta=0$ and divide by the positive exponential to obtain every term of paper Equation (14). [Paper Equation (14)](https://arxiv.org/html/2509.24912v2#A2.E14).
 
 Substitute the ansatz and cancel its exponential factor:
 
@@ -175,6 +210,34 @@ In particular, the term obtained from $d_{p,j}=\langle N_p,\partial_{u_j}N_q\ran
 
 ### Lemma B.6: use transport to eliminate those normal derivatives
 
+Expand the intermediate calculations of paper Equations (18)–(19) component by component. In this calculation only, abbreviate $z=(u,r)$, $c=\widetilde c_0$, $F=f_0$, and $M=G^{-1}$. Subscripts denote coordinate derivatives, for example $c_k=\partial_{z_k}c$ and $F_{pi}=\partial_{z_pz_i}F$. The normal dimension is $q=d-n$. The transport equation is
+
+$$
+T(z)=\sum_{k,p=1}^d c_k(z)M_{kp}(z)F_p(z)=0.
+$$
+
+Differentiate each of the three factors in turn. Equation (18) becomes
+
+$$
+\begin{aligned}
+0=\partial_iT
+=\sum_{k,p=1}^d\bigl[
+ c_{ki}M_{kp}F_p
++c_k(\partial_iM_{kp})F_p
++c_kM_{kp}F_{pi}\bigr].
+\end{aligned}
+$$
+
+On the manifold,
+
+$$
+\nabla_zF(u,0)=0,\qquad
+M(u,0)=\begin{pmatrix}g^{-1}&0\\0&I_q\end{pmatrix},\qquad
+\nabla_z^2F(u,0)=\begin{pmatrix}0&0\\0&H_N\end{pmatrix}.
+$$
+
+The first two terms vanish because $F_p=0$. The normal components of the remaining term yield $H_N\partial_r\widetilde c_0=0$ below. [Paper Equation (18)](https://arxiv.org/html/2509.24912v2#A2.E18).
+
 Write transport as $a(u,r)\cdot\partial_u\widetilde c_0+b(u,r)\cdot\partial_r\widetilde c_0=0$. At $r=0$, $a=b=0$. Since the gradient vanishes all along the minimum set, tangent and mixed Hessian components vanish there. Together with the block metric, this gives $\partial_ra=0$ and $\partial_rb=H_N$, the positive-definite normal Hessian.
 
 One normal differentiation gives
@@ -183,7 +246,33 @@ $$
 H_N\,\partial_r\widetilde c_0=0.
 $$
 
-Hence $\partial_r\widetilde c_0=0$. Two normal differentiations give a Sylvester equation for $C=\partial_{rr}^2\widetilde c_0$:
+Hence $\partial_r\widetilde c_0=0$. A second differentiation produces nine terms. Four contain $F_p$ and vanish at $r=0$. The five remaining terms, corresponding to paper Equation (19), are
+
+$$
+\begin{aligned}
+0=\partial_{ij}T\big|_{r=0}
+=\sum_{k,p=1}^d\bigl[&
+ c_{ki}M_{kp}F_{pj}+c_{kj}M_{kp}F_{pi}\\
+&+c_k(\partial_iM_{kp})F_{pj}
++c_k(\partial_jM_{kp})F_{pi}\\
+&+c_kM_{kp}F_{pij}\bigr]_{r=0}.
+\end{aligned}
+$$
+
+Only derivatives of $c$ through order two remain in these five terms. Under the stated $c\in C^2$ regularity, use $M\nabla F=0$ at $z_0=(u,0)$: expand $\nabla c$ through first order and $M\nabla F$ through second order, multiply, and compare the quadratic coefficient of the transport identity. This yields the same five terms without adding a third-derivative assumption on $c$.
+
+Now restrict $i,j$ to normal coordinates and use $\partial_rc=0$. The first two terms become $CH_N+H_NC$; the rest are linear in the tangential derivatives $\partial_{u_\ell}c$. Their coefficient matrices can be written explicitly as
+
+$$
+a_\ell(z)=\bigl[M(z)\nabla_zF(z)\bigr]_{u_\ell},
+\qquad
+[A_\ell(u)]_{ij}
+=\partial_{r_i r_j}a_\ell(u,0).
+$$
+
+Thus the normal Hessian $C=\partial^2_{rr}\widetilde c_0$ satisfies the following Sylvester equation. [Paper Equation (19)](https://arxiv.org/html/2509.24912v2#A2.E19).
+
+
 
 $$
 H_NC+CH_N+\sum_i A_i(u)\,\partial_{u_i}\widetilde c_0=0.
@@ -440,6 +529,21 @@ The optimization paragraph prints a cosine decay over $4\times10^{-4}$ steps to 
 
 Sampling uses $\sigma_{\min}=0.01$, Euler–Maruyama step size 0.1, 10,000 steps, and 10,000 runs. Its drift is $\widehat s$; standard noise is $\sqrt{2\sigma^2}$ and tempered noise is $\sqrt{2\sigma^{2-\alpha}}$. This rescaling preserves the stationary comparison but changes physical time units.
 
+The two implemented stochastic differential equations are explicit below, with $\widehat s_\sigma=\sigma^2s_\sigma$ and $\sigma_{\min}=0.01$.
+
+$$
+\begin{aligned}
+\text{vanilla:}\quad dX_t
+&=\widehat s_{\sigma_{\min}}(X_t)\,dt
++\sqrt{2\sigma_{\min}^2}\,dW_t,\\
+\text{TS:}\quad dX_t
+&=\widehat s_{\sigma_{\min}}(X_t)\,dt
++\sqrt{2\sigma_{\min}^{2-\alpha}}\,dW_t.
+\end{aligned}
+$$
+
+Dividing the tempered process's generator by $\sigma_{\min}^{2-\alpha}$ gives drift $\sigma_{\min}^\alpha s_{\sigma_{\min}}$ and unit diffusion, as in the main-text TS dynamics. Equality of stationary laws is distinct from equality of numerical trajectories at a fixed step size. [Paper C.1, Sampling](https://arxiv.org/html/2509.24912v2#A3.SS1).
+
 ### C.2 Image Generation with Diffusion Models
 
 The comparisons use Stable Diffusion 1.5 with Denoising Diffusion Probabilistic Models (DDPM), predictor–corrector (PC), and TS sampling. Contrastive Language–Image Pre-training (CLIP) features provide prompt similarity (P-sim), where higher is better alignment, and inter-image similarity (I-sim), where lower means more feature diversity. Table cells marked P / I use these two metrics without changing the source's numerical scale.
@@ -572,6 +676,18 @@ The source's $e^{-C_{\mathrm{PI}}t}$ bound is weaker but valid. A point-mass ini
 
 On a uniform unit circle, Fourier modes $e^{iku}$ have intrinsic Laplacian eigenvalues $k^2$, so the first nonzero gap is 1. Very stiff normal confinement does not remove slow transitions between deep tangential wells.
 
+For a target error $0<\eta<D_0:=\chi^2(p_0\|\pi)<\infty$, solve the bound directly for a sufficient time:
+
+$$
+e^{-2C_{\mathrm{PI}}t}D_0\le\eta
+\quad\Longleftrightarrow\quad
+2C_{\mathrm{PI}}t\ge\log\frac{D_0}{\eta}
+\quad\Longleftrightarrow\quad
+t\ge\frac1{2C_{\mathrm{PI}}}\log\frac{D_0}{\eta}.
+$$
+
+This retains both initial error and target accuracy. The paper's $O(C_{\mathrm{PI}}^{-1}\log(1/\eta))$ notation fixes the initial error. [Paper D.1](https://arxiv.org/html/2509.24912v2#A4.SS1).
+
 ### D.2 Analyzing the effect of drift scaling to the Poincaré constant
 
 The source considers
@@ -591,6 +707,16 @@ $$
 
 When $\alpha+\beta>0$, that tangential barrier vanishes; when $\alpha<2$, normal confinement remains. The two structures can be controlled separately because they occur at different scales.
 
+For this example, the authors present the following intended comparison of standard and tempered mixing rates:
+
+$$
+C_{\mathrm{PI}}^{\mathrm{vanilla}}
+=O\!\left(e^{-\sigma^\beta}\right),
+\qquad C_{\mathrm{PI}}^{\mathrm{TS}}\ge c_*>0.
+$$
+
+Here $c_*$ is positive and independent of noise. Applying these claims as proved bounds for the printed nonsmooth example requires the checks below. [Paper D.2](https://arxiv.org/html/2509.24912v2#A4.SS2).
+
 <strong>Review interpretation.</strong> The printed $\phi$ is not differentiable at $x_1=0$ and has unbounded global oscillation. A smooth Eyring–Kramers theorem or a globally bounded perturbation theorem cannot be applied to that expression literally. A regular supplementary model is
 
 $$
@@ -599,10 +725,6 @@ $$
 
 which is smooth, bounded between 0 and 1, and equals $\tfrac12\sin^2u$ on the unit circle. It retains a double-well angular barrier without claiming to reproduce a paper experiment.
 
-<details class="review-background">
-<summary><span>Supplementary explanation: the Holley–Stroock perturbation bound</span><span class="review-background-toggle" aria-hidden="true"></span></summary>
-<div class="review-background-body">
-
 Suppose $\mu\propto e^{-U}$ and $\nu\propto e^{-U-\delta U}$, with finite oscillation $\operatorname{osc}(\delta U)=\sup\delta U-\inf\delta U$. Then
 
 $$
@@ -610,6 +732,12 @@ C_{\mathrm{PI}}(\nu)
 \ge e^{-\operatorname{osc}(\delta U)}
 C_{\mathrm{PI}}(\mu).
 $$
+
+[Menz–Schlichting, Theorem 3.2](https://arxiv.org/abs/1202.1510v4).
+
+<details class="review-background">
+<summary><span>Supplementary explanation: the Holley–Stroock perturbation bound</span><span class="review-background-toggle" aria-hidden="true"></span></summary>
+<div class="review-background-body">
 
 For a direct derivation, let $m\le d\nu/d\mu\le M$, so $M/m=e^{\operatorname{osc}(\delta U)}$. The variance minimization formula gives
 
@@ -674,13 +802,30 @@ It allows nonconvexity and a manifold of minimizers. For $V\approx r^2/2$ in nor
 
 For $L_\theta=-\nabla V\cdot\nabla+\theta\Delta$ and $W=e^{V/(2\theta)}$,
 
+The generator and positive test function are
+
+$$
+L_\theta h=-\nabla V\cdot\nabla h+\theta\Delta h,
+\qquad W(x)=\exp\!\left[\frac{V(x)}{2\theta}\right]>0.
+$$
+
+Product and exponential differentiation give the following expression.
+
 $$
 \frac{L_\theta W}{\theta W}
 =\frac{\Delta V}{2\theta}
 -\frac{|\nabla V|^2}{4\theta^2}.
 $$
 
-If this is at most $-\lambda+b\mathbf1_U$, and the conditional law inside $U$ has gap $\rho_U$, the source's Proposition D.1 gives a bound of the form
+The required Lyapunov condition, with $\lambda>0$ and $b\ge0$, is the global bound
+
+$$
+\frac{L_\theta W(x)}{\theta W(x)}
+\le-\lambda+b\mathbf1_U(x)
+\qquad\text{for every }x\in\mathbb R^d.
+$$
+
+If the conditional law inside $U$ additionally has gap $\rho_U$, the source's Proposition D.1 gives a bound of the form
 
 $$
 C_{\mathrm{PI}}\ge
