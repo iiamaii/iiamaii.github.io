@@ -3,7 +3,7 @@ title: "[4/4] Score Geometry: Proving a Uniform Limit"
 description: "Complete supplementary proofs on a reflecting annulus and a confining whole-plane model, allowing residual derivatives to grow."
 date: "2026-10-29"
 publishedAt: "2026-10-29T08:55:40+09:00"
-updatedAt: "2026-10-29T15:42:19+09:00"
+updatedAt: "2026-10-29T20:45:07+09:00"
 topics: ["생성 모델", "확률과 기하"]
 visibility: "public"
 lang: "en"
@@ -134,12 +134,12 @@ The residual enters only through $\int\varepsilon_\theta\cdot\nabla f\,d\mu_\the
 
 ### 3.2 Check the boundary term explicitly
 
-If the stationary density $p_\theta$ is smooth, define current $J_\theta=b_\theta p_\theta-\theta\nabla p_\theta$. Stationarity is $\nabla\cdot J_\theta=0$, and reflection gives zero outward current $n_{\mathrm{out}}\cdot J_\theta=0$. Integration by parts yields
+If the stationary density $p_\theta$ is smooth, define the probability-current vector $\boldsymbol{j}_\theta=b_\theta p_\theta-\theta\nabla p_\theta$. Here $\theta$ labels the noise-temperature parameter; Part 1 uses $t$ for time. Stationarity is $\nabla\cdot \boldsymbol{j}_\theta=0$, and reflection gives zero outward current $n_{\mathrm{out}}\cdot \boldsymbol{j}_\theta=0$. Integration by parts yields
 
 $$
 \begin{aligned}
 \int_{\mathcal A}L_\theta f\,p_\theta dx
-&=\int_{\mathcal A}J_\theta\cdot\nabla f\,dx
+&=\int_{\mathcal A}\boldsymbol{j}_\theta\cdot\nabla f\,dx
 +\theta\int_{\partial\mathcal A}p_\theta
 \partial_{n_{\mathrm{out}}}f\,dS\\
 &=\theta\int_{\partial\mathcal A}p_\theta
@@ -148,7 +148,7 @@ $$
 \tag{S7}
 $$
 
-Zero outward normal derivative of $f$ gives equality to zero. Nonnegative outward derivative gives a nonnegative generator integral. The test-function Neumann condition is distinct from the density's no-flux condition, which sets the net current through the boundary to zero: reflection generally requires $n\cdot J=0$, not $\partial_n p=0$.
+Zero outward normal derivative of $f$ gives equality to zero. Nonnegative outward derivative gives a nonnegative generator integral. The test-function Neumann condition is distinct from the density's no-flux condition, which sets the net current through the boundary to zero: reflection generally requires $n\cdot\boldsymbol{j}_\theta=0$, not $\partial_n p=0$.
 
 [Pavliotis §4.1, Equations (4.9)–(4.12) and the reflecting-boundary discussion](https://wwwf.imperial.ac.uk/~pavl/PavliotisBook.pdf#page=83) explains this distinction. The author-hosted manuscript is dated 2015-11-11; its physical pages differ from printed page numbers. Itô's formula gives the same sign: if inward reflection decreases $f$, the stationary mean interior generator must compensate that decrease.
 
@@ -381,7 +381,7 @@ $$
 \varepsilon_\theta=\frac{\mathcal J_\theta}{w_\theta}
 $$
 
-Mixed derivatives cancel, giving $\nabla\cdot\mathcal J_\theta=0$. Since $h(r_\pm)=0$, normal boundary current vanishes. The residual components are
+The script symbol $\mathcal J_\theta$ denotes an unnormalized auxiliary vector field. Mixed derivatives cancel, giving $\nabla\cdot\mathcal J_\theta=0$. Since $h(r_\pm)=0$, normal boundary current vanishes. The residual components are
 
 $$
 \begin{aligned}
@@ -420,7 +420,7 @@ k_\theta+\frac{\theta^{-1}+2a^{-2}}{k_\theta}
 \right]>0.
 $$
 
-Yet the complete stationary current is exactly $\mathcal J_\theta/Z_\theta$. Hence $p_\theta=w_\theta/Z_\theta$ is an exact invariant density at every temperature, with uniform angle. Large residual derivatives do not themselves invalidate the uniform conclusion; conservation structure explains why a weak proof can still succeed.
+Yet the complete stationary probability current is $\boldsymbol{j}_\theta=\mathcal J_\theta/Z_\theta$. Hence $p_\theta=w_\theta/Z_\theta$ is an exact invariant density at every temperature, with uniform angle. Large residual derivatives do not themselves invalidate the uniform conclusion; conservation structure explains why a weak proof can still succeed.
 
 ## 8. Retaining likelihood identifies the posterior
 
@@ -536,14 +536,14 @@ The TV convention is $\sup_A|\nu(A)-\lambda(A)|=\tfrac12\sup_{\|g\|_\infty\le1}|
 The stationary current is
 
 $$
-J=(-\nabla U+\varepsilon_\theta)p_\theta-\theta\nabla p_\theta,
-\qquad \nabla\cdot J=0.
+\boldsymbol{j}_\theta=(-\nabla U+\varepsilon_\theta)p_\theta-\theta\nabla p_\theta,
+\qquad \nabla\cdot\boldsymbol{j}_\theta=0.
 \tag{F4}
 $$
 
-The current–generator correspondence is reviewed in [Pavliotis §4.1, physical PDF pp.83–84](https://wwwf.imperial.ac.uk/~pavl/PavliotisBook.pdf#page=83). The following radial reduction is a supplementary derivation.
+Here $j_{\theta,r}=\boldsymbol{j}_\theta\cdot e_r$ is the radial component of the probability current. The current–generator correspondence is reviewed in [Pavliotis §4.1, physical PDF pp.83–84](https://wwwf.imperial.ac.uk/~pavl/PavliotisBook.pdf#page=83). The following radial reduction is a supplementary derivation.
 
-The divergence theorem converts a volume integral of divergence into a boundary flux integral. Apply it to a disk of radius $r$. Its total outward current is zero: the current is smooth at the origin, with no point source or sink. Thus $r\int_0^{2\pi}J_rdu=0$ for every $r>0$.
+The divergence theorem converts a volume integral of divergence into a boundary flux integral. Apply it to a disk of radius $r$. Its total outward current is zero: the current is smooth at the origin, with no point source or sink. Thus $r\int_0^{2\pi}j_{\theta,r}du=0$ for every $r>0$.
 
 Let $w_\theta(r)=\int_0^{2\pi}p_\theta(r,u)du$ and define the conditional radial residual
 
@@ -681,15 +681,15 @@ Its unique probability solution is $Z^{-1}e^{-v_0(u)}du$. The weighted Poisson c
 
 ## 15. An exact whole-plane example with growing derivatives
 
-Let $w=e^{-U/\theta}$. Choose a smooth radial $h$ supported in a fixed annulus away from the origin, with $h(1)=1$, $h'(1)=0$. Set $k_\theta=\lceil\theta^{-2}\rceil$ and $\eta_\theta=\theta^{3/2}$, and define
+Let $w=e^{-U/\theta}$. Here $\mathcal J_\theta$ again denotes an unnormalized auxiliary vector field, distinct from the probability current $\boldsymbol{j}_\theta$. Choose a smooth radial $h$ supported in a fixed annulus away from the origin, with $h(1)=1$, $h'(1)=0$. Set $k_\theta=\lceil\theta^{-2}\rceil$ and $\eta_\theta=\theta^{3/2}$, and define
 
 $$
 \psi_\theta=\frac{\eta_\theta}{k_\theta}h(r)w(r)\sin(k_\theta u),
-\quad J_r=\frac1r\partial_u\psi_\theta,\quad J_u=-\partial_r\psi_\theta
+\quad \mathcal J_{\theta,r}=\frac1r\partial_u\psi_\theta,\quad \mathcal J_{\theta,u}=-\partial_r\psi_\theta
 \tag{F17}
 $$
 
-The current is divergence-free and vanishes near the origin and infinity. With $\varepsilon=J/w$,
+This auxiliary field is divergence-free and vanishes near the origin and infinity. With $\varepsilon=\mathcal J_\theta/w$,
 
 $$
 \varepsilon_r=\frac{\eta_\theta h}r\cos(k_\theta u),\qquad
@@ -698,7 +698,7 @@ $$
 \tag{F18}
 $$
 
-Its global supremum is $O(\theta^{3/2})=o(\theta)$, but at $r=1$ the angular derivative amplitude is $\eta_\theta k_\theta\asymp\theta^{-1/2}$. Its curl is generally nonzero. Nevertheless the complete current of $p=w/Z$ is exactly $J/Z$, so this is an exact stationary density with uniform angle at every temperature. The global assumptions are therefore realized by an explicit non-gradient family.
+Its global supremum is $O(\theta^{3/2})=o(\theta)$, but at $r=1$ the angular derivative amplitude is $\eta_\theta k_\theta\asymp\theta^{-1/2}$. Its curl is generally nonzero. Nevertheless the complete current of $p=w/Z$ is exactly $\boldsymbol{j}_\theta=\mathcal J_\theta/Z$, so this is an exact stationary density with uniform angle at every temperature. The global assumptions are therefore realized by an explicit non-gradient family.
 
 ![Cutoff-region mass and normal variance in the quartic whole-plane model](/assets/score-geometry/full-space-toy.svg)
 

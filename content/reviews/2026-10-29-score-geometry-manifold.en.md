@@ -3,7 +3,7 @@ title: "[1/4] Score Geometry: Shape and Density"
 description: "Why small-noise scores encode shape more strongly than frequency, and what the five main theorems and experiments establish."
 date: "2026-10-29"
 publishedAt: "2026-10-29T08:55:43+09:00"
-updatedAt: "2026-10-29T16:07:03+09:00"
+updatedAt: "2026-10-29T20:45:08+09:00"
 topics: ["생성 모델", "확률과 기하"]
 visibility: "public"
 lang: "en"
@@ -51,7 +51,7 @@ The background behind the proofs is developed where it becomes necessary: Laplac
 
 ### Manifolds, coordinates, and two densities
 
-<strong>Assumption 2.1.</strong> The support $\mathcal M$ is a compact, boundaryless, $C^4$ embedded submanifold of dimension $n$. Compactness makes finite coordinate covers and uniform geometric bounds available. An embedded submanifold sits smoothly in the ambient space. Absence of a boundary matters when integrating tangential diffusion. The $C^4$ regularity condition means that derivatives through order four are continuous; those derivatives enter the refined Laplace estimates used later for scores.
+<strong>Assumption 2.1.</strong> The support $\mathcal M$ is a compact, boundaryless, $C^4$ embedded submanifold of dimension $n$. Compactness makes finite coordinate covers and uniform geometric bounds available. An embedded submanifold sits smoothly in the ambient space. Absence of a boundary removes boundary terms when integrating tangential diffusion; a stationary tangential probability current can still remain. The $C^4$ regularity condition means that derivatives through order four are continuous; those derivatives enter the refined Laplace estimates used later for scores.
 
 Let $\Phi:U\subset\mathbb R^n\to\mathcal M$ be a chart. The columns of $D\Phi$ span the tangent space; its orthogonal complement is the normal space. The induced Riemannian metric and volume element are
 
@@ -442,11 +442,11 @@ This derives the background needed for the stationary equation in [paper §2.3](
 </div>
 </details>
 
-Define the probability current $j_t$ to express the density equation as a conservation law:
+Define the probability-current vector $\boldsymbol{j}_t(x)\in\mathbb R^d$ to express the density equation as a conservation law. Throughout this series, bold lowercase $\boldsymbol{j}$ denotes current, distinct from the Jacobian matrices $J$ and $J_A$ and the scalar volume factor $j(u,r)=|\det J(u,r)|$ in [Part 2](/en/reviews/score-geometry-laplace/):
 
 $$
-j_t=b\pi_t-\nabla\pi_t,\qquad
-\partial_t\pi_t=-\nabla\cdot j_t.
+\boldsymbol{j}_t=b\pi_t-\nabla\pi_t,\qquad
+\partial_t\pi_t=-\nabla\cdot \boldsymbol{j}_t.
 $$
 
 In particular, for $b=-\nabla f$ and a normalizable smooth Gibbs density $\pi=Z_f^{-1}e^{-f}$, direct differentiation gives
@@ -454,14 +454,14 @@ In particular, for $b=-\nabla f$ and a normalizable smooth Gibbs density $\pi=Z_
 $$
 \begin{aligned}
 \nabla\pi&=-\pi\nabla f,\\
-j&=(-\nabla f)\pi-(-\pi\nabla f)=0,\\
-L^*\pi&=-\nabla\cdot j=0
+\boldsymbol{j}&=(-\nabla f)\pi-(-\pi\nabla f)=0,\\
+L^*\pi&=-\nabla\cdot \boldsymbol{j}=0
 \end{aligned}
 $$
 
 Taking $f=v-\log p_{\mathrm{prior}}$ recovers the posterior from the previous section. This verifies that the target density satisfies the stationary equation; long-time convergence to it additionally requires suitable existence, uniqueness, and convergence conditions.
 
-A learned non-gradient field may have $j\ne0$ while $\nabla\cdot j=0$: probability can circulate without changing the density at any location. A non-reversible stationary law therefore need not have an arbitrary scalar-potential expression $e^{-f}$. This motivates the paper's WKB analysis, developed in [Part 3's Appendix B.4 discussion](/en/reviews/score-geometry-wkb/).
+A learned non-gradient field may have $\boldsymbol{j}\ne0$ while $\nabla\cdot \boldsymbol{j}=0$: probability can circulate without changing the density at any location. A non-reversible stationary law therefore need not have an arbitrary scalar-potential expression $e^{-f}$. This motivates the paper's WKB analysis, developed in [Part 3's Appendix B.4 discussion](/en/reviews/score-geometry-wkb/).
 
 The WKB starting form, for a small parameter $\theta>0$, is
 

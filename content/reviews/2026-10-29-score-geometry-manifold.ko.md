@@ -3,7 +3,7 @@ title: "[1/4] Score Geometry: 기하와 빈도"
 description: "작은 잡음에서 기하와 빈도 정보의 척도가 갈라지는 이유, 다섯 정리와 원·타원 및 이미지 생성 실험을 설명한다."
 date: "2026-10-29"
 publishedAt: "2026-10-29T08:55:43+09:00"
-updatedAt: "2026-10-29T16:07:03+09:00"
+updatedAt: "2026-10-29T20:45:08+09:00"
 topics: ["생성 모델", "확률과 기하"]
 visibility: "public"
 lang: "ko"
@@ -54,7 +54,7 @@ Laplace 근사의 원전과 비가역 Wentzel–Kramers–Brillouin(WKB) 분석�
 
 <strong>가정 2.1.</strong> $\mathcal M\subset\mathbb R^d$는 콤팩트(compact)하고 경계가 없고 주변 공간에 매끄럽게 들어 있는 $C^4$ 부분다양체(embedded submanifold)이고 차원은 $n$이다. 데이터 측도는 그 위에 놓인다.
 
-콤팩트성은 유한 개의 좌표로 전체를 덮고, 필요한 미분계수·곡률의 상수를 균일하게 제어하는 데 쓰인다. 경계가 없다는 조건은 나중에 부피 적분의 경계항과 정상 확률 흐름을 없애는 데 중요하다. $C^4$라는 매끄러움 조건(regularity)은 4차까지의 도함수가 연속임을 뜻하며, score 전개의 더 정밀한 Laplace 오차를 얻을 때 사용한다.
+콤팩트성은 유한 개의 좌표로 전체를 덮고, 필요한 미분계수·곡률의 상수를 균일하게 제어하는 데 쓰인다. 경계가 없다는 조건은 나중에 부피 적분에서 경계항이 생기지 않게 한다. 정상 상태에서 접선 방향의 확률 흐름(probability current) 자체는 남을 수 있다. $C^4$라는 매끄러움 조건(regularity)은 4차까지의 도함수가 연속임을 뜻하며, score 전개의 더 정밀한 Laplace 오차를 얻을 때 사용한다.
 
 곡면의 일부를 평면 좌표로 표현하는 국소 좌표(chart)를 $\Phi:U\subset\mathbb R^n\to\mathcal M$라 하자. 접공간(tangent space)은 $D\Phi(u)$의 열벡터들이 생성하는 공간이고, 법공간(normal space)은 접공간의 모든 벡터에 수직인 벡터들의 공간, 즉 직교 여공간(orthogonal complement)이다. 리만 계량(Riemannian metric)은 다음 $n\times n$ 행렬이다.
 
@@ -449,11 +449,11 @@ $$
 </div>
 </details>
 
-이 방정식은 확률 흐름(probability current) $j_t$를 사용해 다음처럼 쓸 수 있다.
+이 방정식은 확률 흐름(probability current) 벡터 $\boldsymbol{j}_t(x)\in\mathbb R^d$를 사용해 다음처럼 쓸 수 있다. 이 시리즈에서는 굵은 소문자 $\boldsymbol{j}$로 흐름을 표시해, 야코비안 행렬 $J$·$J_A$ 및 [2편의 부피 변환 계수](/reviews/score-geometry-laplace/)인 스칼라 $j(u,r)=|\det J(u,r)|$와 구별한다.
 
 $$
-j_t=b\pi_t-\nabla\pi_t,\qquad
-\partial_t\pi_t=-\nabla\cdot j_t.
+\boldsymbol{j}_t=b\pi_t-\nabla\pi_t,\qquad
+\partial_t\pi_t=-\nabla\cdot \boldsymbol{j}_t.
 $$
 
 특히 $b=-\nabla f$이고 $\pi=Z_f^{-1}e^{-f}$가 정규화 가능한 매끄러운 밀도이면, 연쇄법칙을 직접 대입해
@@ -461,14 +461,14 @@ $$
 $$
 \begin{aligned}
 \nabla\pi&=-\pi\nabla f,\\
-j&=(-\nabla f)\pi-(-\pi\nabla f)=0,\\
-L^*\pi&=-\nabla\cdot j=0
+\boldsymbol{j}&=(-\nabla f)\pi-(-\pi\nabla f)=0,\\
+L^*\pi&=-\nabla\cdot \boldsymbol{j}=0
 \end{aligned}
 $$
 
 을 얻는다. 앞 절의 사후분포에는 $f=v-\log p_{\mathrm{prior}}$를 넣으면 된다. 이 계산은 목표 밀도가 정상 방정식을 만족함을 확인하며, 그 밀도로의 장시간 수렴에는 별도의 존재·유일성·수렴 조건이 필요하다.
 
-학습된 벡터장이 gradient가 아니면 $j\ne0$이어도 $\nabla\cdot j=0$일 수 있다. 확률은 계속 순환하면서도 각 위치의 밀도는 일정할 수 있다는 뜻이다. 따라서 비가역(non-reversible) 동역학의 정상분포를 임의로 $e^{-f}$라고 놓을 수 없다. 논문이 WKB를 도입하는 이유이며, 그 전개는 [3편 부록 B.4 해설](/reviews/score-geometry-wkb/)에서 이어진다.
+학습된 벡터장이 gradient가 아니면 $\boldsymbol{j}\ne0$이어도 $\nabla\cdot \boldsymbol{j}=0$일 수 있다. 확률은 계속 순환하면서도 각 위치의 밀도는 일정할 수 있다는 뜻이다. 따라서 비가역(non-reversible) 동역학의 정상분포를 임의로 $e^{-f}$라고 놓을 수 없다. 논문이 WKB를 도입하는 이유이며, 그 전개는 [3편 부록 B.4 해설](/reviews/score-geometry-wkb/)에서 이어진다.
 
 이때 사용하는 WKB의 출발 형태는 작은 매개변수 $\theta>0$에 대해
 

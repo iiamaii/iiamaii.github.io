@@ -3,7 +3,7 @@ title: "[4/4] Score Geometry: 균등 극한 증명"
 description: "반사 경계를 둔 고리 영역과 전체 평면의 단위원 모형에서 잔차를 미분하지 않고 균등 극한과 사후분포를 증명한다."
 date: "2026-10-29"
 publishedAt: "2026-10-29T08:55:40+09:00"
-updatedAt: "2026-10-29T15:42:19+09:00"
+updatedAt: "2026-10-29T20:45:07+09:00"
 topics: ["생성 모델", "확률과 기하"]
 visibility: "public"
 lang: "ko"
@@ -151,14 +151,14 @@ $$
 
 ### 3.2 경계항의 부호를 직접 확인한다
 
-각 $\theta$에서 충분히 매끄러운 정상밀도 $p_\theta$를 갖는 경우로 계산을 보자. 확률 흐름(probability current)은 $J_\theta=b_\theta p_\theta-\theta\nabla p_\theta$다. 정상성은 $\nabla\cdot J_\theta=0$, 반사 경계는 $n_{\mathrm{out}}\cdot J_\theta=0$이다.
+각 $\theta$에서 충분히 매끄러운 정상밀도 $p_\theta$를 갖는 경우로 계산을 보자. 확률 흐름(probability current) 벡터는 $\boldsymbol{j}_\theta=b_\theta p_\theta-\theta\nabla p_\theta$다. 여기서 $\theta$는 잡음의 온도 매개변수이며, 1편의 $t$는 시간이다. 정상성은 $\nabla\cdot \boldsymbol{j}_\theta=0$, 반사 경계는 $n_{\mathrm{out}}\cdot \boldsymbol{j}_\theta=0$이다.
 
 부분적분하면
 
 $$
 \begin{aligned}
 \int_{\mathcal A}L_\theta f\,p_\theta dx
-&=\int_{\mathcal A}J_\theta\cdot\nabla f\,dx
+&=\int_{\mathcal A}\boldsymbol{j}_\theta\cdot\nabla f\,dx
 +\theta\int_{\partial\mathcal A}p_\theta
 \partial_{n_{\mathrm{out}}}f\,dS\\
 &=\theta\int_{\partial\mathcal A}p_\theta
@@ -167,7 +167,7 @@ $$
 \tag{S7}
 $$
 
-따라서 법선 미분이 0이면 적분이 0이고, 법선 미분이 음이 아니면 적분도 음이 아니다. 시험함수의 경계 조건은 Neumann 조건이지만, <strong>밀도의 반사 조건은 일반적으로 $\partial_n p=0$이 아니라 경계를 통과하는 순흐름이 0인 무유출(no-flux) 조건 $n\cdot J=0$</strong>다. 둘을 구별해야 한다.
+따라서 법선 미분이 0이면 적분이 0이고, 법선 미분이 음이 아니면 적분도 음이 아니다. 시험함수의 경계 조건은 Neumann 조건이지만, <strong>밀도의 반사 조건은 일반적으로 $\partial_n p=0$이 아니라 경계를 통과하는 순흐름이 0인 무유출(no-flux) 조건 $n\cdot\boldsymbol{j}_\theta=0$</strong>다. 둘을 구별해야 한다.
 
 [Pavliotis의 저자 공개 강의본 §4.1, 식 (4.9)–(4.12)와 반사 경계 설명](https://wwwf.imperial.ac.uk/~pavl/PavliotisBook.pdf#page=83)은 이 흐름·경계 구분을 설명한다. 이 공개본은 2015-11-11 표기본이며 인쇄판과 페이지가 다를 수 있다.
 
@@ -414,7 +414,7 @@ $$
 \varepsilon_\theta=\frac{\mathcal J_\theta}{w_\theta}
 $$
 
-라 정의한다. 혼합 미분이 상쇄되어 $\nabla\cdot\mathcal J_\theta=0$이다. $h(r_\pm)=0$이어서 경계 법선 흐름도 0이다.
+라 정의한다. $\mathcal J_\theta$는 정규화 전의 보조 벡터장이다. 혼합 미분이 상쇄되어 $\nabla\cdot\mathcal J_\theta=0$이다. $h(r_\pm)=0$이어서 경계 법선 흐름도 0이다.
 
 실제 drift 성분은
 
@@ -455,7 +455,7 @@ k_\theta+\frac{\theta^{-1}+2a^{-2}}{k_\theta}
 \right]>0.
 $$
 
-그런데 전체 정상 흐름은 $\mathcal J_\theta/Z_\theta$이므로 $p_\theta=w_\theta/Z_\theta$가 <strong>모든 $\theta$에서 정확한 정상밀도</strong>다. 각도 밀도는 정확히 균등하다. 큰 미분이 있다고 균등 결론이 깨지는 것은 아니며, 잔차를 개별 항으로 미분하기보다 보존 구조나 약한 방정식이 중요한 예다.
+그런데 전체 정상 확률 흐름은 $\boldsymbol{j}_\theta=\mathcal J_\theta/Z_\theta$이므로 $p_\theta=w_\theta/Z_\theta$가 <strong>모든 $\theta$에서 정확한 정상밀도</strong>다. 각도 밀도는 정확히 균등하다. 큰 미분이 있다고 균등 결론이 깨지는 것은 아니며, 잔차를 개별 항으로 미분하기보다 보존 구조나 약한 방정식이 중요한 예다.
 
 ## 8 likelihood를 더하면 posterior도 식별할 수 있다
 
@@ -580,14 +580,14 @@ $$
 정상 Fokker–Planck 방정식의 확률 흐름(probability current)은
 
 $$
-J=(-\nabla U+\varepsilon_\theta)p_\theta-\theta\nabla p_\theta,
-\qquad \nabla\cdot J=0.
+\boldsymbol{j}_\theta=(-\nabla U+\varepsilon_\theta)p_\theta-\theta\nabla p_\theta,
+\qquad \nabla\cdot\boldsymbol{j}_\theta=0.
 \tag{F4}
 $$
 
-이 식과 생성자의 대응은 [Pavliotis, §4.1, 실제 파일 pp.83–84](https://wwwf.imperial.ac.uk/~pavl/PavliotisBook.pdf#page=83)에 설명되어 있다. 다음 방사형 계산은 이 해설의 유도다.
+여기서 $j_{\theta,r}=\boldsymbol{j}_\theta\cdot e_r$는 확률 흐름의 방사형 성분이다. 이 식과 생성자의 대응은 [Pavliotis, §4.1, 실제 파일 pp.83–84](https://wwwf.imperial.ac.uk/~pavl/PavliotisBook.pdf#page=83)에 설명되어 있다. 다음 방사형 계산은 이 해설의 유도다.
 
-반지름 $r$의 원판에 내부의 발산 적분을 경계의 흐름 적분으로 바꾸는 발산정리(divergence theorem)를 적용하면 원을 통과하는 총 흐름은 0이다. 원점에 별도 원천이나 흡수원이 없고, 각 $\theta$의 $J$가 그곳에서도 매끄럽기 때문이다. 따라서 $r>0$에서 $r\int_0^{2\pi}J_rdu=0$이다.
+반지름 $r$의 원판에 내부의 발산 적분을 경계의 흐름 적분으로 바꾸는 발산정리(divergence theorem)를 적용하면 원을 통과하는 총 흐름은 0이다. 원점에 별도 원천이나 흡수원이 없고, 각 $\theta$의 $\boldsymbol{j}_\theta$가 그곳에서도 매끄럽기 때문이다. 따라서 $r>0$에서 $r\int_0^{2\pi}j_{\theta,r}du=0$이다.
 
 $w_\theta(r)=\int_0^{2\pi}p_\theta(r,u)du$와 조건부 방사형 잔차
 
@@ -727,15 +727,15 @@ $$
 
 ## 15. 미분이 커지는 비보존적(non-conservative) 정확 예제
 
-$w=e^{-U/\theta}$라 하자. 원점에서 떨어진 고정 고리 영역 밖에서는 0이 되고 $h(1)=1$, $h'(1)=0$인 매끄러운 방사형 함수 $h$를 택한다. $k_\theta=\lceil\theta^{-2}\rceil$, $\eta_\theta=\theta^{3/2}$로 두고 흐름 함수(stream function)를
+$w=e^{-U/\theta}$라 하자. 아래의 $\mathcal J_\theta$도 정규화 전의 보조 벡터장이며, 확률 흐름 $\boldsymbol{j}_\theta$와 구별한다. 원점에서 떨어진 고정 고리 영역 밖에서는 0이 되고 $h(1)=1$, $h'(1)=0$인 매끄러운 방사형 함수 $h$를 택한다. $k_\theta=\lceil\theta^{-2}\rceil$, $\eta_\theta=\theta^{3/2}$로 두고 흐름 함수(stream function)를
 
 $$
 \psi_\theta=\frac{\eta_\theta}{k_\theta}h(r)w(r)\sin(k_\theta u),
-\quad J_r=\frac1r\partial_u\psi_\theta,\quad J_u=-\partial_r\psi_\theta
+\quad \mathcal J_{\theta,r}=\frac1r\partial_u\psi_\theta,\quad \mathcal J_{\theta,u}=-\partial_r\psi_\theta
 \tag{F17}
 $$
 
-로 만든다. $\nabla\cdot J=0$이고 $J$는 원점 근처와 충분히 먼 곳에서 0이다. $\varepsilon=J/w$이면
+로 만든다. $\nabla\cdot\mathcal J_\theta=0$이고 $\mathcal J_\theta$는 원점 근처와 충분히 먼 곳에서 0이다. $\varepsilon=\mathcal J_\theta/w$이면
 
 $$
 \varepsilon_r=\frac{\eta_\theta h}r\cos(k_\theta u),\qquad
@@ -744,7 +744,7 @@ $$
 \tag{F18}
 $$
 
-고정 고리 영역에서 $\|\varepsilon\|_\infty=O(\theta^{3/2})=o(\theta)$이지만 $r=1$에서 $\partial_u\varepsilon_r$의 진폭은 $\eta_\theta k_\theta\asymp\theta^{-1/2}$로 발산한다. curl도 일반적으로 0이 아니다. 그런데 $p=w/Z$의 전체 확률 흐름은 정확히 $J/Z$이고 발산은 0이다. 따라서 $p$는 정확한 정상밀도이고 각도는 모든 온도에서 균등하다. 이는 작은 잔차의 큰 미분과 균등 극한이 양립하며, 전역 모형의 가정이 실제로 충족될 수 있음을 보여준다.
+고정 고리 영역에서 $\|\varepsilon\|_\infty=O(\theta^{3/2})=o(\theta)$이지만 $r=1$에서 $\partial_u\varepsilon_r$의 진폭은 $\eta_\theta k_\theta\asymp\theta^{-1/2}$로 발산한다. curl도 일반적으로 0이 아니다. 그런데 $p=w/Z$의 전체 확률 흐름은 정확히 $\boldsymbol{j}_\theta=\mathcal J_\theta/Z$이고 발산은 0이다. 따라서 $p$는 정확한 정상밀도이고 각도는 모든 온도에서 균등하다. 이는 작은 잔차의 큰 미분과 균등 극한이 양립하며, 전역 모형의 가정이 실제로 충족될 수 있음을 보여준다.
 
 
 ![전역 방사형 모형의 절단 영역 질량과 법선 분산](/assets/score-geometry/full-space-toy.svg)
