@@ -3,7 +3,7 @@ title: "[3/4] Score Geometry: Stationarity and Mixing"
 description: "The stationary-density expansion, its assumptions, the complete additional experiments, and the argument connecting tempering to mixing."
 date: "2026-10-29"
 publishedAt: "2026-10-29T08:55:41+09:00"
-updatedAt: "2026-10-29T11:06:36+09:00"
+updatedAt: "2026-10-29T13:13:11+09:00"
 topics: ["생성 모델", "확률과 기하"]
 visibility: "public"
 lang: "en"
@@ -18,7 +18,7 @@ thumbnailAlt: "Non-conservative scores, stationary laws, and mixing"
 topicNames: {"생성 모델": "Generative Models", "확률과 기하": "Probability and Geometry"}
 ---
 
-A learned score need not be a gradient, so its stationary density cannot generally be read from a Gibbs potential. The paper assumes a Wentzel–Kramers–Brillouin (WKB) form and derives the intrinsic uniform limit of Tempered Score (TS) Langevin when $\beta>-2$ and $\max(-\beta,0)<\alpha<2$. [Theorem 5.2, Appendices B.4–B.5](https://arxiv.org/html/2509.24912v2#A2.SS4)
+A learned score need not be a gradient, so its stationary density—the probability density unchanged over time—cannot generally be read from a Gibbs potential. The paper assumes a Wentzel–Kramers–Brillouin (WKB) form and derives the intrinsic uniform limit of Tempered Score (TS) Langevin when $\beta>-2$ and $\max(-\beta,0)<\alpha<2$. [Theorem 5.2, Appendices B.4–B.5](https://arxiv.org/html/2509.24912v2#A2.SS4)
 
 <strong>Review interpretation.</strong> The important structure is the passage from normal transport to a closed tangential elliptic equation; differentiating the residual and obtaining uniform global mixing constants require their own justification.
 
@@ -26,7 +26,7 @@ This third part covers B.4–B.6, C, and D; [[1/4] Score Geometry: Shape and Den
 
 ## B.4. Manifold WKB Analysis of the Stationary Distribution
 
-Let $\mathcal M\subset\mathbb R^d$ be compact, boundaryless, $C^4$, and of dimension $n<d$. Write $d_{\mathcal M}=\tfrac12\operatorname{dist}^2(\cdot,\mathcal M)$, and let $P$ denote nearest-point projection within a narrow tube. The exact score is $s_\sigma^*=\nabla\log p_\sigma$ and its estimate is $s_\sigma$. The general-score theorem requires the positive coordinate data density to be $C^2$.
+Let $\mathcal M\subset\mathbb R^d$ be compact, boundaryless, $C^4$, and of dimension $n<d$. Write $d_{\mathcal M}=\tfrac12\operatorname{dist}^2(\cdot,\mathcal M)$, and let $P$ denote nearest-point projection within a narrow tube. The exact score is $s_\sigma^*=\nabla\log p_\sigma$ and its estimate is $s_\sigma$. The general-score theorem requires the positive coordinate data density to be $C^2$, meaning that derivatives through order two are continuous. The tube is a thin neighborhood around the manifold, chosen narrow enough to give a unique nearest point. Tangent directions follow the manifold, while normal directions are perpendicular to it.
 
 In tube coordinates $x=\Phi(u)+N(u)r$, use $g=(D_u\Phi)^\top D_u\Phi$, $J=D_{u,r}\Phi$, and $G=J^\top J$. The source locations are Theorem B.3 and Lemmas B.5–B.6, Portable Document Format (PDF) pp.24–28.
 
@@ -52,7 +52,7 @@ e^{-V(x)/\theta}c_\theta(x),\qquad
 c_\theta\longrightarrow c_0>0\quad\text{in }C^2.
 $$
 
-The action $V$ locates mass at exponential scale. The limiting amplitude $c_0$ determines relative frequencies between points with the same minimal action. When an entire manifold minimizes $V$, the amplitude is essential to identifying the law along that manifold.
+The action $V$ acts as a cost in the exponent and locates mass at exponential scale. The amplitude is the coefficient function multiplying that exponential. The limiting amplitude $c_0$ determines relative frequencies between points with the same minimal action. When an entire manifold minimizes $V$, the amplitude is essential to identifying the law along that manifold.
 
 Assumption B.2 includes concentration in the tube, positive $c_0\in C^2$, convergence $c_\theta\to c_0$ in $C^2$, and a $C^3$ action with a uniqueness assumption. These properties are assumed, not established for arbitrary learned fields. [Bouchet–Reygner §§3.1–3.3](https://arxiv.org/abs/1507.02104) supplies the Hamilton–Jacobi/transport background, but its isolated-attractor setting differs from a manifold of minima. [Paper Assumption B.2](https://arxiv.org/html/2509.24912v2#A2.Thmassumption2)
 
@@ -208,7 +208,7 @@ $$
 B_{\mathcal M}\cdot\nabla_{\mathcal M}\widetilde c_0=0
 $$
 
-Its principal coefficient is $g^{-1}$, locally uniformly positive definite. Compactness gives a maximum, absence of boundary makes it an interior maximum, and the strong maximum principle forces a solution to be constant on each connected component, under the coefficient regularity conditions of that principle.
+The equation is closed in tangential variables: no normal derivatives remain. Its principal coefficient is $g^{-1}$, locally uniformly positive definite, so diffusion does not vanish in any tangential direction. Compactness gives a maximum, absence of boundary makes it an interior maximum, and the strong maximum principle forces a solution to be constant on each connected component, under the coefficient regularity conditions of that principle.
 
 The source cites Gilbarg–Trudinger Theorem 3.5. The relevant elliptic form is also stated in [Guerra–Orriols §3.2, Theorem 3.12](https://www.dpmms.cam.ac.uk/~adblg2/EllipticPDELent2026.pdf). The result is
 
@@ -550,7 +550,7 @@ $$
 \int|\nabla h|^2\,d\pi
 $$
 
-The convention here makes $C_{\mathrm{PI}}$ a spectral gap: <strong>larger means faster</strong>. Some literature calls its reciprocal the Poincaré constant. The test functions belong to the weighted Sobolev space $H^1(\pi)$, with square-integrable function and weak gradient.
+The convention here makes $C_{\mathrm{PI}}$ a spectral gap: <strong>larger means faster</strong>. Some literature calls its reciprocal the Poincaré constant. The test functions belong to the weighted Sobolev space $H^1(\pi)$, with square-integrable function and weak gradient. Here a weak derivative is defined through integration identities rather than requiring a pointwise derivative.
 
 For reversible Langevin with drift $-\nabla U$ and noise $\sqrt2$, $\pi\propto e^{-U}$. Set $r_t=p_t/\pi-1$. Integration by parts gives
 
@@ -668,7 +668,7 @@ $$
 
 It allows nonconvexity and a manifold of minimizers. For $V\approx r^2/2$ in normal coordinates, $|\nabla V|^2\approx r^2=2(V-V_{\min})$ even though tangent directions are flat.
 
-[Gong–He–Shen v2, Theorems 2 and 4](https://arxiv.org/abs/2501.00429v2) connects such local geometry, conditions on other critical points, and tail growth to a global PI through the minimum-set neighborhood. The intrinsic Laplace–Beltrami gap governs the surviving tangential mixing. These results have constants and small-temperature thresholds for their potential. If the potential itself varies through $c=c(\sigma)$, those constants and thresholds must be tracked uniformly.
+[Gong–He–Shen v2, Theorems 2 and 4](https://arxiv.org/abs/2501.00429v2) connects such local geometry, conditions on other critical points, where the gradient vanishes, and tail growth to a global PI through the minimum-set neighborhood. The intrinsic Laplace–Beltrami gap governs the surviving tangential mixing. These results have constants and small-temperature thresholds for their potential. If the potential itself varies through $c=c(\sigma)$, those constants and thresholds must be tracked uniformly.
 
 ### From local control to a global gap
 
@@ -697,7 +697,7 @@ Appendix D.2 gives the direct bound $C_{\mathrm{PI}}^{\mathrm{smooth}}=\Omega(c)
 
 <strong>Review interpretation.</strong> With this gap convention, a larger lower bound is stronger. Passing from $\Omega(1/\sigma)$ to $\Omega(1)$ is not an improvement. Confidence is high that these direct-bound statements are inconsistent. A coherent intended direction is to distinguish $\Omega(c)$ from a structurally stronger $\Omega(1)$, but establishing the latter requires uniform constants and temperature thresholds. This affects the quantitative mixing discussion in Appendix D, not the separate chain of stationary weak-limit arguments.
 
-The robust mechanism is that tempering can reduce metastability by lowering tangential barriers while preserving normal confinement. Exact finite-time bounds still depend on the geometry, initialization, and discretization.
+The robust mechanism is that tempering can reduce metastability—long residence in one region—by lowering tangential barriers while preserving normal confinement. Exact finite-time bounds still depend on the geometry, initialization, and discretization.
 
 ## Review interpretation and open questions
 

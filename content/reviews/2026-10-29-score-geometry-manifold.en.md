@@ -3,7 +3,7 @@ title: "[1/4] Score Geometry: Shape and Density"
 description: "Why small-noise scores encode shape more strongly than frequency, and what the five main theorems and experiments establish."
 date: "2026-10-29"
 publishedAt: "2026-10-29T08:55:43+09:00"
-updatedAt: "2026-10-29T11:16:15+09:00"
+updatedAt: "2026-10-29T13:13:13+09:00"
 topics: ["생성 모델", "확률과 기하"]
 visibility: "public"
 lang: "en"
@@ -51,7 +51,7 @@ The background behind the proofs is developed where it becomes necessary: Laplac
 
 ### Manifolds, coordinates, and two densities
 
-<strong>Assumption 2.1.</strong> The support $\mathcal M$ is a compact, boundaryless, $C^4$ embedded submanifold of dimension $n$. Compactness makes finite coordinate covers and uniform geometric bounds available. Absence of a boundary matters when integrating tangential diffusion, while the fourth derivatives enter the refined Laplace estimates used later for scores.
+<strong>Assumption 2.1.</strong> The support $\mathcal M$ is a compact, boundaryless, $C^4$ embedded submanifold of dimension $n$. Compactness makes finite coordinate covers and uniform geometric bounds available. An embedded submanifold sits smoothly in the ambient space. Absence of a boundary matters when integrating tangential diffusion. The $C^4$ regularity condition means that derivatives through order four are continuous; those derivatives enter the refined Laplace estimates used later for scores.
 
 Let $\Phi:U\subset\mathbb R^n\to\mathcal M$ be a chart. The columns of $D\Phi$ span the tangent space; its orthogonal complement is the normal space. The induced Riemannian metric and volume element are
 
@@ -82,11 +82,13 @@ $$
 
 Equal angular increments therefore carry different arc lengths. Only a circle makes uniform angle and uniform arc length coincide.
 
+A tubular neighborhood is a thin tube around the manifold. We choose it narrow enough that every point has a unique nearest point on the manifold; nearest-point projection sends a point to that nearest point.
+
 <details class="review-background">
 <summary><span>Supplementary explanation: the tube and nearest-point projection</span><span class="review-background-toggle" aria-hidden="true"></span></summary>
 <div class="review-background-body">
 
-Inside a sufficiently narrow tubular neighborhood $T_{\mathcal M}(\epsilon)$, each point has a unique nearest point $P_{\mathcal M}(x)$. Choose a local orthonormal normal frame $N(u)\in\mathbb R^{d\times(d-n)}$. Then
+Inside a sufficiently narrow tubular neighborhood $T_{\mathcal M}(\epsilon)$, each point has a unique nearest point $P_{\mathcal M}(x)$. Choose a local orthonormal normal frame $N(u)\in\mathbb R^{d\times(d-n)}$: its normal vectors are mutually perpendicular and have unit length. Then
 
 $$
 x=\Phi(u,r)=\Phi(u)+N(u)r,\qquad
@@ -122,7 +124,7 @@ p_\sigma(x)=\frac1{(2\pi\sigma^2)^{d/2}}
 p_{\mathrm{data}}(u)\,du.
 $$
 
-Multiple charts are combined with a partition of unity, so overlapping patches are not counted twice. The smoothed measure has an ambient Lebesgue density, whereas the original lower-dimensional measure does not. The appropriate limiting statement is weak convergence:
+Multiple charts are combined with a partition of unity: weights on overlapping patches sum to one, so those patches are not counted twice. The smoothed measure has an ambient Lebesgue density, whereas the original lower-dimensional measure does not. The appropriate limiting statement is weak convergence, tested against bounded continuous functions. Bounded means that the absolute value stays below some finite constant:
 
 $$
 \mu_\sigma\Rightarrow\mu
@@ -244,7 +246,7 @@ $$
 |\Delta_\sigma(x)-\Delta_\sigma(y)|\le L_KE_\sigma.
 $$
 
-This controls oscillation of a log-density ratio. Normalization and concentration on $K$ then fix its otherwise unknown additive constant. [Part 2](/en/reviews/score-geometry-laplace/) provides the complete argument and a smooth ambient counterexample showing why the $o(1)$ sufficient condition is not a necessary condition for every successful sequence.
+This controls oscillation of a log-density ratio, the difference between its supremum and infimum. Normalization and concentration on $K$ then fix its otherwise unknown additive constant. [Part 2](/en/reviews/score-geometry-laplace/) provides the complete argument and a smooth ambient counterexample showing why the $o(1)$ sufficient condition is not a necessary condition for every successful sequence.
 
 ## 5. New Paradigm of Geometric Learning: Recover Uniform Distributions with $o(\sigma^{-2})$ Score Error
 

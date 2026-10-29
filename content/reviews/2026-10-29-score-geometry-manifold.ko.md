@@ -3,7 +3,7 @@ title: "[1/4] Score Geometry: 기하와 빈도"
 description: "작은 잡음에서 기하와 빈도 정보의 척도가 갈라지는 이유, 다섯 정리와 원·타원 및 이미지 생성 실험을 설명한다."
 date: "2026-10-29"
 publishedAt: "2026-10-29T08:55:43+09:00"
-updatedAt: "2026-10-29T11:16:15+09:00"
+updatedAt: "2026-10-29T13:13:13+09:00"
 topics: ["생성 모델", "확률과 기하"]
 visibility: "public"
 lang: "ko"
@@ -27,21 +27,21 @@ thumbnailAlt: "기하·분포 학습 시리즈 1편: 기하를 배우는 score�
 
 데이터가 $\mathbb R^d$ 전체를 채우지 않고 $n<d$차원 다양체(manifold) $\mathcal M$에 놓인다고 하자. 예를 들어 원 둘레 위의 점들은 평면 좌표 두 개를 가지지만, 원을 따라 움직일 자유도는 하나다. 원의 모양을 맞히는 것과 어느 각도에서 데이터가 많이 관찰되는지 맞히는 것은 다른 일이다.
 
-원래 데이터 측도(measure)를 $\mu_{\mathrm{data}}$라 하고 Gaussian 잡음을 더하면 주변 공간에 매끄러운 밀도 $p_\sigma$가 생긴다. 점수 함수(score function)는 $s^*(x,\sigma)=\nabla\log p_\sigma(x)$다. 저자들은 작은 잡음에서 이 함수가 “다양체 쪽으로 돌아오라”는 큰 신호와 “다양체 위의 더 빈번한 위치로 이동하라”는 작은 신호를 함께 담는다고 본다.
+데이터의 확률을 나타내는 측도(measure)를 $\mu_{\mathrm{data}}$라 하고 Gaussian 잡음을 더하면 주변 공간에 매끄러운 밀도 $p_\sigma$가 생긴다. 점수 함수(score function)는 $s^*(x,\sigma)=\nabla\log p_\sigma(x)$다. 저자들은 작은 잡음에서 이 함수가 “다양체 쪽으로 돌아오라”는 큰 신호와 “다양체 위의 더 빈번한 위치로 이동하라”는 작은 신호를 함께 담는다고 본다.
 
 기존 분포 복원 이론은 보통 두 신호를 함께 맞추려 한다. 이 논문은 이를 나누어, 먼저 기하를 배우고 원래 밀도의 영향을 약화시키면 균등한 탐색이 가능하다고 제안한다. 구체적인 알고리즘은 잡음 세기 $\sigma$에서 score에 $\sigma^\alpha$를 곱하는 <strong>Tempered Score Langevin(TS Langevin)</strong>이다.
 
 ![원문 Fig.1의 기존 분포 학습과 기하 학습 비교](/assets/score-geometry/paper-figure-1.svg)
 
-원문 Fig.1은 지지집합을 복원하는 오차 척도와 세밀한 빈도를 복원하는 척도를 나란히 놓는다. 오른쪽은 원래 빈도를 지우고 균등 부피분포를 표적으로 삼는 제안이다. [원문 Fig.1](https://arxiv.org/html/2509.24912v2#S1.F1)
+원문 Fig.1은 분포가 놓이는 범위를 나타내는 지지집합(support)을 복원하는 오차 척도와 세밀한 빈도를 복원하는 척도를 나란히 놓는다. 오른쪽은 원래 빈도를 지우고 균등 부피분포를 표적으로 삼는 제안이다. [원문 Fig.1](https://arxiv.org/html/2509.24912v2#S1.F1)
 
 ### 1.1 관련 연구 (Related Work)
 
 저자들은 관련 연구를 네 흐름으로 나누어 이 논문의 위치를 설명한다.
 
-- <strong>분포 복원 이론.</strong> 정확한 score를 전제로 목표 분포에 수렴하는 이론과 차원 의존성을 다룬다. 기존 오차 상계는 기하와 밀도를 한꺼번에 비교하며, 두 정보의 서로 다른 척도를 분리하지 않는다는 것이 저자들의 대비다.
+- <strong>분포 복원 이론.</strong> 정확한 score를 전제로 목표 분포에 수렴하는 이론과 차원 의존성을 다룬다. 기존의 오차 상계(upper bound), 즉 오차가 이 값을 넘지 않는다는 보장은 기하와 밀도를 한꺼번에 비교하며, 두 정보의 서로 다른 척도를 분리하지 않는다는 것이 저자들의 대비다.
 - <strong>다양체를 검출하는 확산 모델.</strong> 원문은 Stanczuk 등의 내재 차원 추정, Ventura 등의 선형 부분공간 분석, Pavlova 등의 경험적 근거, Pidstrigach의 높은 정확도 아래 집중 조건을 구별한다. 저자들은 이들과 달리 잡음에 따른 오차율을 분리하고 균등 표본까지 목표로 한다.
-- <strong>score의 점근적 특성(asymptotic behavior of the score).</strong> Lu·Lyu·Liu 등의 선행 분석이 잡음 세기가 0에 가까워질 때 나타나는 score의 특이성과 사영 방향을 설명한다고 정리한다. 저자들은 유계 나머지에 포함된 데이터 밀도 항을 명시적으로 분리하는 것이 정확도 비교에 필요하다고 주장한다.
+- <strong>score의 점근적 특성(asymptotic behavior of the score).</strong> Lu·Lyu·Liu 등의 선행 분석이 잡음 세기가 0에 가까워질 때 나타나는 score의 특이성과 최근접점으로 향하는 사영(projection) 방향을 설명한다고 정리한다. 저자들은 크기가 일정한 상수 이내로 제한된 나머지(bounded remainder)에 포함된 데이터 밀도 항을 명시적으로 분리하는 것이 정확도 비교에 필요하다고 주장한다.
 - <strong>다양체 균등 표본화.</strong> Coifman·Hein 등의 그래프 정규화는 표본 밀도를 상쇄하여 Laplace–Beltrami 연산자를 얻는다. 저자들은 대규모 주변 공간 생성으로의 확장 문제를 지적하고, De Santi 등의 균등 탐색을 위한 미세 조정과 대비하여 추론 단계에서만 조절하는 접근을 제안한다.
 
 이 비교는 대상 논문의 관련 연구 기술을 따른다. [원문 §1.1의 네 소절](https://arxiv.org/html/2509.24912v2#S1.SS1)
@@ -52,11 +52,11 @@ Laplace 근사의 원전과 비가역 Wentzel–Kramers–Brillouin(WKB) 분석�
 
 ### 다양체 가설과 좌표
 
-<strong>가정 2.1.</strong> $\mathcal M\subset\mathbb R^d$는 콤팩트(compact), 경계가 없는 $C^4$ 매장 부분다양체(embedded submanifold)이고 차원은 $n$이다. 데이터 측도는 그 위에 놓인다.
+<strong>가정 2.1.</strong> $\mathcal M\subset\mathbb R^d$는 콤팩트(compact)하고 경계가 없고 주변 공간에 매끄럽게 들어 있는 $C^4$ 부분다양체(embedded submanifold)이고 차원은 $n$이다. 데이터 측도는 그 위에 놓인다.
 
-콤팩트성은 유한 개의 좌표로 전체를 덮고, 필요한 미분계수·곡률의 상수를 균일하게 제어하는 데 쓰인다. 경계가 없다는 조건은 나중에 부피 적분의 경계항과 정상 확률 흐름을 없애는 데 중요하다. $C^4$ 정규성은 특히 score 전개의 더 정밀한 Laplace 오차를 얻을 때 사용한다.
+콤팩트성은 유한 개의 좌표로 전체를 덮고, 필요한 미분계수·곡률의 상수를 균일하게 제어하는 데 쓰인다. 경계가 없다는 조건은 나중에 부피 적분의 경계항과 정상 확률 흐름을 없애는 데 중요하다. $C^4$라는 매끄러움 조건(regularity)은 4차까지의 도함수가 연속임을 뜻하며, score 전개의 더 정밀한 Laplace 오차를 얻을 때 사용한다.
 
-국소 좌표사상(chart)을 $\Phi:U\subset\mathbb R^n\to\mathcal M$라 하자. 접공간(tangent space)은 $D\Phi(u)$의 열벡터들이 생성하는 공간이고, 법공간(normal space)은 그 직교 여공간이다. 리만 계량(Riemannian metric)은 다음 $n\times n$ 행렬이다.
+곡면의 일부를 평면 좌표로 표현하는 국소 좌표(chart)를 $\Phi:U\subset\mathbb R^n\to\mathcal M$라 하자. 접공간(tangent space)은 $D\Phi(u)$의 열벡터들이 생성하는 공간이고, 법공간(normal space)은 접공간의 모든 벡터에 수직인 벡터들의 공간, 즉 직교 여공간(orthogonal complement)이다. 리만 계량(Riemannian metric)은 다음 $n\times n$ 행렬이다.
 
 $$
 g(u)=D\Phi(u)^\top D\Phi(u),\qquad
@@ -65,7 +65,7 @@ $$
 
 $du$는 좌표에서의 평평한 부피이고 $d\mathcal M$은 실제 곡면의 부피다. 같은 좌표 간격이라도 곡면에서의 길이는 달라질 수 있어 $\sqrt{\det g}$라는 야코비안(Jacobian) 보정이 필요하다.
 
-<strong>가정 2.2.</strong> 원문의 $p_{\mathrm{data}}(u)$는 $du$에 대한 밀도이며 $C^1$이고 엄밀히 양수다. 이 해설에서는 부피에 대한 밀도를 나타내기 위해 보조 기호 $\rho$를 사용한다.
+<strong>가정 2.2.</strong> 원문의 $p_{\mathrm{data}}(u)$는 $du$에 대한 밀도이며 $C^1$이고 모든 점에서 0보다 크다(strictly positive). 이 해설에서는 부피에 대한 밀도를 나타내기 위해 보조 기호 $\rho$를 사용한다.
 
 $$
 d\mu_{\mathrm{data}}=p_{\mathrm{data}}(u)\,du
@@ -87,11 +87,13 @@ $$
 
 이 식은 원의 경우에만 각도에 대한 상수가 된다. 논문의 타원 실험을 볼 때도 각도 히스토그램이 평평한지보다 <strong>호 길이(arc length)에 대한 균등성</strong>을 보아야 한다.
 
+다양체를 얇은 관처럼 둘러싼 영역을 <strong>튜브형 이웃(tubular neighborhood)</strong>이라 부른다. 여기서는 각 점에서 가장 가까운 다양체 위의 점이 유일하게 정해지도록 충분히 작은 영역을 사용한다. 그 점으로 보내는 연산이 최근접점 사영(nearest-point projection)이다.
+
 <details class="review-background">
-<summary><span>보충 설명: 관상근방과 최근접 사영</span><span class="review-background-toggle" aria-hidden="true"></span></summary>
+<summary><span>보충 설명: 튜브형 이웃과 최근접점 사영</span><span class="review-background-toggle" aria-hidden="true"></span></summary>
 <div class="review-background-body">
 
-충분히 가까운 점 $x$는 다양체 위의 유일한 최근접점 $P_{\mathcal M}(x)$를 갖는다. 이런 영역이 <strong>관상근방(tubular neighborhood)</strong> $T_{\mathcal M}(\epsilon)$이다. 국소적으로 법선 벡터들의 정규직교 프레임 $N(u)\in\mathbb R^{d\times(d-n)}$을 택하면
+이 영역을 $T_{\mathcal M}(\epsilon)$, 최근접점을 $P_{\mathcal M}(x)$로 쓰자. 서로 수직이고 길이가 1인 법선 벡터들로 이루어진 정규직교 프레임(orthonormal frame) $N(u)\in\mathbb R^{d\times(d-n)}$을 국소적으로 택하면
 
 $$
 x=\Phi(u,r)=\Phi(u)+N(u)r,\qquad
@@ -109,9 +111,9 @@ $$
 =x-P_{\mathcal M}(x).
 $$
 
-두 번째 등식은 $x-P_{\mathcal M}(x)$가 법선이고 $DP_{\mathcal M}(x)$의 상이 접공간에 놓이기 때문이다. 이것이 “score의 큰 항이 사영 방향을 알려준다”는 말의 정확한 기하적 근거다. 정규성은 [Leobacher–Steinicke, Theorem 2 및 Theorem C, Portable Document Format(PDF) pp.15–16](https://arxiv.org/pdf/1811.10578#page=15)에서 확인할 수 있다.
+두 번째 등식은 $x-P_{\mathcal M}(x)$가 법선이고 $DP_{\mathcal M}(x)$의 상이 접공간에 놓이기 때문이다. 이것이 “score의 큰 항이 사영 방향을 알려준다”는 말의 정확한 기하적 근거다. 매끄러움 조건은 [Leobacher–Steinicke, Theorem 2 및 Theorem C, Portable Document Format(PDF) pp.15–16](https://arxiv.org/pdf/1811.10578#page=15)에서 확인할 수 있다.
 
-차원 표기에 주의할 부분도 있다. $D_u\Phi$로 만든 $g$는 $n\times n$인 반면, 관상근방의 전체 야코비안 $J=D_{(u,r)}\Phi$로 만든 $G=J^\top J$는 $d\times d$다. 원문 부록 A의 축약 표기를 이 해설에서는 이 둘로 나누며, 다양체 위에서는 $G(u,0)=\operatorname{diag}(g(u),I)$다.
+차원 표기에 주의할 부분도 있다. $D_u\Phi$로 만든 $g$는 $n\times n$인 반면, 튜브형 이웃의 전체 야코비안 $J=D_{(u,r)}\Phi$로 만든 $G=J^\top J$는 $d\times d$다. 원문 부록 A의 축약 표기를 이 해설에서는 이 둘로 나누며, 다양체 위에서는 $G(u,0)=\operatorname{diag}(g(u),I)$다.
 
 </div>
 </details>
@@ -127,9 +129,9 @@ p_\sigma(x)=\frac1{(2\pi\sigma^2)^{d/2}}
 p_{\mathrm{data}}(u)\,du.
 $$
 
-여러 좌표가 필요한 경우에는 단위 분할(partition of unity)로 적분을 합친다. 서로 겹치는 좌표 패치를 단순히 더해 확률을 중복 계산한다는 뜻은 아니다.
+여러 좌표가 필요한 경우에는 겹치는 영역마다 가중치 함수를 두고 그 합이 1이 되게 하는 단위 분할(partition of unity)로 적분을 합친다. 서로 겹치는 좌표 패치를 단순히 더해 확률을 중복 계산한다는 뜻은 아니다.
 
-$\mu_\sigma$는 주변 공간에서 밀도를 갖지만 $\mu_{\mathrm{data}}$는 $n<d$차원에 놓여 주변 공간의 Lebesgue 밀도를 갖지 않는다. 따라서 $\mu_\sigma\Rightarrow\mu_{\mathrm{data}}$라는 <strong>약수렴(weak convergence)</strong>을 사용한다.
+$\mu_\sigma$는 주변 공간에서 밀도를 갖지만 $\mu_{\mathrm{data}}$는 $n<d$차원에 놓여 주변 공간의 Lebesgue 밀도를 갖지 않는다. 따라서 $\mu_\sigma\Rightarrow\mu_{\mathrm{data}}$라는 <strong>약수렴(weak convergence)</strong>을 사용한다. 여기서 유계(bounded) 함수란 절댓값이 어떤 유한한 상수를 넘지 않는 함수를 말한다.
 
 $$
 \mu_\sigma\Rightarrow\mu
@@ -166,9 +168,9 @@ $$
 
 의 밀도는 Fokker–Planck 방정식 $\partial_t\pi=-\nabla\cdot(b\pi)+\Delta\pi$를 따른다. 정상분포(stationary distribution)는 우변이 0인 분포다.
 
-<strong>리뷰 보충 유도.</strong> 시험함수 $h$에 Itô 공식을 적용하면 평균 변화율은 $\mathbb E[b\cdot\nabla h+\Delta h]$다. 이를 부분적분하여 미분을 밀도 쪽으로 옮기면 위 방정식이 나온다. $\sqrt2$가 확산 계수를 1로 만들기 때문에 Laplacian 앞에 $1/2$가 붙지 않는다.
+<strong>리뷰 보충 유도.</strong> 분포의 성질을 적분으로 확인하는 데 쓰는 시험함수(test function) $h$에 Itô 공식을 적용하면 평균 변화율은 $\mathbb E[b\cdot\nabla h+\Delta h]$다. 이를 부분적분하여 미분을 밀도 쪽으로 옮기면 위 방정식이 나온다. $\sqrt2$가 확산 계수를 1로 만들기 때문에 Laplacian 앞에 $1/2$가 붙지 않는다.
 
-Itô 공식에서 2차 미분이 사라지지 않는 이유는 Brownian 증가량이 $O(\sqrt{dt})$이기 때문이다. $dX_i\,dX_j=2\delta_{ij}dt$인 이차변동(quadratic variation)을 Taylor의 $\tfrac12\partial_{ij}h\,dX_i\,dX_j$에 넣으면 $\Delta h\,dt$가 남는다. 생성자(generator) $Lh=b\cdot\nabla h+\Delta h$와 그 밀도에 대한 수반 $L^*\pi$가 각각 시험함수·밀도의 진화를 표현한다.
+Itô 공식에서 2차 미분이 사라지지 않는 이유는 Brownian 증가량이 $O(\sqrt{dt})$이기 때문이다. $dX_i\,dX_j=2\delta_{ij}dt$인 이차변동(quadratic variation)을 Taylor의 $\tfrac12\partial_{ij}h\,dX_i\,dX_j$에 넣으면 $\Delta h\,dt$가 남는다. 생성자(generator) $Lh=b\cdot\nabla h+\Delta h$와 적분에서 미분을 밀도 쪽으로 옮긴 수반 연산자(adjoint operator) $L^*\pi$가 각각 시험함수·밀도의 진화를 표현한다.
 
 $b=-\nabla f$이면 $\pi\propto e^{-f}$에서 확률 흐름 $j=b\pi-\nabla\pi$가 0이다. 반면 학습된 벡터장이 gradient가 아닐 때는 $j$가 0이 아니어도 $\nabla\cdot j=0$일 수 있다. 따라서 비가역(non-reversible) 동역학의 정상분포를 임의로 $e^{-f}$라고 쓸 수 없다. 논문이 WKB를 도입하는 이유다. [원문 §2.3](https://arxiv.org/html/2509.24912v2#S2.SS3)
 
@@ -176,7 +178,7 @@ $b=-\nabla f$이면 $\pi\propto e^{-f}$에서 확률 흐름 $j=b\pi-\nabla\pi$�
 
 ### 정리의 정확한 내용
 
-가정 2.1·2.2 아래 충분히 작은 고정 관상근방에서 원문 Theorem 3.1은 다음 전개를 준다. $u_x=\Phi^{-1}(P_{\mathcal M}(x))$, $q=d-n$으로 쓴다.
+가정 2.1·2.2 아래 충분히 작은 고정 튜브형 이웃에서 원문 Theorem 3.1은 다음 전개를 준다. $u_x=\Phi^{-1}(P_{\mathcal M}(x))$, $q=d-n$으로 쓴다.
 
 $$
 \log p_\sigma(x)=
@@ -200,10 +202,10 @@ $$
 
 $$
 \lim_{\sigma\to0}\sigma^2\log p_\sigma(x)=-d_{\mathcal M}(x)
-\quad\text{관상근방에서 균일하게}.
+\quad\text{튜브형 이웃에서 균일하게}.
 $$
 
-즉 재조정한 log-density의 선도 극한은 원래 데이터의 빈도와 무관한 거리 함수다. [원문 §3, Eq.(7)](https://arxiv.org/html/2509.24912v2#S3)
+즉 재조정한 log-density에서 가장 큰 항이 정하는 극한(leading-order limit)은 원래 데이터의 빈도와 무관한 거리 함수다. [원문 §3, Eq.(7)](https://arxiv.org/html/2509.24912v2#S3)
 
 ### 어떤 항이 무엇을 학습하는가
 
@@ -215,14 +217,14 @@ $-\sigma^{-2}d_{\mathcal M}$는 다양체 밖의 점에 큰 비용을 매긴다.
 <summary><span>보충 설명: score의 실제 크기</span><span class="review-background-toggle" aria-hidden="true"></span></summary>
 <div class="review-background-body">
 
-아래 score 근사는 더 강한 정규성으로 부록 B.5에서 따로 증명해야 한다. log-density의 $o(1)$을 단순 미분해서 얻는 식이 아니다.
+아래 score 근사는 더 강한 매끄러움 조건으로 부록 B.5에서 따로 증명해야 한다. log-density의 $o(1)$을 단순 미분해서 얻는 식이 아니다.
 
 $$
 s^*(x,\sigma)
 =-\frac{x-P_{\mathcal M}(x)}{\sigma^2}+O(1).
 $$
 
-법선 거리가 고정된 $\delta>0$라면 큰 항은 $\delta/\sigma^2$다. 하지만 거리 자체가 $O(\sigma)$인 전형적인 잡음 샘플에서는 $O(\sigma^{-1})$이고, 정확히 다양체 위에서는 이 항이 0이다. 따라서 $\Theta(\sigma^{-2})$라는 표현은 주로 <strong>거리 항의 계수와 고정된 관상근방의 점근 전개</strong>를 가리킨다.
+법선 거리가 고정된 $\delta>0$라면 큰 항은 $\delta/\sigma^2$다. 하지만 거리 자체가 $O(\sigma)$인 전형적인 잡음 샘플에서는 $O(\sigma^{-1})$이고, 정확히 다양체 위에서는 이 항이 0이다. 따라서 $\Theta(\sigma^{-2})$라는 표현은 주로 <strong>거리 항의 계수와 고정된 튜브형 이웃의 점근 전개</strong>를 가리킨다.
 
 또한 $\sigma^2\log p_\sigma\to-d_{\mathcal M}$는 특이 극한이다. 원문의 “Taylor expansion”을 $\sigma=0$에서 매끄러운 보통 Taylor 급수로 이해하면 안 된다. 자세한 유도는 Laplace 근사인 부록 B.2에서 한다.
 
@@ -241,7 +243,7 @@ E_\sigma=
 \|s_{\pi_\sigma}-s^*(\cdot,\sigma)\|_{L^\infty(K)}.
 $$
 
-가정 4.1은 $-\log\pi_\sigma$가 $K$에서 $C^1$이고, 관상근방을 포함하는 콤팩트 집합 $K$에 확률이 집중하며, $K$ 안의 두 점을 잇는 경로 길이를 공통 상수로 제어할 수 있다고 요구한다.
+가정 4.1은 $-\log\pi_\sigma$가 $K$에서 $C^1$이고, 튜브형 이웃을 포함하는 콤팩트 집합 $K$에 확률이 집중하며, $K$ 안의 두 점을 잇는 경로 길이를 공통 상수로 제어할 수 있다고 요구한다.
 
 $L^\infty$ 오차는 $K$에서의 최악 오차다. 학습 샘플 평균의 제곱오차가 작다는 $L^2$ 조건보다 강하다. 또한 reverse SDE의 매 단계 학습 오차에서 위 최종 밀도 오차를 구하는 정리는 여기서 제공하지 않는다. 이 차이는 원문 §8도 한계로 밝힌다.
 
@@ -263,7 +265,7 @@ $$
 |\Delta_\sigma(x)-\Delta_\sigma(y)|\le L_KE_\sigma.
 $$
 
-즉, 미분 오차가 log-density ratio의 <strong>진동(oscillation)</strong>을 제어한다. 여기에 두 밀도의 정규화와 $K$에서의 질량 집중을 사용해야 알 수 없는 가산 상수가 고정된다. 그 결과 작은 상대 오차이면 원래 밀도를 복원하고, $\sigma^{-2}$보다만 작은 오차이면 거리 장벽을 보존한다. 전체 정규화 계산과 집중 증명은 부록 B.3에 있다.
+즉, 미분 오차가 log-density ratio의 <strong>변동 폭(oscillation)</strong>을 제어한다. 여기서 변동 폭은 함수의 상한에서 하한을 뺀 값이다. 여기에 두 밀도의 정규화와 $K$에서의 질량 집중을 사용해야 더해지는 상수(additive constant)의 값이 정해진다. 그 결과 작은 상대 오차이면 원래 밀도를 복원하고, $\sigma^{-2}$보다만 작은 오차이면 거리 장벽을 보존한다. 전체 정규화 계산과 집중 증명은 부록 B.3에 있다.
 
 $o(1)$은 원래 분포 복원의 충분조건이다. 밀도는 수렴해도 그 미분은 수렴하지 않는 예와, 이를 주변 공간의 가정에 맞춘 구성은 [2편의 정리 4.1 증명](/reviews/score-geometry-laplace/)에서 설명한다.
 
@@ -315,7 +317,7 @@ $$
 
 두 부등식은 서로 다른 일을 한다. $\alpha<2$는 법선 집중을 남기며, $\alpha+\beta>0$는 학습 오차의 효과를 사라지게 하고, $\alpha>0$는 원래 데이터 밀도의 효과를 지운다. 예컨대 $E_\sigma=O(1)$이면 $\beta=-1/2$를 택할 수 있으므로 $\alpha=1$이 조건을 만족한다. $E_\sigma=o(\sigma^{-3/2})$이면 $3/2<\alpha<2$가 정리가 허용하는 범위다. [Theorem 5.1](https://arxiv.org/html/2509.24912v2#S5.Thmtheorem1)
 
-법선 방향 분산은 대략 $\theta=\sigma^{2-\alpha}$이며 표준편차는 $\sigma^{1-\alpha/2}$다. $\alpha=1$일 때는 $\sqrt{\sigma}$다. 표적 빈도를 지우는 대가로 같은 작은 $\sigma$에서 원래 smoothing보다 더 넓은 관상근방을 탐색한다.
+법선 방향 분산은 대략 $\theta=\sigma^{2-\alpha}$이며 표준편차는 $\sigma^{1-\alpha/2}$다. $\alpha=1$일 때는 $\sqrt{\sigma}$다. 표적 빈도를 지우는 대가로 같은 작은 $\sigma$에서 원래 smoothing보다 더 넓은 튜브형 이웃을 탐색한다.
 
 ![별도 annulus toy에서 온도 조절에 따른 법선 폭과 접선 밀도](/assets/score-geometry/tempering-toy.svg)
 
@@ -325,9 +327,9 @@ $$
 
 ### Theorem 5.2 일반 비gradient score
 
-원래 $p_{\mathrm{data}}$에 $C^2$ 정규성을 더하고 같은 score 오차·$\alpha,\beta$ 조건을 둔다. 추가로 SDE가 유일한 정상분포를 가지며, $\theta=\sigma^{2-\alpha}$에서 <strong>국소 WKB 가정 B.2</strong>를 만족한다고 가정한다. 그때 Theorem 5.1과 같은 균등 부피 극한을 얻는다는 것이 Theorem 5.2다.
+원래 $p_{\mathrm{data}}$에 $C^2$ 매끄러움 조건을 더하고 같은 score 오차·$\alpha,\beta$ 조건을 둔다. 추가로 SDE가 유일한 정상분포를 가지며, $\theta=\sigma^{2-\alpha}$에서 <strong>국소 WKB 가정 B.2</strong>를 만족한다고 가정한다. 그때 Theorem 5.1과 같은 균등 부피 극한을 얻는다는 것이 Theorem 5.2다.
 
-WKB 가정은 단순한 계산 편의가 아니다. 관상근방으로의 확률 집중, 양의 $C^2$ prefactor, 그 prefactor의 $C^2$ 수렴, 선택된 action 해의 유일성을 포함한다. 이 논문은 이런 가정들이 모든 학습 score network에서 성립한다고 증명하지 않는다. 부록 B.4에서 그 가정 아래의 계수 결정 과정을 따라간다. [Theorem 5.2](https://arxiv.org/html/2509.24912v2#S5.Thmtheorem2), [가정 B.2](https://arxiv.org/html/2509.24912v2#A2.Thmassumption2)
+WKB 가정은 단순한 계산 편의가 아니다. 튜브형 이웃으로의 확률 집중, 지수항 앞에 곱해지는 양의 $C^2$ 계수 함수(prefactor)와 그 함수의 $C^2$ 수렴, 선택된 action 해의 유일성을 포함한다. 이 논문은 이런 가정들이 모든 학습 score network에서 성립한다고 증명하지 않는다. 부록 B.4에서 그 가정 아래의 계수 결정 과정을 따라간다. [Theorem 5.2](https://arxiv.org/html/2509.24912v2#S5.Thmtheorem2), [가정 B.2](https://arxiv.org/html/2509.24912v2#A2.Thmassumption2)
 
 또한 각각의 $\sigma$에서 먼저 정상상태를 얻고 나서 $\sigma\to0$를 취한다. 고정된 수의 corrector step으로 $\sigma$를 계속 바꾸는 실용 알고리즘의 분포가 이 극한과 같다는 결론은 별도의 문제다.
 
@@ -339,7 +341,7 @@ WKB 가정은 단순한 계산 편의가 아니다. 관상근방으로의 확률
 
 <strong>보충 유도 최대 엔트로피.</strong> $\mathcal M$의 부피를 $V_{\mathcal M}$라 하면 균등 밀도는 $1/V_{\mathcal M}$이고, 부피 기준 밀도 $\rho$의 엔트로피를 생각하자.
 
-Kullback–Leibler 발산(Kullback–Leibler divergence, KL)은 같은 기준측도에 대한 두 밀도 $p,q$의 $D_{\mathrm{KL}}(p\|q)=\int p\log(p/q)$다. $q$를 기준으로 $t=p/q$라 두면 $t\log t$의 볼록성과 $\int tq=1$ 때문에 적분이 0 이상이다. 등호는 두 분포가 같은 경우에만 성립한다. 아래 엔트로피 상계와 균등분포의 최적성은 바로 이 비음성에서 나온다.
+Kullback–Leibler 발산(Kullback–Leibler divergence, KL)은 같은 기준측도에 대한 두 밀도 $p,q$의 $D_{\mathrm{KL}}(p\|q)=\int p\log(p/q)$다. $q$를 기준으로 $t=p/q$라 두면 $t\log t$의 볼록성과 $\int tq=1$ 때문에 적분이 0 이상이다. 등호는 두 분포가 같은 경우에만 성립한다. 아래 엔트로피 상계와 균등분포의 최적성은 바로 적분이 0 이상이라는 성질(nonnegativity)에서 나온다.
 
 $$
 -\int_{\mathcal M}\rho\log\rho\,d\mathcal M
@@ -353,7 +355,7 @@ $$
 
 ### 정리와 유도
 
-Theorem 5.2와 같은 조건에 더해 $v$는 $\mathbb R^d$ 전체에서 유계이고 관상근방에서 $C^1$이라고 하자. 원문 Theorem 6.1의 gradient 표기는
+Theorem 5.2와 같은 조건에 더해 $v$는 $\mathbb R^d$ 전체에서 유계이고 튜브형 이웃에서 $C^1$이라고 하자. 원문 Theorem 6.1의 gradient 표기는
 
 $$
 dX_t=-\nabla v(X_t)\,dt-\sigma^\alpha\nabla f_\sigma(X_t)\,dt+\sqrt2\,dW_t
@@ -394,7 +396,7 @@ likelihood에 해당하는 두 번째 항은 $O(1)$로 남아야 한다. 전체 
 
 ### 7.1 원과 타원
 
-원문은 원과 타원의 각도 좌표에서 von Mises 데이터 분포를 만들고, 학습 score로 일반 Langevin과 $\alpha=1$인 TS를 비교한다. Fig.2에서는 일반 Langevin이 원래 빈도를 제대로 재현하지 못하는 반면 TS가 부피 균등 분포에 가까워지는 모습을 보인다. 관상근방의 법선 집중과 접선 빈도를 함께 보아야 하며, 타원에서는 각도 균등을 정답으로 삼지 않는다.
+원문은 원과 타원의 각도 좌표에서 von Mises 데이터 분포를 만들고, 학습 score로 일반 Langevin과 $\alpha=1$인 TS를 비교한다. Fig.2에서는 일반 Langevin이 원래 빈도를 제대로 재현하지 못하는 반면 TS가 부피 균등 분포에 가까워지는 모습을 보인다. 튜브형 이웃의 법선 집중과 접선 빈도를 함께 보아야 하며, 타원에서는 각도 균등을 정답으로 삼지 않는다.
 
 von Mises 분포는 원 위의 집중 정도를 조절하는 분포로 $p(u)\propto e^{\kappa\cos(u-\mu)}$다. $\mu$는 선호 각도, $\kappa\ge0$는 집중도다. $\kappa=0$이면 각도 균등이고 클수록 $\mu$ 주변에 모인다. 정규화 상수는 $2\pi I_0(\kappa)$이며 $I_0(\kappa)=(2\pi)^{-1}\int_0^{2\pi}e^{\kappa\cos u}\,du$는 0차 수정 Bessel 함수다. 이름을 몰라도 이 적분 정의로 실험의 밀도를 이해할 수 있다.
 

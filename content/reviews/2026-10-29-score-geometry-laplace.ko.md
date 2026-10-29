@@ -3,7 +3,7 @@ title: "[2/4] Score Geometry: Laplace와 오차 분리"
 description: "좌표 밀도와 부피 밀도, 두 Hessian, Laplace 근사의 중간 계산을 통해 지지집합과 원래 분포의 복원 조건을 증명한다."
 date: "2026-10-29"
 publishedAt: "2026-10-29T08:55:42+09:00"
-updatedAt: "2026-10-29T11:06:37+09:00"
+updatedAt: "2026-10-29T13:13:12+09:00"
 topics: ["생성 모델", "확률과 기하"]
 visibility: "public"
 lang: "ko"
@@ -17,7 +17,7 @@ thumbnail: "/assets/score-geometry/cover-2.svg"
 thumbnailAlt: "기하·분포 학습 시리즈 2편: Laplace 근사에서 오차 분리 정리까지"
 ---
 
-작은 온도 $\theta$에서 최소점이 곡면 전체를 이루면, Laplace 근사의 극한 밀도에는 법선 Hessian 행렬식의 역제곱근이 남는다. 이 계산은 기하 복원에 충분한 score 오차 $o(\sigma^{-2})$와 원래 분포 복원에 충분한 $o(1)$의 차이를 연결한다. [원문 부록 B.1–B.3](https://arxiv.org/html/2509.24912v2#A2.SS1)
+작은 온도 $\theta$에서 최소점이 곡면 전체를 이루면, Laplace 근사의 극한 밀도에는 법선 Hessian(normal Hessian) 행렬식의 역제곱근이 남는다. 이 계산은 기하 복원에 충분한 score 오차 $o(\sigma^{-2})$와 원래 분포 복원에 충분한 $o(1)$의 차이를 연결한다. [원문 부록 B.1–B.3](https://arxiv.org/html/2509.24912v2#A2.SS1)
 
 <strong>리뷰 해석.</strong> 이 논문의 정확도 분리는 정규화 상수와 좌표 야코비안을 함께 추적할 때 가장 분명해진다.
 
@@ -25,14 +25,14 @@ thumbnailAlt: "기하·분포 학습 시리즈 2편: Laplace 근사에서 오차
 
 ## A. 증명을 위한 기호와 기초 (Additional Notation and Preliminaries)
 
-$\mathcal M\subset\mathbb R^d$는 $n<d$차원의 콤팩트하고 경계 없는 $C^4$ 매장 다양체다. 데이터의 좌표 밀도 $p_{\mathrm{data}}$는 양의 $C^1$ 함수다. $\sigma$는 Gaussian 잡음의 표준편차이며, $p_\sigma$는 그 잡음으로 평활화한 주변 공간 밀도다. $\pi_\sigma$는 비교할 생성 밀도이고 $K$는 다양체를 포함하여 원문이 집중을 가정하는 콤팩트 영역이다. 아래 표는 기호의 차원을 구별한다.
+$\mathcal M\subset\mathbb R^d$는 $n<d$차원의 콤팩트(compact)하고 경계가 없으며, 주변 공간에 매끄럽게 들어 있는 $C^4$ 다양체(embedded manifold)다. 데이터의 좌표 밀도 $p_{\mathrm{data}}$는 모든 점에서 0보다 큰(strictly positive) $C^1$ 함수다. $\sigma$는 Gaussian 잡음의 표준편차이며, $p_\sigma$는 그 잡음으로 평활화한 주변 공간 밀도다. $\pi_\sigma$는 비교할 생성 밀도이고 $K$는 다양체를 포함하여 원문이 집중을 가정하는 콤팩트 영역이다. 다양체를 얇은 관처럼 둘러싸고 최근접점이 유일한 튜브형 이웃(tubular neighborhood)을 사용한다. 접선(tangent) 방향은 다양체를 따라가는 방향이고 법선(normal) 방향은 그에 수직인 방향이다. 아래 표는 기호의 차원을 구별한다.
 
 | 기호 | 의미와 차원 |
 | --- | --- |
 | $d,n,q=d-n$ | 주변 공간·다양체·법공간의 차원 |
 | $\Phi(u)$ | 다양체의 국소 좌표, $\mathbb R^n\to\mathbb R^d$ |
-| $\Phi(u,r)=\Phi(u)+N(u)r$ | 관상근방 좌표, $r\in\mathbb R^q$ |
-| $P_{\mathcal M}(x)$ | 최근접점, 관상근방에서 유일 |
+| $\Phi(u,r)=\Phi(u)+N(u)r$ | 튜브형 이웃 좌표, $r\in\mathbb R^q$ |
+| $P_{\mathcal M}(x)$ | 최근접점, 튜브형 이웃에서 유일 |
 | $d_{\mathcal M}(x)$ | $\frac12\operatorname{dist}^2(x,\mathcal M)$ |
 | $J_T=D_u\Phi,\;g=J_T^\top J_T$ | 접선 야코비안과 $n\times n$ 계량 |
 | $J=D_{(u,r)}\Phi,\;G=J^\top J$ | 전체 야코비안과 $d\times d$ 계량 |
@@ -49,18 +49,18 @@ $\mathcal M\subset\mathbb R^d$는 $n<d$차원의 콤팩트하고 경계 없는 $
 <summary><span>보충 설명: 유한 좌표와 균일한 상수</span><span class="review-background-toggle" aria-hidden="true"></span></summary>
 <div class="review-background-body">
 
-콤팩트 다양체는 유한한 좌표 패치로 덮을 수 있다. 각 패치를 조금 줄여 그 폐포가 원래 패치 안에 놓이게 하면, 연속인 미분계수들은 이 폐포들에서 최대·최소를 갖는다. 패치 수가 유한하므로 모든 패치에 공통인 상수를 고를 수 있다.
+콤팩트 다양체는 유한한 좌표 패치로 덮을 수 있다. 각 패치를 조금 줄여 경계점까지 포함한 폐포(closure)가 원래 패치 안에 놓이게 하면, 연속인 미분계수들은 이 폐포들에서 최대·최소를 갖는다. 패치 수가 유한하므로 모든 패치에 공통인 상수를 고를 수 있다.
 
-이것이 원문 Remark B.1에서 shrinking lemma를 인용하는 이유다. 콤팩트하지 않은 좌표 영역 전체에서 모든 미분계수가 자동으로 유계라는 뜻은 아니다. 특히 양의 좌표 밀도의 하한은 잘 선택한 유한한 국소 영역에서 확보한다.
+이것이 원문 Remark B.1에서 shrinking lemma를 인용하는 이유다. 콤팩트하지 않은 좌표 영역 전체에서 모든 미분계수의 크기가 자동으로 일정한 상수 이내로 제한되는 유계성(boundedness)을 갖는다는 뜻은 아니다. 특히 양의 좌표 밀도의 하한은 잘 선택한 유한한 국소 영역에서 확보한다.
 
 </div>
 </details>
 
 <details class="review-background">
-<summary><span>보충 설명: 행렬 양의 정부호를 유지하는 법</span><span class="review-background-toggle" aria-hidden="true"></span></summary>
+<summary><span>보충 설명: 양의 정부호성(positive definiteness)을 유지하는 법</span><span class="review-background-toggle" aria-hidden="true"></span></summary>
 <div class="review-background-body">
 
-대칭행렬 $A,B$에 대해 단위벡터 $v$를 사용하면
+대칭행렬이 양의 정부호(positive definite)라는 것은 0이 아닌 모든 벡터에 대해 이차형식의 값이 0보다 크다는 뜻이다. 이는 모든 고유값이 0보다 크다는 것과 같다. 대칭행렬 $A,B$에 대해 단위벡터 $v$를 사용하면
 
 $$
 v^\top(A+B)v\ge\lambda_{\min}(A)-\|B\|,
@@ -77,7 +77,7 @@ $$
 
 ### 따름정리 B.1 Laplace 근사의 진술과 이유
 
-Łapiński의 Theorem 2를 최소화 표기로 바꾼 것이 원문의 Corollary B.1이다. $F$가 유일한 내부 최소점 $x^*$를 갖고, 그 근처에서 $C^3$, Hessian은 양의 정부호이며, 바깥에는 양의 에너지 간격이 있다고 하자. 진폭 $a$는 근처에서 $C^1$이고 적분 가능하다고 하자. 그러면
+Łapiński의 Theorem 2를 최소화 표기로 바꾼 것이 원문의 Corollary B.1이다. 지수부 함수(phase function) $F$가 유일한 내부 최소점 $x^*$를 갖고, 그 근처에서 $C^3$, Hessian은 양의 정부호이며, 바깥에는 양의 에너지 간격이 있다고 하자. 지수함수 앞에 곱해지는 가중 함수인 진폭(amplitude) $a$는 근처에서 $C^1$이고 적분 가능하다고 하자. 그러면
 
 $$
 \int a(x)e^{-F(x)/\theta}\,dx
@@ -86,7 +86,7 @@ $$
 \left[a(x^*)+O(\sqrt\theta)\right].
 $$
 
-여기서 균일한 오차를 얻으려면 세 가지 종류의 상수가 함께 제어되어야 한다. 미분계수와 진폭의 상한, Hessian 고유값의 양의 하한, 근처 영역 바깥의 에너지 간격이다. 원문의 여섯 상수 $c_1,\ldots,c_6$와 두 양의 상수 $m_1,m_2$가 이 역할을 한다. [Łapiński v7, Theorem 2, Portable Document Format(PDF) p.5](https://arxiv.org/pdf/1502.03266v7#page=5)
+여기서 균일한 오차를 얻으려면 세 가지 종류의 상수가 함께 제어되어야 한다. 미분계수와 진폭의 상한, Hessian 고유값의 0보다 큰 하한, 근처 영역 바깥의 에너지 간격이다. 원문의 여섯 상수 $c_1,\ldots,c_6$와 0보다 큰 두 상수 $m_1,m_2$가 이 역할을 한다. [Łapiński v7, Theorem 2, Portable Document Format(PDF) p.5](https://arxiv.org/pdf/1502.03266v7#page=5)
 
 <strong>리뷰 보충 유도.</strong> $x=x^*+\sqrt\theta\,z$로 바꾸고 Hessian을 $H$라 하자.
 
@@ -109,7 +109,7 @@ f_\theta=f_0+\theta f_1+\widehat f_\theta,\qquad
 \pi_\theta\propto e^{-f_\theta/\theta}.
 $$
 
-$\mathcal M$은 $f_0$의 최소점 집합이다. $f_0\ge0$는 $C^3$, $f_1$은 $C^1$이고, 법선 Hessian은 작은 관상근방에서 균일하게 양의 정부호다. 최소점에서 떨어진 구간에는 양의 에너지 간격이 있으며 $\mathcal M$은 콤팩트하고 경계가 없는 $C^4$ 다양체다. 이 조건들이 가정 B.1의 내용이다.
+$\mathcal M$은 $f_0$의 최소점 집합이다. $f_0\ge0$는 $C^3$, $f_1$은 $C^1$이고, 법선 Hessian은 작은 튜브형 이웃에서 균일하게 양의 정부호다. 최소점에서 떨어진 구간에는 양의 에너지 간격이 있으며 $\mathcal M$은 콤팩트하고 경계가 없는 $C^4$ 다양체다. 이 조건들이 가정 B.1의 내용이다.
 
 중요한 크기는 $\widehat f_\theta$ 그 자체가 아니라 $\widehat f_\theta/\theta$다. 지수에 들어가기 때문이다. 균일한 $o(\theta)$이면
 
@@ -117,7 +117,7 @@ $$
 \sup_x\left|e^{-\widehat f_\theta(x)/\theta}-1\right|\to0.
 $$
 
-따라서 이 작은 섭동은 적분의 leading factor를 바꾸지 않는다.
+따라서 함수에 덧붙인 작은 변화인 섭동(perturbation)은 적분의 leading factor를 바꾸지 않는다.
 
 Lemma B.1은 $u$를 고정하고 법선 $r$만 적분한다. $H_N(u)=\partial^2_{rr}f_0(u,0)$라 하면, 적절한 유계 $C^1$ 함수 $h$에 대해
 
@@ -135,7 +135,7 @@ $$
 
 ### 보조정리 B.2 집중과 Portmanteau
 
-$f_\theta=f_0+o(1)$이고 이미 관상근방에 질량이 집중한다면, 정규화된 $e^{-f_\theta/\theta}$는 $f_0$의 최소점 집합에 집중한다. 정규화 분모도 함께 제어해야 한다. 최소값을 0으로 놓고 $|f_\theta-f_0|<\eta/8$인 충분히 작은 $\theta$를 택하자. $f_0>\eta$인 집합에서는 $f_\theta>7\eta/8$이다. 반면 최소점 근처의 고정된 양의 부피 영역 $U$를 $f_0<\eta/8$이 되도록 택하면 그곳에서 $f_\theta<\eta/4$다. 따라서 관상근방 안에서의 정규화 질량 비는
+$f_\theta=f_0+o(1)$이고 이미 튜브형 이웃에 질량이 집중한다면, 정규화된 $e^{-f_\theta/\theta}$는 $f_0$의 최소점 집합에 집중한다. 정규화 분모도 함께 제어해야 한다. 최소값을 0으로 놓고 $|f_\theta-f_0|<\eta/8$인 충분히 작은 $\theta$를 택하자. $f_0>\eta$인 집합에서는 $f_\theta>7\eta/8$이다. 반면 최소점 근처의 고정된 양의 부피 영역 $U$를 $f_0<\eta/8$이 되도록 택하면 그곳에서 $f_\theta<\eta/4$다. 따라서 튜브형 이웃 안에서의 정규화 질량 비는
 
 $$
 \frac{\int_{\{f_0>\eta\}}e^{-f_\theta/\theta}\,dx}
@@ -146,9 +146,9 @@ $$
 e^{-5\eta/(8\theta)}\to0.
 $$
 
-관상근방 밖의 질량 소멸을 더하면 전체 집중이 된다. 이 단계는 상대 오차를 확인할 때 분모를 생략하지 않도록 풀어 쓴 것이다.
+튜브형 이웃 밖의 질량 소멸을 더하면 전체 집중이 된다. 이 단계는 상대 오차를 확인할 때 분모를 생략하지 않도록 풀어 쓴 것이다.
 
-약극한이 존재할 때 그 지지집합이 $\mathcal M$에 놓인다는 마지막 단계는 <strong>Portmanteau 정리</strong>의 열린 집합 부등식이다.
+약수렴 극한이 존재할 때 그 지지집합(support), 즉 분포가 놓이는 범위가 $\mathcal M$에 놓인다는 마지막 단계는 <strong>Portmanteau 정리</strong>의 열린 집합 부등식이다.
 
 $$
 \mu(G)\le\liminf_{\theta\to0}\mu_\theta(G)
@@ -161,7 +161,7 @@ $$
 
 ### 정리 B.1 최종적으로 남는 다양체 위의 밀도
 
-위 조건에 더해 관상근방 밖의 질량이 사라진다고 하자. 원문의 Theorem B.1은 다음 부피 기준 밀도를 준다.
+위 조건에 더해 튜브형 이웃 밖의 질량이 사라진다고 하자. 원문의 Theorem B.1은 다음 부피 기준 밀도를 준다.
 
 $$
 \frac{d\mu_0}{d\mathcal M}(u)
@@ -171,7 +171,7 @@ $$
 
 좌표 $du$ 기준으로는 여기에 $\sqrt{\det g(u)}$를 곱한다.
 
-<strong>보충 증명.</strong> 유계 매끄러운 시험함수 $h$에 대해, 관상근방 좌표의 부피 야코비안을 $j(u,r)=|\det J(u,r)|$라 쓰자.
+<strong>보충 증명.</strong> 분포를 적분으로 비교하는 데 쓰는 유계 매끄러운 시험함수(test function) $h$에 대해, 튜브형 이웃 좌표의 부피 야코비안을 $j(u,r)=|\det J(u,r)|$라 쓰자.
 
 $$
 \int h\,d\mu_\theta
@@ -195,11 +195,11 @@ $$
 
 ## B.2. Gaussian 평활화의 점근 전개 (Proof for Theorem 3.1)
 
-이 절의 정밀한 진술은 원문 <strong>Theorem B.2</strong>다. 본문 Theorem 3.1은 이를 비형식적으로 요약한 것이다.
+이 절의 정밀한 진술은 원문 <strong>Theorem B.2</strong>다. 본문 Theorem 3.1은 이를 개략적으로 요약한 것이다.
 
 ### 1단계 적분의 최소점과 Hessian
 
-분산 폭증(variance exploding, VE)의 위상함수는 $F_x(u)=\frac12\|x-\Phi(u)\|^2$다. 최소점은 최근접점 좌표 $u_x$이며,
+분산 폭증(variance exploding, VE)의 지수부 함수는 $F_x(u)=\frac12\|x-\Phi(u)\|^2$다. 최소점은 최근접점 좌표 $u_x$이며,
 
 $$
 \partial_iF_x(u)=\langle\Phi(u)-x,\partial_i\Phi(u)\rangle.
@@ -214,11 +214,11 @@ $$
 =\widehat H_{ij}(u,x).
 $$
 
-$x=\Phi(u)$이면 두 번째 항은 0이므로 $\widehat H(u,\Phi(u))=g(u)$다. 작은 관상근방에서는 곡률 보정이 작고, 부록 A의 고유값 부등식으로 $\widehat H$가 양의 정부호임을 보장한다.
+$x=\Phi(u)$이면 두 번째 항은 0이므로 $\widehat H(u,\Phi(u))=g(u)$다. 작은 튜브형 이웃에서는 곡률 보정이 작고, 부록 A의 고유값 부등식으로 $\widehat H$가 양의 정부호임을 보장한다.
 
-곡률을 더 구체적으로 보면 $\partial_{ij}\Phi$의 법선 성분인 <strong>제2기본형(second fundamental form)</strong>만 두 번째 내적에 기여한다. $\Phi-x$가 법선이기 때문에 접선 성분과의 내적은 0이다. 따라서 곡면에서 떨어진 거리와 곡률의 곱이 적분의 폭을 바꾼다.
+곡면의 휘어짐, 즉 곡률을 더 구체적으로 보면 $\partial_{ij}\Phi$의 법선 성분인 <strong>제2기본형(second fundamental form)</strong>만 두 번째 내적에 기여한다. $\Phi-x$가 법선이기 때문에 접선 성분과의 내적은 0이다. 따라서 곡면에서 떨어진 거리와 곡률의 곱이 적분의 폭을 바꾼다.
 
-단위원의 $\Phi(u)=(\cos u,\sin u)$, $x=(R,0)$를 예로 들면 $u_x=0$, $g=1$, $\widehat H=1+(R-1)=R$다. 따라서 VE의 곡률 보정은 $H(x)=-\tfrac12\log R$다. 원점 $R=0$에서는 Hessian이 퇴화하고 모든 원 위 점이 최근접점이므로 이 국소 Laplace 설명을 쓸 수 없다. 관상근방 조건이 단순한 기술적 장식이 아닌 이유다.
+단위원의 $\Phi(u)=(\cos u,\sin u)$, $x=(R,0)$를 예로 들면 $u_x=0$, $g=1$, $\widehat H=1+(R-1)=R$다. 따라서 VE의 곡률 보정은 $H(x)=-\tfrac12\log R$다. 원점 $R=0$에서는 Hessian이 퇴화하고 모든 원 위 점이 최근접점이므로 이 국소 Laplace 설명을 쓸 수 없다. 튜브형 이웃 조건이 단순한 기술적 장식이 아닌 이유다.
 
 ### 2단계 Laplace 근사를 적용한다
 
@@ -237,7 +237,7 @@ $$
 
 ### 3단계 로그와 균일 remainder
 
-밀도의 양의 하한을 이용해 괄호를 $p_{\mathrm{data}}(u_x)[1+O(\sigma)/p_{\mathrm{data}}(u_x)]$로 쓸 수 있다. 로그를 취하면
+밀도의 0보다 큰 하한을 이용해 괄호를 $p_{\mathrm{data}}(u_x)[1+O(\sigma)/p_{\mathrm{data}}(u_x)]$로 쓸 수 있다. 로그를 취하면
 
 $$
 \begin{aligned}
@@ -261,16 +261,16 @@ $$
 +\sigma^2\langle\Phi(u),x-\Phi(u)\rangle+O(\sigma^4).
 $$
 
-따라서 같은 VE 위상함수에 진폭
+따라서 같은 VE 지수부 함수에 진폭
 
 $$
 p_{\mathrm{data}}(u)
 \exp\!\left[-\frac12\langle\Phi(u),x-\Phi(u)\rangle\right]
 $$
 
-을 넣어 Laplace 근사를 적용하면 된다. 로그에 $-\frac12\langle P_{\mathcal M}(x),x-P_{\mathcal M}(x)\rangle$가 추가되고, 이는 고정 관상근방에서 $O(1)$이며 다양체 위에서는 0이다.
+을 넣어 Laplace 근사를 적용하면 된다. 로그에 $-\frac12\langle P_{\mathcal M}(x),x-P_{\mathcal M}(x)\rangle$가 추가되고, 이는 고정 튜브형 이웃에서 $O(1)$이며 다양체 위에서는 0이다.
 
-<strong>리뷰 해석.</strong> 원문 증명 초반은 VE·VP의 최소점을 같은 것으로 적는다. 유한한 $\sigma$에서 VP의 정확한 최근접점은 일반적으로 $\gamma P_{\mathcal M}(x/\gamma)$이므로 문자 그대로 같은 점은 아니다. 위처럼 VE의 위상함수와 VP의 진폭 보정으로 분리하면 원문이 의도한 점근 전개를 얻을 수 있다. 정확한 최소점을 동일시할 필요가 없다.
+<strong>리뷰 해석.</strong> 원문 증명 초반은 VE·VP의 최소점을 같은 것으로 적는다. 유한한 $\sigma$에서 VP의 정확한 최근접점은 일반적으로 $\gamma P_{\mathcal M}(x/\gamma)$이므로 문자 그대로 같은 점은 아니다. 위처럼 VE의 지수부 함수와 VP의 진폭 보정으로 분리하면 원문이 의도한 점근 전개를 얻을 수 있다. 정확한 최소점을 동일시할 필요가 없다.
 
 ### 5단계 점근식을 미분할 수 있는가
 
@@ -287,7 +287,7 @@ $$
 \le\Pr(\|Z\|\ge\epsilon/\sigma)\to0.
 $$
 
-Gaussian 꼬리는 지수적으로 작아진다. VP에서는 추가 변위 $(\sqrt{1-\sigma^2}-1)Y=O(\sigma^2)$를 삼각부등식으로 처리할 수 있다. $Y$의 크기가 유계이므로 같은 결론이 나온다. 원문에서 이 적분 순서를 교환하는 근거는 integrand가 음이 아닌 경우에 적용되는 <strong>Tonelli 정리</strong>다.
+Gaussian 꼬리는 지수적으로 작아진다. VP에서는 추가 변위 $(\sqrt{1-\sigma^2}-1)Y=O(\sigma^2)$를 삼각부등식으로 처리할 수 있다. $Y$의 크기가 유계이므로 같은 결론이 나온다. 원문에서 이 적분 순서를 교환하는 근거는 integrand가 0 이상인 경우에 적용되는 <strong>Tonelli 정리</strong>다.
 
 ### 정규화가 빠지면 안 되는 핵심 부등식
 
@@ -310,7 +310,7 @@ $$
 
 가정과 Lemma B.3에 의해 $m_\sigma,n_\sigma\to1$이다. 그러므로 $E_\sigma=o(\sigma^{-2})$이면 $\|\Delta_\sigma\|_\infty=o(\sigma^{-2})$이고, $E_\sigma=o(1)$이면 $\|\Delta_\sigma\|_\infty=o(1)$이다.
 
-<strong>리뷰 해석.</strong> 원문은 이 논증을 모든 $\eta\ge-2$의 $o(\sigma^\eta)$로 일반화하지만, $m_\sigma,n_\sigma\to1$만으로 정규화 오차가 양의 $\eta$에 대해 $o(\sigma^\eta)$가 된다고 할 수는 없다. 주정리에서 사용하는 $\eta=-2,0$의 두 경우는 위 부등식으로 충분하다. 따라서 필요한 결론을 그 두 경우로 좁히면 이 문제가 사라진다.
+<strong>리뷰 해석.</strong> 원문은 이 논증을 모든 $\eta\ge-2$의 $o(\sigma^\eta)$로 일반화하지만, $m_\sigma,n_\sigma\to1$만으로 정규화 오차가 양의 $\eta$에 대해 $o(\sigma^\eta)$가 된다고 할 수는 없다. 핵심 정리에서 사용하는 $\eta=-2,0$의 두 경우는 위 부등식으로 충분하다. 따라서 필요한 결론을 그 두 경우로 좁히면 이 문제가 사라진다.
 
 ### 보조정리 B.4와 1번 결론 집중
 
@@ -326,13 +326,13 @@ VP에서는 $\delta$와 $\sigma$에 독립인 충분히 작은 상수 배를 사
 
 ### 3번 결론 원래 분포 복원
 
-$E_\sigma=o(1)$이면 $K$에서 $e^{\Delta_\sigma}=1+o(1)$가 균일하다. 따라서 $\pi_\sigma$와 $\mu_\sigma$의 차이는 $K$에서의 적분도, $K$ 밖의 질량도 0으로 간다. 즉 두 smoothing 측도 사이에는 전변동(total variation) 오차까지 0으로 간다. $\mu_\sigma\Rightarrow\mu_{\mathrm{data}}$이므로 $\pi_\sigma\Rightarrow\mu_{\mathrm{data}}$다.
+$E_\sigma=o(1)$이면 $K$에서 $e^{\Delta_\sigma}=1+o(1)$가 균일하다. 따라서 $\pi_\sigma$와 $\mu_\sigma$의 차이는 $K$에서의 적분도, $K$ 밖의 질량도 0으로 간다. 즉 두 평활화 측도 사이의 전변동 거리(total variation distance), 곧 사건별 확률 차이의 최댓값도 0으로 간다. $\mu_\sigma\Rightarrow\mu_{\mathrm{data}}$이므로 $\pi_\sigma\Rightarrow\mu_{\mathrm{data}}$다.
 
 이는 원문의 Theorem B.1 사용과 같은 결론을 더 직접적인 밀도 비로 얻는 보충 증명이다. 전변동으로 직접 비교한 대상은 $\pi_\sigma$와 <strong>매끄러운 $\mu_\sigma$</strong>다. 주변 공간에서 매끄러운 측도와 저차원 $\mu_{\mathrm{data}}$ 자체가 전변동으로 수렴한다는 주장은 아니다.
 
 ### 2번 결론 다른 접선 밀도도 가능하다
 
-부피 기준 원래 밀도를 $\rho$, 다른 양의 $C^1$ 목표 밀도를 $q$라 하자. 관상근방에서
+부피 기준 원래 밀도를 $\rho$, 다른 양의 $C^1$ 목표 밀도를 $q$라 하자. 튜브형 이웃에서
 
 $$
 a(x)=\log\frac{q(P_{\mathcal M}(x))}{\rho(P_{\mathcal M}(x))},
@@ -340,11 +340,11 @@ a(x)=\log\frac{q(P_{\mathcal M}(x))}{\rho(P_{\mathcal M}(x))},
 \pi_\sigma(x)\propto p_\sigma(x)e^{a(x)}
 $$
 
-로 기울이면 최근접 사영의 미분과 두 밀도의 양의 하한 때문에 $\nabla a$는 유계다. score는 $O(1)$만 바뀌지만 약극한은 $q\,d\mathcal M$다. $q\ne\rho$이면 이 변화는 일반적으로 사라지지 않는다. 바깥에서는 매끄러운 cutoff로 확장한다.
+로 기울이면 최근접 사영의 미분과 두 밀도의 0보다 큰 하한 때문에 $\nabla a$는 유계다. score는 $O(1)$만 바뀌지만 약수렴 극한은 $q\,d\mathcal M$다. $q\ne\rho$이면 이 변화는 일반적으로 사라지지 않는다. 바깥에서는 매끄러운 cutoff로 확장한다.
 
 이 예는 작은 잡음에서 $O(1)$의 score 차이가 다양체 위의 빈도를 바꿀 수 있음을 직접 보여준다.
 
-<strong>리뷰 보충 유도: 목표 밀도가 0이 되는 경우.</strong> $q_\eta=(q+\eta\rho)/(1+\eta)$로 양의 밀도를 만들고 $\eta\downarrow0$로 보내자. 콤팩트 다양체에서 진폭 $q_\eta/\rho$는 $q/\rho$로 균일 수렴한다. 고정된 매끄러운 관상근방 cutoff로 이 진폭과 바깥의 1을 연결하면, 주변 공간의 유계 연속 진폭도 균일 수렴한다. 따라서 $\mu_\sigma\Rightarrow\mu_{\mathrm{data}}$에 대한 적분과 정규화로 같은 목표 극한을 얻는다. 로그 미분은 $\eta$에 따라 커질 수 있지만, 원문의 $\Omega(1)$은 상수 상계를 요구하는 표기가 아니다. $q=\rho$인 특별한 목표에서도 아래 진동 구성을 쓰면 약극한을 유지하면서 score 오차를 사라지지 않게 할 수 있다.
+<strong>리뷰 보충 유도: 목표 밀도가 0이 되는 경우.</strong> $q_\eta=(q+\eta\rho)/(1+\eta)$로 양의 밀도를 만들고 $\eta\downarrow0$로 보내자. 콤팩트 다양체에서 진폭 $q_\eta/\rho$는 $q/\rho$로 균일 수렴한다. 고정된 매끄러운 튜브형 이웃 cutoff로 이 진폭과 바깥의 1을 연결하면, 주변 공간의 유계 연속 진폭도 균일 수렴한다. 따라서 $\mu_\sigma\Rightarrow\mu_{\mathrm{data}}$에 대한 적분과 정규화로 같은 목표 극한을 얻는다. 로그 미분은 $\eta$에 따라 커질 수 있지만, 원문의 $\Omega(1)$은 상수 상계를 요구하는 표기가 아니다. $q=\rho$인 특별한 목표에서도 아래 진동 구성을 쓰면 약수렴 극한을 유지하면서 score 오차를 사라지지 않게 할 수 있다.
 
 
 ### 리뷰 보충 유도: 충분조건의 역과 진동 밀도

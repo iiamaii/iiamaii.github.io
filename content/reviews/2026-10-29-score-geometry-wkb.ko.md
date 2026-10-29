@@ -3,7 +3,7 @@ title: "[3/4] Score Geometry: 정상분포와 혼합"
 description: "비보존적 score의 정상밀도 전개와 온도 조건을 유도하고, 추가 실험 전체와 Poincaré 부등식의 혼합 논증을 검토한다."
 date: "2026-10-29"
 publishedAt: "2026-10-29T08:55:41+09:00"
-updatedAt: "2026-10-29T11:06:36+09:00"
+updatedAt: "2026-10-29T13:13:11+09:00"
 topics: ["생성 모델", "확률과 기하"]
 visibility: "public"
 lang: "ko"
@@ -17,17 +17,17 @@ thumbnail: "/assets/score-geometry/cover-3.svg"
 thumbnailAlt: "기하·분포 학습 시리즈 3편: 비보존적 score의 정상분포와 혼합 시간"
 ---
 
-기울기가 아닌 score의 정상밀도는 Gibbs 공식만으로 정해지지 않는다. 원문은 Wentzel–Kramers–Brillouin(WKB) 전개를 가정하고, 오차 지수 $\beta>-2$에 대해 $\max(-\beta,0)<\alpha<2$인 조절된 score Langevin(Tempered Score Langevin, TS Langevin)의 균등 극한을 유도한다. [원문 정리 5.2, 부록 B.4–B.5](https://arxiv.org/html/2509.24912v2#A2.SS4)
+기울기가 아닌 score의 정상밀도(stationary density), 즉 시간이 지나도 변하지 않는 확률밀도는 Gibbs 공식만으로 정해지지 않는다. 원문은 Wentzel–Kramers–Brillouin(WKB) 전개를 가정하고, 오차 지수 $\beta>-2$에 대해 $\max(-\beta,0)<\alpha<2$인 조절된 score Langevin(Tempered Score Langevin, TS Langevin)의 균등 극한을 유도한다. [원문 정리 5.2, 부록 B.4–B.5](https://arxiv.org/html/2509.24912v2#A2.SS4)
 
-<strong>리뷰 해석.</strong> 법선 수송에서 접선 타원형 방정식으로 이어지는 구조가 핵심 성과이며, 잔차 미분과 전역 혼합의 정당화는 가정과 별도로 추적해야 한다.
+<strong>리뷰 해석.</strong> 법선(normal) 방향의 수송에서 접선(tangent) 방향의 타원형 방정식(elliptic equation)으로 이어지는 구조가 핵심 성과이며, 근사 뒤 남는 오차항인 잔차(residual)의 미분과 전역 혼합의 정당화는 가정과 별도로 추적해야 한다.
 
 이 시리즈의 3편이다. [[1/4] Score Geometry: 기하와 빈도](/reviews/score-geometry-manifold/) · [[2/4] Score Geometry: Laplace와 오차 분리](/reviews/score-geometry-laplace/) · [[4/4] Score Geometry: 균등 극한 증명](/reviews/score-geometry-weak-proof/).
 
-## B.4. 비보존적 동역학의 정상밀도 (Manifold WKB Analysis of the Stationary Distribution)
+## B.4. 기울기장으로 나타낼 수 없는 동역학의 정상밀도 (Manifold WKB Analysis of the Stationary Distribution)
 
-$\mathcal M\subset\mathbb R^d$는 $n<d$차원의 콤팩트하고 경계 없는 $C^4$ 다양체다. $\sigma$는 평활화 잡음의 표준편차, $s_\sigma^*=\nabla\log p_\sigma$는 정확한 score, $s_\sigma$는 추정 score다. 일반 score 정리에서는 데이터의 양의 좌표 밀도에 $C^2$ 정칙성을 추가한다. $d_{\mathcal M}=\tfrac12\operatorname{dist}^2(\cdot,\mathcal M)$, $P$는 관상근방의 최근접 사영이다. 국소 좌표 $\Phi(u)$와 법선 프레임 $N(u)$를 써서 $x=\Phi(u)+N(u)r$, $g=(D_u\Phi)^\top D_u\Phi$, $J=D_{u,r}\Phi$, $G=J^\top J$로 둔다.
+$\mathcal M\subset\mathbb R^d$는 $n<d$차원의 콤팩트(compact)하고 경계 없는 $C^4$ 다양체다. $\sigma$는 평활화 잡음의 표준편차, $s_\sigma^*=\nabla\log p_\sigma$는 정확한 score, $s_\sigma$는 추정 score다. 일반 score 정리에서는 모든 점에서 0보다 큰(strictly positive) 데이터 좌표 밀도에 $C^2$ 매끄러움 조건(regularity), 즉 2차까지의 도함수가 연속이라는 조건을 추가한다. $d_{\mathcal M}=\tfrac12\operatorname{dist}^2(\cdot,\mathcal M)$, $P$는 다양체를 얇은 관처럼 둘러싼 튜브형 이웃(tubular neighborhood) 안의 최근접점 사영(nearest-point projection)이다. 국소 좌표 $\Phi(u)$와 법선 프레임 $N(u)$를 써서 $x=\Phi(u)+N(u)r$, $g=(D_u\Phi)^\top D_u\Phi$, $J=D_{u,r}\Phi$, $G=J^\top J$로 둔다.
 
-원문 위치: 부록 B.4, Theorem B.3, Lemma B.5–B.6, Portable Document Format(PDF) pp. 24–28. 이 절은 정상밀도의 지수부와 진폭을 순서대로 정한다. 중간 계산은 리뷰 보충 유도로 풀어 쓴다.
+원문 위치: 부록 B.4, Theorem B.3, Lemma B.5–B.6, Portable Document Format(PDF) pp. 24–28. 법선(normal) 방향은 다양체에 수직이고, 접선(tangent) 방향은 다양체를 따라간다. 이 절은 정상밀도의 지수부와 그 앞에 곱해지는 계수 함수인 진폭(amplitude)을 순서대로 정한다. 중간 계산은 리뷰 보충 유도로 풀어 쓴다.
 
 ### 왜 Gibbs 밀도만으로 끝낼 수 없는가
 
@@ -53,9 +53,9 @@ e^{-V(x)/\theta}c_\theta(x),\qquad
 c_\theta\longrightarrow c_0>0\quad\text{in }C^2.
 $$
 
-$V$는 지수 수준에서 질량이 어디에 모이는지 정하는 action 또는 준퍼텐셜(quasipotential)의 역할을 한다. $c_0$는 같은 최소 action을 가진 지점들 사이의 상대 질량을 정한다. 점 하나가 최소점이면 상대 빈도를 비교할 공간이 작지만, 최소점들이 다양체 전체를 이루면 <strong>진폭을 알아야 다양체 위의 분포를 안다.</strong>
+$V$는 지수부의 비용 함수로서 질량이 어디에 모이는지 정하며, action 또는 준퍼텐셜(quasipotential)의 역할을 한다. $c_0$는 같은 최소 action을 가진 지점들 사이의 상대 질량을 정한다. 점 하나가 최소점이면 상대 빈도를 비교할 공간이 작지만, 최소점들이 다양체 전체를 이루면 <strong>진폭을 알아야 다양체 위의 분포를 안다.</strong>
 
-원문 Assumption B.2는 이 형태, $V$의 $C^3$ 정칙성과 선택된 해의 유일성, 그리고 관상근방으로의 질량 집중을 가정한다. 따라서 여기서 WKB는 임의의 학습된 score에 대해 새로 증명한 사실이 아니다. Bouchet–Reygner의 [§3.1–3.3](https://arxiv.org/abs/1507.02104)은 정상 Fokker–Planck에서 Hamilton–Jacobi와 transport 식을 얻는 배경을 제공하지만, 그 문헌의 고립된 안정점 설정과 이 논문의 최소점 다양체 설정은 구분해야 한다.
+원문 Assumption B.2는 이 형태, $V$의 $C^3$ 매끄러움 조건과 선택된 해의 유일성, 그리고 튜브형 이웃으로의 질량 집중을 가정한다. 따라서 여기서 WKB는 임의의 학습된 score에 대해 새로 증명한 사실이 아니다. Bouchet–Reygner의 [§3.1–3.3](https://arxiv.org/abs/1507.02104)은 정상 Fokker–Planck에서 Hamilton–Jacobi와 transport 식을 얻는 배경을 제공하지만, 그 문헌의 고립된 안정점 설정과 이 논문의 최소점 다양체 설정은 구분해야 한다.
 
 ### 1단계: Fokker–Planck에 대입한다
 
@@ -165,7 +165,7 @@ $$
 \end{aligned}
 $$
 
-혼합 metric 항을 없애는 데는 법선 기저의 직교 정규성이 쓰인다. $N_p$가 법선 기저의 $p$번째 열이면
+혼합 metric 항을 없애는 데는 법선 기저의 정규직교성(orthonormality), 즉 서로 수직이고 각 벡터의 길이가 1이라는 성질이 쓰인다. $N_p$가 법선 기저의 $p$번째 열이면
 
 $$
 \langle N_p,\partial_{u_j}N_p\rangle
@@ -184,7 +184,7 @@ $$
 H_N\,\partial_r\widetilde c_0=0.
 $$
 
-$H_N$이 양의 정부호이므로 $\partial_r\widetilde c_0=0$이다. 두 번 미분하면 법선 Hessian $C=\partial^2_{rr}\widetilde c_0$에 대해 다음 형태의 Sylvester 방정식을 얻는다.
+$H_N$의 모든 고유값이 0보다 큰 양의 정부호(positive definite) 행렬이므로 $\partial_r\widetilde c_0=0$이다. 두 번 미분하면 법선 Hessian $C=\partial^2_{rr}\widetilde c_0$에 대해 다음 형태의 Sylvester 방정식을 얻는다.
 
 $$
 H_NC+CH_N+\sum_i A_i(u)\,\partial_{u_i}\widetilde c_0=0.
@@ -202,14 +202,14 @@ $$
 
 ### 5단계: 강한 최대원리
 
-법선 항을 대체하면 다양체 위에 닫힌 식
+법선 항을 대체하면 법선 미분을 포함하지 않고 접선 변수만으로 완결되는 식
 
 $$
 \Delta_{\mathcal M}\widetilde c_0+
 B_{\mathcal M}\cdot\nabla_{\mathcal M}\widetilde c_0=0
 $$
 
-을 얻는다. 주계수는 $g^{-1}$이므로 국소적으로 균일 타원형이다. 경계 없는 compact 다양체에서는 함수가 최댓값을 달성한다. <strong>강한 최대원리(strong maximum principle)</strong>는 연결된 영역에서 이 타원형 방정식의 해가 내부 최댓값을 달성하면 상수임을 말한다. 계수의 국소 유계성과 정칙성도 전제한다.
+을 얻는다. 주계수는 $g^{-1}$이므로 국소적으로 균일 타원형(uniformly elliptic)이다. 즉 접선의 어느 방향에서도 확산이 0으로 사라지지 않는다. 경계 없는 compact 다양체에서는 함수가 최댓값을 달성한다. <strong>강한 최대원리(strong maximum principle)</strong>는 연결된 영역에서 이 타원형 방정식의 해가 내부 최댓값을 달성하면 상수임을 말한다. 계수의 크기가 각 국소 영역에서 유한한 상수 이내로 제한되는 국소 유계성(local boundedness)과 매끄러움 조건도 전제한다.
 
 직관은 확산이 주변보다 엄격히 높은 정지 봉우리를 유지할 수 없다는 것이다. 보통 최대원리는 상한을 제어하고, 강한 최대원리는 등호가 생겼을 때 영역 전체가 평평함을 결론낸다. 원문은 Gilbarg–Trudinger Theorem 3.5를 인용한다. 적용되는 형태는 [Guerra–Orriols 강의노트 §3.2, Theorem 3.12](https://www.dpmms.cam.ac.uk/~adblg2/EllipticPDELent2026.pdf)에서도 확인했다. 원문 §5는 이 편미분방정식(partial differential equation, PDE)을 “parabolic PDE”라고 표현한다. [원문 §5](https://arxiv.org/html/2509.24912v2#S5)
 
@@ -252,12 +252,12 @@ $$
 <strong>리뷰 해석.</strong> 이 계산의 정당화에는 다음 조건이 쓰인다.
 
 1. <strong>연결성:</strong> 최대원리는 연결 성분마다 상수를 준다. $\mathcal M$의 연결성이 없으면 서로 다른 성분 사이의 상수와 질량 비율을 별도로 결정해야 한다. 본문 Assumption 2.1에는 연결성이 명시되어 있지 않으므로, 위 증명만으로 전 성분에 하나의 상수가 정해졌다고 읽을 수 없다.
-2. <strong>잔차 미분:</strong> $\widehat b_\theta=o(\theta)$라는 함수값의 균일 제어만으로 $\nabla\cdot\widehat b_\theta=o(\theta)$가 따라오지 않는다. 원문의 차수 비교는 잔차를 미분하므로, 해당 미분 제어를 추가하거나 약한 Fokker–Planck 형식으로 극한을 정당화해야 한다. 또한 $\Delta f_1$를 점별로 쓰려면 단순 $C^1$보다 강한 정칙성 또는 약한 해 해석이 필요하다.
-3. <strong>WKB 자체:</strong> 양의 $C^2$ 진폭, 선택된 action, 관상근방 집중은 가정이다. 모든 비보존적 neural score에 대한 자동 보장은 아니다.
+2. <strong>잔차 미분:</strong> $\widehat b_\theta=o(\theta)$라는 함수값의 균일 제어만으로 $\nabla\cdot\widehat b_\theta=o(\theta)$가 따라오지 않는다. 원문의 차수 비교는 잔차를 미분하므로, 해당 미분 제어를 추가하거나 약한 Fokker–Planck 형식으로 극한을 정당화해야 한다. 또한 $\Delta f_1$를 점별로 쓰려면 단순 $C^1$보다 강한 매끄러움 조건 또는 약한 해 해석이 필요하다.
+3. <strong>WKB 자체:</strong> 양의 $C^2$ 진폭, 선택된 action, 튜브형 이웃 집중은 가정이다. 모든 비보존적(non-conservative), 즉 기울기장으로 나타낼 수 없는 neural score에 대한 자동 보장은 아니다.
 
 이들은 원문의 증명에서 확인해야 할 조건을 지적한 것이다. 이 해설이 모든 조건 아래의 결론에 대한 반례를 확립했다는 뜻은 아니다. 기울기 score의 Theorem 5.1은 별도의 Gibbs·Laplace 논증이 있으므로 이 WKB 문제와 분리해 읽을 수 있다.
 
-[4편](/reviews/score-geometry-weak-proof/)은 반사 원환과 추가 전역 조건을 둔 전체 평면 모형을 다룬다.
+[4편](/reviews/score-geometry-weak-proof/)은 반사 경계를 둔 고리 영역과 추가 전역 조건을 둔 전체 평면 모형을 다룬다.
 
 ## B.5. score의 나머지와 온도 선택 (Proof for Theorems 5.1–5.2)
 
@@ -285,7 +285,7 @@ $$
 
 조건부로 $Y$가 $P$의 $O(\sigma)$ 근방에 있다는 것만 쓰면 오른쪽이 $O(\sigma^{-1})$다. 논문에 필요한 더 강한 결론은 <strong>중심화된 평균은 $O(\sigma^2)$</strong>라는 것이다.
 
-이를 위해 [Majerski, Theorem 2.4 및 Corollary 2.5](https://arxiv.org/abs/1511.00302v2)의 더 정밀한 Laplace 오차를 사용한다. 최소점 근방의 phase가 $C^4$, amplitude가 $C^2$이고 비퇴화 조건과 적분 꼬리 조건이 갖춰지면, 적분의 상대 오차는 $O(\sigma^2)$다. 단순 $C^3/C^1$의 $O(\sigma)$ 결과보다 한 차수 좋다.
+이를 위해 [Majerski, Theorem 2.4 및 Corollary 2.5](https://arxiv.org/abs/1511.00302v2)의 더 정밀한 Laplace 오차를 사용한다. 최소점 근방의 phase가 $C^4$, amplitude가 $C^2$이고 관련 Hessian의 행렬식이 0이 아닌 비퇴화 조건(non-degeneracy)과 적분 꼬리 조건이 갖춰지면, 적분의 상대 오차는 $O(\sigma^2)$다. 단순 $C^3/C^1$의 $O(\sigma)$ 결과보다 한 차수 좋다.
 
 왜 좋아지는가? $u=u_*+\sigma z$로 놓으면 phase의 3차 항과 amplitude의 1차 항이 첫 $O(\sigma)$ 후보인데, 중심 Gaussian에 대해 홀함수이므로 적분이 0이다. 다음 짝수 항이 $O(\sigma^2)$를 만든다. 균일 오차를 얻으려면 최소점·Hessian·고차 미분·꼬리 상수의 균일성까지 확인해야 한다.
 
@@ -348,7 +348,7 @@ Theorem B.3이 정당화되는 범위에서는 $V=d_{\mathcal M}$, $c_0=C$를 �
 
 - score의 정밀한 Laplace 근사: drift의 형태를 보장한다.
 - WKB: 비보존적 drift의 정상밀도 action과 진폭을 연결한다.
-- 최소점 다양체 Laplace 정리: 그 정상밀도의 약극한을 계산한다.
+- 최소점 다양체 Laplace 정리: 그 정상밀도의 약수렴 극한을 계산한다.
 
 ### 기울기 score의 경우에는 밀도로 직접 증명한다
 
@@ -362,7 +362,7 @@ $$
 
 이다. 원래 밀도와 곡률의 유한 항은 $h\to0$로 지워진다. 법선 우물은 $h/\sigma^2\to\infty$로 유지된다.
 
-집중을 확인할 때는 적분의 최솟값에 대한 부정확한 하한을 쓸 필요가 없다. $|r|\le\sqrt\theta$인 작은 관상근방을 적분하면, 상수 gauge를 제거한 분모는 $c\theta^{q/2}$ 이상이다. 반면 고정 거리 $\delta$ 바깥의 분자는 $Ce^{-c_\delta/\theta}$ 이하다. 따라서 그 비는
+집중을 확인할 때는 적분의 최솟값에 대한 부정확한 하한을 쓸 필요가 없다. $|r|\le\sqrt\theta$인 작은 튜브형 이웃을 적분하면, 상수 gauge를 제거한 분모는 $c\theta^{q/2}$ 이상이다. 반면 고정 거리 $\delta$ 바깥의 분자는 $Ce^{-c_\delta/\theta}$ 이하다. 따라서 그 비는
 
 $$
 C\theta^{-q/2}e^{-c_\delta/\theta}\to0.
@@ -433,7 +433,7 @@ $$
 
 엔트로피는 기준측도에 의존하므로 좌표 Lebesgue 균등과 혼동하면 안 된다.
 
-원문 정리는 $v$가 전역 유계이고 관상근방에서 $C^1$인 조건을 둔다. Gaussian 관측의 이차 손실은 전역 유계가 아니므로, 그것을 예로 사용할 때는 꼬리 제어나 cutoff에 대한 별도 논증이 필요하다. 분류기 없는 유도(classifier-free guidance, CFG)의 조건부 score 차이가 실제로 고정된 $-\nabla v$를 근사하는지, 유한 predictor–corrector가 정상분포에 얼마나 가까운지는 또 다른 문제다.
+원문 정리는 $v$가 전역 유계이고 튜브형 이웃에서 $C^1$인 조건을 둔다. Gaussian 관측의 이차 손실은 전역 유계가 아니므로, 그것을 예로 사용할 때는 꼬리 제어나 cutoff에 대한 별도 논증이 필요하다. 분류기 없는 유도(classifier-free guidance, CFG)의 조건부 score 차이가 실제로 고정된 $-\nabla v$를 근사하는지, 유한 predictor–corrector가 정상분포에 얼마나 가까운지는 또 다른 문제다.
 
 ## C. 실험 설정과 추가 실험 (Experimental Details and Further Experiments)
 
@@ -569,7 +569,7 @@ $$
 \int|\nabla h|^2\,d\pi
 $$
 
-다. 이 글과 논문은 <strong>큰 $C_{\mathrm{PI}}$가 빠른 혼합</strong>을 뜻하는 spectral-gap 관례를 쓴다. 문헌에 따라 그 역수를 Poincaré constant라 부르므로 표기를 먼저 확인해야 한다. $h$는 함수와 약한 미분의 제곱이 적분 가능한 가중 Sobolev 공간 $H^1(\pi)$에서 고려한다.
+다. 이 글과 논문은 <strong>큰 $C_{\mathrm{PI}}$가 빠른 혼합</strong>을 뜻하는 spectral-gap 관례를 쓴다. 문헌에 따라 그 역수를 Poincaré constant라 부르므로 표기를 먼저 확인해야 한다. $h$는 함수와 적분 관계로 정의하는 약한 미분(weak derivative)의 제곱이 적분 가능한 가중 Sobolev 공간 $H^1(\pi)$에서 고려한다.
 
 가역 Langevin $dX=-\nabla U\,dt+\sqrt2\,dW$의 정상밀도는 $\pi\propto e^{-U}$다. $r_t=p_t/\pi-1$이라 놓으면
 
@@ -587,9 +587,9 @@ $$
 \le e^{-2C_{\mathrm{PI}}t}\chi^2(p_0\|\pi).
 $$
 
-원문의 $e^{-C_{\mathrm{PI}}t}$ 상계는 이보다 느슨하지만 유효하다. 점질량 초기화는 처음부터 유한 $\chi^2$라는 조건을 만족하지 않으므로 smoothing 이후의 논증이 필요하다.
+원문의 $e^{-C_{\mathrm{PI}}t}$ 상계는 이보다 느슨하지만 유효하다. 확률이 한 점에 모인 점질량(point mass)으로 시작하면 처음부터 유한 $\chi^2$라는 조건을 만족하지 않으므로 smoothing 이후의 논증이 필요하다.
 
-단위원 균등분포에서는 Fourier 모드 $e^{iku}$가 $-\Delta_{\mathcal M}$의 고유함수이고 고유값은 $k^2$다. 첫 비영 고유값은 1이다. 법선 우물이 아무리 강해도 접선 방향에 깊은 두 봉우리 사이의 장벽이 남으면 전역 혼합은 느릴 수 있다.
+단위원 균등분포에서는 Fourier 모드 $e^{iku}$가 $-\Delta_{\mathcal M}$의 고유함수이고 고유값은 $k^2$다. 0이 아닌 첫 번째 고유값(first nonzero eigenvalue)은 1이다. 법선 우물이 아무리 강해도 접선 방향에 깊은 두 봉우리 사이의 장벽이 남으면 전역 혼합은 느릴 수 있다.
 
 ### D.2 장벽을 제거하는 메커니즘
 
@@ -612,13 +612,13 @@ $$
 
 $\alpha+\beta>0$이면 접선 장벽은 사라지고 $\alpha<2$이면 법선 집중은 남는다. <strong>지우고 싶은 장벽과 남기고 싶은 장벽의 척도가 다르기 때문에</strong> 가능한 선택이다.
 
-다만 원문의 $\phi$는 $x_1=0$에서 미분 불가능하고 전역 oscillation도 무한하다. 매끄러운 Eyring–Kramers 정리나 전역 유계 perturbation 정리를 이 식에 문자 그대로 적용해서는 안 된다. 예를 들어 해설용으로
+다만 원문의 $\phi$는 $x_1=0$에서 미분 불가능하고 전역 oscillation도 무한하다. 매끄러운 Eyring–Kramers 정리나 크기가 제한된 함수를 더해 퍼텐셜을 바꾸는 섭동(perturbation) 정리를 이 식에 문자 그대로 적용해서는 안 된다. 예를 들어 해설용으로
 
 $$
 \phi_{\mathrm{smooth}}(x)=\frac{x_2^2}{1+|x|^2}
 $$
 
-를 쓰면 전역 매끄럽고 $0\le\phi_{\mathrm{smooth}}\le1$이며, 단위원에서 $\tfrac12\sin^2u$라는 이중 우물 장벽을 만든다. 이것은 <strong>정칙성을 갖춘 대체 toy 예제</strong>다. 원문 실험을 다시 실행한 결과로 제시하지 않는다.
+를 쓰면 전역 매끄럽고 $0\le\phi_{\mathrm{smooth}}\le1$이며, 단위원에서 $\tfrac12\sin^2u$라는 이중 우물 장벽을 만든다. 이것은 <strong>매끄러움 조건을 갖춘 대체 toy 예제</strong>다. 원문 실험을 다시 실행한 결과로 제시하지 않는다.
 
 <details class="review-background">
 <summary><span>보충 설명: Holley–Stroock 섭동 정리</span><span class="review-background-toggle" aria-hidden="true"></span></summary>
@@ -689,7 +689,7 @@ $$
 
 라는 부등식이다. 함수가 convex일 필요는 없으며, 최소점이 한 점일 필요도 없다. 원 주변의 $V\approx\tfrac12r^2$에서는 $|\nabla V|^2\approx r^2=2(V-V_{\min})$이므로 접선이 평평해도 성립할 수 있다.
 
-[Gong–He–Shen v2, Theorem 2 및 Theorem 4](https://arxiv.org/abs/2501.00429v2)는 이런 국소 구조, 최소점 외 임계점과 꼬리에 대한 조건을 사용해 전역 PI를 최소점 관상근방의 국소 PI와 연결한다. 최소점 다양체 위의 Laplace–Beltrami spectral gap이 법선 집중 이후 남는 혼합을 설명한다. 해당 문헌도 고정 potential과 충분히 작은 온도에 대한 상수·문턱 조건을 가진다. 여기처럼 $c=c(\sigma)$로 potential 자체가 변하면 상수와 허용 온도를 다시 균일하게 추적해야 한다.
+[Gong–He–Shen v2, Theorem 2 및 Theorem 4](https://arxiv.org/abs/2501.00429v2)는 이런 국소 구조, 최소점 밖에서 기울기가 0이 되는 임계점(critical point)과 꼬리에 대한 조건을 사용해 전역 PI를 최소점 튜브형 이웃의 국소 PI와 연결한다. 최소점 다양체 위의 Laplace–Beltrami spectral gap이 법선 집중 이후 남는 혼합을 설명한다. 해당 문헌도 고정 potential과 충분히 작은 온도에 대한 상수·문턱 조건을 가진다. 여기처럼 $c=c(\sigma)$로 potential 자체가 변하면 상수와 허용 온도를 다시 균일하게 추적해야 한다.
 
 ### Lyapunov 조건은 국소 결과를 어떻게 전역화하는가
 
@@ -716,16 +716,16 @@ $$
 
 원문 D.2는 직접 적용의 하한을 $C_{\mathrm{PI}}^{\mathrm{smooth}}=\Omega(c)$라 적고, 구조를 이용하면 $\Omega(1)$로 개선한다고 설명한다. D.3의 첫 문장은 직접 적용 결과를 $\Omega(1/\sigma)$라 적은 뒤 $\Omega(1)$로 개선한다고 쓴다. [원문 D.2–D.3, 파일 pp.36–37](https://arxiv.org/pdf/2509.24912v2#page=36)
 
-<strong>리뷰 해석.</strong> 이 관례에서는 큰 하한이 강하므로 $\Omega(1/\sigma)$에서 $\Omega(1)$로의 변화는 개선이 아니다. D.2와 D.3의 직접 적용 차수에 표기 불일치가 있다는 판단의 확신은 높다. 일관된 수정 방향은 D.2의 $\Omega(c)$와 구조를 이용한 $\Omega(1)$을 구별하는 것이지만, 최종 하한을 확정하려면 $c(\sigma)$에 따른 상수와 허용 온도를 끝까지 추적해야 한다. 이 문제는 부록 D의 정량 혼합 차수에 영향을 주며, 본문 정리의 정상측도 약극한 논증과는 의존 경로가 다르다.
+<strong>리뷰 해석.</strong> 이 관례에서는 큰 하한이 강하므로 $\Omega(1/\sigma)$에서 $\Omega(1)$로의 변화는 개선이 아니다. D.2와 D.3의 직접 적용 차수에 표기 불일치가 있다는 판단의 확신은 높다. 일관된 수정 방향은 D.2의 $\Omega(c)$와 구조를 이용한 $\Omega(1)$을 구별하는 것이지만, 최종 하한을 확정하려면 $c(\sigma)$에 따른 상수와 허용 온도를 끝까지 추적해야 한다. 이 문제는 부록 D의 정량 혼합 차수에 영향을 주며, 본문 정리의 정상측도 약수렴 극한 논증과는 의존 경로가 다르다.
 
-유효한 연구 메시지는 다음과 같다. <strong>법선 집중과 접선 장벽을 분리할 수 있는 분포에서는, 온도 조절이 기하를 남기면서 metastability를 줄일 수 있다.</strong> 정확한 상수와 유한 시간 오차는 분포·기하·초기화·수치화에 따라 별도로 분석해야 한다.
+유효한 연구 메시지는 다음과 같다. <strong>법선 집중과 접선 장벽을 분리할 수 있는 분포에서는, 온도 조절이 기하를 남기면서 한 영역에 오래 머무르는 준안정성(metastability)을 줄일 수 있다.</strong> 정확한 상수와 유한 시간 오차는 분포·기하·초기화·수치화에 따라 별도로 분석해야 한다.
 
 
 ## 리뷰 해석과 남은 질문
 
 <strong>리뷰 해석.</strong> 원문의 가장 강한 근거는 Assumption B.2 아래 action을 선택한 뒤, 법선 수송식의 미분으로 법선 Hessian을 제거하여 닫힌 접선 타원형 방정식을 얻는 계산이다. 연결된 성분에서 최대원리는 진폭의 상수성을 준다. 거리 제곱 퍼텐셜의 경우에는 가중 에너지 적분으로 같은 결론을 더 직접적으로 확인할 수 있다.
 
-남는 정당화는 세 가지다. 함수값의 $o(\theta)$만으로 잔차의 발산을 같은 차수에서 버리려면 추가 근거가 필요하고, 점별 $\Delta f_1$을 쓰려면 명시한 정칙성과 맞는 해석이 필요하다. 연결성은 성분별 상수를 전체의 한 상수로 만드는 단계에 쓰인다. 이는 원문 결론의 반례가 아니라 제시된 증명의 연결 조건이다. [4편](/reviews/score-geometry-weak-proof/)은 잔차를 미분하지 않는 별도 단위원 모형의 증명을 제시한다.
+남는 정당화는 세 가지다. 함수값의 $o(\theta)$만으로 잔차의 발산을 같은 차수에서 버리려면 추가 근거가 필요하고, 점별 $\Delta f_1$을 쓰려면 명시한 매끄러움 조건과 맞는 해석이 필요하다. 연결성은 성분별 상수를 전체의 한 상수로 만드는 단계에 쓰인다. 이는 원문 결론의 반례가 아니라 제시된 증명의 연결 조건이다. [4편](/reviews/score-geometry-weak-proof/)은 잔차를 미분하지 않는 별도 단위원 모형의 증명을 제시한다.
 
 혼합 분석에서는 장벽 제거의 정성적 효과와 최종 상수의 균일성을 구별한다. 원문의 비매끄럽고 전역 유계가 아닌 접선 퍼텐셜에는 매끄러운 장벽 정리와 유계 섭동 정리를 그대로 적용하기 어렵다. 잡음에 따라 변하는 매끄러운 근사의 상수·허용 온도까지 추적해야 정량 차수가 완성된다.
 

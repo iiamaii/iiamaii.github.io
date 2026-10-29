@@ -3,7 +3,7 @@ title: "[4/4] Score Geometry: Proving a Uniform Limit"
 description: "Complete supplementary proofs on a reflecting annulus and a confining whole-plane model, allowing residual derivatives to grow."
 date: "2026-10-29"
 publishedAt: "2026-10-29T08:55:40+09:00"
-updatedAt: "2026-10-29T11:06:35+09:00"
+updatedAt: "2026-10-29T13:13:09+09:00"
 topics: ["생성 모델", "확률과 기하"]
 visibility: "public"
 lang: "en"
@@ -18,7 +18,7 @@ thumbnailAlt: "A weak-stationarity proof of uniform sampling"
 topicNames: {"생성 모델": "Generative Models", "확률과 기하": "Probability and Geometry"}
 ---
 
-A stationary equation can identify a uniform limit without differentiating the residual drift. For temperature $\theta$ and residual bound $\delta_\theta$, this article proves the normal mean-square estimate $M_\theta\le\delta_\theta^2+4\theta$ on a reflecting annulus, then removes reflection in an explicit confining whole-plane model. <strong>Review interpretation.</strong> This supplies a supplementary route that permits growing residual derivatives, within the circle models and global assumptions stated below.
+A test function is used to compare distributions through their integrals. Integrating a stationary equation against such functions can identify a uniform limit without differentiating the residual drift, the error remaining after the main drift terms are separated. For temperature $\theta$ and residual bound $\delta_\theta$, this article proves the normal mean-square estimate $M_\theta\le\delta_\theta^2+4\theta$ on a reflecting annulus, the ring between two concentric circles. This is a second-moment bound: it controls mean squared normal distance. The article then removes reflection in an explicit confining whole-plane model. <strong>Review interpretation.</strong> This supplies a supplementary route that permits growing residual derivatives, within the circle models and global assumptions stated below.
 
 This final part contains reviewer-derived results; [[1/4] Score Geometry: Shape and Density](/en/reviews/score-geometry-manifold/), [[2/4] Score Geometry: Laplace and Error Separation](/en/reviews/score-geometry-laplace/), and [[3/4] Score Geometry: Stationarity and Mixing](/en/reviews/score-geometry-wkb/).
 
@@ -71,7 +71,7 @@ $$
 \tag{S2}
 $$
 
-We use total variation distance (TV) for the projected angular laws.
+We use total variation distance (TV) for the projected angular laws: it is the largest difference between the probabilities the two laws assign to the same event.
 
 ### 2.3 Supplementary Proposition S.1
 
@@ -135,7 +135,7 @@ $$
 \tag{S7}
 $$
 
-Zero outward normal derivative of $f$ gives equality to zero. Nonnegative outward derivative gives a nonnegative generator integral. The test-function Neumann condition is distinct from the density's no-flux condition: reflection generally requires $n\cdot J=0$, not $\partial_n p=0$.
+Zero outward normal derivative of $f$ gives equality to zero. Nonnegative outward derivative gives a nonnegative generator integral. The test-function Neumann condition is distinct from the density's no-flux condition, which sets the net current through the boundary to zero: reflection generally requires $n\cdot J=0$, not $\partial_n p=0$.
 
 [Pavliotis §4.1, Equations (4.9)–(4.12) and the reflecting-boundary discussion](https://wwwf.imperial.ac.uk/~pavl/PavliotisBook.pdf#page=83) explains this distinction. The author-hosted manuscript is dated 2015-11-11; its physical pages differ from printed page numbers. Itô's formula gives the same sign: if inward reflection decreases $f$, the stationary mean interior generator must compensate that decrease.
 
@@ -530,7 +530,7 @@ $$
 
 The current–generator correspondence is reviewed in [Pavliotis §4.1, physical PDF pp.83–84](https://wwwf.imperial.ac.uk/~pavl/PavliotisBook.pdf#page=83). The following radial reduction is a supplementary derivation.
 
-Apply the divergence theorem to a disk of radius $r$. Its total outward current is zero: the current is smooth at the origin, with no point source or sink. Thus $r\int_0^{2\pi}J_rdu=0$ for every $r>0$.
+The divergence theorem converts a volume integral of divergence into a boundary flux integral. Apply it to a disk of radius $r$. Its total outward current is zero: the current is smooth at the origin, with no point source or sink. Thus $r\int_0^{2\pi}J_rdu=0$ for every $r>0$.
 
 Let $w_\theta(r)=\int_0^{2\pi}p_\theta(r,u)du$ and define the conditional radial residual
 
@@ -683,14 +683,14 @@ This deterministic illustration uses the exact zero-residual law for $U=(r^2-1)^
 
 ## 16. The geometric structure beyond a circle
 
-For a general smooth manifold within its projection tube, extend an intrinsic function by $F=\varphi\circ P$. It is constant along each straight normal fiber, so
+For a general smooth manifold within a narrow tubular neighborhood, a thin tube with unique nearest-point projection, extend an intrinsic function by $F=\varphi\circ P$. It is constant along each straight normal fiber, the points with the same nearest projection, so
 
 $$
 \nabla d_{\mathcal M}\cdot\nabla F=0,\qquad
 \left.\Delta F\right|_{\mathcal M}=\Delta_{\mathcal M}\varphi.
 $$
 
-For the second identity, the normal Hessian diagonal vanishes because the extension is fiber-constant. Along an intrinsic geodesic, the second derivative has an ambient Hessian contribution and a curvature-acceleration contribution. The latter is normal while $\nabla F$ is tangent, so their inner product is zero. Summing tangent directions leaves the intrinsic Laplacian.
+For the second identity, the normal Hessian diagonal vanishes because the extension is fiber-constant. Along an intrinsic geodesic, a path locally minimizing length within the manifold, the second derivative has an ambient Hessian contribution and a curvature-acceleration contribution. The latter is normal while $\nabla F$ is tangent, so their inner product is zero. Summing tangent directions leaves the intrinsic Laplacian.
 
 This suggests a weak-equation extension for squared-distance dynamics with normal reflection. Quantitative TV estimates would still need uniform projection derivatives and suitable Poisson estimates. A general potential sharing only the same minimum manifold need not have this exact orthogonality, and its varying normal Hessian can leave a nonuniform weight. Whole-space concentration and relative weights of disconnected components remain separate tasks.
 
