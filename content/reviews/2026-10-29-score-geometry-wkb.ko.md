@@ -3,7 +3,7 @@ title: "[3/4] Score Geometry: 정상분포와 혼합"
 description: "비보존적 score의 정상밀도 전개와 온도 조건을 유도하고, 추가 실험 전체와 Poincaré 부등식의 혼합 논증을 검토한다."
 date: "2026-10-29"
 publishedAt: "2026-10-29T08:55:41+09:00"
-updatedAt: "2026-10-29T13:13:11+09:00"
+updatedAt: "2026-10-29T14:25:50+09:00"
 topics: ["생성 모델", "확률과 기하"]
 visibility: "public"
 lang: "ko"
@@ -25,7 +25,7 @@ thumbnailAlt: "기하·분포 학습 시리즈 3편: 비보존적 score의 정�
 
 ## B.4. 기울기장으로 나타낼 수 없는 동역학의 정상밀도 (Manifold WKB Analysis of the Stationary Distribution)
 
-$\mathcal M\subset\mathbb R^d$는 $n<d$차원의 콤팩트(compact)하고 경계 없는 $C^4$ 다양체다. $\sigma$는 평활화 잡음의 표준편차, $s_\sigma^*=\nabla\log p_\sigma$는 정확한 score, $s_\sigma$는 추정 score다. 일반 score 정리에서는 모든 점에서 0보다 큰(strictly positive) 데이터 좌표 밀도에 $C^2$ 매끄러움 조건(regularity), 즉 2차까지의 도함수가 연속이라는 조건을 추가한다. $d_{\mathcal M}=\tfrac12\operatorname{dist}^2(\cdot,\mathcal M)$, $P$는 다양체를 얇은 관처럼 둘러싼 튜브형 이웃(tubular neighborhood) 안의 최근접점 사영(nearest-point projection)이다. 국소 좌표 $\Phi(u)$와 법선 프레임 $N(u)$를 써서 $x=\Phi(u)+N(u)r$, $g=(D_u\Phi)^\top D_u\Phi$, $J=D_{u,r}\Phi$, $G=J^\top J$로 둔다.
+$\mathcal M\subset\mathbb R^d$는 $n<d$차원의 콤팩트(compact)하고 경계 없는 $C^4$ 다양체다. $\sigma$는 Gaussian 평활화(Gaussian smoothing)에 쓰이는 잡음의 표준편차, $s_\sigma^*=\nabla\log p_\sigma$는 정확한 score, $s_\sigma$는 추정 score다. 일반 score 정리에서는 모든 점에서 0보다 큰(strictly positive) 데이터 좌표 밀도에 $C^2$ 매끄러움 조건(regularity), 즉 2차까지의 도함수가 연속이라는 조건을 추가한다. $d_{\mathcal M}=\tfrac12\operatorname{dist}^2(\cdot,\mathcal M)$, $P$는 다양체를 얇은 관처럼 둘러싼 튜브형 이웃(tubular neighborhood) 안의 최근접점 사영(nearest-point projection)이다. 국소 좌표 $\Phi(u)$와 법선 프레임 $N(u)$를 써서 $x=\Phi(u)+N(u)r$, $g=(D_u\Phi)^\top D_u\Phi$, $J=D_{u,r}\Phi$, $G=J^\top J$로 둔다.
 
 원문 위치: 부록 B.4, Theorem B.3, Lemma B.5–B.6, Portable Document Format(PDF) pp. 24–28. 법선(normal) 방향은 다양체에 수직이고, 접선(tangent) 방향은 다양체를 따라간다. 이 절은 정상밀도의 지수부와 그 앞에 곱해지는 계수 함수인 진폭(amplitude)을 순서대로 정한다. 중간 계산은 리뷰 보충 유도로 풀어 쓴다.
 

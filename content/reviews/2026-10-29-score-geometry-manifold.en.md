@@ -3,7 +3,7 @@ title: "[1/4] Score Geometry: Shape and Density"
 description: "Why small-noise scores encode shape more strongly than frequency, and what the five main theorems and experiments establish."
 date: "2026-10-29"
 publishedAt: "2026-10-29T08:55:43+09:00"
-updatedAt: "2026-10-29T13:13:13+09:00"
+updatedAt: "2026-10-29T14:25:52+09:00"
 topics: ["생성 모델", "확률과 기하"]
 visibility: "public"
 lang: "en"
@@ -133,7 +133,34 @@ $$
 \quad\text{for every bounded continuous function }h.
 $$
 
-The ambient density can diverge like $\sigma^{-(d-n)}$ on the manifold while the measures converge weakly. There is no contradiction: the mass occupies a progressively thinner normal tube. [Paper §2.1](https://arxiv.org/html/2509.24912v2#S2.SS1)
+Fix a point $y$ on the manifold. Saying that its ambient density diverges at scale $\sigma^{-(d-n)}$ means that **the density height grows approximately as a positive constant times $\sigma^{-(d-n)}$ when the noise width tends to zero**. The codimension $q=d-n$ counts the normal directions. For variance-exploding smoothing, the positive intrinsic-volume density $\rho(y)$ gives the precise limit
+
+$$
+\lim_{\sigma\to0}\sigma^q p_\sigma(y)
+=\frac{\rho(y)}{(2\pi)^{q/2}}>0,
+\qquad q=d-n,\quad y\in\mathcal M.
+$$
+
+At sufficiently small noise, halving $\sigma$ therefore multiplies the height at the same point by approximately $2^q$. For a curve in the plane, $d=2$ and $n=1$, so the factor is approximately two. **A density value is not itself a probability:** it measures probability per unit ambient volume and can exceed one. Normal widths shrink with $\sigma$, so the corresponding $q$-dimensional volume scales as $\sigma^q$. This shrinking volume offsets the increasing height, leaving total probability equal to one. Pointwise density growth is therefore compatible with weak convergence of measures. [Density definition in §2.1](https://arxiv.org/html/2509.24912v2#S2.SS1); [Theorem B.2 evaluated on the manifold](https://arxiv.org/html/2509.24912v2#A2.Thmtheorem2).
+
+<details class="review-background">
+<summary><span>Supplementary explanation: density height versus probability</span><span class="review-background-toggle" aria-hidden="true"></span></summary>
+<div class="review-background-body">
+
+As an exact explanatory example, add Gaussian noise of standard deviation $\sigma$ to a point located at zero. Its density is
+
+$$
+\varphi_\sigma(x)=\frac{1}{\sqrt{2\pi}\sigma}
+\exp\!\left(-\frac{x^2}{2\sigma^2}\right),
+\qquad \int_{\mathbb R}\varphi_\sigma(x)\,dx=1.
+$$
+
+The peak $\varphi_\sigma(0)=1/(\sqrt{2\pi}\sigma)$ is about 1.995 at $\sigma=0.2$ and 3.989 at $\sigma=0.1$. Doubling height while halving width preserves the total area of one. An interval's probability is the **area under its part of the curve**, rather than the height at one point.
+
+As $\sigma\to0$, these Gaussian probability measures converge weakly to the point mass $\delta_0$, which places all probability at zero, even though their density heights at zero grow without bound. This is an exact example of divergent densities accompanying weak convergence of measures. For a general manifold, the thinning occurs in normal directions. The displayed density is the $d=1$, $n=0$ explanatory case of Equation (3), not a learned-model experiment. [Paper Equation (3)](https://arxiv.org/html/2509.24912v2#S2.SS1).
+
+</div>
+</details>
 
 These two families are the marginals of forward noising processes in diffusion models. A reverse process follows a schedule $\sigma(t)$ toward zero. Alternatively, one can run Langevin at a fixed noise level, or use Langevin correction between predictor updates. The paper treats both smoothing conventions with the same notation when possible.
 

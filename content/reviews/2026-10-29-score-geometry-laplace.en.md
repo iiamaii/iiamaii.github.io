@@ -3,7 +3,7 @@ title: "[2/4] Score Geometry: Laplace and Error Separation"
 description: "A detailed derivation of the manifold Laplace limit, Gaussian smoothing, and the distinct score-error requirements for support and density."
 date: "2026-10-29"
 publishedAt: "2026-10-29T08:55:42+09:00"
-updatedAt: "2026-10-29T13:13:12+09:00"
+updatedAt: "2026-10-29T14:25:51+09:00"
 topics: ["생성 모델", "확률과 기하"]
 visibility: "public"
 lang: "en"
@@ -26,7 +26,7 @@ This second part covers Appendix A and B.1–B.3; [[1/4] Score Geometry: Shape a
 
 ## A. Additional Notation and Preliminaries
 
-Let $\mathcal M\subset\mathbb R^d$ be a compact, boundaryless, $C^4$ embedded manifold of dimension $n<d$. Its coordinate data density $p_{\mathrm{data}}$ is strictly positive and $C^1$. The Gaussian smoothing parameter $\sigma$ is a standard deviation, $p_\sigma$ is the resulting ambient density, and $\pi_\sigma$ is a comparison density. The compact set $K$ contains a tube around the manifold and carries asymptotically all comparison mass. An embedded manifold sits smoothly in ambient space. A sufficiently narrow tubular neighborhood is a thin tube with unique nearest-point projection. Tangent directions follow the manifold; normal directions are perpendicular to it.
+Let $\mathcal M\subset\mathbb R^d$ be a compact, boundaryless, $C^4$ embedded manifold of dimension $n<d$. Its coordinate data density $p_{\mathrm{data}}$ is strictly positive and $C^1$. Gaussian smoothing adds Gaussian noise to the data. Its parameter $\sigma$ is a standard deviation, $p_\sigma$ is the resulting ambient density, and $\pi_\sigma$ is a comparison density. The compact set $K$ contains a tube around the manifold and carries asymptotically all comparison mass. An embedded manifold sits smoothly in ambient space. A sufficiently narrow tubular neighborhood is a thin tube with unique nearest-point projection. Tangent directions follow the manifold; normal directions are perpendicular to it.
 
 | Symbol | Meaning and dimension |
 | --- | --- |

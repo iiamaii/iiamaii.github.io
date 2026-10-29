@@ -3,7 +3,7 @@ title: "[2/4] Score Geometry: Laplace와 오차 분리"
 description: "좌표 밀도와 부피 밀도, 두 Hessian, Laplace 근사의 중간 계산을 통해 지지집합과 원래 분포의 복원 조건을 증명한다."
 date: "2026-10-29"
 publishedAt: "2026-10-29T08:55:42+09:00"
-updatedAt: "2026-10-29T13:13:12+09:00"
+updatedAt: "2026-10-29T14:25:51+09:00"
 topics: ["생성 모델", "확률과 기하"]
 visibility: "public"
 lang: "ko"
@@ -25,7 +25,7 @@ thumbnailAlt: "기하·분포 학습 시리즈 2편: Laplace 근사에서 오차
 
 ## A. 증명을 위한 기호와 기초 (Additional Notation and Preliminaries)
 
-$\mathcal M\subset\mathbb R^d$는 $n<d$차원의 콤팩트(compact)하고 경계가 없으며, 주변 공간에 매끄럽게 들어 있는 $C^4$ 다양체(embedded manifold)다. 데이터의 좌표 밀도 $p_{\mathrm{data}}$는 모든 점에서 0보다 큰(strictly positive) $C^1$ 함수다. $\sigma$는 Gaussian 잡음의 표준편차이며, $p_\sigma$는 그 잡음으로 평활화한 주변 공간 밀도다. $\pi_\sigma$는 비교할 생성 밀도이고 $K$는 다양체를 포함하여 원문이 집중을 가정하는 콤팩트 영역이다. 다양체를 얇은 관처럼 둘러싸고 최근접점이 유일한 튜브형 이웃(tubular neighborhood)을 사용한다. 접선(tangent) 방향은 다양체를 따라가는 방향이고 법선(normal) 방향은 그에 수직인 방향이다. 아래 표는 기호의 차원을 구별한다.
+$\mathcal M\subset\mathbb R^d$는 $n<d$차원의 콤팩트(compact)하고 경계가 없으며, 주변 공간에 매끄럽게 들어 있는 $C^4$ 다양체(embedded manifold)다. 데이터의 좌표 밀도 $p_{\mathrm{data}}$는 모든 점에서 0보다 큰(strictly positive) $C^1$ 함수다. $\sigma$는 Gaussian 잡음의 표준편차이며, $p_\sigma$는 그 잡음으로 평활화(smoothing)하여 얻은 주변 공간 밀도다. $\pi_\sigma$는 비교할 생성 밀도이고 $K$는 다양체를 포함하여 원문이 집중을 가정하는 콤팩트 영역이다. 다양체를 얇은 관처럼 둘러싸고 최근접점이 유일한 튜브형 이웃(tubular neighborhood)을 사용한다. 접선(tangent) 방향은 다양체를 따라가는 방향이고 법선(normal) 방향은 그에 수직인 방향이다. 아래 표는 기호의 차원을 구별한다.
 
 | 기호 | 의미와 차원 |
 | --- | --- |

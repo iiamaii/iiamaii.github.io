@@ -3,7 +3,7 @@ title: "[1/4] Score Geometry: 기하와 빈도"
 description: "작은 잡음에서 기하와 빈도 정보의 척도가 갈라지는 이유, 다섯 정리와 원·타원 및 이미지 생성 실험을 설명한다."
 date: "2026-10-29"
 publishedAt: "2026-10-29T08:55:43+09:00"
-updatedAt: "2026-10-29T13:13:13+09:00"
+updatedAt: "2026-10-29T14:25:52+09:00"
 topics: ["생성 모델", "확률과 기하"]
 visibility: "public"
 lang: "ko"
@@ -27,7 +27,7 @@ thumbnailAlt: "기하·분포 학습 시리즈 1편: 기하를 배우는 score�
 
 데이터가 $\mathbb R^d$ 전체를 채우지 않고 $n<d$차원 다양체(manifold) $\mathcal M$에 놓인다고 하자. 예를 들어 원 둘레 위의 점들은 평면 좌표 두 개를 가지지만, 원을 따라 움직일 자유도는 하나다. 원의 모양을 맞히는 것과 어느 각도에서 데이터가 많이 관찰되는지 맞히는 것은 다른 일이다.
 
-데이터의 확률을 나타내는 측도(measure)를 $\mu_{\mathrm{data}}$라 하고 Gaussian 잡음을 더하면 주변 공간에 매끄러운 밀도 $p_\sigma$가 생긴다. 점수 함수(score function)는 $s^*(x,\sigma)=\nabla\log p_\sigma(x)$다. 저자들은 작은 잡음에서 이 함수가 “다양체 쪽으로 돌아오라”는 큰 신호와 “다양체 위의 더 빈번한 위치로 이동하라”는 작은 신호를 함께 담는다고 본다.
+데이터의 확률을 나타내는 측도(measure)를 $\mu_{\mathrm{data}}$라 하고 Gaussian 잡음을 더하는 평활화(smoothing)를 적용하면 주변 공간에 매끄러운 밀도 $p_\sigma$가 생긴다. 점수 함수(score function)는 $s^*(x,\sigma)=\nabla\log p_\sigma(x)$다. 저자들은 작은 잡음에서 이 함수가 “다양체 쪽으로 돌아오라”는 큰 신호와 “다양체 위의 더 빈번한 위치로 이동하라”는 작은 신호를 함께 담는다고 본다.
 
 기존 분포 복원 이론은 보통 두 신호를 함께 맞추려 한다. 이 논문은 이를 나누어, 먼저 기하를 배우고 원래 밀도의 영향을 약화시키면 균등한 탐색이 가능하다고 제안한다. 구체적인 알고리즘은 잡음 세기 $\sigma$에서 score에 $\sigma^\alpha$를 곱하는 <strong>Tempered Score Langevin(TS Langevin)</strong>이다.
 
@@ -118,7 +118,7 @@ $$
 </div>
 </details>
 
-### 2.1 Gaussian smoothing 분산 폭증(variance exploding, VE)과 분산 보존(variance preserving, VP)
+### 2.1 Gaussian 평활화(Gaussian smoothing): 분산 폭증과 분산 보존
 
 분산 폭증(variance exploding, VE)은 $X_\sigma=Y+\sigma Z$, 분산 보존(variance preserving, VP)은 $X_\sigma=\sqrt{1-\sigma^2}Y+\sigma Z$다. $Y\sim\mu_{\mathrm{data}}$, $Z\sim\mathcal N(0,I_d)$이고, VP에서는 $0<\sigma<1$이다. 통합 표기 $\gamma(\sigma)=1$ 또는 $\sqrt{1-\sigma^2}$를 쓰면 원문 Eq.(3)은 다음이다.
 
@@ -140,7 +140,34 @@ $$
 \quad\text{모든 유계 연속 함수 }h.
 $$
 
-낮은 차원 지지집합으로의 약수렴은 주변 공간의 밀도가 점별로 유한한 함수에 수렴한다는 말이 아니다. 실제로 다양체 위의 $p_\sigma$는 $\sigma^{-(d-n)}$ 크기로 발산할 수 있다. [원문 §2.1](https://arxiv.org/html/2509.24912v2#S2.SS1)
+다양체 위의 고정된 점 $y$에서 밀도 $p_\sigma(y)$가 $\sigma^{-(d-n)}$ 크기로 발산한다는 것은, **잡음 폭 $\sigma$가 0으로 줄어들수록 그 점의 밀도 높이가 대략 $\sigma^{-(d-n)}$에 비례하여 커진다**는 뜻이다. 여기서 $q=d-n$은 다양체에 수직인 방향의 개수다. 위의 분산 폭증 평활화를 예로 들면, 양의 부피 밀도 $\rho(y)$에 대해 다음과 같이 정확히 쓸 수 있다.
+
+$$
+\lim_{\sigma\to0}\sigma^q p_\sigma(y)
+=\frac{\rho(y)}{(2\pi)^{q/2}}>0,
+\qquad q=d-n,\quad y\in\mathcal M.
+$$
+
+따라서 작은 $\sigma$를 절반으로 줄이면 같은 점의 밀도 높이는 대략 $2^q$배가 된다. 평면 위의 곡선처럼 $d=2$, $n=1$이면 대략 두 배다. 이는 **확률 자체가 커진다는 말이 아니다.** 밀도는 단위 부피당 확률을 나타내는 값이며 1보다 클 수 있다. 동시에 법선 방향의 폭은 $\sigma$에 비례해 줄어든다. 그 $q$차원 부피가 $\sigma^q$ 규모로 줄어들기 때문에, 높이가 커져도 밀도를 적분한 전체 확률은 1로 유지된다. 이 점별 밀도 변화와 약수렴은 서로 양립한다. [원문 §2.1의 밀도 정의](https://arxiv.org/html/2509.24912v2#S2.SS1), [Theorem B.2를 다양체 위에 대입한 결과](https://arxiv.org/html/2509.24912v2#A2.Thmtheorem2).
+
+<details class="review-background">
+<summary><span>보충 설명: 밀도의 높이와 확률은 왜 다른가</span><span class="review-background-toggle" aria-hidden="true"></span></summary>
+<div class="review-background-body">
+
+가장 간단한 설명 예제로, 0에 놓인 점에 표준편차 $\sigma$의 Gaussian 잡음을 더하자. 밀도를 $\varphi_\sigma$라 쓰면
+
+$$
+\varphi_\sigma(x)=\frac{1}{\sqrt{2\pi}\sigma}
+\exp\!\left(-\frac{x^2}{2\sigma^2}\right),
+\qquad \int_{\mathbb R}\varphi_\sigma(x)\,dx=1.
+$$
+
+꼭대기의 높이 $\varphi_\sigma(0)=1/(\sqrt{2\pi}\sigma)$는 $\sigma=0.2$에서 약 1.995, $\sigma=0.1$에서 약 3.989다. 높이는 두 배가 되지만 그래프의 폭은 절반이 되어 전체 면적은 1로 같다. 어떤 구간의 확률은 그래프의 높이 한 개가 아니라 **그 구간 아래의 면적**이다.
+
+$\sigma\to0$이면 이 Gaussian 확률측도는 0에 확률이 모두 놓인 점질량 $\delta_0$로 약수렴한다. 한편 0에서의 밀도 높이는 무한히 커진다. 이것이 “밀도는 발산하지만 확률측도는 약수렴한다”는 상황의 정확한 예다. 일반 다양체에서는 이 얇아지는 방향이 법선 방향에 해당한다. 위 식은 원문 Eq.(3)의 $d=1$, $n=0$인 설명 예제이며 학습 실험의 결과가 아니다. [원문 Eq.(3)](https://arxiv.org/html/2509.24912v2#S2.SS1).
+
+</div>
+</details>
 
 두 평활화 밀도는 확산 모델의 전방 잡음 과정(forward noising process)에서 시점별 주변분포에 해당한다. 잡음 일정 $\sigma(t)$를 쓰면 역과정은 $p_{\sigma(t)}$를 거쳐 $\sigma(t)\to0$에서 원래 분포를 복원하려 한다. 고정된 잡음에서 학습 score로 Langevin을 직접 실행하거나, 역과정의 predictor 뒤에 Langevin corrector를 붙일 수도 있다. 원문의 이론은 두 평활화에 공통으로 적용된다. [원문 §2.1](https://arxiv.org/html/2509.24912v2#S2.SS1)
 

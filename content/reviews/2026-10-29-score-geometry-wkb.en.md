@@ -3,7 +3,7 @@ title: "[3/4] Score Geometry: Stationarity and Mixing"
 description: "The stationary-density expansion, its assumptions, the complete additional experiments, and the argument connecting tempering to mixing."
 date: "2026-10-29"
 publishedAt: "2026-10-29T08:55:41+09:00"
-updatedAt: "2026-10-29T13:13:11+09:00"
+updatedAt: "2026-10-29T14:25:50+09:00"
 topics: ["생성 모델", "확률과 기하"]
 visibility: "public"
 lang: "en"
@@ -26,7 +26,7 @@ This third part covers B.4–B.6, C, and D; [[1/4] Score Geometry: Shape and Den
 
 ## B.4. Manifold WKB Analysis of the Stationary Distribution
 
-Let $\mathcal M\subset\mathbb R^d$ be compact, boundaryless, $C^4$, and of dimension $n<d$. Write $d_{\mathcal M}=\tfrac12\operatorname{dist}^2(\cdot,\mathcal M)$, and let $P$ denote nearest-point projection within a narrow tube. The exact score is $s_\sigma^*=\nabla\log p_\sigma$ and its estimate is $s_\sigma$. The general-score theorem requires the positive coordinate data density to be $C^2$, meaning that derivatives through order two are continuous. The tube is a thin neighborhood around the manifold, chosen narrow enough to give a unique nearest point. Tangent directions follow the manifold, while normal directions are perpendicular to it.
+Let $\mathcal M\subset\mathbb R^d$ be compact, boundaryless, $C^4$, and of dimension $n<d$. Write $d_{\mathcal M}=\tfrac12\operatorname{dist}^2(\cdot,\mathcal M)$, and let $P$ denote nearest-point projection within a narrow tube. Gaussian smoothing adds Gaussian noise with standard deviation $\sigma$ to the data. The exact score is $s_\sigma^*=\nabla\log p_\sigma$ and its estimate is $s_\sigma$. The general-score theorem requires the positive coordinate data density to be $C^2$, meaning that derivatives through order two are continuous. The tube is a thin neighborhood around the manifold, chosen narrow enough to give a unique nearest point. Tangent directions follow the manifold, while normal directions are perpendicular to it.
 
 In tube coordinates $x=\Phi(u)+N(u)r$, use $g=(D_u\Phi)^\top D_u\Phi$, $J=D_{u,r}\Phi$, and $G=J^\top J$. The source locations are Theorem B.3 and Lemmas B.5–B.6, Portable Document Format (PDF) pp.24–28.
 
