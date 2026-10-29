@@ -3,7 +3,7 @@ title: "[1/4] Score Geometry: Shape and Density"
 description: "Why small-noise scores encode shape more strongly than frequency, and what the five main theorems and experiments establish."
 date: "2026-10-29"
 publishedAt: "2026-10-29T08:55:43+09:00"
-updatedAt: "2026-10-29T15:42:22+09:00"
+updatedAt: "2026-10-29T16:07:03+09:00"
 topics: ["생성 모델", "확률과 기하"]
 visibility: "public"
 lang: "en"
@@ -290,7 +290,7 @@ $$
 dX_t=b(X_t)\,dt+\sqrt2\,dW_t
 $$
 
-$b$ is the drift and $W_t$ is standard $d$-dimensional Brownian motion. Its time-dependent density $\pi_t$ satisfies the Fokker–Planck equation
+$b$ is the drift and $W_t$ is standard $d$-dimensional Brownian motion. When its time-dependent density $\pi_t$ is sufficiently smooth, it satisfies the Fokker–Planck equation
 
 $$
 \partial_t\pi_t=-\nabla\cdot(b\pi_t)+\Delta\pi_t
@@ -298,19 +298,36 @@ $$
 
 Here $\nabla\cdot$ is the divergence of a vector field and $\Delta=\sum_{i=1}^d\partial_{x_i}^2$ is the Laplacian. Vector-field divergence is a differential operator measuring local outward flow; it is distinct from a density value diverging to infinity, discussed earlier. A stationary distribution has a time-independent density and hence a zero right-hand side. [Paper §2.3](https://arxiv.org/html/2509.24912v2#S2.SS3)
 
-<details class="review-background">
-<summary><span>Supplementary explanation: from Itô's formula to Fokker–Planck</span><span class="review-background-toggle" aria-hidden="true"></span></summary>
+<details class="review-background" id="ito-fokker-planck">
+<summary><span>Supplementary explanation: from Itô's lemma to the Fokker–Planck equation</span><span class="review-background-toggle" aria-hidden="true"></span></summary>
 <div class="review-background-body">
 
-<strong>Supplementary derivation.</strong> Observe the law through a test function $h\in C_c^\infty(\mathbb R^d)$: a smooth function that vanishes outside a compact set. Assume the regularity and integrability needed to exchange density derivatives, integrals, and expectations. Compact support of the test function removes the boundary terms at infinity in the integrations by parts.
+<strong>Supplementary derivation.</strong> Start with the motion of a path $X_t$ and ask how its density $\pi_t$ evolves. The bridge is to **apply Itô's lemma to an observable and then take expectations**. Assume that $b$ is locally smooth and that the process does not explode in finite time. We first compute with a sufficiently smooth density, then retain an integral formulation that does not require classical density derivatives.
 
-**1. Compute the second-order effect of Brownian noise.** Independent Brownian components obey the quadratic-variation rule $dW_i\,dW_j=\delta_{ij}\,dt$, where $\delta_{ij}$ is one for $i=j$ and zero otherwise. Products involving the drift vanish in this calculus, so
+**1. Choose an observable of the distribution.** Fix a test function $h\in C_c^\infty(\mathbb R^d)$: a smooth function that vanishes outside a compact set. A nonnegative bump supported near a region of interest provides a smoothly weighted observation of the probability there. The same observation has a random-variable representation and a density representation:
+
+$$
+\mathbb E[h(X_t)]=\int_{\mathbb R^d}h(x)\pi_t(x)\,dx.
+$$
+
+Computing the time variation on the left using Itô's lemma will therefore reveal the density evolution on the right. Since $h=h(x)$ has no explicit time dependence, there is no $\partial_t h$ term. Write $\partial_i=\partial/\partial x_i$ below.
+
+**2. Track the diffusion coefficient in Itô's lemma.** Brownian quadratic variation obeys $dW_i\,dW_j=\delta_{ij}\,dt$. The Kronecker delta $\delta_{ij}$ is one when $i=j$ and zero otherwise. Because the noise coefficient is $\sqrt2$,
 
 $$
 \begin{aligned}
-dX_i\,dX_j
-&=(\sqrt2\,dW_i)(\sqrt2\,dW_j)
-=2\delta_{ij}\,dt,\\
+dX_i\,dX_j&=2\delta_{ij}\,dt,\\
+\frac12\sum_{i,j=1}^d\partial_{ij}h(X_t)\,dX_i\,dX_j
+&=\frac12\sum_{i,j=1}^d\partial_{ij}h(X_t)\,2\delta_{ij}\,dt\\
+&=\sum_{i=1}^d\partial_{ii}h(X_t)\,dt
+=\Delta h(X_t)\,dt.
+\end{aligned}
+$$
+
+These are quadratic-variation rules rather than ordinary products of infinitesimals. Over a short interval of length $\delta$, Brownian increments have size $\sqrt\delta$, so their squares accumulate at order $\delta$. Products $dt\,dt$ and $dt\,dW_i$ make no contribution to quadratic variation. The displayed calculation tracks the cancellation between Itô's factor $1/2$ and the noise covariance factor two.
+
+$$
+\begin{aligned}
 dh(X_t)
 &=\sum_i\partial_i h(X_t)\,dX_i
 +\frac12\sum_{i,j}\partial_{ij}h(X_t)\,dX_i\,dX_j\\
@@ -319,22 +336,54 @@ dh(X_t)
 \end{aligned}
 $$
 
-The factor $1/2$ in Itô's formula multiplies a covariance factor of two. Their product is one, leaving no factor $1/2$ in front of $\Delta h$. The notation $dX_i\,dX_j$ denotes quadratic variation rather than ordinary multiplication of infinitesimals.
+The differential operator $Lh=b\cdot\nabla h+\Delta h$ is the generator. At a current position $x$, $Lh(x)$ gives the instantaneous mean rate of change of the observable $h(X_t)$.
 
-**2. Take expectations.** Under the necessary integrability conditions, an Itô stochastic integral has expectation zero. The generator $L$, acting on test functions, therefore determines the mean rate of change:
+**3. Integrate in time before taking expectations.** Instead of directly differentiating an expected stochastic differential, integrate the identity from $0$ to $t$:
 
 $$
 \begin{aligned}
-Lh&=b\cdot\nabla h+\Delta h,\\
-\frac{d}{dt}\mathbb E[h(X_t)]
-&=\mathbb E[(Lh)(X_t)]
-=\int_{\mathbb R^d}(Lh)(x)\pi_t(x)\,dx.
+h(X_t)-h(X_0)
+&=\int_0^t(Lh)(X_s)\,ds+M_t,\\
+M_t&=\sqrt2\int_0^t\nabla h(X_s)\cdot dW_s.
 \end{aligned}
 $$
 
-Since $\mathbb E[h(X_t)]=\int h\pi_t\,dx$, the left-hand side is $\int h\,\partial_t\pi_t\,dx$. We now move the derivatives on $h$ to the density.
+The zero mean of $M_t$ has a specific justification. Its integrand depends on the path observed so far, without anticipating future Brownian increments. Together with the square-integrability condition below, this makes $M_t$ a martingale: conditional on the information available now, its future change has mean zero. Since $M_0=0$, its unconditional mean remains zero as well. Here the boundedness of $\nabla h$ supplies the condition automatically. Write $\|\nabla h\|_\infty=\sup_x\|\nabla h(x)\|$.
 
-**3. Integrate the drift term once and the diffusion term twice.** All spatial integrals below are over $\mathbb R^d$. For each component,
+$$
+\begin{aligned}
+\mathbb E\int_0^t2\|\nabla h(X_s)\|^2\,ds
+&\le 2t\|\nabla h\|_\infty^2<\infty,\\
+\mathbb E[M_t]&=0.
+\end{aligned}
+$$
+
+For finite sums, each future Brownian increment has conditional mean zero. The condition above preserves this property in the limit defining the stochastic integral. Also, $b$ is bounded on the support of $h$, making $Lh$ bounded. We may therefore exchange the time integral and expectation to obtain
+
+$$
+\mathbb E[h(X_t)]-\mathbb E[h(X_0)]
+=\int_0^t\mathbb E[(Lh)(X_s)]\,ds.
+$$
+
+**4. Replace expectations by density integrals.** Applying the identity from step 1 gives a time-integrated equation for the law, with $\pi_0$ denoting the initial density:
+
+$$
+\int h(x)\pi_t(x)\,dx-\int h(x)\pi_0(x)\,dx
+=\int_0^t\int (Lh)(x)\pi_s(x)\,dx\,ds.
+$$
+
+This is the time-integrated **weak form**. Spatial derivatives act only on the known smooth function $h$. Differentiating in time, whenever justified, gives the following identity; in general it holds for almost every time. All spatial integrals below are over $\mathbb R^d$.
+
+$$
+\begin{aligned}
+\frac{d}{dt}\int h\pi_t\,dx
+&=\int(Lh)\pi_t\,dx\\
+&=\sum_{i=1}^d\int b_i\pi_t\,\partial_i h\,dx
++\sum_{i=1}^d\int\pi_t\,\partial_{ii}h\,dx.
+\end{aligned}
+$$
+
+**5. Transfer spatial derivatives by integration by parts.** With a smooth density, integrate the drift term once and the diffusion term twice. The test function and its derivatives vanish sufficiently far away, so the boundary terms vanish:
 
 $$
 \begin{aligned}
@@ -346,16 +395,49 @@ $$
 \end{aligned}
 $$
 
-The first line acquires one minus sign. The diffusion term transfers derivatives twice and therefore has a positive final sign. Summing the components yields
+One transfer gives a minus sign for the drift; two transfers give a plus sign for diffusion. The drift derivative acts on the **entire product $b_i\pi_t$**. Summing the components gives
 
 $$
 \int h\,\partial_t\pi_t\,dx
 =\int h\bigl[-\nabla\cdot(b\pi_t)+\Delta\pi_t\bigr]\,dx.
 $$
 
-Because the identity holds for every test function $h$, it gives the Fokker–Planck equation in the main text. With smooth densities it is a pointwise equation; at lower regularity the integral identity defines its weak form. The density operator $L^*\pi=-\nabla\cdot(b\pi)+\Delta\pi$ is called the adjoint of the generator because $\int(Lh)\pi=\int h(L^*\pi)$.
+**6. Turn the test-function identity into the density equation.** Bring the two sides together:
 
-This develops the stationary-equation background used in paper §2.3. For the connection between Itô's formula, the adjoint, and the forward equation, see [Goodman's lecture notes, Lesson 5, §2, pp.4–6](https://math.nyu.edu/~goodman/teaching/StochCalc2018/notes/Lesson5.pdf#page=4).
+$$
+\int h\,\bigl[\partial_t\pi_t
++\nabla\cdot(b\pi_t)-\Delta\pi_t\bigr]\,dx=0.
+$$
+
+If the bracketed function were continuous and positive at some point, a nonnegative test function supported near that point would make the integral positive. The same argument excludes a negative value. The continuous bracket must therefore vanish everywhere, giving the equation stated in the main text:
+
+$$
+\partial_t\pi_t=-\nabla\cdot(b\pi_t)+\Delta\pi_t.
+$$
+
+With less regular densities, retain the integral identity in step 4 and interpret the equation in the distributional sense. This does not presuppose classical derivatives of the density. Writing $L^*\pi=-\nabla\cdot(b\pi)+\Delta\pi$ gives
+
+$$
+\int(Lh)\pi\,dx=\int h(L^*\pi)\,dx,
+\qquad \partial_t\pi_t=L^*\pi_t.
+$$
+
+This integral relation makes $L^*$ the formal adjoint of the generator. $L$ acts on observables, whereas $L^*$ acts on densities. The route is **pathwise Itô formula → evolution of an expected observable → integration by parts → density equation**.
+
+**What changes with a different noise coefficient?** For the Itô equation $dX_t=b(X_t)dt+\Sigma(X_t)dW_t$, with $m$-dimensional Brownian motion and $\Sigma(x)\in\mathbb R^{d\times m}$, define the diffusion covariance matrix $a(x)=\Sigma(x)\Sigma(x)^\top$. The same calculation gives
+
+$$
+\begin{aligned}
+Lh&=b\cdot\nabla h+\frac12\sum_{i,j=1}^d a_{ij}\partial_{ij}h,\\
+\partial_t\pi_t
+&=-\sum_{i=1}^d\partial_i(b_i\pi_t)
++\frac12\sum_{i,j=1}^d\partial_i\partial_j(a_{ij}\pi_t).
+\end{aligned}
+$$
+
+In the main text, $\Sigma=\sqrt2 I_d$ gives $a=2I_d$, so the diffusion term is exactly $\Delta\pi_t$. When $a$ varies with position, the derivatives in the last equation act on the full product $a_{ij}\pi_t$.
+
+This derives the background needed for the stationary equation in [paper §2.3](https://arxiv.org/html/2509.24912v2#S2.SS3), using the notation of this review. For the generator, adjoint, and integration-by-parts connection, see [Goodman's lecture notes, Lesson 5, §2, pp.4–6](https://math.nyu.edu/~goodman/teaching/StochCalc2018/notes/Lesson5.pdf#page=4).
 
 </div>
 </details>

@@ -3,7 +3,7 @@ title: "[1/4] Score Geometry: 기하와 빈도"
 description: "작은 잡음에서 기하와 빈도 정보의 척도가 갈라지는 이유, 다섯 정리와 원·타원 및 이미지 생성 실험을 설명한다."
 date: "2026-10-29"
 publishedAt: "2026-10-29T08:55:43+09:00"
-updatedAt: "2026-10-29T15:42:22+09:00"
+updatedAt: "2026-10-29T16:07:03+09:00"
 topics: ["생성 모델", "확률과 기하"]
 visibility: "public"
 lang: "ko"
@@ -297,7 +297,7 @@ $$
 dX_t=b(X_t)\,dt+\sqrt2\,dW_t
 $$
 
-에서 $b$는 이동항이고 $W_t$는 $d$차원 표준 Brownian 운동(standard Brownian motion)이다. 시간 $t$에서의 밀도 $\pi_t$는 Fokker–Planck 방정식
+에서 $b$는 이동항이고 $W_t$는 $d$차원 표준 Brownian 운동(standard Brownian motion)이다. 시간 $t$에서의 밀도 $\pi_t$가 충분히 매끄러우면 포커–플랑크 방정식(Fokker–Planck equation)
 
 $$
 \partial_t\pi_t=-\nabla\cdot(b\pi_t)+\Delta\pi_t
@@ -305,19 +305,36 @@ $$
 
 을 따른다. 여기서 $\nabla\cdot$는 벡터장의 발산(divergence), $\Delta=\sum_{i=1}^d\partial_{x_i}^2$는 Laplacian이다. 이때 발산은 앞서 밀도값이 무한히 커진다는 뜻으로 쓴 발산과 달리, 벡터장이 한 지점에서 퍼져 나가는 양을 나타내는 미분 연산이다. 정상분포(stationary distribution)는 밀도가 시간에 따라 변하지 않아 우변이 0인 분포다. [원문 §2.3](https://arxiv.org/html/2509.24912v2#S2.SS3)
 
-<details class="review-background">
-<summary><span>보충 설명: Itô 공식에서 Fokker–Planck 방정식까지</span><span class="review-background-toggle" aria-hidden="true"></span></summary>
+<details class="review-background" id="ito-fokker-planck">
+<summary><span>보충 설명: 이토 보조정리(Itô’s lemma)에서 Fokker–Planck 방정식까지</span><span class="review-background-toggle" aria-hidden="true"></span></summary>
 <div class="review-background-body">
 
-<strong>리뷰 보충 유도.</strong> 분포의 변화를 적분으로 관찰하는 시험함수(test function) $h\in C_c^\infty(\mathbb R^d)$를 잡는다. 이는 매끄럽고 충분히 먼 곳에서 0이 되는 함수다. 아래 계산에는 밀도의 미분과 적분·기댓값을 교환할 수 있는 매끄러움 및 적분 가능성을 둔다. 시험함수의 지지집합이 콤팩트하므로 부분적분의 무한대 경계항은 0이다.
+<strong>리뷰 보충 유도.</strong> 경로 $X_t$가 어떻게 움직이는지에서 출발해, 그 경로들의 분포인 $\pi_t$가 어떻게 변하는지를 구한다. 연결 고리는 **시험함수에 Itô 공식을 적용한 뒤 기댓값을 취하는 것**이다. $b$는 국소적으로 매끄럽고 과정은 유한 시간에 폭주하지 않는다고 하자. 먼저 밀도가 충분히 매끄러운 경우를 계산하고, 마지막에 밀도의 미분을 직접 요구하지 않는 약한 형태를 남긴다.
 
-**1. Brownian 잡음의 2차 효과를 계산한다.** 독립인 Brownian 성분은 이차변동(quadratic variation) 규칙 $dW_i\,dW_j=\delta_{ij}\,dt$를 따른다. $\delta_{ij}$는 $i=j$이면 1, 다르면 0이다. 이동항과의 곱은 이 규칙에서 0이므로
+**1. 분포를 관찰할 함수를 고른다.** 시험함수(test function) $h\in C_c^\infty(\mathbb R^d)$를 하나 고정한다. 이는 매끄럽고 충분히 먼 곳에서 0이 되는 함수다. 예를 들어 관심 영역 안에서는 양수이고 바깥에서는 0인 $h$를 고르면, 그 주변에 놓인 확률을 부드럽게 가중하여 관찰한다. 같은 관찰값을 확률변수와 밀도 두 방식으로 쓸 수 있다.
+
+$$
+\mathbb E[h(X_t)]=\int_{\mathbb R^d}h(x)\pi_t(x)\,dx.
+$$
+
+따라서 왼쪽의 시간 변화를 Itô 공식으로 계산하면 오른쪽을 통해 밀도의 시간 변화와 연결된다. $h=h(x)$는 시간에 직접 의존하지 않으므로 Itô 공식에 $\partial_t h$ 항은 없다. 아래에서 $\partial_i=\partial/\partial x_i$다.
+
+**2. Itô 보조정리에서 확산 계수를 확인한다.** Brownian 운동의 이차변동(quadratic variation)은 $dW_i\,dW_j=\delta_{ij}\,dt$다. $\delta_{ij}$는 $i=j$이면 1, 다르면 0인 Kronecker delta다. 잡음 계수가 $\sqrt2$이므로
 
 $$
 \begin{aligned}
-dX_i\,dX_j
-&=(\sqrt2\,dW_i)(\sqrt2\,dW_j)
-=2\delta_{ij}\,dt,\\
+dX_i\,dX_j&=2\delta_{ij}\,dt,\\
+\frac12\sum_{i,j=1}^d\partial_{ij}h(X_t)\,dX_i\,dX_j
+&=\frac12\sum_{i,j=1}^d\partial_{ij}h(X_t)\,2\delta_{ij}\,dt\\
+&=\sum_{i=1}^d\partial_{ii}h(X_t)\,dt
+=\Delta h(X_t)\,dt.
+\end{aligned}
+$$
+
+이 표기는 보통의 미소량 곱셈이 아니다. 길이 $\delta$인 작은 시간 구간에서 Brownian 증분의 크기가 $\sqrt\delta$이므로 그 제곱은 $\delta$ 규모로 누적된다. 반면 $dt\,dt$와 $dt\,dW_i$는 이차변동에 기여하지 않는다. Itô 공식의 $1/2$가 잡음의 공분산(covariance) 계수 2와 상쇄되는 과정을 위 식에 모두 보였다.
+
+$$
+\begin{aligned}
 dh(X_t)
 &=\sum_i\partial_i h(X_t)\,dX_i
 +\frac12\sum_{i,j}\partial_{ij}h(X_t)\,dX_i\,dX_j\\
@@ -326,22 +343,54 @@ dh(X_t)
 \end{aligned}
 $$
 
-Itô 공식의 $1/2$와공분산(covariance)의 2가 곱해져 1이 된다. 그래서 $\Delta h$ 앞에 $1/2$가 남지 않는다. $dX_i\,dX_j$는 보통의 미소량을 곱한 것이 아니라 확률 과정의 이차변동을 적는 표기다.
+시험함수에 작용하는 미분 연산자 $Lh=b\cdot\nabla h+\Delta h$를 생성자(generator)라 부른다. $Lh(x)$는 현재 위치가 $x$일 때 관찰값 $h(X_t)$의 평균이 순간적으로 변하는 비율이다.
 
-**2. 기댓값을 취한다.** 필요한 적분 가능성 아래 Itô 확률적분의 기댓값은 0이다. 따라서 시험함수에 작용하는 생성자(generator) $L$과 평균 변화율은
+**3. 시간 적분 후 기댓값을 취한다.** 확률미분의 평균을 바로 미분하기보다, 위 식을 $0$부터 $t$까지 적분한다.
 
 $$
 \begin{aligned}
-Lh&=b\cdot\nabla h+\Delta h,\\
-\frac{d}{dt}\mathbb E[h(X_t)]
-&=\mathbb E[(Lh)(X_t)]
-=\int_{\mathbb R^d}(Lh)(x)\pi_t(x)\,dx.
+h(X_t)-h(X_0)
+&=\int_0^t(Lh)(X_s)\,ds+M_t,\\
+M_t&=\sqrt2\int_0^t\nabla h(X_s)\cdot dW_s.
 \end{aligned}
 $$
 
-한편 $\mathbb E[h(X_t)]=\int h\pi_t\,dx$이므로 왼쪽은 $\int h\,\partial_t\pi_t\,dx$다. 이제 오른쪽의 $h$에 붙은 미분을 밀도 쪽으로 옮긴다.
+확률적분(stochastic integral) $M_t$의 평균이 0인 이유도 조건과 함께 확인할 수 있다. 적분 안의 값은 현재까지의 경로로 정해지고 미래 Brownian 증분을 미리 보지 않는다. 이런 성질과 다음 제곱 적분 가능성 아래 $M_t$는 마팅게일(martingale)이다. 즉, 현재까지의 정보를 알아도 미래 변화의 조건부 평균이 0이다. $M_0=0$이므로 전체 평균도 0으로 유지된다. 여기서는 $\nabla h$가 유계이므로 조건이 자동으로 성립한다. $\|\nabla h\|_\infty=\sup_x\|\nabla h(x)\|$로 쓴다.
 
-**3. 이동항은 한 번, 확산항은 두 번 부분적분한다.** 공간 적분의 영역은 모두 $\mathbb R^d$다. 각 성분에 대해
+$$
+\begin{aligned}
+\mathbb E\int_0^t2\|\nabla h(X_s)\|^2\,ds
+&\le 2t\|\nabla h\|_\infty^2<\infty,\\
+\mathbb E[M_t]&=0.
+\end{aligned}
+$$
+
+유한합으로 생각하면 각 Brownian 증분의 조건부 평균이 0이어서 평균이 사라지고, 위 조건은 그 성질을 확률적분의 극한까지 유지해 준다. 또한 $b$는 $h$의 지지집합에서 유계이므로 $Lh$도 유계다. 따라서 시간 적분과 기댓값을 교환하면
+
+$$
+\mathbb E[h(X_t)]-\mathbb E[h(X_0)]
+=\int_0^t\mathbb E[(Lh)(X_s)]\,ds.
+$$
+
+**4. 기댓값을 밀도 적분으로 바꾼다.** 1단계의 등식을 양쪽에 적용하면 밀도의 시간 변화에 대한 적분형 관계를 얻는다. 여기서 $\pi_0$는 초기분포의 밀도다.
+
+$$
+\int h(x)\pi_t(x)\,dx-\int h(x)\pi_0(x)\,dx
+=\int_0^t\int (Lh)(x)\pi_s(x)\,dx\,ds.
+$$
+
+이 식이 시간까지 적분한 <strong>약한 형태(weak form)</strong>다. 공간 미분은 알려진 매끄러운 함수 $h$에만 붙어 있다. 시간에 대해 미분할 수 있으면 다음 식을 얻으며, 일반적으로는 거의 모든 시간에서 성립한다. 이하 공간 적분은 모두 $\mathbb R^d$ 위에서 한다.
+
+$$
+\begin{aligned}
+\frac{d}{dt}\int h\pi_t\,dx
+&=\int(Lh)\pi_t\,dx\\
+&=\sum_{i=1}^d\int b_i\pi_t\,\partial_i h\,dx
++\sum_{i=1}^d\int\pi_t\,\partial_{ii}h\,dx.
+\end{aligned}
+$$
+
+**5. 부분적분으로 공간 미분을 밀도 쪽에 옮긴다.** 매끄러운 밀도에서는 이동항을 한 번, 확산항을 두 번 부분적분(integration by parts)한다. $h$와 그 미분은 충분히 먼 곳에서 0이므로 경계항이 사라진다.
 
 $$
 \begin{aligned}
@@ -353,16 +402,49 @@ $$
 \end{aligned}
 $$
 
-첫째 줄에는 음수 부호가 하나 생긴다. 둘째·셋째 줄은 두 번 옮기므로 음수 부호가 두 번 생겨 최종적으로 양수다. 모든 성분을 더하면
+이동항은 미분을 한 번 옮겨 음수, 확산항은 두 번 옮겨 양수가 된다. 이동항의 미분은 **곱 $b_i\pi_t$ 전체**에 작용한다. 성분을 더하면
 
 $$
 \int h\,\partial_t\pi_t\,dx
 =\int h\bigl[-\nabla\cdot(b\pi_t)+\Delta\pi_t\bigr]\,dx.
 $$
 
-이 식이 모든 시험함수 $h$에 대해 성립하므로 본문의 Fokker–Planck 방정식을 얻는다. 매끄러운 경우에는 점별 방정식으로 읽으며, 더 약한 매끄러움에서는 위 적분 등식이 약한 형태(weak form)의 정의가 된다. 밀도 쪽의 연산자 $L^*\pi=-\nabla\cdot(b\pi)+\Delta\pi$를 생성자의 수반 연산자(adjoint operator)라 부르는 이유도 $\int(Lh)\pi=\int h(L^*\pi)$라는 관계에 있다.
+**6. 모든 시험함수에 대한 등식에서 방정식을 얻는다.** 앞 식의 양변을 한쪽으로 옮기면
 
-이는 원문 §2.3에서 쓰는 정상 방정식의 기초 유도다. Itô 공식과 수반 연산자를 통한 전방 방정식의 연결은 [Goodman 강의노트 Lesson 5, §2, pp.4–6](https://math.nyu.edu/~goodman/teaching/StochCalc2018/notes/Lesson5.pdf#page=4)에서 확인할 수 있다.
+$$
+\int h\,\bigl[\partial_t\pi_t
++\nabla\cdot(b\pi_t)-\Delta\pi_t\bigr]\,dx=0.
+$$
+
+대괄호 안의 함수가 어느 점에서 양수이고 연속이라면, 그 점 근처에서만 양수인 $h\ge0$을 골라 적분을 양수로 만들 수 있다. 음수인 경우도 마찬가지다. 따라서 연속인 대괄호 안은 모든 점에서 0이어야 한다. 이렇게 본문의 방정식을 얻는다.
+
+$$
+\partial_t\pi_t=-\nabla\cdot(b\pi_t)+\Delta\pi_t.
+$$
+
+밀도가 충분히 매끄럽지 않을 때에는 4단계의 적분형 관계를 사용하고, 방정식을 분포의 의미(distributional sense)로 해석한다. 이때 밀도의 고전적 미분을 미리 가정할 필요가 없다. 밀도 쪽 연산자를 $L^*\pi=-\nabla\cdot(b\pi)+\Delta\pi$로 쓰면
+
+$$
+\int(Lh)\pi\,dx=\int h(L^*\pi)\,dx,
+\qquad \partial_t\pi_t=L^*\pi_t.
+$$
+
+이 적분 관계 때문에 $L^*$를 생성자의 형식적 수반 연산자(formal adjoint operator)라 부른다. $L$은 관찰 함수에, $L^*$는 밀도에 작용한다. 요컨대 **경로의 Itô 공식 → 평균 관찰값의 변화 → 부분적분 → 밀도의 방정식** 순서다.
+
+**잡음 계수가 달라지면 무엇이 바뀌는가?** Itô 의미의 일반적인 $dX_t=b(X_t)dt+\Sigma(X_t)dW_t$에서 $W_t$가 $m$차원이고 $\Sigma(x)\in\mathbb R^{d\times m}$이면, 확산 공분산 행렬은 $a(x)=\Sigma(x)\Sigma(x)^\top$다. 같은 계산으로
+
+$$
+\begin{aligned}
+Lh&=b\cdot\nabla h+\frac12\sum_{i,j=1}^d a_{ij}\partial_{ij}h,\\
+\partial_t\pi_t
+&=-\sum_{i=1}^d\partial_i(b_i\pi_t)
++\frac12\sum_{i,j=1}^d\partial_i\partial_j(a_{ij}\pi_t).
+\end{aligned}
+$$
+
+본문에서는 $\Sigma=\sqrt2 I_d$라서 $a=2I_d$이고 확산항이 정확히 $\Delta\pi_t$가 된다. 위치에 따라 $a$가 달라지면 마지막 식의 미분은 $a_{ij}\pi_t$ 전체에 작용한다.
+
+이 설명은 [원문 §2.3](https://arxiv.org/html/2509.24912v2#S2.SS3)의 정상 방정식에 필요한 기초를 현재 기호로 유도한 것이다. 생성자·수반과 부분적분의 연결은 [Goodman 강의노트 Lesson 5, §2, pp.4–6](https://math.nyu.edu/~goodman/teaching/StochCalc2018/notes/Lesson5.pdf#page=4)에서 함께 볼 수 있다.
 
 </div>
 </details>
